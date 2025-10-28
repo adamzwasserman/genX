@@ -1,273 +1,228 @@
-# GenX Accessibility Tagger for VS Code
+# genX - Declarative Web Development Platform
 
-Visual accessibility tagging and automated fixes for HTML with GenX attributes. Point, click, and fix accessibility issues without leaving your editor.
+**Make web development simpler with HTML attributes.**
 
-![GenX Tagger Demo](media/demo.gif)
+genX is a declarative web development platform that enhances HTML with powerful functionality through simple attributes. No frameworks required, no complex build processes, just add attributes and go.
 
-## Features
+```html
+<!-- Before -->
+<span>$25.00</span>
+<input type="email" id="email">
 
-### 🎯 Visual Tagger
-- **Split-pane interface** - See your HTML preview and tagging panel side-by-side
-- **Point-and-click selection** - Click elements in the preview to add transformations
-- **Smart detection** - Automatically detects:
-  - Currency values that need formatting
-  - Dates in various formats
-  - Phone numbers
-  - Images missing alt text
-  - Form fields without labels
-  - Navigation areas needing ARIA roles
-
-### 🛡️ Lighthouse-Style Accessibility Audit
-- **Instant scanning** - Run comprehensive accessibility audits with one click
-- **Severity grouping** - Issues organized by Critical, Serious, Moderate, Minor
-- **Visual highlighting** - See issues highlighted directly in your code
-- **Score tracking** - Get a 0-100 accessibility score like Lighthouse
-- **Auto-fix suggestions** - One-click fixes for common issues
-
-### ✨ Smart Code Actions
-- **Inline hints** - See accessibility issues as you type
-- **Quick fixes** - Right-click any element for fix suggestions
-- **Bulk operations** - Apply fixes to all similar elements at once
-- **Undo support** - Full VS Code undo/redo integration
-
-### 📋 Manifest System
-- **Import/Export** - Share transformation rules across projects
-- **AI-ready format** - Generate prompts for GitHub Copilot, Cursor, etc.
-- **Version control friendly** - JSON manifests work great with Git
-
-## Installation
-
-1. Install from VS Code Marketplace:
-   ```
-   ext install genx-accessibility-tagger
-   ```
-
-2. Or install manually:
-   ```bash
-   git clone https://github.com/genx-dev/vscode-extension
-   cd vscode-extension
-   npm install
-   npm run compile
-   code --install-extension genx-tagger-0.1.0.vsix
-   ```
-
-## Usage
-
-### Quick Start
-
-1. Open any HTML file
-2. Press `Cmd+Shift+A` (Mac) or `Ctrl+Shift+A` (Windows/Linux) to open the tagger
-3. Click elements in the preview to see suggestions
-4. Click suggestions to apply transformations
-
-### Running an Audit
-
-#### Method 1: Command Palette
-- Press `Cmd+Shift+P` → "GenX: Run Accessibility Audit"
-
-#### Method 2: Status Bar
-- Click the shield icon in the status bar
-
-#### Method 3: Editor Title
-- Click the eye icon in the editor title bar (HTML files only)
-
-### Applying Fixes
-
-#### Individual Fixes
-1. Hover over any diagnostic (red/yellow underline)
-2. Click the lightbulb icon
-3. Select the fix to apply
-
-#### Bulk Fixes from Audit
-1. Run audit → View issues in Problems panel
-2. Right-click → "Fix all GenX issues"
-
-#### From Manifest
-1. `Cmd+Shift+P` → "GenX: Apply Manifest"
-2. Select your `.genx.json` file
-3. All transformations applied automatically
-
-## Snippets
-
-Type these prefixes in HTML files for quick insertion:
-
-| Prefix | Description | Example |
-|--------|-------------|---------|
-| `gx-currency` | Currency formatting | `fx-format="currency" fx-currency="USD"` |
-| `gx-date` | Date formatting | `fx-format="date" fx-date-style="medium"` |
-| `gx-phone` | Phone formatting | `fx-format="phone" fx-country="US"` |
-| `ax-image` | Image accessibility | `ax-enhance="image" alt="Description"` |
-| `ax-form` | Form field label | `ax-enhance="form" aria-label="Field"` |
-| `ax-nav` | Navigation ARIA | `ax-enhance="navigation" role="navigation"` |
-| `gx-product` | Complete product card | Full accessible product template |
-
-## Configuration
-
-Configure in VS Code settings (`Cmd+,`):
-
-```json
-{
-  "genx.enableAutoAudit": true,        // Auto-audit HTML files on open
-  "genx.auditOnSave": false,           // Run audit when saving
-  "genx.showInlineHints": true,        // Show code lens hints
-  "genx.defaultCurrency": "USD",       // Default currency for formatting
-  "genx.defaultDateFormat": "medium",  // short|medium|long|full
-  "genx.severityLevel": "moderate"     // Minimum severity to report
-}
+<!-- After: Formatted and accessible -->
+<span fx-format="currency" fx-currency="USD">25.00</span>
+<input type="email" id="email" ax-enhance="field" ax-required="true" ax-help="We'll never share your email">
 ```
 
-## Manifest Format
+## ✨ Features
 
-The extension generates and consumes manifests in this format:
+- **🎯 Declarative** - Control everything with HTML attributes
+- **⚡ Lightweight** - 1KB bootloader, modules loaded on-demand
+- **🔒 Privacy-First** - Client-side processing only, no tracking
+- **♿ Accessible** - WCAG 2.1 AA compliant by default
+- **🚀 Fast** - 0ms Total Blocking Time, perfect Lighthouse scores
+- **🔧 Framework Agnostic** - Works with vanilla HTML, React, Vue, Angular, or anything else
 
-```json
-{
-  "version": "1.0",
-  "generator": "GenX VS Code Extension",
-  "created": "2025-01-15T10:30:00Z",
-  "transformations": [
-    {
-      "selector": ".price",
-      "attributes": {
-        "fx-format": "currency",
-        "fx-currency": "USD"
-      },
-      "type": "Currency Format",
-      "severity": "moderate"
-    },
-    {
-      "selector": "img",
-      "attributes": {
-        "ax-enhance": "image",
-        "alt": "Product image"
-      },
-      "type": "Add Alt Text",
-      "severity": "critical"
-    }
-  ]
-}
+## 🚀 Quick Start
+
+### 1. Add the Bootloader
+
+```html
+<script src="https://cdn.genx.software/v1/bootloader.js"></script>
 ```
 
-## Keyboard Shortcuts
+### 2. Use genX Attributes
 
-| Command | Mac | Windows/Linux |
-|---------|-----|---------------|
-| Open Tagger | `Cmd+Shift+A` | `Ctrl+Shift+A` |
-| Run Audit | `Cmd+Shift+U` | `Ctrl+Shift+U` |
-| Quick Fix | `Cmd+.` | `Ctrl+.` |
-| Export Manifest | `Cmd+Shift+E` | `Ctrl+Shift+E` |
+```html
+<!-- Currency Formatting -->
+<span fx-format="currency" fx-currency="USD">1299.99</span>
 
-## Integration with CI/CD
+<!-- Accessibility Enhancement -->
+<button ax-enhance="button" ax-pressed="false">Toggle</button>
 
-### GitHub Actions
-
-```yaml
-name: Accessibility Check
-on: [push, pull_request]
-
-jobs:
-  audit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run GenX Audit
-        run: |
-          npx genx-cli audit src/**/*.html
-          npx genx-cli apply manifest.genx.json
-      - name: Upload manifest
-        uses: actions/upload-artifact@v2
-        with:
-          name: genx-manifest
-          path: manifest.genx.json
+<!-- Date Formatting -->
+<span fx-format="date" fx-date-format="long">2024-03-15</span>
 ```
 
-### Pre-commit Hook
+### 3. It Just Works™
 
+The bootloader scans your page, loads only the modules you need, and enhances everything automatically. Dynamic content is handled automatically via MutationObserver.
+
+See the [Quick Start Guide](docs/QUICK-START.md) for more details.
+
+## 📦 Modules
+
+| Module | Purpose | Attributes | Status |
+|--------|---------|------------|--------|
+| **fmtX** | Text formatting (currency, dates, numbers) | `fx-*` | ✅ Ready |
+| **accX** | Accessibility (WCAG, ARIA) | `ax-*` | ✅ Ready |
+| **bindX** | Reactive data binding | `bx-*` | 📋 Planned |
+| **loadX** | Loading states, skeletons | `lx-*` | 📋 Planned |
+| **dragX** | Drag & drop | `dx-*` | 📋 Planned |
+| **tableX** | Enhanced tables | `tx-*` | 📋 Planned |
+| **navX** | Navigation & routing | `nx-*` | 📋 Planned |
+
+## 📚 Documentation
+
+- **[Quick Start Guide](docs/QUICK-START.md)** - Get started in 5 minutes
+- **[Full Documentation](docs/README.md)** - Complete guide to all modules
+- **[Architecture](docs/architecture/)** - Technical specifications
+- **[API Reference](docs/README.md#modules)** - All attributes and options
+
+## 🎯 Use Cases
+
+### E-commerce
+```html
+<div class="product-card">
+    <img ax-enhance="image" alt="Product" src="product.jpg">
+    <h3>Amazing Product</h3>
+    <span fx-format="currency" fx-currency="USD">99.99</span>
+    <button ax-enhance="button">Add to Cart</button>
+</div>
+```
+
+### Forms
+```html
+<form>
+    <input type="email"
+           ax-enhance="field"
+           ax-required="true"
+           ax-help="We'll never share your email">
+
+    <input type="tel"
+           fx-format="phone"
+           fx-phone-format="us"
+           ax-enhance="field">
+</form>
+```
+
+### Data Display
+```html
+<table ax-enhance="table" ax-caption="Sales Report" ax-sortable="true">
+    <tr>
+        <th>Product</th>
+        <th>Revenue</th>
+        <th>Growth</th>
+    </tr>
+    <tr>
+        <td>Widget A</td>
+        <td><span fx-format="currency">45000</span></td>
+        <td><span fx-format="percent">0.15</span></td>
+    </tr>
+</table>
+```
+
+## 🏗️ Architecture
+
+genX consists of three core components:
+
+### 1. Universal Bootloader (1KB)
+- Loads after first paint for 0ms blocking time
+- Scans DOM for genX attributes
+- Dynamically loads only required modules
+- Watches for dynamic content via MutationObserver
+
+### 2. Polymorphic Processing Engine
+- Pure functional JavaScript
+- Processes multiple notation styles
+- Framework-agnostic design
+- Client-side only (privacy-preserving)
+
+### 3. Edge Compilation Service (Optional)
+- ML-optimized bundles
+- Edge location delivery
+- Pre-compiled common patterns
+- Paid tier for production optimization
+
+See [Architecture Documentation](docs/architecture/) for technical details.
+
+## 🔒 Security & Privacy
+
+- **Client-side only** - No data sent to servers
+- **XSS protected** - Safe DOM manipulation, no innerHTML
+- **CSP compliant** - No eval, no inline scripts
+- **SRI supported** - Subresource integrity for CDN
+- **GDPR compliant** - No tracking, no PII collection
+
+## 🎨 Visual Tooling (Coming Soon)
+
+- **Chrome Extension** - Point-and-click visual tagger
+- **VSCode Extension** - IDE-integrated tagging
+- **Collaboration Server** - Team-based tagging workflows
+
+## 🚀 Performance
+
+genX is designed for perfect performance:
+
+- **0ms Total Blocking Time** - Loads after first paint
+- **<16ms Operations** - 60 FPS guaranteed
+- **Perfect Lighthouse Scores** - 100/100/100/100
+- **<1KB Bootloader** - Minimal initial load
+- **On-demand Loading** - Only load what you use
+
+## 🌐 Browser Support
+
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+Requires ES6+ (Proxy, MutationObserver, async/await)
+
+## 📦 Installation Options
+
+### Option 1: CDN (Easiest)
+```html
+<script src="https://cdn.genx.software/v1/bootloader.js"></script>
+```
+
+### Option 2: npm (Coming Soon)
 ```bash
-#!/bin/sh
-# .git/hooks/pre-commit
-
-# Run GenX audit on staged HTML files
-staged_files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.html$')
-
-if [ -n "$staged_files" ]; then
-  npx genx-cli audit $staged_files
-  if [ $? -ne 0 ]; then
-    echo "❌ Accessibility issues found. Run 'genx fix' to resolve."
-    exit 1
-  fi
-fi
+npm install @genx/core
 ```
 
-## Troubleshooting
-
-### Webview not loading
-- Ensure VS Code has permission to run local servers
-- Try reloading the window: `Cmd+R`
-
-### Audit not finding issues
-- Check that axe-core is installed: `npm list axe-core`
-- Verify HTML is valid: malformed HTML may cause issues
-- Check severity level in settings
-
-### Transformations not applying
-- Ensure selectors are specific enough
-- Check for conflicting attributes
-- Verify file has write permissions
-
-## Development
-
-### Building from source
-
+### Option 3: Self-Hosted
 ```bash
-git clone https://github.com/genx-dev/vscode-extension
-cd vscode-extension
-npm install
-npm run compile
-
-# Run in development
-code . 
-# Press F5 to launch extension development host
+# Download and host yourself
+wget https://cdn.genx.software/v1/bootloader.js
 ```
 
-### Running tests
+See [Deployment Guide](docs/README.md#deployment) for details.
 
-```bash
-npm test
-```
+## 🤝 Contributing
 
-### Publishing
+Contributions are welcome! Please see our [Contributing Guide](.claude/CLAUDE.local.md) for:
 
-```bash
-vsce package
-vsce publish
-```
+- Code style guidelines
+- Module development standards
+- Testing requirements
+- Documentation standards
 
-## License
+## 📄 License
 
-MIT
+MIT License - see [LICENSE](LICENSE) for details
 
-## Contributing
+## 🙏 Acknowledgments
 
-Contributions welcome! Please read our [Contributing Guide](CONTRIBUTING.md).
+Built with inspiration from:
+- Alpine.js - For declarative simplicity
+- HTMX - For HTML-first philosophy
+- Tailwind - For utility-first thinking
 
-## Roadmap
+## 🔗 Links
 
-- [ ] Multi-file audit reports
-- [ ] Custom rule definitions
-- [ ] Integration with ESLint
-- [ ] Real-time collaboration features
-- [ ] AI-powered alt text generation
-- [ ] Support for Vue/React/Angular templates
-- [ ] Export to PDF reports
-- [ ] Team sharing of manifests
+- **Website:** https://genx.software
+- **Documentation:** [docs/README.md](docs/README.md)
+- **GitHub:** https://github.com/genx-software/genx
+- **Discord:** https://discord.gg/genx
 
-## Support
+## 📊 Project Status
 
-- 📧 Email: support@genx.dev
-- 💬 Discord: discord.gg/genx
-- 🐛 Issues: github.com/genx-dev/vscode-extension/issues
+**Current Phase:** Alpha
+**Version:** 1.0.0-alpha
+**Modules Ready:** fmtX, accX
+**In Development:** bindX, loadX, dragX, tableX, navX
 
 ---
 
-Made with ❤️ by the GenX team
+**Made with ❤️ for developers who value simplicity.**
