@@ -1,0 +1,4 @@
+# Prevent .claude/ from being merged or overwritten
+.claude/** merge=ours
+
+# This ensures that during merges, local .claude/ config always wins
