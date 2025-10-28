@@ -144,11 +144,15 @@ See [Architecture Documentation](docs/architecture/) for technical details.
 - **SRI supported** - Subresource integrity for CDN
 - **GDPR compliant** - No tracking, no PII collection
 
-## 🎨 Visual Tooling (Coming Soon)
+## 🎨 Visual Tooling (Commercial)
 
-- **Chrome Extension** - Point-and-click visual tagger
-- **VSCode Extension** - IDE-integrated tagging
-- **Collaboration Server** - Team-based tagging workflows
+Professional point-and-click tools for genX attribute tagging:
+
+- **Chrome Extension** - Visual element inspector and tagger
+- **VSCode Extension** - IDE-integrated tagging with live preview
+- **Collaboration Server** - Team workflows and version control
+
+**Learn more:** https://visual.genx.software | sales@genx.software
 
 ## 🚀 Performance
 

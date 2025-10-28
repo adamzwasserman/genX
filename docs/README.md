@@ -41,11 +41,17 @@ Comprehensive architecture documentation for the genX platform and all modules.
 | **tableX** | Enhanced tables with sorting, filtering | [Architecture](architecture/tablex-architecture-v1_0.md) |
 | **navX** | Navigation and routing | [Architecture](architecture/navx-architecture-v1_0.md) |
 
-### Visual Tooling
+### Visual Tooling (Commercial)
 
-- [Visual genX Chrome Extension](architecture/visual-genx-chrome-extension-architecture-v1_0.md) - Browser-based visual tagger
-- [Visual genX VSCode Extension](architecture/visual-genx-vscode-extension-architecture-v1_0.md) - IDE integration
-- [Visual genX Collaboration Server](architecture/visual-genx-collaboration-server-architecture-v1_0.md) - Team collaboration features
+Visual genX tooling is available as a commercial product. For information:
+- Website: https://visual.genx.software
+- Contact: sales@genx.software
+
+**Features:**
+- Chrome Extension - Point-and-click visual tagger
+- VSCode Extension - IDE-integrated tagging
+- Collaboration Server - Team-based workflows
+- Enterprise SSO and RBAC
 
 ---
 
