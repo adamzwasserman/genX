@@ -1,0 +1,87 @@
+{
+  "name": "@genx/core",
+  "version": "1.0.0-alpha.1",
+  "description": "Declarative web development platform - enhance HTML with powerful functionality through simple attributes",
+  "main": "dist/bootloader.js",
+  "module": "dist/bootloader.esm.js",
+  "unpkg": "dist/bootloader.min.js",
+  "jsdelivr": "dist/bootloader.min.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "npm run build:bootloader && npm run build:modules && npm run minify",
+    "build:bootloader": "esbuild src/bootloader.js --bundle --outfile=dist/bootloader.js --format=iife --global-name=genx",
+    "build:modules": "esbuild src/fmtx.js src/accx.js --outdir=dist/modules --format=iife",
+    "minify": "npm run minify:bootloader && npm run minify:modules",
+    "minify:bootloader": "terser dist/bootloader.js -o dist/bootloader.min.js --compress --mangle",
+    "minify:modules": "terser dist/modules/fmtx.js -o dist/modules/fmtx.min.js --compress --mangle && terser dist/modules/accx.js -o dist/modules/accx.min.js --compress --mangle",
+    "dev": "python3 -m http.server 8080",
+    "test": "echo \"Tests coming soon\" && exit 0",
+    "lint": "eslint src/**/*.js",
+    "format": "prettier --write src/**/*.js",
+    "size": "npm run build && size-limit",
+    "prepare": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/genx-software/genx.git"
+  },
+  "keywords": [
+    "declarative",
+    "html",
+    "attributes",
+    "accessibility",
+    "formatting",
+    "wcag",
+    "aria",
+    "a11y",
+    "progressive-enhancement",
+    "framework-agnostic",
+    "vanilla-js",
+    "web-components",
+    "no-framework"
+  ],
+  "author": "genX Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/genx-software/genx/issues"
+  },
+  "homepage": "https://genx.software",
+  "devDependencies": {
+    "@size-limit/preset-small-lib": "^11.0.0",
+    "esbuild": "^0.19.0",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.0",
+    "size-limit": "^11.0.0",
+    "terser": "^5.26.0"
+  },
+  "size-limit": [
+    {
+      "name": "Bootloader",
+      "path": "dist/bootloader.min.js",
+      "limit": "1 KB",
+      "gzip": true
+    },
+    {
+      "name": "FormatX Module",
+      "path": "dist/modules/fmtx.min.js",
+      "limit": "50 KB"
+    },
+    {
+      "name": "AccessX Module",
+      "path": "dist/modules/accx.min.js",
+      "limit": "50 KB"
+    }
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
