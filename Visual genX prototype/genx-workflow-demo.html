@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GenX Complete Workflow Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f8f9fa;
+        }
+        
+        .demo-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .demo-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .workflow-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .step-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 32px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+        
+        .demo-section {
+            background: white;
+            border-radius: 8px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .sample-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .sample-item {
+            padding: 16px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .price { font-size: 24px; font-weight: bold; color: #495057; }
+        .date { color: #6c757d; }
+        .phone { font-family: monospace; }
+        
+        .code-block {
+            background: #212529;
+            color: #f8f9fa;
+            padding: 16px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            margin: 16px 0;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 12px;
+        }
+        
+        .status-ready { background: #d1f4e0; color: #0f5132; }
+        .status-processing { background: #fff3cd; color: #664d03; }
+        .status-complete { background: #cfe2ff; color: #084298; }
+    </style>
+</head>
+<body>
+    <div class="demo-header">
+        <h1>GenX Complete Workflow Demo</h1>
+        <p style="margin-top:12px; opacity:0.9">
+            From visual tagging to production implementation
+        </p>
+    </div>
+
+    <div class="demo-container">
+        <!-- Workflow Overview -->
+        <div class="workflow-steps">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Visual Tagging</h3>
+                <p>Point and click interface for non-technical users to specify transformations</p>
+            </div>
+            
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Manifest Generation</h3>
+                <p>Automatic creation of JSON manifest with selectors and attributes</p>
+            </div>
+            
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Implementation</h3>
+                <p>AI agent or developer applies transformations using the manifest</p>
+            </div>
+            
+            <div class="step-card">
+                <div class="step-number">4</div>
+                <h3>Deployment</h3>
+                <p>Production-ready code with GenX libraries handling the heavy lifting</p>
+            </div>
+        </div>
+
+        <!-- Step 1: Sample Content -->
+        <div class="demo-section">
+            <h2>Step 1: Original Content <span class="status-indicator status-ready">Ready for tagging</span></h2>
+            <p style="color:#6c757d; margin-top:8px">
+                This is sample content that needs formatting and accessibility improvements
+            </p>
+            
+            <div class="sample-content" id="sample-content">
+                <div class="sample-item">
+                    <div class="price">1299.99</div>
+                    <div>Premium Package</div>
+                </div>
+                
+                <div class="sample-item">
+                    <div class="date">2025-01-15</div>
+                    <div>Next delivery date</div>
+                </div>
+                
+                <div class="sample-item">
+                    <div class="phone">4155551234</div>
+                    <div>Customer support</div>
+                </div>
+                
+                <div class="sample-item">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23dee2e6' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dy='.3em' fill='%236c757d'%3EProduct%3C/text%3E%3C/svg%3E" width="100" height="100">
+                    <div>Product image</div>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="launchTagger()">
+                    Launch Visual Tagger
+                </button>
+                <button class="btn btn-secondary" onclick="simulateTagging()">
+                    Simulate Tagging
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Generated Manifest -->
+        <div class="demo-section">
+            <h2>Step 2: Generated Manifest <span class="status-indicator status-processing">Processing</span></h2>
+            <p style="color:#6c757d; margin-top:8px">
+                The visual tagger generates this manifest based on user selections
+            </p>
+            
+            <div class="code-block" id="manifest-display">
+{
+    "version": "1.0",
+    "generator": "GenX Visual Tagger",
+    "transformations": []
+}</div>
+            
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="copyManifest()">
+                    Copy Manifest
+                </button>
+                <button class="btn btn-secondary" onclick="downloadManifest()">
+                    Download JSON
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Implementation Options -->
+        <div class="demo-section">
+            <h2>Step 3: Implementation <span class="status-indicator status-processing">Choose method</span></h2>
+            <p style="color:#6c757d; margin-top:8px">
+                Multiple ways to implement the transformations
+            </p>
+            
+            <div style="margin-top:20px">
+                <h4>Option A: Direct HTML Attributes</h4>
+                <div class="code-block" id="impl-inline">
+// Waiting for manifest...</div>
+            </div>
+            
+            <div style="margin-top:20px">
+                <h4>Option B: External Configuration</h4>
+                <div class="code-block" id="impl-external">
+// Waiting for manifest...</div>
+            </div>
+            
+            <div style="margin-top:20px">
+                <h4>Option C: AI Agent Prompt</h4>
+                <div class="code-block" id="impl-ai">
+// Waiting for manifest...</div>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="applyTransformations()">
+                    Apply Transformations
+                </button>
+                <button class="btn btn-secondary" onclick="generateImplementation()">
+                    Generate Code
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 4: Result Preview -->
+        <div class="demo-section">
+            <h2>Step 4: Result <span class="status-indicator status-complete" style="display:none" id="status-complete">Complete</span></h2>
+            <p style="color:#6c757d; margin-top:8px">
+                Preview of content with GenX transformations applied
+            </p>
+            
+            <div class="sample-content" id="result-content" style="display:none">
+                <!-- Transformed content will appear here -->
+            </div>
+            
+            <div class="code-block" id="result-code" style="display:none">
+// Transformed HTML will appear here</div>
+        </div>
+    </div>
+
+    <script>
+        // Sample manifest that would be generated by the visual tagger
+        const sampleManifest = {
+            version: "1.0",
+            generator: "GenX Visual Tagger",
+            created: new Date().toISOString(),
+            transformations: [
+                {
+                    selector: ".price",
+                    attributes: {
+                        "fx-format": "currency",
+                        "fx-currency": "USD",
+                        "fx-decimals": "2"
+                    },
+                    type: "Currency Format",
+                    confidence: "high"
+                },
+                {
+                    selector: ".date",
+                    attributes: {
+                        "fx-format": "date",
+                        "fx-date-style": "long"
+                    },
+                    type: "Date Format",
+                    confidence: "high"
+                },
+                {
+                    selector: ".phone",
+                    attributes: {
+                        "fx-format": "phone",
+                        "fx-country": "US"
+                    },
+                    type: "Phone Number",
+                    confidence: "high"
+                },
+                {
+                    selector: "img:not([alt])",
+                    attributes: {
+                        "ax-enhance": "image",
+                        "ax-generate-alt": "true",
+                        "alt": "Product image - decorative"
+                    },
+                    type: "Add Alt Text",
+                    confidence: "high"
+                }
+            ]
+        };
+
+        function launchTagger() {
+            alert('In production, this would inject the visual tagger overlay.\nFor demo, click "Simulate Tagging" to see the workflow.');
+        }
+
+        function simulateTagging() {
+            // Simulate the tagging process
+            document.getElementById('manifest-display').textContent = JSON.stringify(sampleManifest, null, 2);
+            
+            // Generate implementation examples
+            generateImplementation();
+            
+            // Update status
+            document.querySelector('.status-processing').textContent = 'Generated';
+        }
+
+        function generateImplementation() {
+            // Inline implementation
+            const inlineImpl = sampleManifest.transformations.map(t => {
+                return `<!-- Find: ${t.selector} -->
+<!-- Add: ${Object.entries(t.attributes).map(([k,v]) => `${k}="${v}"`).join(' ')} -->
+
+Example:
+<div class="${t.selector.replace('.', '')}" ${Object.entries(t.attributes).map(([k,v]) => `${k}="${v}"`).join(' ')}>
+    Content here
+</div>`;
+            }).join('\n\n');
+            
+            document.getElementById('impl-inline').textContent = inlineImpl;
+            
+            // External config
+            const externalConfig = {
+                rules: sampleManifest.transformations.map(t => ({
+                    selector: t.selector,
+                    attributes: t.attributes
+                }))
+            };
+            
+            document.getElementById('impl-external').textContent = `// genx.config.json
+${JSON.stringify(externalConfig, null, 2)}
+
+// In HTML:
+<script>
+    window.genxConfig = ${JSON.stringify(externalConfig, null, 2)};
+</script>
+<script src="https://cdn.genx.dev/loader.js"></script>`;
+
+            // AI Agent prompt
+            const aiPrompt = `Apply GenX transformations to HTML:
+
+${sampleManifest.transformations.map(t => 
+`1. Find all elements matching: ${t.selector}
+   Add these attributes: ${Object.entries(t.attributes).map(([k,v]) => `${k}="${v}"`).join(', ')}
+   Purpose: ${t.type}`
+).join('\n\n')}
+
+Ensure all transformations are applied and test that the GenX libraries process them correctly.`;
+            
+            document.getElementById('impl-ai').textContent = aiPrompt;
+        }
+
+        function copyManifest() {
+            const manifestText = document.getElementById('manifest-display').textContent;
+            navigator.clipboard.writeText(manifestText).then(() => {
+                alert('Manifest copied to clipboard!');
+            });
+        }
+
+        function downloadManifest() {
+            const manifestText = document.getElementById('manifest-display').textContent;
+            const blob = new Blob([manifestText], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `genx-manifest-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function applyTransformations() {
+            // Clone original content
+            const original = document.getElementById('sample-content');
+            const result = original.cloneNode(true);
+            result.id = 'result-content-transformed';
+            
+            // Apply transformations based on manifest
+            sampleManifest.transformations.forEach(transform => {
+                const elements = result.querySelectorAll(transform.selector);
+                elements.forEach(el => {
+                    Object.entries(transform.attributes).forEach(([attr, value]) => {
+                        el.setAttribute(attr, value);
+                    });
+                });
+            });
+            
+            // Mock the formatting (in production, GenX libraries would handle this)
+            result.querySelector('.price').textContent = '$1,299.99';
+            result.querySelector('.date').textContent = 'January 15, 2025';
+            result.querySelector('.phone').textContent = '(415) 555-1234';
+            
+            // Display result
+            const resultContainer = document.getElementById('result-content');
+            resultContainer.innerHTML = result.innerHTML;
+            resultContainer.style.display = 'grid';
+            
+            // Show the transformed HTML
+            document.getElementById('result-code').textContent = result.innerHTML
+                .replace(/></g, '>\n<')
+                .replace(/(\s{2,})/g, '\n$1');
+            document.getElementById('result-code').style.display = 'block';
+            
+            // Update status
+            document.getElementById('status-complete').style.display = 'inline-block';
+        }
+    </script>
+</body>
+</html>

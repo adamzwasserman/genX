@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GenX Accessibility Auditor - Lighthouse-Style</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f8f9fa;
+        }
+        
+        /* Audit Panel */
+        .audit-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 380px;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            z-index: 999999;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .audit-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #0cce6b 0%, #00a651 100%);
+            color: white;
+        }
+        
+        .audit-score {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-top: 16px;
+        }
+        
+        .score-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #0cce6b;
+            position: relative;
+        }
+        
+        .score-ring {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+        
+        .score-details {
+            flex: 1;
+        }
+        
+        .score-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .score-status {
+            font-size: 24px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        
+        /* Issue Categories */
+        .audit-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .issue-category {
+            margin-bottom: 24px;
+        }
+        
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+        
+        .category-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .severity-critical { background: #dc3545; }
+        .severity-serious { background: #fd7e14; }
+        .severity-moderate { background: #ffc107; color: #333; }
+        .severity-minor { background: #6c757d; }
+        
+        .category-title {
+            flex: 1;
+            font-weight: 600;
+        }
+        
+        .category-count {
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        
+        /* Issue Items */
+        .issue-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .issue-item:hover {
+            border-color: #0cce6b;
+            transform: translateX(-4px);
+        }
+        
+        .issue-item.selected {
+            border-color: #0cce6b;
+            background: #f0fff4;
+        }
+        
+        .issue-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .issue-description {
+            font-size: 13px;
+            color: #6c757d;
+            margin-bottom: 8px;
+        }
+        
+        .issue-elements {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 8px;
+        }
+        
+        .element-tag {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: 'Monaco', monospace;
+        }
+        
+        /* Highlight Overlays */
+        .issue-highlight {
+            position: absolute;
+            pointer-events: none;
+            z-index: 999998;
+            animation: pulse 2s infinite;
+        }
+        
+        .highlight-critical {
+            border: 3px solid #dc3545;
+            background: rgba(220, 53, 69, 0.1);
+        }
+        
+        .highlight-serious {
+            border: 3px solid #fd7e14;
+            background: rgba(253, 126, 20, 0.1);
+        }
+        
+        .highlight-moderate {
+            border: 3px solid #ffc107;
+            background: rgba(255, 193, 7, 0.1);
+        }
+        
+        .highlight-minor {
+            border: 3px solid #6c757d;
+            background: rgba(108, 117, 125, 0.1);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Action Buttons */
+        .audit-actions {
+            padding: 16px;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-audit {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #0cce6b;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        /* Loading State */
+        .audit-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e9ecef;
+            border-top-color: #0cce6b;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Lighthouse-style metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .metric-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .metric-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #212529;
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+        
+        .page-content {
+            margin-right: 380px;
+            padding: 40px;
+        }
+        
+        /* Sample content for demo */
+        .demo-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .demo-form {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .form-field {
+            margin-bottom: 20px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sample page content with accessibility issues -->
+    <div class="page-content">
+        <div class="demo-content">
+            <h1>Demo Page with Accessibility Issues</h1>
+            
+            <!-- Missing alt text -->
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='100'%3E%3Crect fill='%23ddd' width='200' height='100'/%3E%3C/svg%3E" width="200" height="100">
+            
+            <!-- Form without labels -->
+            <div class="demo-form">
+                <div class="form-field">
+                    <input type="text" placeholder="Name">
+                </div>
+                <div class="form-field">
+                    <input type="email" placeholder="Email">
+                </div>
+                <div class="form-field">
+                    <select>
+                        <option>Choose...</option>
+                        <option>Option 1</option>
+                    </select>
+                </div>
+                <button onclick="void(0)" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Submit</button>
+            </div>
+            
+            <!-- Poor color contrast -->
+            <p style="color: #999; background: #f0f0f0; padding: 10px;">
+                This text has poor color contrast
+            </p>
+            
+            <!-- Links without descriptive text -->
+            <p>
+                For more information <a href="#">click here</a> or <a href="#">here</a>.
+            </p>
+            
+            <!-- Missing heading hierarchy -->
+            <h4>Skipped heading level</h4>
+            
+            <!-- Table without headers -->
+            <table style="width: 100%; border: 1px solid #ddd;">
+                <tr>
+                    <td>Product</td>
+                    <td>Price</td>
+                </tr>
+                <tr>
+                    <td>Item 1</td>
+                    <td>$10</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Accessibility Audit Panel -->
+    <div class="audit-panel">
+        <div class="audit-header">
+            <h2 style="margin:0">Accessibility Audit</h2>
+            <div class="audit-score">
+                <div class="score-circle">
+                    <svg class="score-ring" width="80" height="80">
+                        <circle cx="40" cy="40" r="36" fill="none" stroke="#fff3" stroke-width="8"/>
+                        <circle cx="40" cy="40" r="36" fill="none" stroke="white" stroke-width="8"
+                                stroke-dasharray="226" stroke-dashoffset="68" stroke-linecap="round"/>
+                    </svg>
+                    <span id="score-value">--</span>
+                </div>
+                <div class="score-details">
+                    <div class="score-label">Accessibility Score</div>
+                    <div class="score-status" id="score-status">Scanning...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="audit-content" id="audit-content">
+            <div class="audit-loading">
+                <div class="spinner"></div>
+                <p style="margin-top:16px">Running accessibility audit...</p>
+            </div>
+        </div>
+        
+        <div class="audit-actions">
+            <button class="btn-audit btn-primary" onclick="runAudit()">Re-run Audit</button>
+            <button class="btn-audit btn-secondary" onclick="exportReport()">Export Report</button>
+            <button class="btn-audit btn-secondary" onclick="fixAll()">Fix All Issues</button>
+        </div>
+    </div>
+    
+    <!-- Load axe-core from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.8.2/axe.min.js"></script>
+    
+    <script>
+        class AccessibilityAuditor {
+            constructor() {
+                this.issues = [];
+                this.highlights = [];
+                this.selectedIssue = null;
+                this.score = 0;
+            }
+            
+            async runAudit() {
+                // Clear previous highlights
+                this.clearHighlights();
+                
+                // Show loading state
+                document.getElementById('audit-content').innerHTML = `
+                    <div class="audit-loading">
+                        <div class="spinner"></div>
+                        <p style="margin-top:16px">Running accessibility audit...</p>
+                    </div>
+                `;
+                
+                // Run axe-core
+                try {
+                    const results = await axe.run(document.querySelector('.page-content'));
+                    this.processResults(results);
+                } catch (error) {
+                    console.error('Audit failed:', error);
+                    this.showError();
+                }
+            }
+            
+            processResults(results) {
+                // Calculate score (similar to Lighthouse scoring)
+                const totalIssues = results.violations.reduce((sum, v) => sum + v.nodes.length, 0);
+                const maxExpectedIssues = 20; // Baseline for scoring
+                this.score = Math.max(0, Math.round(100 - (totalIssues / maxExpectedIssues * 100)));
+                
+                // Group violations by severity
+                const grouped = {
+                    critical: [],
+                    serious: [],
+                    moderate: [],
+                    minor: []
+                };
+                
+                results.violations.forEach(violation => {
+                    const impact = violation.impact || 'minor';
+                    grouped[impact].push(violation);
+                });
+                
+                this.issues = grouped;
+                this.updateUI();
+                this.highlightAllIssues();
+            }
+            
+            updateUI() {
+                // Update score
+                document.getElementById('score-value').textContent = this.score;
+                const status = this.score >= 90 ? 'Excellent' : 
+                             this.score >= 70 ? 'Good' : 
+                             this.score >= 50 ? 'Needs Work' : 'Poor';
+                document.getElementById('score-status').textContent = status;
+                
+                // Update score ring
+                const circumference = 2 * Math.PI * 36;
+                const offset = circumference - (this.score / 100 * circumference);
+                document.querySelector('.score-ring circle:last-child').style.strokeDashoffset = offset;
+                
+                // Update score color
+                const scoreCircle = document.querySelector('.score-circle');
+                scoreCircle.style.color = this.score >= 90 ? '#0cce6b' : 
+                                         this.score >= 50 ? '#fd7e14' : '#dc3545';
+                
+                // Build issues list
+                let html = '';
+                
+                // Add metrics
+                const totalViolations = Object.values(this.issues).flat().length;
+                const totalElements = Object.values(this.issues).flat()
+                    .reduce((sum, v) => sum + v.nodes.length, 0);
+                
+                html += `
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <div class="metric-value">${totalViolations}</div>
+                            <div class="metric-label">Violations Found</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value">${totalElements}</div>
+                            <div class="metric-label">Elements Affected</div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add issues by category
+                ['critical', 'serious', 'moderate', 'minor'].forEach(severity => {
+                    if (this.issues[severity].length > 0) {
+                        html += `
+                            <div class="issue-category">
+                                <div class="category-header">
+                                    <div class="category-icon severity-${severity}">!</div>
+                                    <div class="category-title">${severity.charAt(0).toUpperCase() + severity.slice(1)} Issues</div>
+                                    <div class="category-count">${this.issues[severity].length}</div>
+                                </div>
+                                <div class="category-issues">
+                        `;
+                        
+                        this.issues[severity].forEach((violation, index) => {
+                            const elements = violation.nodes.map(n => {
+                                const el = document.querySelector(n.target[0]);
+                                return el ? el.tagName.toLowerCase() : 'element';
+                            }).slice(0, 3);
+                            
+                            html += `
+                                <div class="issue-item" onclick="auditor.selectIssue('${severity}', ${index})">
+                                    <div class="issue-title">${violation.help}</div>
+                                    <div class="issue-description">${violation.description}</div>
+                                    <div class="issue-elements">
+                                        ${elements.map(tag => `<span class="element-tag">&lt;${tag}&gt;</span>`).join('')}
+                                        ${violation.nodes.length > 3 ? `<span class="element-tag">+${violation.nodes.length - 3} more</span>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        html += `
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                document.getElementById('audit-content').innerHTML = html;
+            }
+            
+            highlightAllIssues() {
+                // Create highlight overlays for all issues
+                ['critical', 'serious', 'moderate', 'minor'].forEach(severity => {
+                    this.issues[severity].forEach(violation => {
+                        violation.nodes.forEach(node => {
+                            const element = document.querySelector(node.target[0]);
+                            if (element) {
+                                this.createHighlight(element, severity);
+                            }
+                        });
+                    });
+                });
+            }
+            
+            createHighlight(element, severity) {
+                const rect = element.getBoundingClientRect();
+                const highlight = document.createElement('div');
+                highlight.className = `issue-highlight highlight-${severity}`;
+                highlight.style.position = 'absolute';
+                highlight.style.left = `${rect.left + window.scrollX}px`;
+                highlight.style.top = `${rect.top + window.scrollY}px`;
+                highlight.style.width = `${rect.width}px`;
+                highlight.style.height = `${rect.height}px`;
+                document.body.appendChild(highlight);
+                this.highlights.push(highlight);
+            }
+            
+            clearHighlights() {
+                this.highlights.forEach(h => h.remove());
+                this.highlights = [];
+            }
+            
+            selectIssue(severity, index) {
+                // Clear previous selection
+                document.querySelectorAll('.issue-item').forEach(item => {
+                    item.classList.remove('selected');
+                });
+                
+                // Select new issue
+                event.currentTarget.classList.add('selected');
+                
+                // Scroll to first affected element
+                const violation = this.issues[severity][index];
+                if (violation.nodes.length > 0) {
+                    const element = document.querySelector(violation.nodes[0].target[0]);
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                        // Flash the element
+                        const rect = element.getBoundingClientRect();
+                        const flash = document.createElement('div');
+                        flash.style.cssText = `
+                            position: absolute;
+                            left: ${rect.left + window.scrollX}px;
+                            top: ${rect.top + window.scrollY}px;
+                            width: ${rect.width}px;
+                            height: ${rect.height}px;
+                            background: rgba(12, 206, 107, 0.3);
+                            pointer-events: none;
+                            z-index: 999999;
+                            animation: flash 0.5s ease-out;
+                        `;
+                        document.body.appendChild(flash);
+                        setTimeout(() => flash.remove(), 500);
+                    }
+                }
+                
+                // Store selected issue for potential fixes
+                this.selectedIssue = { severity, index, violation };
+            }
+            
+            exportReport() {
+                const report = {
+                    url: window.location.href,
+                    timestamp: new Date().toISOString(),
+                    score: this.score,
+                    issues: this.issues,
+                    summary: {
+                        critical: this.issues.critical.length,
+                        serious: this.issues.serious.length,
+                        moderate: this.issues.moderate.length,
+                        minor: this.issues.minor.length
+                    }
+                };
+                
+                // Create GenX manifest format
+                const manifest = {
+                    version: '1.0',
+                    generator: 'GenX Accessibility Auditor',
+                    created: report.timestamp,
+                    score: this.score,
+                    transformations: []
+                };
+                
+                // Convert violations to transformations
+                Object.entries(this.issues).forEach(([severity, violations]) => {
+                    violations.forEach(violation => {
+                        violation.nodes.forEach(node => {
+                            const selector = node.target[0];
+                            let attributes = {};
+                            
+                            // Map violation types to GenX attributes
+                            switch(violation.id) {
+                                case 'image-alt':
+                                    attributes = { 'ax-enhance': 'image', 'alt': 'Add description' };
+                                    break;
+                                case 'label':
+                                    attributes = { 'ax-enhance': 'form', 'aria-label': 'Add label' };
+                                    break;
+                                case 'color-contrast':
+                                    attributes = { 'ax-enhance': 'contrast', 'ax-fix-contrast': 'true' };
+                                    break;
+                                case 'link-name':
+                                    attributes = { 'ax-enhance': 'link', 'ax-description': 'true' };
+                                    break;
+                                case 'heading-order':
+                                    attributes = { 'ax-enhance': 'heading', 'ax-fix-hierarchy': 'true' };
+                                    break;
+                                default:
+                                    attributes = { 'ax-enhance': 'generic', 'ax-violation': violation.id };
+                            }
+                            
+                            manifest.transformations.push({
+                                selector: selector,
+                                attributes: attributes,
+                                type: violation.help,
+                                severity: severity,
+                                description: violation.description
+                            });
+                        });
+                    });
+                });
+                
+                // Download as JSON
+                const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `accessibility-audit-${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                alert(`Report exported with ${manifest.transformations.length} issues to fix`);
+            }
+            
+            async fixAll() {
+                if (confirm('This will add GenX attributes to fix all detected issues. Continue?')) {
+                    let fixCount = 0;
+                    
+                    Object.entries(this.issues).forEach(([severity, violations]) => {
+                        violations.forEach(violation => {
+                            violation.nodes.forEach(node => {
+                                const element = document.querySelector(node.target[0]);
+                                if (element) {
+                                    // Add GenX fix attributes
+                                    switch(violation.id) {
+                                        case 'image-alt':
+                                            element.setAttribute('ax-enhance', 'image');
+                                            element.setAttribute('alt', 'Image description needed');
+                                            break;
+                                        case 'label':
+                                            element.setAttribute('ax-enhance', 'form');
+                                            element.setAttribute('aria-label', element.placeholder || 'Field label');
+                                            break;
+                                        case 'color-contrast':
+                                            element.setAttribute('ax-enhance', 'contrast');
+                                            break;
+                                        // Add more fixes as needed
+                                    }
+                                    fixCount++;
+                                }
+                            });
+                        });
+                    });
+                    
+                    alert(`Added GenX attributes to ${fixCount} elements. Re-run audit to see improvements.`);
+                    
+                    // Re-run audit after fixes
+                    setTimeout(() => this.runAudit(), 1000);
+                }
+            }
+            
+            showError() {
+                document.getElementById('audit-content').innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: #dc3545;">
+                        <h3>Audit Failed</h3>
+                        <p>Unable to complete accessibility audit. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Initialize and run on load
+        const auditor = new AccessibilityAuditor();
+        
+        function runAudit() {
+            auditor.runAudit();
+        }
+        
+        function exportReport() {
+            auditor.exportReport();
+        }
+        
+        function fixAll() {
+            auditor.fixAll();
+        }
+        
+        // Auto-run on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => auditor.runAudit(), 500);
+        });
+        
+        // Add flash animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes flash {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
