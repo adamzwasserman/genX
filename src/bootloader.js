@@ -11,8 +11,8 @@
 
     // Module registry - maps prefixes to module URLs
     const modules = {
-        'fx': '/modules/fmtx.js',
-        'ax': '/modules/accx.js',
+        'fx': '../src/fmtx.js',
+        'ax': '../src/accx.js',
         'bx': '/modules/bindx.js',
         'dx': '/modules/dragx.js',
         'lx': '/modules/loadx.js',
