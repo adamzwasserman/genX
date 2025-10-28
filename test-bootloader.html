@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>genX Bootloader Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .demo-price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #27ae60;
+            margin: 10px 0;
+        }
+        .demo-label {
+            display: inline-block;
+            margin: 5px;
+            padding: 8px 12px;
+            background: #ecf0f1;
+            border-radius: 4px;
+        }
+    </style>
+
+    <!-- Optional: Configure genX before bootloader loads -->
+    <script>
+        window.genxConfig = {
+            cdn: '', // Use relative paths for local testing
+            observe: true, // Enable MutationObserver
+            modules: {
+                fx: { locale: 'en-US' },
+                ax: { prefix: 'ax-' }
+            }
+        };
+    </script>
+
+    <!-- Load the bootloader (only 1KB!) -->
+    <script src="bootloader.js"></script>
+</head>
+<body>
+    <h1>genX Universal Bootloader Test</h1>
+    <p>This page tests the 1KB universal bootloader with automatic module loading based on DOM scanning.</p>
+
+    <div class="test-section">
+        <h2>Bootloader Status</h2>
+        <div id="bootloader-status" class="status info">Waiting for genx:ready event...</div>
+        <div id="loaded-modules" class="status info">Loaded modules: (none)</div>
+    </div>
+
+    <div class="test-section">
+        <h2>FormatX (fx-) Module Test</h2>
+        <p>These elements use fx- attributes, so the bootloader should automatically load fmtx.js:</p>
+
+        <div class="demo-price">
+            Price: <span fx-format="currency" fx-raw="29.99" fx-currency="USD">29.99</span>
+        </div>
+
+        <p>
+            Date: <span fx-format="date" fx-raw="2024-03-15" fx-date-format="long">2024-03-15</span>
+        </p>
+
+        <p>
+            Large Number: <span fx-format="abbreviated" fx-raw="1500000" fx-decimals="1">1500000</span>
+        </p>
+
+        <p>
+            Percentage: <span fx-format="percent" fx-raw="0.856" fx-decimals="1">0.856</span>
+        </p>
+    </div>
+
+    <div class="test-section">
+        <h2>AccessX (ax-) Module Test</h2>
+        <p>These elements use ax- attributes, so the bootloader should automatically load accx.js:</p>
+
+        <div class="demo-label">
+            <span ax-enhance="label" ax-type="abbreviation" ax-full="Application Programming Interface">API</span>
+        </div>
+
+        <div class="demo-label">
+            <span ax-enhance="label" ax-type="auto" ax-label="One million users">1M</span> users
+        </div>
+
+        <div style="margin-top: 20px;">
+            <label for="test-input">Test Input:</label>
+            <input type="email"
+                   id="test-input"
+                   ax-enhance="field"
+                   ax-required="true"
+                   ax-help="Enter your email address"
+                   placeholder="user@example.com">
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Dynamic Content Test</h2>
+        <p>After 2 seconds, we'll add new genX elements dynamically. The MutationObserver should detect and enhance them automatically.</p>
+        <div id="dynamic-content"></div>
+    </div>
+
+    <script>
+        // Listen for genx:ready event
+        window.addEventListener('genx:ready', (event) => {
+            const statusEl = document.getElementById('bootloader-status');
+            const modulesEl = document.getElementById('loaded-modules');
+
+            statusEl.textContent = '✅ genX Bootloader Ready!';
+            statusEl.className = 'status success';
+
+            const loadedModules = event.detail.loaded;
+            modulesEl.textContent = `✅ Loaded modules: ${loadedModules.join(', ')}`;
+            modulesEl.className = 'status success';
+
+            console.log('genX Ready Event:', event.detail);
+            console.log('genX API:', window.genx);
+        });
+
+        // Test dynamic content addition after 2 seconds
+        setTimeout(() => {
+            const dynamicDiv = document.createElement('div');
+            dynamicDiv.innerHTML = `
+                <div class="status info" style="margin-top: 10px;">
+                    <strong>Dynamically Added Content:</strong><br>
+                    Currency: <span fx-format="currency" fx-raw="1299.50" fx-currency="EUR">1299.50</span><br>
+                    Abbreviation: <span ax-enhance="label" ax-type="abbreviation" ax-full="Artificial Intelligence">AI</span>
+                </div>
+            `;
+            document.getElementById('dynamic-content').appendChild(dynamicDiv);
+
+            console.log('Dynamic content added - MutationObserver should detect and enhance it');
+        }, 2000);
+
+        // Additional diagnostics
+        console.log('genX Config:', window.genxConfig);
+        console.log('Scanning for genx attributes...');
+    </script>
+</body>
+</html>
