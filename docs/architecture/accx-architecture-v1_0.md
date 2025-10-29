@@ -10,13 +10,12 @@ accX is part of the **genx.software** declarative web development platform, whic
 
 **genx.software Core Architecture:**
 
-The platform consists of three foundational components:
+The platform consists of two foundational components:
 
 1. **Universal Bootloader (1KB)**: A single, identical loader for all users that loads after first paint. The bootloader scans the DOM for declarative attributes (`fx-`, `ax-`, `bx-`, `dx-`, `lx-`, `tx-`, `nx-`), detects required transformations, and dynamically loads only needed modules. This inverts the traditional "load everything upfront" paradigm.
 
 2. **Polymorphic Processing Engine**: Pure functional JavaScript engine that processes multiple notation styles (HTML attributes, CSS classes, JSON configuration) through a unified pipeline. Developers choose their preferred syntax without performance penalty—all compile to identical transformations.
 
-3. **Edge Compilation Service** (optional, paid tier): Server-side optimization that pre-compiles personalized bundles with ML-driven improvements. Critically, only transformation patterns are transmitted (never user data), maintaining privacy-first architecture.
 
 **Module Family:**
 - **fmtX**: Declarative formatting (currency, dates, numbers, phone)
@@ -96,7 +95,6 @@ graph LR
     subgraph "genx.software Common Infrastructure"
         Bootloader[Universal Bootloader<br/>1KB]
         Engine[Polymorphic Engine<br/>4KB]
-        Edge[Edge Compilation<br/>Optional]
     end
     
     subgraph "accX Library"
@@ -130,7 +128,6 @@ graph LR
 - Browser MutationObserver API (required for dynamic content)
 - Browser ARIA specification (required)
 - Assistive technology APIs (screen readers, magnifiers)
-- Edge compilation service (optional, paid tier only)
 
 **Downstream Consumers:**
 - Web applications requiring accessibility compliance (legal requirement)
@@ -195,7 +192,6 @@ graph TB
     
     subgraph "Untrusted: Network"
         CDN[CDN Distribution]
-        Edge[Edge Compilation<br/>Optional]
     end
     
     subgraph "Protected Data"
@@ -1105,34 +1101,13 @@ const getCachedEnhancement = (element, options) => {
 <!-- Note: 'unsafe-inline' only needed for dynamic styles -->
 ```
 
-### 5.2 Edge Compilation Security
+### 5.2 Privacy and Data Protection
 
-**What Gets Sent to Edge** (Premium Only):
-```javascript
-// SAFE: Only transformation patterns, never user data
-const edgePayload = {
-    patterns: [
-        { type: 'button', count: 15 },
-        { type: 'form', count: 3 },
-        { type: 'navigation', count: 2 }
-    ],
-    syntax: 'attributes', // or 'classes' or 'mixed'
-    domain: 'example.com' // For pattern learning
-};
-
-// NEVER SENT: User content, PII, page data
-```
-
-**Edge Response**:
-```javascript
-// Optimized bundle based on patterns
-{
-    bundle: 'https://cdn.genx.software/accx/custom-abc123.js',
-    modules: ['button', 'form', 'navigation'],
-    size: '8.2KB',
-    cacheFor: 86400 // 24 hours
-}
-```
+**Client-Side Processing**:
+- All accessibility transformations happen in the browser
+- No user data transmitted to servers
+- GDPR-compliant by design
+- No tracking or analytics without explicit consent
 
 ### 5.3 XSS Prevention
 

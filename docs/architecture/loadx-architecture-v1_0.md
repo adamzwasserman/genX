@@ -10,13 +10,12 @@ loadX is part of the **genx.software** declarative web development platform, whi
 
 **genx.software Core Architecture:**
 
-The platform consists of three foundational components:
+The platform consists of two foundational components:
 
 1. **Universal Bootloader (1KB)**: A single, identical loader for all users that loads after first paint. The bootloader scans the DOM for declarative attributes (`fx-`, `ax-`, `bx-`, `dx-`, `lx-`, `tx-`, `nx-`), detects required transformations, and dynamically loads only needed modules. This inverts the traditional "load everything upfront" paradigm.
 
 2. **Polymorphic Processing Engine**: Pure functional JavaScript engine that processes multiple notation styles (HTML attributes, CSS classes, JSON configuration) through a unified pipeline. Developers choose their preferred syntax without performance penalty—all compile to identical transformations.
 
-3. **Edge Compilation Service** (optional, paid tier): Server-side optimization that pre-compiles personalized bundles with ML-driven improvements. Critically, only transformation patterns are transmitted (never user data), maintaining privacy-first architecture.
 
 **Module Family:**
 - **fmtX**: Declarative formatting (currency, dates, numbers, phone)
@@ -74,7 +73,7 @@ loadX provides declarative loading state management within the genx.software eco
 
 4. **Strategy Protocol Pattern**: All loading strategies (spinner, skeleton, progress, fade) implement identical Protocol interface, enabling runtime selection without code branching.
 
-5. **Privacy-Preserving Architecture**: All core processing occurs client-side. No user data (loading times, operation types, failure patterns) is ever transmitted to servers. For paid-tier edge optimization, only transformation patterns (e.g., "site uses lx-skeleton") are transmitted—never the actual loading data. This makes loadX GDPR-compliant by design.
+5. **Privacy-Preserving Architecture**: All core processing occurs client-side. No user data (loading times, operation types, failure patterns) is ever transmitted to servers. This makes loadX GDPR-compliant by design.
 
 ### Expected Outcomes and Benefits
 
@@ -145,7 +144,6 @@ graph LR
     subgraph "genx.software Infrastructure"
         Boot[Universal Bootloader<br/>1KB]
         Engine[Polymorphic Engine<br/>4KB]
-        Edge[Edge Compilation<br/>Optional]
     end
 
     subgraph "loadX Library"
@@ -180,7 +178,6 @@ graph LR
 - Browser Fetch/XHR APIs (required)
 - Browser MutationObserver (required for dynamic content)
 - HTMX events (optional, for HTMX integration)
-- Edge compilation service (optional, paid tier only)
 
 **Downstream Consumers:**
 - Web applications with async operations (forms, data fetching)
@@ -257,7 +254,6 @@ graph TB
 
     subgraph "Untrusted: Network"
         CDN[CDN Distribution]
-        Edge[Edge Compilation<br/>Optional]
     end
 
     subgraph "Protected Data"

@@ -10,13 +10,12 @@ fmtX is part of the **genx.software** declarative web development platform, whic
 
 **genx.software Core Architecture:**
 
-The platform consists of three foundational components:
+The platform consists of two foundational components:
 
 1. **Universal Bootloader (1KB)**: A single, identical loader for all users that loads after first paint. The bootloader scans the DOM for declarative attributes (`fx-`, `ax-`, `bx-`, `dx-`, `lx-`, `tx-`, `nx-`), detects required transformations, and dynamically loads only needed modules. This inverts the traditional "load everything upfront" paradigm.
 
 2. **Polymorphic Processing Engine**: Pure functional JavaScript engine that processes multiple notation styles (HTML attributes, CSS classes, JSON configuration) through a unified pipeline. Developers choose their preferred syntax without performance penalty—all compile to identical transformations.
 
-3. **Edge Compilation Service** (optional, paid tier): Server-side optimization that pre-compiles personalized bundles with ML-driven improvements. Critically, only transformation patterns are transmitted (never user data), maintaining privacy-first architecture.
 
 **Module Family:**
 - **fmtX**: Declarative formatting (currency, dates, numbers, phone)
@@ -168,7 +167,6 @@ graph LR
 - genx.software polymorphic processing engine (required)
 - Browser Intl API (required for locale-specific formatting)
 - Browser DOM API (required)
-- Edge compilation service (optional, paid tier only)
 
 **Downstream Consumers:**
 - Web applications requiring data formatting (e-commerce, finance, analytics)
@@ -233,7 +231,6 @@ graph TB
 
     subgraph "Untrusted: Network"
         CDN[CDN Distribution]
-        Edge[Edge Compilation<br/>Optional]
     end
 
     subgraph "Protected Data"

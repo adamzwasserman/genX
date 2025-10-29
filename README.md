@@ -114,7 +114,7 @@ See the [Quick Start Guide](docs/QUICK-START.md) for more details.
 
 ## 🏗️ Architecture
 
-genX consists of three core components:
+genX consists of two core components:
 
 ### 1. Universal Bootloader (1KB)
 - Loads after first paint for 0ms blocking time
@@ -127,12 +127,6 @@ genX consists of three core components:
 - Processes multiple notation styles
 - Framework-agnostic design
 - Client-side only (privacy-preserving)
-
-### 3. Edge Compilation Service (Optional)
-- ML-optimized bundles
-- Edge location delivery
-- Pre-compiled common patterns
-- Paid tier for production optimization
 
 See [Architecture Documentation](docs/architecture/) for technical details.
 

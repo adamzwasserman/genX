@@ -10,13 +10,12 @@ navX is part of the **genx.software** declarative web development platform, whic
 
 **genx.software Core Architecture:**
 
-The platform consists of three foundational components:
+The platform consists of two foundational components:
 
 1. **Universal Bootloader (1KB)**: A single, identical loader for all users that loads after first paint. The bootloader scans the DOM for declarative attributes (`fx-`, `ax-`, `bx-`, `dx-`, `lx-`, `tx-`, `nx-`), detects required transformations, and dynamically loads only needed modules. This inverts the traditional "load everything upfront" paradigm.
 
 2. **Polymorphic Processing Engine**: Pure functional JavaScript engine that processes multiple notation styles (HTML attributes, CSS classes, JSON configuration) through a unified pipeline. Developers choose their preferred syntax without performance penalty—all compile to identical transformations.
 
-3. **Edge Compilation Service** (optional, paid tier): Server-side optimization that pre-compiles personalized bundles with ML-driven improvements. Critically, only transformation patterns are transmitted (never user data), maintaining privacy-first architecture.
 
 **Module Family:**
 - **fmtX**: Declarative formatting (currency, dates, numbers, phone)
@@ -73,7 +72,7 @@ navX provides a declarative navigation library within the genx.software ecosyste
 
 4. **URL State Synchronization**: Trail state reflected in shareable URLs through query parameters. Users can share navigation context, and trail data persists across page reloads through intelligent encoding.
 
-5. **Privacy-Preserving Architecture**: All core processing occurs client-side. No user data (PII, page content, navigation patterns) is ever transmitted to servers. For paid-tier edge optimization, only transformation patterns (e.g., "site uses nx-trail") are transmitted—never the actual navigation data. This makes navX GDPR-compliant by design.
+5. **Privacy-Preserving Architecture**: All core processing occurs client-side. No user data (PII, page content, navigation patterns) is ever transmitted to servers. This makes navX GDPR-compliant by design.
 
 ### Expected Outcomes and Benefits
 
@@ -144,7 +143,6 @@ graph LR
     subgraph "genx.software Infrastructure"
         Boot[Universal Bootloader<br/>1KB]
         Engine[Polymorphic Engine<br/>4KB]
-        Edge[Edge Compilation<br/>Optional]
     end
 
     subgraph "navX Library"
@@ -181,7 +179,6 @@ graph LR
 - Browser sessionStorage API (required for trail mode)
 - Browser History API (required for URL synchronization)
 - Browser MutationObserver (required for dynamic content)
-- Edge compilation service (optional, paid tier only)
 
 **Downstream Consumers:**
 - Web applications requiring breadcrumbs (e-commerce, documentation)
@@ -255,7 +252,6 @@ graph TB
 
     subgraph "Untrusted: Network"
         CDN[CDN Distribution]
-        Edge[Edge Compilation<br/>Optional]
     end
 
     subgraph "Protected Data"

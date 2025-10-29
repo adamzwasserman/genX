@@ -10,13 +10,12 @@ dragX is part of the **genx.software** declarative web development platform, whi
 
 **genx.software Core Architecture:**
 
-The platform consists of three foundational components:
+The platform consists of two foundational components:
 
 1. **Universal Bootloader (1KB)**: A single, identical loader for all users that loads after first paint. The bootloader scans the DOM for declarative attributes (`fx-`, `ax-`, `bx-`, `dx-`, `lx-`, `tx-`, `nx-`), detects required transformations, and dynamically loads only needed modules. This inverts the traditional "load everything upfront" paradigm.
 
 2. **Polymorphic Processing Engine**: Pure functional JavaScript engine that processes multiple notation styles (HTML attributes, CSS classes, JSON configuration) through a unified pipeline. Developers choose their preferred syntax without performance penalty—all compile to identical transformations.
 
-3. **Edge Compilation Service** (optional, paid tier): Server-side optimization that pre-compiles personalized bundles with ML-driven improvements. Critically, only transformation patterns are transmitted (never user data), maintaining privacy-first architecture.
 
 **Module Family:**
 - **fmtX**: Declarative formatting (currency, dates, numbers, phone)
@@ -74,7 +73,7 @@ dragX provides declarative drag-and-drop within the genx.software ecosystem. Thr
 
 4. **Spatial Indexing for Drop Zones**: O(1) drop target detection using quad-tree spatial index. Prevents performance degradation with hundreds of drop zones.
 
-5. **Privacy-Preserving Architecture**: All core processing occurs client-side. No user data (dragged items, drop coordinates, interaction patterns) is ever transmitted to servers. For paid-tier edge optimization, only transformation patterns (e.g., "site uses dx-draggable") are transmitted—never the actual drag data. This makes dragX GDPR-compliant by design.
+5. **Privacy-Preserving Architecture**: All core processing occurs client-side. No user data (dragged items, drop coordinates, interaction patterns) is ever transmitted to servers. This makes dragX GDPR-compliant by design.
 
 ### Expected Outcomes and Benefits
 
@@ -144,7 +143,6 @@ graph LR
     subgraph "genx.software Infrastructure"
         Boot[Universal Bootloader<br/>1KB]
         Engine[Polymorphic Engine<br/>4KB]
-        Edge[Edge Compilation<br/>Optional]
     end
 
     subgraph "dragX Library"
@@ -180,7 +178,6 @@ graph LR
 - Browser Touch Events API (required)
 - Browser MutationObserver (required for dynamic content)
 - CSS Custom Properties (optional, for visual feedback)
-- Edge compilation service (optional, paid tier only)
 
 **Downstream Consumers:**
 - Web applications requiring drag-drop (kanban boards, file managers)
@@ -265,7 +262,6 @@ graph TB
 
     subgraph "Untrusted: Network"
         CDN[CDN Distribution]
-        Edge[Edge Compilation<br/>Optional]
     end
 
     subgraph "Protected Data"
@@ -1671,7 +1667,6 @@ graph LR
     Dev[Developer]
     NPM[npm Registry]
     CDN[CDN: cdn.genx.software]
-    Edge[Edge Compilation]
     Browser[User Browser]
     
     Dev -->|npm install @genx/dragx| NPM
@@ -1706,7 +1701,6 @@ dragX.init();
 <script src="https://cdn.genx.software/dragx/v1/dragx.min.js"></script>
 ```
 
-3. **Edge Compilation (Premium):**
 ```html
 <!-- Custom build with only your features -->
 <script src="https://cdn.genx.software/dragx/v1/custom-abc123.js"></script>

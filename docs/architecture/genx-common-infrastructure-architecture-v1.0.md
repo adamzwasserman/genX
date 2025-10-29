@@ -14,11 +14,10 @@ The genx.software platform solves this fundamental tradeoff through intelligent 
 
 ### Proposed Solution Overview
 
-The genx Common Infrastructure provides three foundational components:
+The genx Common Infrastructure provides two foundational components:
 
-1. **Universal Bootloader (1KB)**: A single, identical loader for all users (free and paid) that scans the DOM after first paint, detects required transformations, and dynamically loads only needed modules
+1. **Universal Bootloader (1KB)**: A single, identical loader that scans the DOM after first paint, detects required transformations, and dynamically loads only needed modules
 2. **Polymorphic Processing Engine**: Pure functional JavaScript engine that processes multiple notation styles (HTML attributes, CSS classes, JSON) through a single pipeline without branching logic
-3. **Edge Compilation Service**: Proprietary server-side optimization that pre-compiles personalized bundles with machine learning-driven improvements
 
 This architecture delivers **0ms blocking time**, **LCP <0.2s**, and **perfect Lighthouse scores** while maintaining developer simplicity comparable to including a CDN script tag.
 
@@ -26,13 +25,11 @@ This architecture delivers **0ms blocking time**, **LCP <0.2s**, and **perfect L
 
 1. **Defer All Module Loading Until After First Paint**: Traditional libraries load everything upfront. We load the 1KB bootloader first, then fetch only required modules after DOM inspection. This inverts the traditional "ship everything or require builds" paradigm.
 
-2. **Universal Bootloader for All Tiers**: Same 1KB loader for free and enterprise users eliminates tier-specific code paths. The loader URL determines bundle optimization, not the loader itself.
+2. **Universal Bootloader**: Single 1KB loader eliminates tier-specific code paths.
 
 3. **Polymorphic Syntax Equivalence**: Multiple notation styles (HTML attributes, CSS classes, JSON config) compile to identical transformations. This reduces cognitive load—developers use their preferred syntax without performance penalty.
 
-4. **Privacy-Preserving Edge Compilation**: User data never leaves the browser. Only transformation patterns (what attributes/classes are used) are transmitted to edge servers for bundle optimization.
-
-5. **Pure Functional Processing**: Zero classes in business logic. All transformations are pure functions with explicit dependencies, enabling perfect caching and predictable performance.
+4. **Pure Functional Processing**: Zero classes in business logic. All transformations are pure functions with explicit dependencies, enabling perfect caching and predictable performance.
 
 ### Expected Outcomes and Benefits
 
@@ -113,7 +110,6 @@ graph LR
     subgraph "genx Infrastructure"
         Boot[1KB Bootloader<br/>MIT Open Source]
         Engine[Polymorphic Engine<br/>MIT Open Source]
-        Edge[Edge Compilation<br/>Proprietary]
     end
     
     subgraph "genx Libraries"
@@ -236,33 +232,23 @@ graph TB
         Cache[Client Cache<br/>IndexedDB]
     end
     
-    subgraph "Edge Components (Proprietary)"
-        CDN[CDN Entry Point<br/>Cloudflare Workers]
-        Compiler[Bundle Compiler<br/>ML-Optimized]
-        PatternDB[Pattern Database<br/>PostgreSQL]
-        MLService[ML Training Pipeline<br/>Continuous Learning]
+    subgraph "CDN Components"
+        CDN[CDN Entry Point<br/>Module Distribution]
     end
-    
+
     Boot --> Scanner
     Scanner --> Loader
     Loader --> CDN
-    CDN --> Compiler
-    Compiler --> PatternDB
-    PatternDB --> MLService
-    MLService -.->|Improves| Compiler
-    Compiler --> Engine
+    CDN --> Engine
     Engine --> Cache
     Cache -.->|Next Visit| Engine
-    
+
     style Boot fill:#9f9
     style Scanner fill:#9f9
     style Loader fill:#9f9
     style Engine fill:#9f9
     style Cache fill:#9f9
-    style CDN fill:#f99
-    style Compiler fill:#f99
-    style PatternDB fill:#f99
-    style MLService fill:#f99
+    style CDN fill:#99f
 ```
 
 **Component Responsibilities:**
@@ -293,11 +279,10 @@ graph TB
 - Immutable transformations
 - Sub-millisecond per-element processing
 
-**Edge Compilation Service (Proprietary):**
-- Pattern-to-bundle compilation
-- ML-driven optimization (which functions to inline, etc.)
-- Global pattern database (learns from all users)
-- Tiered feature access (free vs. enterprise)
+**CDN Distribution:**
+- Module hosting and delivery
+- Standard CDN caching
+- Static module files
 
 ### 2.2 Communication Patterns
 
@@ -626,143 +611,6 @@ navigator.sendBeacon('https://analytics.genx.software/beacon', JSON.stringify(an
 
 ---
 
-## 5. Edge Compilation Service Architecture
-
-### 5.1 Edge Network Topology
-
-```mermaid
-graph TB
-    subgraph "Client Requests"
-        C1[Browser US East]
-        C2[Browser EU West]
-        C3[Browser APAC]
-    end
-    
-    subgraph "Cloudflare Edge Network"
-        E1[Edge POP New York]
-        E2[Edge POP London]
-        E3[Edge POP Singapore]
-    end
-    
-    subgraph "Edge Workers"
-        W1[Compiler Worker]
-        W2[Cache Worker]
-        W3[License Worker]
-    end
-    
-    subgraph "Origin Services"
-        O1[Pattern Database<br/>PostgreSQL]
-        O2[ML Pipeline<br/>Python/TensorFlow]
-        O3[Customer DB<br/>License Management]
-    end
-    
-    C1 -->|Request| E1
-    C2 -->|Request| E2
-    C3 -->|Request| E3
-    
-    E1 --> W1
-    E2 --> W1
-    E3 --> W1
-    
-    W1 --> W2
-    W2 -->|Cache Miss| W3
-    W3 -->|Validate| O3
-    W3 -->|Compile| O1
-    O1 -.->|Train| O2
-    O2 -.->|Optimize| O1
-    
-    style W1 fill:#f99
-    style W2 fill:#f99
-    style W3 fill:#f99
-    style O1 fill:#f99
-    style O2 fill:#f99
-    style O3 fill:#f99
-```
-
-**Edge Latency Targets:**
-- Cache hit: <5ms
-- Cache miss, free tier: <50ms
-- Cache miss, paid tier: <200ms (custom compilation)
-
-### 5.2 Compilation Pipeline
-
-```javascript
-// Edge Worker pseudocode (runs on Cloudflare Workers)
-const handleRequest = async (request, env) => {
-    const { signature, uid } = parseQuery(request.url);
-    
-    // L1 Cache: Edge KV (instant)
-    const cachedBundle = await env.BUNDLE_CACHE.get(signature);
-    if (cachedBundle) {
-        return new Response(cachedBundle, {
-            headers: { 
-                'Cache-Control': 'public, max-age=31536000, immutable',
-                'X-Cache': 'HIT'
-            }
-        });
-    }
-    
-    // L2 Cache: Customer-specific bundles (if paid tier)
-    if (uid !== 'free') {
-        const customerBundle = await env.CUSTOMER_BUNDLES.get(`${uid}:${signature}`);
-        if (customerBundle) {
-            return new Response(customerBundle, {
-                headers: { 
-                    'Cache-Control': 'public, max-age=86400',
-                    'X-Cache': 'CUSTOMER-HIT'
-                }
-            });
-        }
-    }
-    
-    // Cache miss: compile bundle
-    const bundle = await compileBundle(signature, uid, env);
-    
-    // Store in cache
-    await env.BUNDLE_CACHE.put(signature, bundle, {
-        expirationTtl: 31536000 // 1 year
-    });
-    
-    return new Response(bundle, {
-        headers: { 
-            'Cache-Control': 'public, max-age=31536000, immutable',
-            'X-Cache': 'MISS'
-        }
-    });
-};
-```
-
-### 5.3 Machine Learning Optimization
-
-The ML pipeline continuously improves bundle compilation:
-
-```mermaid
-graph LR
-    A[Pattern Usage<br/>Telemetry] -->|Aggregate| B[Training Data]
-    B -->|Daily| C[ML Model<br/>TensorFlow]
-    C -->|Predict| D[Optimization Rules]
-    D -->|Apply| E[Bundle Compiler]
-    E -->|Generate| F[Optimized Bundles]
-    F -.->|Collect Metrics| A
-    
-    style C fill:#f99
-    style D fill:#f99
-```
-
-**ML Optimization Examples:**
-- Function inlining decisions (which functions to inline vs. keep separate)
-- Dead code elimination (which optional features to exclude)
-- Module load order (which modules to prioritize)
-- Polyfill selection (which polyfills are actually needed)
-
-**Training Data:**
-- Pattern co-occurrence (fx-currency often appears with fx-decimals)
-- Performance metrics (which bundles are fastest)
-- Error rates (which configurations cause errors)
-- Browser distribution (which capabilities are most common)
-
----
-
 ## 6. Code Organization Standards
 
 ### 6.1 File Size and Structure
@@ -952,34 +800,20 @@ const validateLicense = async (licenseKey, domain) => {
 };
 ```
 
-### 8.3 Data Isolation
+### 8.3 Module Caching
 
-**Principle:** Free tier users and paid tier users share edge cache but have isolated pattern databases.
+**Principle:** CDN caching for optimal module delivery.
 
 ```mermaid
 graph TB
-    subgraph "Shared Edge Cache"
-        C1[Public Patterns<br/>Anyone can access]
+    subgraph "CDN Cache"
+        C1[Public Modules<br/>Standard CDN cache]
     end
-    
-    subgraph "Isolated Customer Data"
-        C2[Customer A Patterns]
-        C3[Customer B Patterns]
-        C4[Enterprise Custom Patterns]
-    end
-    
-    Free[Free Users] -->|Read Only| C1
-    CustomerA[Customer A] -->|Read/Write| C2
-    CustomerA -->|Read Only| C1
-    CustomerB[Customer B] -->|Read/Write| C3
-    CustomerB -->|Read Only| C1
-    Enterprise[Enterprise] -->|Full Control| C4
-    Enterprise -->|Optional| C1
-    
+
+    Users[All Users] -->|HTTPS GET| C1
+    C1 -->|Cache-Control headers| Users
+
     style C1 fill:#9f9
-    style C2 fill:#ff9
-    style C3 fill:#ff9
-    style C4 fill:#f99
 ```
 
 ---
@@ -1359,18 +1193,18 @@ alerts:
 
 ## 13. Decision Log
 
-### Decision 1: Single Universal Bootloader vs. Tier-Specific Loaders
+### Decision 1: Single Universal Bootloader vs. Module-Specific Loaders
 
-**Date:** 2025-01-15  
-**Decision:** Use single universal bootloader for all tiers  
+**Date:** 2025-01-15
+**Decision:** Use single universal bootloader for all modules
 **Alternatives Considered:**
-- Separate loaders for free/paid tiers
-- Different loaders for different libraries
+- Separate loaders for different libraries
+- Per-module bootloaders
 
 **Rationale:**
 - Simplifies caching (one loader to cache)
 - Reduces maintenance burden
-- Eliminates tier-detection code
+- Eliminates complexity
 - Better developer experience (same script everywhere)
 
 **Trade-offs Accepted:**
@@ -1381,28 +1215,27 @@ alerts:
 - If bootloader grows >2KB, reconsider split loaders
 - Monitor upgrade conversion rates
 
-### Decision 2: Edge Compilation vs. Build-Time Compilation
+### Decision 2: Runtime Loading vs. Build-Time Bundling
 
-**Date:** 2025-01-20  
-**Decision:** Use edge compilation with build-time as optional optimization  
+**Date:** 2025-01-20
+**Decision:** Use runtime module loading with CDN delivery
 **Alternatives Considered:**
 - Build-time only (like traditional bundlers)
-- Client-side compilation (like some frameworks)
+- Client-side bundling
 
 **Rationale:**
-- Edge compilation allows zero-build workflow
+- Runtime loading allows zero-build workflow
 - Perfect tree-shaking without user configuration
-- ML optimization improves over time
-- Still allows build-time for advanced users
+- CDN caching provides optimal performance
+- Simpler deployment model
 
 **Trade-offs Accepted:**
-- First-time load slightly slower (~50ms compilation)
-- Requires proprietary server infrastructure
-- More complex deployment
+- First-time load requires network requests
+- CDN dependency
 
 **Future Considerations:**
-- If edge costs become prohibitive, add more aggressive caching
-- Consider WebAssembly compilation for complex patterns
+- Consider build-time optimization for advanced users
+- WebAssembly compilation for complex patterns
 
 ### Decision 3: Polymorphic Syntax vs. Single Canonical Syntax
 
@@ -1429,29 +1262,27 @@ alerts:
 - Consider deprecating least-used notation
 - Add linter to enforce consistency within projects
 
-### Decision 4: Proprietary Edge Service vs. Open Source Everything
+### Decision 4: Open Source Strategy
 
-**Date:** 2025-02-01  
-**Decision:** Keep edge compilation service proprietary  
+**Date:** 2025-02-01
+**Decision:** Fully open source platform
 **Alternatives Considered:**
-- Fully open source (GitHub sponsors model)
 - Dual license (AGPL + commercial)
+- Closed source core with open plugins
 
 **Rationale:**
-- Edge service contains competitive advantage (ML optimization)
-- Open source client libraries drive adoption
-- Freemium model aligns incentives (free users = more training data)
-- Sustainable business model for long-term maintenance
+- Open source drives adoption
+- Community contributions improve quality
+- Transparency builds trust
+- MIT license maximizes compatibility
 
 **Trade-offs Accepted:**
-- Some developers prefer fully open source
-- Must maintain trust (privacy guarantees)
-- Risk of competitor cloning (but patents protect)
+- Requires alternative revenue models (consulting, support)
+- No licensing revenue
 
 **Future Considerations:**
-- If competitors clone successfully, reconsider strategy
-- Open source more components as they become commoditized
-- Always keep ML training data proprietary
+- Community governance model
+- Sustainability through sponsorships
 
 ---
 
@@ -1463,7 +1294,7 @@ alerts:
 
 **Pattern Signature:** Hash of detected patterns and browser capabilities. Used to cache bundles efficiently.
 
-**Edge Compilation:** Server-side bundle creation that happens at CDN edge locations for minimal latency.
+**CDN Delivery:** Module distribution via standard CDN for optimal performance.
 
 **Polymorphic Syntax:** Multiple notation styles (attributes, classes, JSON) that compile to identical transformations.
 
@@ -1533,7 +1364,7 @@ Result: 37x faster on 3G networks
 - [x] Rollback procedures documented
 - [x] Risks identified and mitigated
 - [x] Decisions justified with rationale
-- [x] Licensing strategy clearly stated (MIT for clients, proprietary for edge)
+- [x] Licensing strategy clearly stated (MIT license)
 - [x] Privacy guarantees documented (GDPR compliance)
 - [x] Patent protection noted (without exposing trade secrets)
 
