@@ -24,12 +24,39 @@ Feature: Universal Bootloader
     And it should detect the "ax" prefix
     And it should not detect any other prefixes
 
+  Scenario: Detect all module types
+    Given an HTML page with all module attributes:
+      """
+      <span fx-format="currency">25.00</span>
+      <button ax-enhance="button">Click</button>
+      <input bx-model="user.name" />
+      <div dx-draggable="card">Card</div>
+      <img lx-lazy src="/image.jpg" />
+      <table tx-sort="true"></table>
+      <nav nx-nav="main"></nav>
+      """
+    When the bootloader scans the DOM
+    Then it should detect all 7 prefixes: "fx", "ax", "bx", "dx", "lx", "tx", "nx"
+
   Scenario: Dynamic module loading
     Given an HTML page with fx- attributes
     When the bootloader initializes
     Then it should load "fmtx.js" module
     And it should not load "accx.js" module
     And it should not load "bindx.js" module
+
+  Scenario: Load correct module for each prefix
+    Given an HTML page with bx- attributes
+    When the bootloader initializes
+    Then it should load "bindx.js" from "/modules/bindx.js"
+    Given an HTML page with dx- attributes
+    Then it should load "dragx.js" from "/modules/dragx.js"
+    Given an HTML page with lx- attributes
+    Then it should load "loadx.js" from "/modules/loadx.js"
+    Given an HTML page with tx- attributes
+    Then it should load "tablex.js" from "/modules/tablex.js"
+    Given an HTML page with nx- attributes
+    Then it should load "navx.js" from "/modules/navx.js"
 
   Scenario: Factory pattern initialization
     Given the "fmtx.js" module is loaded
