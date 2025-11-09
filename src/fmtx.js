@@ -1,6 +1,3 @@
-formatx-v2.js
-11.29 KB •182 lines
-Formatting may be inconsistent from source
 /**
  * FormatX - Succinct functional text formatting library
  * @version 2.2 (succinct refactor)
@@ -123,8 +120,13 @@ Formatting may be inconsistent from source
         let raw = el.getAttribute(`${pref}raw`) || el.getAttribute(`${pref}value`) || el.textContent?.trim() || el.value || '';
         const opts = {}; for (let a of el.attributes) { if (a.name.startsWith(pref) && a.name !== `${pref}format`) { let n = a.name.slice(pref.length); opts[kebabToCamel(n)] = safeJsonParse(a.value); } }
         const fmt = format(typ, raw, opts);
-        if (['INPUT','TEXTAREA'].includes(el.tagName)) { el.value = fmt; } else { el.textContent = fmt; }
-        el.setAttribute(`${pref}raw`, raw);
+        // Prevent infinite loop: only update if value changed
+        if (['INPUT','TEXTAREA'].includes(el.tagName)) {
+            if (el.value !== fmt) el.value = fmt;
+        } else {
+            if (el.textContent !== fmt) el.textContent = fmt;
+        }
+        if (!el.getAttribute(`${pref}raw`)) el.setAttribute(`${pref}raw`, raw);
     };
     const unformatElement = (el, pref = 'fx-') => {
         const raw = el.getAttribute(`${pref}raw`);

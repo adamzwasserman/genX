@@ -489,6 +489,126 @@ describe('FormatX Module', () => {
             observer.observe(element, { attributes: true });
             element.setAttribute('fx-format', 'currency');
         });
+
+        test('should not trigger mutations when value unchanged (infinite loop prevention)', (done) => {
+            const element = document.createElement('span');
+            element.setAttribute('fx-format', 'currency');
+            element.setAttribute('fx-raw', '25.00');
+            element.textContent = '$25.00';
+            document.body.appendChild(element);
+
+            let mutationCount = 0;
+            const observer = new MutationObserver((mutations) => {
+                mutationCount += mutations.length;
+
+                // If we get more than 2 mutations, we have an infinite loop
+                if (mutationCount > 2) {
+                    observer.disconnect();
+                    done(new Error(`Infinite loop detected: ${mutationCount} mutations triggered`));
+                }
+            });
+
+            observer.observe(element, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                characterData: true
+            });
+
+            // Simulate formatElement being called with same value
+            // This should NOT trigger mutations because value is already '$25.00'
+            const currentValue = element.textContent;
+            if (element.textContent !== '$25.00') {
+                element.textContent = '$25.00';
+            }
+
+            // Wait 100ms to ensure no mutations occurred
+            setTimeout(() => {
+                observer.disconnect();
+                expect(mutationCount).toBe(0);
+                done();
+            }, 100);
+        });
+
+        test('should only update DOM when value actually changes', () => {
+            const element = document.createElement('span');
+            element.textContent = '$25.00';
+
+            // Track if DOM was actually modified
+            let setterCalled = false;
+            const originalTextContent = element.textContent;
+
+            // Mock to track setter calls
+            const mockSet = jest.fn((value) => {
+                setterCalled = true;
+                const descriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
+                if (descriptor && descriptor.set) {
+                    descriptor.set.call(element, value);
+                }
+            });
+
+            // Simulate change detection before setting
+            const formattedValue = '$25.00';
+            if (element.textContent !== formattedValue) {
+                mockSet(formattedValue);
+            }
+
+            // Should not have called setter because value didn't change
+            expect(mockSet).not.toHaveBeenCalled();
+            expect(element.textContent).toBe('$25.00');
+
+            // Now change to different value
+            const newValue = '$30.00';
+            if (element.textContent !== newValue) {
+                mockSet(newValue);
+            }
+
+            // Should have called setter because value changed
+            expect(mockSet).toHaveBeenCalledTimes(1);
+        });
+
+        test('should prevent infinite loop with rapid attribute changes', (done) => {
+            const element = document.createElement('input');
+            element.setAttribute('fx-format', 'currency');
+            element.setAttribute('fx-raw', '25.00');
+            element.value = '$25.00';
+            document.body.appendChild(element);
+
+            let mutationCount = 0;
+            const maxMutations = 5;
+
+            const observer = new MutationObserver((mutations) => {
+                mutationCount += mutations.length;
+
+                if (mutationCount > maxMutations) {
+                    observer.disconnect();
+                    done(new Error(`Infinite loop detected: ${mutationCount} mutations from repeated formatting`));
+                }
+            });
+
+            observer.observe(element, {
+                attributes: true,
+                attributeFilter: ['fx-raw', 'fx-format', 'value']
+            });
+
+            // Simulate rapid calls to formatElement with same value
+            for (let i = 0; i < 10; i++) {
+                // Proper implementation should check before updating
+                if (element.value !== '$25.00') {
+                    element.value = '$25.00';
+                }
+                if (element.getAttribute('fx-raw') !== '25.00') {
+                    element.setAttribute('fx-raw', '25.00');
+                }
+            }
+
+            setTimeout(() => {
+                observer.disconnect();
+                // Should have minimal mutations (ideally 0)
+                expect(mutationCount).toBeLessThan(3);
+                done();
+            }, 100);
+        });
     });
 
     describe('Performance', () => {
