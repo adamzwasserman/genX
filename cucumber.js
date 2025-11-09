@@ -55,8 +55,16 @@ module.exports = {
 
     // Profile for CI (critical tests only, fast)
     ci: {
+        requireModule: ['@babel/register'],
+        require: [
+            'tests/support/**/*.js',
+            'tests/step_definitions/**/*.js'
+        ],
+        paths: ['tests/features/**/*.feature'],
         tags: '@critical',
+        format: ['progress-bar'],
         parallel: 4,
-        retry: 2
+        retry: 2,
+        timeout: 30000
     }
 };
