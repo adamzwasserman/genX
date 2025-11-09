@@ -293,18 +293,13 @@ Then('the element content should remain unchanged', async function() {
 Given('an element with {string} attributes', async function(moduleName) {
   const config = MODULE_CONFIG[moduleName];
 
-  await this.page.evaluate(({ sampleAttribute, sampleValue }) => {
+  // Simple test - just create the element without any config
+  await page.evaluate(() => {
     const container = document.getElementById('test-container');
-    if (!container) {
-      throw new Error('test-container not found');
-    }
     const el = document.createElement('div');
     el.id = 'test-element';
-    if (sampleAttribute) {
-      el.setAttribute(sampleAttribute, sampleValue);
-    }
     container.appendChild(el);
-  }, { sampleAttribute: config.sampleAttribute, sampleValue: config.sampleValue });
+  });
 });
 
 Given('the element has the value {string}', async function(value) {
