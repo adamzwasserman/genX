@@ -579,133 +579,16 @@ packages/accx/
 
 ### 2.5 Progressive Disclosure Architecture
 
-**Innovation**: accX solves the detection problem by letting users self-identify rather than attempting browser-based detection.
-
-```javascript
-/**
- * PATENT-WORTHY: Progressive Accessibility Disclosure
- * 
- * Default: Lightweight accessibility (contrast, focus, basic labels)
- * Opt-in: Heavy ARIA processing for users who need it
- * 
- * This is NOVEL - no existing solution does this
- */
-const ProgressiveDisclosure = {
-    /**
-     * Phase 1: Default Lightweight Enhancements
-     * Always applied, minimal performance impact
-     */
-    applyLightweightEnhancements: (element) => {
-        // Contrast adjustments
-        ensureContrastRatio(element, 4.5); // WCAG AA minimum
-        
-        // Focus indicators
-        if (!element.style.outlineWidth) {
-            element.style.outline = '2px solid currentColor';
-            element.style.outlineOffset = '2px';
-        }
-        
-        // Basic semantic labels
-        if (!element.hasAttribute('aria-label') && element.textContent) {
-            element.setAttribute('aria-label', element.textContent.trim());
-        }
-    },
-    
-    /**
-     * Phase 2: Invisible Opt-in Control
-     * Only screen readers detect this control
-     */
-    injectOptInControl: () => {
-        const control = document.createElement('div');
-        control.className = 'ax-sr-only'; // Visually hidden, SR visible
-        control.setAttribute('role', 'button');
-        control.setAttribute('tabindex', '0');
-        control.setAttribute('aria-label', 'Enable full accessibility features');
-        control.textContent = 'Press Enter to enable comprehensive accessibility enhancements';
-        
-        control.addEventListener('click', () => {
-            ProgressiveDisclosure.enableFullAccessibility();
-        });
-        
-        control.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                ProgressiveDisclosure.enableFullAccessibility();
-            }
-        });
-        
-        // Insert at top of body
-        document.body.insertBefore(control, document.body.firstChild);
-        
-        return control;
-    },
-    
-    /**
-     * Phase 3: Full Accessibility Mode
-     * Loads additional modules and re-scans DOM with intensive rules
-     */
-    enableFullAccessibility: async () => {
-        // Set preference (survives page reload)
-        try {
-            sessionStorage.setItem('ax-full-mode', 'true');
-        } catch (e) {
-            // sessionStorage not available, use attribute
-            document.documentElement.setAttribute('ax-full-mode', 'true');
-        }
-        
-        // Load heavy ARIA module
-        const ariaModule = await import('./enhancements/aria-comprehensive.js');
-        
-        // Re-scan entire document with comprehensive rules
-        const allElements = document.querySelectorAll('[ax-enhance]');
-        allElements.forEach(el => {
-            ariaModule.applyComprehensive(el);
-        });
-        
-        // Announce change to screen reader
-        announceToScreenReader('Full accessibility mode enabled. Page has been enhanced.');
-        
-        // Remove opt-in control
-        document.querySelector('.ax-sr-only')?.remove();
-    },
-    
-    /**
-     * Check if full mode is enabled
-     */
-    isFullModeEnabled: () => {
-        try {
-            return sessionStorage.getItem('ax-full-mode') === 'true';
-        } catch (e) {
-            return document.documentElement.hasAttribute('ax-full-mode');
-        }
-    }
-};
-
-/**
- * Initialize progressive disclosure on page load
- */
-const init = () => {
-    // Apply lightweight enhancements immediately
-    document.querySelectorAll('[ax-enhance]').forEach(el => {
-        ProgressiveDisclosure.applyLightweightEnhancements(el);
-    });
-    
-    // If full mode already enabled, load it
-    if (ProgressiveDisclosure.isFullModeEnabled()) {
-        ProgressiveDisclosure.enableFullAccessibility();
-    } else {
-        // Otherwise, inject opt-in control
-        ProgressiveDisclosure.injectOptInControl();
-    }
-};
-```
-
-**Benefits of Progressive Disclosure**:
-- **Performance**: 95% of users get <2KB, only users who need it get full 6KB
-- **Self-selection**: Users identify themselves, no brittle detection
-- **Privacy**: No tracking, no analytics required
-- **Progressive**: Works before JavaScript loads (lightweight CSS applied)
-- **Novel**: Patent-worthy approach to accessibility optimization
+> **Note**: Progressive disclosure is a commercial feature available in genX Premium. The OSS version includes full accessibility features by default.
+>
+> Progressive disclosure optimizes bundle size by loading enhanced accessibility features on-demand. This section is included for architectural completeness but the implementation details are proprietary.
+>
+> **Commercial Benefits**:
+> - Performance: 95% of users get <2KB bundle
+> - On-demand loading for users who need full features
+> - Privacy-preserving (no detection required)
+>
+> For implementation details, contact sales@genx.software or see genX Premium documentation.
 
 ### 2.6 Function Signatures
 
@@ -1726,22 +1609,19 @@ const metrics = {
 
 ## 10. Decision Log
 
-### Decision 001: Progressive Disclosure Over Auto-Detection
+### Decision 001: Full Features by Default (OSS)
 **Date**: October 2025
-**Context**: How should accX determine if users need full accessibility features?
-**Decision**: Use progressive disclosure with opt-in control instead of browser detection
+**Context**: How should the open-source version handle accessibility features?
+**Decision**: Include all accessibility features in the OSS bundle (no progressive loading)
 **Rationale**:
-- Browser detection is unreliable (many AT users use standard browsers)
-- Privacy-preserving (no need to detect assistive technology)
-- Performance-optimized (lightweight by default)
-- Novel approach (patent-worthy)
-**Alternatives Considered**:
-- Auto-detect screen readers: Rejected (unreliable, privacy concerns)
-- Always load full features: Rejected (performance impact for 95% of users)
-- Server-side detection: Rejected (privacy violation)
+- Simplicity for OSS users (no configuration needed)
+- Complete WCAG compliance out of the box
+- Transparent and verifiable accessibility
+- Community can audit all features
+**Note**: genX Premium offers progressive disclosure for performance optimization (commercial feature)
 **Trade-offs Accepted**:
-- Requires user action to enable full features
-- Assumes users know to look for accessibility controls
+- Larger bundle size (~6KB vs ~2KB for premium lightweight mode)
+- No bundle size optimization for users who don't need full features
 
 ### Decision 002: Pure Functions Over Classes
 **Date**: October 2025
@@ -1857,9 +1737,8 @@ const metrics = {
 |---------|--------|---------|--------|------|
 | Core enhancements | 90+ | 88+ | 14+ | 90+ |
 | MutationObserver | 90+ | 88+ | 14+ | 90+ |
-| WeakMap caching | 90+ | 88+ | 14+ | 90+ |
-| Progressive disclosure | 90+ | 88+ | 14+ | 90+ |
-| Edge compilation | 90+ | 88+ | 14+ | 90+ |
+| ARIA generation | 90+ | 88+ | 14+ | 90+ |
+| Screen reader support | 90+ | 88+ | 14+ | 90+ |
 
 **Polyfills Required**: None for modern browsers (2021+)
 
