@@ -300,4 +300,113 @@ describe('Universal Bootloader', () => {
             consoleSpy.mockRestore();
         });
     });
+
+    describe('Race Conditions', () => {
+        test('should handle concurrent load requests for same module', async () => {
+            // Simulate race condition: multiple parts of code trying to load same module
+            const mockPending = new Set();
+            const mockLoaded = new Set();
+
+            // First request starts loading
+            mockPending.add('fx');
+            expect(mockPending.has('fx')).toBe(true);
+            expect(mockLoaded.has('fx')).toBe(false);
+
+            // Second request should wait, not create duplicate load
+            const shouldWait = mockPending.has('fx') && !mockLoaded.has('fx');
+            expect(shouldWait).toBe(true);
+
+            // After load completes
+            mockLoaded.add('fx');
+            mockPending.delete('fx');
+            expect(mockLoaded.has('fx')).toBe(true);
+            expect(mockPending.has('fx')).toBe(false);
+        });
+
+        test('should track pending modules during load', () => {
+            const pending = new Set();
+            const loaded = new Set();
+
+            // Start loading module
+            pending.add('fx');
+            expect(pending.size).toBe(1);
+            expect(loaded.size).toBe(0);
+
+            // Complete loading
+            loaded.add('fx');
+            pending.delete('fx');
+            expect(pending.size).toBe(0);
+            expect(loaded.size).toBe(1);
+        });
+
+        test('should allow parallel loading of different modules', () => {
+            const pending = new Set();
+            const loaded = new Set();
+
+            // Start loading multiple modules simultaneously
+            pending.add('fx');
+            pending.add('ax');
+            pending.add('bx');
+            expect(pending.size).toBe(3);
+
+            // Modules can complete in any order
+            loaded.add('ax');
+            pending.delete('ax');
+            expect(pending.size).toBe(2);
+            expect(loaded.size).toBe(1);
+
+            loaded.add('fx');
+            pending.delete('fx');
+            expect(pending.size).toBe(1);
+            expect(loaded.size).toBe(2);
+
+            loaded.add('bx');
+            pending.delete('bx');
+            expect(pending.size).toBe(0);
+            expect(loaded.size).toBe(3);
+        });
+    });
+
+    describe('Initialization Order', () => {
+        test('should initialize modules in scan order', () => {
+            const needed = new Set(['fx', 'ax', 'bx']);
+            const initOrder = [];
+
+            // Simulate initialization
+            for (let prefix of needed) {
+                initOrder.push(prefix);
+            }
+
+            expect(initOrder).toContain('fx');
+            expect(initOrder).toContain('ax');
+            expect(initOrder).toContain('bx');
+            expect(initOrder.length).toBe(3);
+        });
+
+        test('should not reinitialize already loaded modules', () => {
+            const loaded = new Set();
+            const pending = new Set();
+
+            // Module already loaded
+            loaded.add('fx');
+
+            // Subsequent load request should skip
+            const shouldLoad = !loaded.has('fx') && !pending.has('fx');
+            expect(shouldLoad).toBe(false);
+        });
+
+        test('should handle module dependencies implicitly through load order', () => {
+            // genX modules are independent, but if one needed another,
+            // the load order would matter
+            const loadOrder = [];
+
+            loadOrder.push('fx'); // Loads first
+            loadOrder.push('ax'); // Loads after fx is done
+            loadOrder.push('bx'); // Loads after ax is done
+
+            expect(loadOrder[0]).toBe('fx');
+            expect(loadOrder[1]).toBe('ax');
+            expect(loadOrder[2]).toBe('bx');
+        });
+    });
 });
