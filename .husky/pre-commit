@@ -1,1 +1,61 @@
+#!/usr/bin/env sh
+
+# Smart pre-commit hook: Run unit tests always, run BDD tests only if affected modules changed
+set -e
+
+echo "Running unit tests (143 tests)..."
 npm run test:unit
+
+# Get staged file names
+STAGED_FILES=$(git diff --cached --name-only)
+
+# Determine which modules are affected
+MODULES_CHANGED=false
+FMTX_CHANGED=false
+ACCX_CHANGED=false
+BOOTLOADER_CHANGED=false
+
+for file in $STAGED_FILES; do
+  case "$file" in
+    src/fmtx.js)
+      FMTX_CHANGED=true
+      MODULES_CHANGED=true
+      ;;
+    src/accx.js)
+      ACCX_CHANGED=true
+      MODULES_CHANGED=true
+      ;;
+    src/bootloader.js)
+      BOOTLOADER_CHANGED=true
+      MODULES_CHANGED=true
+      ;;
+  esac
+done
+
+# If no module files changed, skip BDD tests (e.g., docs-only changes)
+if [ "$MODULES_CHANGED" = false ]; then
+  echo "No module files changed - skipping BDD tests"
+  exit 0
+fi
+
+# Run base module safety tests if any module changed
+echo "Running base module safety tests..."
+npm run test:bdd:base
+
+# Run module-specific BDD tests based on what changed
+if [ "$FMTX_CHANGED" = true ]; then
+  echo "Running fmtx-specific BDD tests..."
+  npx cucumber-js --require tests/support/**/*.js --require tests/step_definitions/**/*.js tests/features/fmtx.feature
+fi
+
+if [ "$ACCX_CHANGED" = true ]; then
+  echo "Running accx-specific BDD tests..."
+  npx cucumber-js --require tests/support/**/*.js --require tests/step_definitions/**/*.js tests/features/accx.feature
+fi
+
+if [ "$BOOTLOADER_CHANGED" = true ]; then
+  echo "Running bootloader-specific BDD tests..."
+  npx cucumber-js --require tests/support/**/*.js --require tests/step_definitions/**/*.js tests/features/bootloader.feature
+fi
+
+echo "All pre-commit checks passed!"
