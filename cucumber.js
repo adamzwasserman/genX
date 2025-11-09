@@ -37,14 +37,28 @@ module.exports = {
 
     // Profile for performance tests
     performance: {
+        requireModule: ['@babel/register'],
+        require: [
+            'tests/support/**/*.js',
+            'tests/step_definitions/**/*.js'
+        ],
         paths: ['tests/features/**/*.feature'],
-        tags: '@performance'
+        tags: '@performance',
+        format: ['progress-bar'],
+        timeout: 30000
     },
 
     // Profile for security/XSS tests
     security: {
+        requireModule: ['@babel/register'],
+        require: [
+            'tests/support/**/*.js',
+            'tests/step_definitions/**/*.js'
+        ],
         paths: ['tests/features/**/*.feature'],
-        tags: '@xss-prevention'
+        tags: '@xss-prevention',
+        format: ['progress-bar'],
+        timeout: 30000
     },
 
     // Profile for module-specific features (exclude base safety)
