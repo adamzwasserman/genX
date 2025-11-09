@@ -25,7 +25,7 @@ const MODULE_CONFIG = {
     expectedOutput: null // accx doesn't transform content
   },
   bootloader: {
-    scriptPath: '/dist/bootloader.js',
+    scriptPath: '/src/bootloader.js',
     globalName: 'genx',
     factoryName: null,
     attributePrefix: null,
