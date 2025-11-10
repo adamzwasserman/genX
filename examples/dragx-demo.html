@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DragX Demo - Declarative Drag and Drop</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+
+        .demo-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .demo-section h2 {
+            color: #666;
+            font-size: 18px;
+            margin-top: 0;
+        }
+
+        /* Draggable elements */
+        [dx-draggable] {
+            cursor: move;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px;
+            width: 150px;
+            display: inline-block;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .card h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Drag states */
+        .dx-dragging {
+            opacity: 0.3;
+            transform: scale(0.95);
+        }
+
+        .dx-ghost {
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+            transform: rotate(3deg);
+        }
+
+        /* Drop zones */
+        .drop-zone {
+            background: #f9f9f9;
+            border: 3px dashed #ccc;
+            border-radius: 8px;
+            min-height: 200px;
+            padding: 20px;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+
+        .drop-zone h3 {
+            color: #666;
+            margin-top: 0;
+        }
+
+        .drop-zone.dx-drag-over {
+            background: #e8f5e9;
+            border-color: #4CAF50;
+            border-style: solid;
+            transform: scale(1.02);
+        }
+
+        /* Container layouts */
+        .flex-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* Status panel */
+        .status-panel {
+            background: #263238;
+            color: #00E676;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .status-panel .event {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 2px solid #00E676;
+            padding-left: 10px;
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .stat {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 DragX - Declarative Drag and Drop</h1>
+
+    <div class="demo-section">
+        <h2>📊 Live Stats</h2>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="stat-drags">0</div>
+                <div class="stat-label">Total Drags</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="stat-drops">0</div>
+                <div class="stat-label">Successful Drops</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="stat-zones">0</div>
+                <div class="stat-label">Drop Zones</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="stat-state">idle</div>
+                <div class="stat-label">Current State</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🎴 Basic Drag and Drop</h2>
+        <p>Drag the cards to either drop zone. Zones accept different types!</p>
+
+        <div class="flex-container">
+            <div>
+                <div class="card" dx-draggable="card" dx-data='{"id":1,"title":"Feature Card"}'>
+                    <h3>🎯 Feature Card</h3>
+                    <p>ID: 1</p>
+                </div>
+
+                <div class="card" dx-draggable="card" dx-data='{"id":2,"title":"Bug Card"}'>
+                    <h3>🐛 Bug Card</h3>
+                    <p>ID: 2</p>
+                </div>
+
+                <div class="card" dx-draggable="image" dx-data='{"id":3,"title":"Image Card"}'>
+                    <h3>🖼️ Image Card</h3>
+                    <p>ID: 3 (different type)</p>
+                </div>
+            </div>
+
+            <div style="flex: 1;">
+                <div class="drop-zone" dx-drop-zone="board" dx-accepts="card">
+                    <h3>📋 Board (accepts: card)</h3>
+                    <p>Drop cards here</p>
+                </div>
+
+                <div class="drop-zone" dx-drop-zone="gallery" dx-accepts="*">
+                    <h3>🎨 Gallery (accepts: all types)</h3>
+                    <p>Drop anything here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>📝 Event Log</h2>
+        <div class="status-panel" id="event-log">
+            <div class="event">System ready. Start dragging!</div>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🔬 Implementation Details</h2>
+        <ul>
+            <li><strong>Pure Functional Architecture:</strong> No classes, immutable state</li>
+            <li><strong>Unified Pointer Events:</strong> Works with mouse, touch, and pen</li>
+            <li><strong>State Machine:</strong> 6 phases (idle → pending → dragging → hovering → dropped/cancelled)</li>
+            <li><strong>Polymorphic Parser:</strong> 4 syntax styles supported</li>
+            <li><strong>Performance:</strong> 60 FPS throttling, <0.5ms event processing</li>
+            <li><strong>Security:</strong> XSS prevention, prototype pollution protection</li>
+        </ul>
+
+        <h3>Syntax Examples:</h3>
+        <pre style="background: #263238; color: #00E676; padding: 15px; border-radius: 4px; overflow-x: auto;"><code>&lt;!-- Verbose syntax --&gt;
+&lt;div dx-draggable="card" dx-data='{"id":123}'&gt;&lt;/div&gt;
+
+&lt;!-- Compact colon syntax --&gt;
+&lt;div dx-drag="card:123:ghost:horizontal"&gt;&lt;/div&gt;
+
+&lt;!-- Class-based syntax --&gt;
+&lt;div class="drag-card" data-id="123"&gt;&lt;/div&gt;
+
+&lt;!-- JSON configuration --&gt;
+&lt;div dx-config='{"draggable":"card","data":{"id":123}}'&gt;&lt;/div&gt;</code></pre>
+    </div>
+
+    <!-- Load dragX module -->
+    <script src="../src/dragx.js"></script>
+
+    <script>
+        // Event tracking
+        let stats = {
+            drags: 0,
+            drops: 0,
+            zones: 0
+        };
+
+        function updateStats() {
+            document.getElementById('stat-drags').textContent = stats.drags;
+            document.getElementById('stat-drops').textContent = stats.drops;
+            document.getElementById('stat-zones').textContent = stats.zones;
+
+            const state = window.DragX.getState();
+            document.getElementById('stat-state').textContent = state.phase;
+        }
+
+        function logEvent(message) {
+            const log = document.getElementById('event-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const event = document.createElement('div');
+            event.className = 'event';
+            event.textContent = `[${timestamp}] ${message}`;
+            log.insertBefore(event, log.firstChild);
+
+            // Keep only last 20 events
+            while (log.children.length > 20) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        // Listen for drag events
+        document.addEventListener('dx:dragstart', (e) => {
+            stats.drags++;
+            updateStats();
+            logEvent(`🎯 Drag started: ${e.detail.type} #${e.detail.data.id || 'unknown'}`);
+        });
+
+        document.addEventListener('dx:drop', (e) => {
+            stats.drops++;
+            updateStats();
+            const zoneName = e.detail.dropZone.getAttribute('dx-drop-zone');
+            logEvent(`✅ Dropped ${e.detail.type} #${e.detail.data.id || 'unknown'} on ${zoneName}`);
+
+            // Animate the drop
+            const card = e.detail.element;
+            e.detail.dropZone.appendChild(card);
+            card.style.animation = 'none';
+            setTimeout(() => {
+                card.style.animation = '';
+            }, 10);
+        });
+
+        document.addEventListener('dx:dragend', (e) => {
+            if (!e.detail.success) {
+                logEvent(`❌ Drag cancelled - invalid drop target`);
+            }
+            updateStats();
+        });
+
+        // Initialize stats
+        window.addEventListener('load', () => {
+            stats.zones = document.querySelectorAll('[dx-drop-zone]').length;
+            updateStats();
+            logEvent('✨ DragX initialized successfully');
+            logEvent(`📦 Version: ${window.DragX.version}`);
+            logEvent(`🎯 ${stats.zones} drop zones registered`);
+        });
+
+        // Update state display every 100ms
+        setInterval(updateStats, 100);
+    </script>
+</body>
+</html>
