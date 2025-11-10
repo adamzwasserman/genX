@@ -26,7 +26,7 @@ Feature: Batched Updates
     When I set count=5
     And I set count=10
     And I set count=15
-    Before the frame completes
+    And before the frame completes
     Then only the final value (15) should be in the batch queue
 
   Scenario: Batch scheduling is idempotent
