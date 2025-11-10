@@ -279,15 +279,20 @@ describe('loadX - Core Initialization', () => {
             }).not.toThrow();
         });
 
-        test('should handle invalid configuration types gracefully', () => {
-            const result = window.loadX.initLoadX({
-                minDisplayMs: 'invalid',
-                autoDetect: 'yes'
-            });
+        test('should reject invalid configuration types with validation error', () => {
+            // Invalid minDisplayMs type should throw
+            expect(() => {
+                window.loadX.initLoadX({
+                    minDisplayMs: 'invalid'
+                });
+            }).toThrow(/minDisplayMs must be a number/);
 
-            // Should use the provided values even if invalid type
-            expect(result.config.minDisplayMs).toBe('invalid');
-            expect(result.config.autoDetect).toBe('yes');
+            // Invalid autoDetect type should throw
+            expect(() => {
+                window.loadX.initLoadX({
+                    autoDetect: 'yes'
+                });
+            }).toThrow(/autoDetect must be a boolean/);
         });
     });
 });
