@@ -104,21 +104,190 @@
      * @param {Object} config - Configuration object
      */
     const processElement = (el, config) => {
-        // Parse loading attributes
-        const strategy = el.getAttribute('lx-strategy');
-        const loading = el.getAttribute('lx-loading');
+        const parsed = parseElementAttributes(el);
 
-        // Check for class-based syntax
-        const classes = el.className.split(' ');
-        const lxClass = classes.find(c => c.startsWith('lx-'));
+        if (parsed.strategy) {
+            // Mark element as tracked
+            el.setAttribute('data-lx-tracked', 'true');
 
-        if (strategy || loading || lxClass) {
-            // Element detected and registered
-            // Actual processing will be implemented in Task 1.2 (Attribute Processing)
+            // Store parsed config on element for later use
+            el._lxConfig = parsed;
+
             return true;
         }
 
         return false;
+    };
+
+    /**
+     * Parse loadX attributes from element (polymorphic attribute processing)
+     * Supports multiple syntax styles:
+     * - HTML attributes: lx-strategy="spinner"
+     * - CSS classes: class="lx-spinner"
+     * - JSON config: lx-config='{"strategy":"spinner","duration":500}'
+     * - Colon syntax: class="lx:spinner:500"
+     * - Data attributes: data-lx-strategy="spinner"
+     *
+     * @param {HTMLElement} el - Element to parse
+     * @returns {Object} - Parsed configuration object
+     */
+    const parseElementAttributes = (el) => {
+        if (!el) return { strategy: 'spinner' }; // Default
+
+        const result = {};
+
+        // Priority 1: lx-config JSON (highest priority)
+        const jsonConfig = el.getAttribute('lx-config');
+        if (jsonConfig) {
+            try {
+                const parsed = JSON.parse(jsonConfig);
+                Object.assign(result, parsed);
+
+                // Normalize strategy name
+                if (result.strategy) {
+                    result.strategy = normalizeStrategyName(result.strategy);
+                }
+
+                return result;
+            } catch (error) {
+                // Invalid JSON - log error and continue to other methods
+                console.warn('loadX: Invalid JSON in lx-config:', error.message);
+            }
+        }
+
+        // Priority 2: lx-strategy HTML attribute
+        const strategyAttr = el.getAttribute('lx-strategy');
+        if (strategyAttr) {
+            result.strategy = normalizeStrategyName(strategyAttr);
+        }
+
+        // Priority 3: data-lx-strategy attribute
+        if (!result.strategy) {
+            const dataStrategy = el.getAttribute('data-lx-strategy');
+            if (dataStrategy) {
+                result.strategy = normalizeStrategyName(dataStrategy);
+            }
+        }
+
+        // Priority 4: CSS class syntax (lx-spinner or lx:spinner:500)
+        if (!result.strategy) {
+            const classResult = parseClassSyntax(el.className);
+            if (classResult.strategy) {
+                Object.assign(result, classResult);
+            }
+        }
+
+        // Parse additional attributes
+        parseAdditionalAttributes(el, result);
+
+        // Apply defaults if no strategy found
+        if (!result.strategy) {
+            result.strategy = 'spinner'; // Default strategy
+        }
+
+        return result;
+    };
+
+    /**
+     * Parse CSS class syntax (supports both lx-strategy and lx:strategy:params)
+     * @param {String} className - Element className string
+     * @returns {Object} - Parsed configuration
+     */
+    const parseClassSyntax = (className) => {
+        if (!className) return {};
+
+        const classes = className.split(' ').filter(c => c.trim());
+        const result = {};
+
+        for (const cls of classes) {
+            // Colon syntax: lx:spinner:500 or lx:progress:determinate:500
+            if (cls.startsWith('lx:')) {
+                const parts = cls.split(':').slice(1); // Remove 'lx' prefix
+                if (parts.length > 0) {
+                    result.strategy = normalizeStrategyName(parts[0]);
+
+                    // Parse additional parameters
+                    if (parts.length > 1) {
+                        // Try to parse as duration (number)
+                        const secondParam = parts[1];
+                        if (/^\d+$/.test(secondParam)) {
+                            result.duration = parseInt(secondParam, 10);
+                        } else {
+                            // Non-numeric parameter (e.g., 'determinate')
+                            result.mode = secondParam;
+                        }
+                    }
+
+                    // Third parameter (if exists)
+                    if (parts.length > 2 && /^\d+$/.test(parts[2])) {
+                        result.duration = parseInt(parts[2], 10);
+                    }
+                }
+                return result;
+            }
+
+            // Standard class syntax: lx-spinner
+            if (cls.startsWith('lx-')) {
+                const strategyName = cls.substring(3); // Remove 'lx-' prefix
+                result.strategy = normalizeStrategyName(strategyName);
+                return result;
+            }
+        }
+
+        return result;
+    };
+
+    /**
+     * Parse additional lx-* attributes (duration, value, rows, etc.)
+     * @param {HTMLElement} el - Element to parse
+     * @param {Object} result - Result object to populate
+     */
+    const parseAdditionalAttributes = (el, result) => {
+        // Duration
+        const duration = el.getAttribute('lx-duration');
+        if (duration && /^\d+$/.test(duration)) {
+            result.duration = parseInt(duration, 10);
+        }
+
+        // Value (for progress bars)
+        const value = el.getAttribute('lx-value');
+        if (value && /^\d+$/.test(value)) {
+            result.value = parseInt(value, 10);
+        }
+
+        // Rows (for skeleton)
+        const rows = el.getAttribute('lx-rows');
+        if (rows && /^\d+$/.test(rows)) {
+            result.rows = parseInt(rows, 10);
+        }
+
+        // Min height
+        const minHeight = el.getAttribute('lx-min-height');
+        if (minHeight) {
+            result.minHeight = minHeight;
+        }
+
+        // Animate flag
+        const animate = el.getAttribute('lx-animate');
+        if (animate !== null) {
+            result.animate = animate !== 'false';
+        }
+
+        // Loading state
+        const loading = el.getAttribute('lx-loading');
+        if (loading !== null) {
+            result.loading = loading !== 'false';
+        }
+    };
+
+    /**
+     * Normalize strategy name (lowercase, trim whitespace)
+     * @param {String} name - Strategy name
+     * @returns {String} - Normalized name
+     */
+    const normalizeStrategyName = (name) => {
+        if (!name || typeof name !== 'string') return 'spinner';
+        return name.toLowerCase().trim() || 'spinner';
     };
 
     // ============================================================================
@@ -205,11 +374,15 @@
     if (typeof window !== 'undefined') {
         window.loadX = window.loadX || {};
         window.loadX.initLoadX = initLoadX;
+        window.loadX.parseElementAttributes = parseElementAttributes;
     }
 
     // Export for ES6 modules (if needed)
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { initLoadX };
+        module.exports = {
+            initLoadX,
+            parseElementAttributes
+        };
     }
 
 })();
