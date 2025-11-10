@@ -10,6 +10,65 @@
     'use strict';
 
     // ============================================================================
+    // CONFIGURATION MANAGEMENT
+    // ============================================================================
+
+    /**
+     * Validate configuration object with detailed error messages
+     * @param {Object} config - Configuration to validate
+     * @throws {Error} - If configuration is invalid with detailed message
+     */
+    const validateConfig = (config) => {
+        // Allow undefined or null config (will use defaults)
+        if (config === undefined || config === null) {
+            return;
+        }
+
+        // Validate minDisplayMs
+        if ('minDisplayMs' in config) {
+            const value = config.minDisplayMs;
+            const type = typeof value;
+
+            if (type !== 'number') {
+                throw new Error(`loadX config error: minDisplayMs must be a number, got ${type}`);
+            }
+
+            if (value < 0) {
+                throw new Error(`loadX config error: minDisplayMs must be non-negative, got ${value}`);
+            }
+        }
+
+        // Validate autoDetect
+        if ('autoDetect' in config) {
+            const value = config.autoDetect;
+            const type = typeof value;
+
+            if (type !== 'boolean') {
+                throw new Error(`loadX config error: autoDetect must be a boolean, got ${type}`);
+            }
+        }
+
+        // Validate telemetry
+        if ('telemetry' in config) {
+            const value = config.telemetry;
+            const type = typeof value;
+
+            if (type !== 'boolean') {
+                throw new Error(`loadX config error: telemetry must be a boolean, got ${type}`);
+            }
+        }
+
+        // Validate strategies
+        if ('strategies' in config) {
+            const value = config.strategies;
+
+            if (!Array.isArray(value)) {
+                throw new Error(`loadX config error: strategies must be an array, got ${typeof value}`);
+            }
+        }
+    };
+
+    // ============================================================================
     // CORE INITIALIZATION ENGINE
     // ============================================================================
 
@@ -19,6 +78,12 @@
      * @returns {Object} - Frozen API object
      */
     const initLoadX = (config = {}) => {
+        // Normalize null/undefined config to empty object
+        const normalizedConfig = config || {};
+
+        // Validate configuration
+        validateConfig(normalizedConfig);
+
         // Default configuration (frozen for immutability)
         const defaultConfig = Object.freeze({
             minDisplayMs: 300,      // Minimum time to display loading indicator
@@ -27,8 +92,21 @@
             telemetry: false        // Telemetry disabled by default (privacy)
         });
 
-        // Merge and freeze configuration
-        const mergedConfig = Object.freeze({ ...defaultConfig, ...config });
+        // Merge configuration (only known properties)
+        const mergedConfig = {
+            minDisplayMs: normalizedConfig.minDisplayMs !== undefined ? normalizedConfig.minDisplayMs : defaultConfig.minDisplayMs,
+            autoDetect: normalizedConfig.autoDetect !== undefined ? normalizedConfig.autoDetect : defaultConfig.autoDetect,
+            strategies: normalizedConfig.strategies !== undefined ? normalizedConfig.strategies : defaultConfig.strategies,
+            telemetry: normalizedConfig.telemetry !== undefined ? normalizedConfig.telemetry : defaultConfig.telemetry
+        };
+
+        // Freeze strategies array if present
+        if (Array.isArray(mergedConfig.strategies)) {
+            mergedConfig.strategies = Object.freeze([...mergedConfig.strategies]);
+        }
+
+        // Freeze final configuration
+        Object.freeze(mergedConfig);
 
         // Initialize strategy registry
         const strategyRegistry = new Map();
@@ -551,13 +629,15 @@
         window.loadX = window.loadX || {};
         window.loadX.initLoadX = initLoadX;
         window.loadX.parseElementAttributes = parseElementAttributes;
+        window.loadX.validateConfig = validateConfig;
     }
 
     // Export for ES6 modules (if needed)
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             initLoadX,
-            parseElementAttributes
+            parseElementAttributes,
+            validateConfig
         };
     }
 
