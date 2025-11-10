@@ -293,7 +293,14 @@
      * @returns {*} Property value
      */
     const getNestedProperty = (obj, path) => {
-        return path.split('.').reduce((acc, key) => acc?.[key], obj);
+        const value = path.split('.').reduce((acc, key) => acc?.[key], obj);
+
+        // If value is a computed property (function with cached state), invoke it
+        if (typeof value === 'function' && computedCache.has(value)) {
+            return value();
+        }
+
+        return value;
     };
 
     /**
@@ -510,7 +517,8 @@
             original: data,
             subscribers: new Set(),
             deep,
-            path
+            path,
+            nestedProxies: new Map() // Cache nested proxies
         };
 
         const handler = {
@@ -528,12 +536,17 @@
 
                 // Deep reactivity: wrap nested objects
                 if (deep && value && typeof value === 'object' && !isReactive(value)) {
-                    return createReactive(value, {
-                        deep,
-                        onChange,
-                        path: accessPath,
-                        _seen
-                    });
+                    // Check cache first
+                    if (!metadata.nestedProxies.has(property)) {
+                        const nestedProxy = createReactive(value, {
+                            deep,
+                            onChange,
+                            path: accessPath,
+                            _seen
+                        });
+                        metadata.nestedProxies.set(property, nestedProxy);
+                    }
+                    return metadata.nestedProxies.get(property);
                 }
 
                 return value;
@@ -551,6 +564,11 @@
 
                 if (result) {
                     const changePath = path ? `${path}.${String(property)}` : String(property);
+
+                    // Clear cached nested proxy if object property changed
+                    if (value && typeof value === 'object') {
+                        metadata.nestedProxies.delete(property);
+                    }
 
                     // Notify onChange callback
                     if (onChange) {
@@ -648,6 +666,351 @@
     };
 
     /**
+     * Computed property cache - WeakMap for memory safety
+     */
+    const computedCache = new WeakMap();
+
+    /**
+     * Circular dependency error
+     */
+    class CircularDependencyError extends Error {
+        constructor(cycle) {
+            super(`Circular dependency detected: ${cycle.join(' → ')}`);
+            this.name = 'CircularDependencyError';
+            this.cycle = cycle;
+        }
+    }
+
+    /**
+     * Create computed property with automatic dependency tracking
+     *
+     * @param {Function} computeFn - Function that computes the value
+     * @returns {Function} Getter function that returns cached/computed value
+     */
+    const computed = (computeFn) => {
+        if (typeof computeFn !== 'function') {
+            throw new TypeError('Computed requires a function');
+        }
+
+        // State for this computed property
+        const state = {
+            value: undefined,
+            cached: false,
+            dependencies: new Set(),
+            dependents: new Set(),
+            evaluating: false,
+            unsubscribers: []
+        };
+
+        // Getter function that handles caching and recomputation
+        const getter = () => {
+            // Detect circular dependencies
+            if (state.evaluating) {
+                throw new CircularDependencyError([computeFn.name || 'anonymous']);
+            }
+
+            // Return cached value if valid
+            if (state.cached) {
+                // Track this computed as dependency of outer computed
+                trackDependency(getter);
+                return state.value;
+            }
+
+            // Evaluate with dependency tracking
+            state.evaluating = true;
+
+            // Clear old subscriptions
+            state.unsubscribers.forEach(unsub => unsub());
+            state.unsubscribers = [];
+            state.dependencies.clear();
+
+            let result;
+            let dependencies;
+
+            try {
+                const tracked = withTracking(() => computeFn());
+                result = tracked.result;
+                dependencies = tracked.dependencies;
+            } catch (error) {
+                state.evaluating = false;
+                throw error;
+            }
+
+            state.value = result;
+            state.dependencies = dependencies;
+            state.cached = true;
+            state.evaluating = false;
+
+            // Subscribe to dependencies for cache invalidation
+            for (const dep of dependencies) {
+                const unsubscribe = subscribeToPath(dep, () => {
+                    invalidateComputed(state);
+                });
+                state.unsubscribers.push(unsubscribe);
+            }
+
+            // Track this computed as dependency of outer computed
+            trackDependency(getter);
+
+            return state.value;
+        };
+
+        // Store state in WeakMap for memory safety
+        computedCache.set(getter, state);
+
+        return getter;
+    };
+
+    /**
+     * Invalidate computed property cache
+     * @param {Object} state - Computed property state
+     */
+    const invalidateComputed = (state) => {
+        if (!state.cached) return;
+
+        state.cached = false;
+        state.value = undefined;
+
+        // Invalidate dependent computeds
+        for (const dependent of state.dependents) {
+            const depState = computedCache.get(dependent);
+            if (depState) {
+                invalidateComputed(depState);
+            }
+        }
+    };
+
+    /**
+     * Parse binding attribute configuration
+     * Supports:
+     * - Simple path: bx-model="user.name"
+     * - With debounce: bx-model="search:300"
+     * - JSON options: bx-opts='{"debounce":300,"formatter":"currency"}'
+     *
+     * @param {HTMLElement} element - DOM element
+     * @param {string} attrName - Attribute name (e.g., "bx-model")
+     * @returns {Object|null} Parsed configuration
+     */
+    const parseBindingAttribute = (element, attrName) => {
+        const attrValue = element.getAttribute(attrName);
+        if (!attrValue) return null;
+
+        // Parse path:options format (e.g., "user.name:300")
+        const [path, ...optionParts] = attrValue.split(':');
+        const config = { path: path.trim() };
+
+        // Parse inline options
+        if (optionParts.length > 0) {
+            const optionValue = optionParts.join(':').trim();
+            // If numeric, treat as debounce
+            if (/^\d+$/.test(optionValue)) {
+                config.debounce = parseInt(optionValue, 10);
+            }
+        }
+
+        // Parse bx-opts attribute for structured options
+        const optsAttr = element.getAttribute('bx-opts');
+        if (optsAttr) {
+            try {
+                const opts = JSON.parse(optsAttr);
+                Object.assign(config, opts);
+            } catch (error) {
+                console.warn(`bindX: Invalid bx-opts JSON on element:`, element, error);
+            }
+        }
+
+        // Parse individual option attributes
+        const debounceAttr = element.getAttribute('bx-debounce');
+        if (debounceAttr) {
+            config.debounce = parseInt(debounceAttr, 10);
+        }
+
+        const formatterAttr = element.getAttribute('bx-format');
+        if (formatterAttr) {
+            config.formatter = formatterAttr;
+        }
+
+        return config;
+    };
+
+    /**
+     * Scan DOM for bindX attributes and create bindings
+     *
+     * @param {HTMLElement} root - Root element to scan (default: document.body)
+     * @param {Object} data - Reactive data object
+     * @param {Object} options - Scan options
+     * @returns {Array} Array of created bindings
+     */
+    const scan = (root = document.body, data = null, options = {}) => {
+        if (!root) return [];
+        if (!data) {
+            console.warn('bindX: scan() requires reactive data object');
+            return [];
+        }
+
+        const { prefix = 'bx-' } = options;
+        const bindings = [];
+
+        // Find all elements with bx-model attributes
+        const modelElements = root.querySelectorAll(`[${prefix}model]`);
+        modelElements.forEach(element => {
+            const config = parseBindingAttribute(element, `${prefix}model`);
+            if (config && config.path) {
+                try {
+                    const binding = createModelBinding(element, data, config.path, config);
+                    bindings.push(binding);
+                } catch (error) {
+                    console.error(`bindX: Failed to create model binding:`, error, element);
+                }
+            }
+        });
+
+        // Find all elements with bx-bind attributes
+        const bindElements = root.querySelectorAll(`[${prefix}bind]`);
+        bindElements.forEach(element => {
+            const config = parseBindingAttribute(element, `${prefix}bind`);
+            if (config && config.path) {
+                try {
+                    const binding = createOneWayBinding(element, data, config.path, config);
+                    bindings.push(binding);
+                } catch (error) {
+                    console.error(`bindX: Failed to create one-way binding:`, error, element);
+                }
+            }
+        });
+
+        return bindings;
+    };
+
+    /**
+     * Create MutationObserver to watch for dynamically added elements
+     *
+     * @param {Object} data - Reactive data object
+     * @param {Object} options - Observer options
+     * @returns {MutationObserver} Observer instance
+     */
+    const createDOMObserver = (data, options = {}) => {
+        const { prefix = 'bx-', throttle = 100 } = options;
+
+        let pending = false;
+        let timeoutId = null;
+
+        const processQueue = () => {
+            pending = false;
+            timeoutId = null;
+            // Rescan entire document for new bindings
+            scan(document.body, data, { prefix });
+        };
+
+        const scheduleProcess = () => {
+            if (pending) return;
+            pending = true;
+            timeoutId = setTimeout(processQueue, throttle);
+        };
+
+        const observer = new MutationObserver((mutations) => {
+            let hasRelevantChanges = false;
+
+            for (const mutation of mutations) {
+                // Check for added nodes with bx- attributes
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === Node.ELEMENT_NODE) {
+                            const hasBindingAttr =
+                                node.hasAttribute && (
+                                    node.hasAttribute(`${prefix}model`) ||
+                                    node.hasAttribute(`${prefix}bind`)
+                                );
+                            if (hasBindingAttr) {
+                                hasRelevantChanges = true;
+                            }
+                        }
+                    });
+                }
+
+                // Check for attribute changes on bx- attributes
+                if (mutation.type === 'attributes') {
+                    const attrName = mutation.attributeName;
+                    if (attrName && attrName.startsWith(prefix)) {
+                        hasRelevantChanges = true;
+                    }
+                }
+            }
+
+            if (hasRelevantChanges) {
+                scheduleProcess();
+            }
+        });
+
+        // Start observing
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: [`${prefix}model`, `${prefix}bind`]
+        });
+
+        return {
+            observer,
+            stop: () => {
+                observer.disconnect();
+                if (timeoutId) clearTimeout(timeoutId);
+            }
+        };
+    };
+
+    /**
+     * Initialize bindX with automatic DOM scanning
+     *
+     * @param {Object} data - Reactive data object
+     * @param {Object} config - Initialization config
+     * @returns {Object} API object
+     */
+    const init = (data, config = {}) => {
+        const {
+            auto = true,        // Auto-scan on DOMContentLoaded
+            observe = true,     // Watch for dynamic changes
+            prefix = 'bx-'      // Attribute prefix
+        } = config;
+
+        let observerInstance = null;
+
+        const initializeBindings = () => {
+            // Initial scan
+            const bindings = scan(document.body, data, { prefix });
+
+            // Start observer if requested
+            if (observe) {
+                observerInstance = createDOMObserver(data, { prefix });
+            }
+
+            return bindings;
+        };
+
+        // Auto-initialize on DOMContentLoaded
+        if (auto) {
+            if (typeof document !== 'undefined') {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initializeBindings);
+                } else {
+                    // Already loaded
+                    initializeBindings();
+                }
+            }
+        }
+
+        return {
+            scan: (root) => scan(root, data, { prefix }),
+            stop: () => {
+                if (observerInstance) {
+                    observerInstance.stop();
+                }
+            },
+            data
+        };
+    };
+
+    /**
      * Main bindx factory function
      *
      * @param {Object} data - Plain object to make reactive
@@ -671,13 +1034,22 @@
     // Export factory for bootloader integration
     if (typeof window !== 'undefined') {
         window.bxXFactory = {
-            init: (config = {}) => ({ bindx }),
-            bindx
+            init: (data, config) => init(data, config),
+            bindx,
+            computed,
+            scan
         };
 
         // Legacy global for standalone use
         if (!window.genx) {
-            window.bindX = { bindx, createReactive, isReactive };
+            window.bindX = {
+                bindx,
+                computed,
+                scan,
+                init,
+                createReactive,
+                isReactive
+            };
         }
     }
 
@@ -697,7 +1069,15 @@
             createOneWayBinding,
             getNestedProperty,
             setNestedProperty,
-            generateBindingId
+            generateBindingId,
+            computed,
+            CircularDependencyError,
+            computedCache,
+            invalidateComputed,
+            parseBindingAttribute,
+            scan,
+            createDOMObserver,
+            init
         };
     }
 })();
