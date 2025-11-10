@@ -291,8 +291,11 @@
     };
 
     // ============================================================================
-    // ASYNC DETECTION (STUBS FOR TASK 1.3)
+    // ASYNC DETECTION ENGINE
     // ============================================================================
+
+    // Track active loading states (WeakMap for automatic cleanup)
+    const activeLoadingStates = new WeakMap();
 
     /**
      * Setup automatic async operation detection
@@ -310,36 +313,209 @@
         }
 
         // Monitor HTMX if available
-        if (typeof window.htmx !== 'undefined') {
+        if (typeof window.htmx !== 'undefined' || typeof htmx !== 'undefined') {
             monitorHTMX(config);
         }
+
+        // Monitor form submissions
+        monitorFormSubmissions(config);
     };
 
     /**
-     * Monitor fetch API calls
+     * Find loading element from event target or active element
+     * @param {HTMLElement} target - Event target element
+     * @returns {HTMLElement|null} - Element with lx-loading configuration
+     */
+    const findLoadingElement = (target) => {
+        if (!target) return null;
+
+        // Check target element
+        if (target._lxConfig || target.hasAttribute('lx-loading')) {
+            return target;
+        }
+
+        // Check parent elements (bubble up)
+        let current = target.parentElement;
+        while (current && current !== document.body) {
+            if (current._lxConfig || current.hasAttribute('lx-loading')) {
+                return current;
+            }
+            current = current.parentElement;
+        }
+
+        return null;
+    };
+
+    /**
+     * Monitor fetch API calls with Proxy interception
      * @param {Object} config - Configuration object
      */
     const monitorFetch = (config) => {
-        // Stub - will be implemented in Task 1.3
-        // Wraps native fetch to detect async operations
+        const originalFetch = window.fetch;
+
+        window.fetch = new Proxy(originalFetch, {
+            apply: function(target, thisArg, argumentsList) {
+                // Find associated element
+                const element = findLoadingElement(document.activeElement);
+
+                // Apply loading state if element configured
+                if (element && element._lxConfig) {
+                    applyLoadingState(element, element._lxConfig, config);
+                    activeLoadingStates.set(element, Date.now());
+                }
+
+                // Call original fetch
+                const promise = Reflect.apply(target, thisArg, argumentsList);
+
+                // Cleanup on completion
+                promise.finally(() => {
+                    if (element) {
+                        const startTime = activeLoadingStates.get(element) || Date.now();
+                        const elapsed = Date.now() - startTime;
+                        const minDisplay = config.minDisplayMs || 300;
+
+                        // Respect minimum display time
+                        const delay = Math.max(0, minDisplay - elapsed);
+                        setTimeout(() => {
+                            removeLoadingState(element);
+                            activeLoadingStates.delete(element);
+                        }, delay);
+                    }
+                });
+
+                return promise;
+            }
+        });
     };
 
     /**
-     * Monitor XMLHttpRequest
+     * Monitor XMLHttpRequest with monkey-patching
      * @param {Object} config - Configuration object
      */
     const monitorXHR = (config) => {
-        // Stub - will be implemented in Task 1.3
-        // Patches XHR to detect async operations
+        const OriginalXHR = window.XMLHttpRequest;
+
+        window.XMLHttpRequest = function() {
+            const xhr = new OriginalXHR();
+            const originalOpen = xhr.open;
+            const originalSend = xhr.send;
+
+            let element = null;
+
+            // Patch open to capture context
+            xhr.open = function(...args) {
+                element = findLoadingElement(document.activeElement);
+                return originalOpen.apply(this, args);
+            };
+
+            // Patch send to apply loading state
+            xhr.send = function(...args) {
+                if (element && element._lxConfig) {
+                    applyLoadingState(element, element._lxConfig, config);
+                    activeLoadingStates.set(element, Date.now());
+                }
+
+                // Cleanup on completion
+                const cleanup = () => {
+                    if (element) {
+                        const startTime = activeLoadingStates.get(element) || Date.now();
+                        const elapsed = Date.now() - startTime;
+                        const minDisplay = config.minDisplayMs || 300;
+
+                        const delay = Math.max(0, minDisplay - elapsed);
+                        setTimeout(() => {
+                            removeLoadingState(element);
+                            activeLoadingStates.delete(element);
+                        }, delay);
+                    }
+                };
+
+                xhr.addEventListener('load', cleanup);
+                xhr.addEventListener('error', cleanup);
+                xhr.addEventListener('abort', cleanup);
+
+                return originalSend.apply(this, args);
+            };
+
+            return xhr;
+        };
+
+        // Copy static properties
+        Object.setPrototypeOf(window.XMLHttpRequest, OriginalXHR);
+        Object.setPrototypeOf(window.XMLHttpRequest.prototype, OriginalXHR.prototype);
     };
 
     /**
-     * Monitor HTMX events
+     * Monitor HTMX events (htmx:beforeRequest, htmx:afterSwap, htmx:afterSettle)
      * @param {Object} config - Configuration object
      */
     const monitorHTMX = (config) => {
-        // Stub - will be implemented in Task 1.4 (HTMX Integration)
-        // Listens to htmx:beforeRequest and htmx:afterSwap events
+        // Listen for htmx:beforeRequest event
+        document.addEventListener('htmx:beforeRequest', (event) => {
+            const element = event.detail?.elt || event.target;
+
+            if (element && (element._lxConfig || element.hasAttribute('lx-loading'))) {
+                const lxConfig = element._lxConfig || parseElementAttributes(element);
+                applyLoadingState(element, lxConfig, config);
+                activeLoadingStates.set(element, Date.now());
+            }
+        });
+
+        // Listen for htmx:afterSwap event
+        document.addEventListener('htmx:afterSwap', (event) => {
+            const element = event.detail?.elt || event.target;
+
+            if (element && activeLoadingStates.has(element)) {
+                const startTime = activeLoadingStates.get(element);
+                const elapsed = Date.now() - startTime;
+                const minDisplay = config.minDisplayMs || 300;
+
+                const delay = Math.max(0, minDisplay - elapsed);
+                setTimeout(() => {
+                    removeLoadingState(element);
+                    activeLoadingStates.delete(element);
+                }, delay);
+            }
+        });
+
+        // Listen for htmx:afterSettle event (final cleanup)
+        document.addEventListener('htmx:afterSettle', (event) => {
+            const element = event.detail?.elt || event.target;
+
+            if (element && activeLoadingStates.has(element)) {
+                removeLoadingState(element);
+                activeLoadingStates.delete(element);
+            }
+        });
+    };
+
+    /**
+     * Monitor form submissions
+     * @param {Object} config - Configuration object
+     */
+    const monitorFormSubmissions = (config) => {
+        document.addEventListener('submit', (event) => {
+            const form = event.target;
+
+            if (form && (form._lxConfig || form.hasAttribute('lx-loading'))) {
+                // Find submit button
+                const submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
+                const element = submitButton || form;
+
+                const lxConfig = element._lxConfig || parseElementAttributes(element);
+                applyLoadingState(element, lxConfig, config);
+                activeLoadingStates.set(element, Date.now());
+
+                // Auto-cleanup after form submission completes
+                // This is a simple timeout - real implementation would listen for response
+                setTimeout(() => {
+                    if (activeLoadingStates.has(element)) {
+                        removeLoadingState(element);
+                        activeLoadingStates.delete(element);
+                    }
+                }, config.minDisplayMs || 300);
+            }
+        });
     };
 
     // ============================================================================
