@@ -119,27 +119,361 @@
     };
 
     /**
+     * Binding Registry (singleton)
+     * Uses WeakMap for automatic garbage collection
+     *
+     * @returns {Object} Binding registry interface
+     */
+    const createBindingRegistry = () => {
+        // WeakMap: element -> Array<BindingConfig>
+        const elementBindings = new WeakMap();
+
+        // Map: path -> Set<BindingConfig> (for efficient path lookups)
+        const pathBindings = new Map();
+
+        // All bindings (for iteration)
+        const allBindings = new Set();
+
+        /**
+         * Register a binding
+         * @param {HTMLElement} element - DOM element
+         * @param {Object} binding - Binding configuration
+         * @returns {Object} The registered binding
+         */
+        const register = (element, binding) => {
+            // Store by element (WeakMap for auto GC)
+            const bindings = elementBindings.get(element) || [];
+            bindings.push(binding);
+            elementBindings.set(element, bindings);
+
+            // Store by path
+            const pathSet = pathBindings.get(binding.path) || new Set();
+            pathSet.add(binding);
+            pathBindings.set(binding.path, pathSet);
+
+            // Add to all bindings
+            allBindings.add(binding);
+
+            return binding;
+        };
+
+        /**
+         * Unregister a binding
+         * @param {Object} binding - Binding to remove
+         */
+        const unregister = (binding) => {
+            // Remove from path index
+            const pathSet = pathBindings.get(binding.path);
+            if (pathSet) {
+                pathSet.delete(binding);
+                if (pathSet.size === 0) {
+                    pathBindings.delete(binding.path);
+                }
+            }
+
+            // Remove from all bindings
+            allBindings.delete(binding);
+
+            // Element bindings cleaned up automatically by WeakMap
+        };
+
+        /**
+         * Get bindings for an element
+         * @param {HTMLElement} element - DOM element
+         * @returns {Array<Object>} Array of bindings
+         */
+        const getByElement = (element) => {
+            return elementBindings.get(element) || [];
+        };
+
+        /**
+         * Get bindings by exact path
+         * @param {string} path - Property path
+         * @returns {Array<Object>} Array of bindings
+         */
+        const getByPath = (path) => {
+            return Array.from(pathBindings.get(path) || []);
+        };
+
+        /**
+         * Get bindings by path pattern (supports wildcards)
+         * @param {string} pattern - Path pattern (e.g., "user.*")
+         * @returns {Array<Object>} Array of bindings
+         */
+        const getByPathPattern = (pattern) => {
+            const regex = new RegExp('^' + pattern.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$');
+            const matches = [];
+
+            for (const [path, bindings] of pathBindings) {
+                if (regex.test(path)) {
+                    matches.push(...bindings);
+                }
+            }
+
+            return matches;
+        };
+
+        /**
+         * Clear all bindings
+         */
+        const clear = () => {
+            pathBindings.clear();
+            allBindings.clear();
+            // elementBindings WeakMap clears automatically
+        };
+
+        return Object.freeze({
+            register,
+            unregister,
+            getByElement,
+            getByPath,
+            getByPathPattern,
+            clear,
+            get size() { return allBindings.size; }
+        });
+    };
+
+    /**
+     * Global binding registry instance
+     */
+    let globalBindingRegistry = null;
+
+    /**
+     * Get or create global binding registry
+     * @returns {Object} Binding registry instance
+     */
+    const getBindingRegistry = () => {
+        if (!globalBindingRegistry) {
+            globalBindingRegistry = createBindingRegistry();
+        }
+        return globalBindingRegistry;
+    };
+
+    /**
      * Execute DOM update (placeholder for Phase 4)
      * @param {string} path - Property path
      * @param {*} value - New value
      */
     const executeDOMUpdate = (path, value) => {
         // Will be implemented in Phase 4: DOM Integration
+        // For now, update bindings registered for this path
+        const registry = getBindingRegistry();
+        const bindings = registry.getByPath(path);
+
+        bindings.forEach(binding => {
+            if (binding.updateDOM) {
+                try {
+                    binding.updateDOM();
+                } catch (error) {
+                    console.error(`bindX: Failed to update DOM for ${path}:`, error);
+                }
+            }
+        });
+
         if (typeof console !== 'undefined' && console.debug) {
             console.debug(`bindX: Update ${path} = ${value}`);
         }
     };
 
     /**
-     * Notify bindings of changes (placeholder for Phase 2)
+     * Notify bindings of changes
      * @param {string} path - Path that changed
      * @param {*} value - New value
      */
     const notifyBindings = (path, value) => {
-        // Will be implemented in Phase 2: Binding Management
-        // For now, schedule in batch queue for future DOM updates
+        // Schedule in batch queue for DOM updates
         const queue = getBatchQueue();
         queue.schedule(path, value);
+    };
+
+    /**
+     * Helper: Get nested property value
+     * @param {Object} obj - Object to read from
+     * @param {string} path - Property path (e.g., "user.name")
+     * @returns {*} Property value
+     */
+    const getNestedProperty = (obj, path) => {
+        return path.split('.').reduce((acc, key) => acc?.[key], obj);
+    };
+
+    /**
+     * Helper: Set nested property value
+     * @param {Object} obj - Object to write to
+     * @param {string} path - Property path (e.g., "user.name")
+     * @param {*} value - Value to set
+     */
+    const setNestedProperty = (obj, path, value) => {
+        const keys = path.split('.');
+        const lastKey = keys.pop();
+        const target = keys.reduce((acc, key) => acc[key], obj);
+        target[lastKey] = value;
+    };
+
+    /**
+     * Generate unique binding ID
+     * @returns {string} Unique ID
+     */
+    const generateBindingId = () => {
+        return `bx-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    };
+
+    /**
+     * Create two-way binding (bx-model)
+     *
+     * @param {HTMLElement} element - Form control element
+     * @param {Object} data - Reactive data object
+     * @param {string} path - Property path to bind
+     * @param {Object} options - Binding options
+     * @param {number} options.debounce - Debounce delay in ms (default: 0)
+     * @returns {Object} Binding instance
+     */
+    const createModelBinding = (element, data, path, options = {}) => {
+        const { debounce = 0 } = options;
+
+        // Validation: bx-model only for form controls
+        if (!['INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName)) {
+            throw new Error(
+                `bx-model requires form control element. Got ${element.tagName}. ` +
+                `Use bx-bind for display-only elements.`
+            );
+        }
+
+        // Get/set value helpers based on input type
+        const getValue = (el) => {
+            if (el.type === 'checkbox') return el.checked;
+            if (el.type === 'number') return parseFloat(el.value) || 0;
+            return el.value;
+        };
+
+        const setValue = (el, val) => {
+            if (el.type === 'checkbox') {
+                el.checked = Boolean(val);
+            } else {
+                el.value = String(val);
+            }
+        };
+
+        // DOM -> Data (with debouncing)
+        let timeoutId = null;
+        const handleInput = (event) => {
+            const newValue = getValue(element);
+
+            if (debounce > 0) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    setNestedProperty(data, path, newValue);
+                }, debounce);
+            } else {
+                setNestedProperty(data, path, newValue);
+            }
+        };
+
+        element.addEventListener('input', handleInput);
+
+        // Data -> DOM (on changes)
+        const updateDOM = () => {
+            const currentValue = getNestedProperty(data, path);
+            const elementValue = getValue(element);
+
+            // Only update if values differ (prevent infinite loops)
+            if (elementValue !== currentValue) {
+                setValue(element, currentValue);
+            }
+        };
+
+        // Initial sync
+        updateDOM();
+
+        // Register binding
+        const binding = {
+            id: generateBindingId(),
+            element,
+            path,
+            type: 'model',
+            options,
+            updateDOM,
+            destroy: () => {
+                element.removeEventListener('input', handleInput);
+                clearTimeout(timeoutId);
+                const registry = getBindingRegistry();
+                registry.unregister(binding);
+            }
+        };
+
+        const registry = getBindingRegistry();
+        registry.register(element, binding);
+
+        return binding;
+    };
+
+    /**
+     * Create one-way binding (bx-bind)
+     *
+     * @param {HTMLElement} element - Any DOM element
+     * @param {Object} data - Reactive data object
+     * @param {string} path - Property path to bind
+     * @param {Object} options - Binding options
+     * @param {string} options.formatter - Optional formatter name (fmtX integration)
+     * @returns {Object} Binding instance
+     */
+    const createOneWayBinding = (element, data, path, options = {}) => {
+        const { formatter = null } = options;
+
+        // Data -> DOM only (no DOM -> Data)
+        const updateDOM = () => {
+            let value = getNestedProperty(data, path);
+
+            // Handle undefined/null gracefully
+            if (value === undefined) {
+                value = '';
+            }
+
+            // Convert to string for display
+            value = String(value);
+
+            // Apply formatter if specified (fmtX integration)
+            if (formatter && typeof window !== 'undefined' && window.fxXFactory) {
+                try {
+                    value = window.fxXFactory.format(formatter, value);
+                } catch (error) {
+                    console.warn(`bindX: Formatter ${formatter} failed:`, error);
+                }
+            }
+
+            // XSS-safe: Use textContent for non-input elements, value for inputs
+            if (['INPUT', 'TEXTAREA'].includes(element.tagName)) {
+                if (element.value !== value) {
+                    element.value = value;
+                }
+            } else {
+                // textContent is XSS-safe (never executes scripts)
+                if (element.textContent !== value) {
+                    element.textContent = value;
+                }
+            }
+        };
+
+        // Initial sync
+        updateDOM();
+
+        // Register binding
+        const binding = {
+            id: generateBindingId(),
+            element,
+            path,
+            type: 'bind',
+            options,
+            updateDOM,
+            destroy: () => {
+                const registry = getBindingRegistry();
+                registry.unregister(binding);
+            }
+        };
+
+        const registry = getBindingRegistry();
+        registry.register(element, binding);
+
+        return binding;
     };
 
     /**
@@ -356,7 +690,14 @@
             withTracking,
             subscribeToPath,
             createBatchQueue,
-            getBatchQueue
+            getBatchQueue,
+            createBindingRegistry,
+            getBindingRegistry,
+            createModelBinding,
+            createOneWayBinding,
+            getNestedProperty,
+            setNestedProperty,
+            generateBindingId
         };
     }
 })();
