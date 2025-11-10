@@ -268,5 +268,61 @@ module.exports = {
         hidden: 'lx-hidden',
         visible: 'lx-visible',
         active: 'lx-active'
+    },
+
+    // Attribute processing fixtures (Task 1.2)
+    attributeProcessing: {
+        htmlAttribute: {
+            html: '<div lx-strategy="spinner">Loading...</div>',
+            expected: { strategy: 'spinner' }
+        },
+        cssClass: {
+            html: '<div class="btn lx-spinner">Click</div>',
+            expected: { strategy: 'spinner' }
+        },
+        jsonConfig: {
+            html: '<div lx-config=\'{"strategy":"spinner","duration":500}\'>Loading</div>',
+            expected: { strategy: 'spinner', duration: 500 }
+        },
+        colonSyntax: {
+            html: '<div class="lx:spinner">Loading</div>',
+            expected: { strategy: 'spinner' }
+        },
+        colonWithDuration: {
+            html: '<div class="lx:spinner:500">Loading</div>',
+            expected: { strategy: 'spinner', duration: 500 }
+        },
+        colonMultipleParams: {
+            html: '<div class="lx:progress:determinate:500">Progress</div>',
+            expected: { strategy: 'progress', mode: 'determinate', duration: 500 }
+        },
+        dataAttribute: {
+            html: '<div data-lx-strategy="skeleton">Content</div>',
+            expected: { strategy: 'skeleton' }
+        },
+        multipleStrategies: {
+            html: '<div lx-strategy="spinner" class="lx-skeleton">Content</div>',
+            expected: { strategy: 'spinner' } // Attribute takes precedence
+        },
+        invalidJson: {
+            html: '<div lx-config="invalid json">Content</div>',
+            expected: { strategy: 'default', error: 'JSON parse error' }
+        },
+        emptyAttribute: {
+            html: '<div lx-strategy="">Content</div>',
+            expected: { strategy: 'default' }
+        },
+        caseInsensitive: {
+            html: '<div lx-strategy="SPINNER">Content</div>',
+            expected: { strategy: 'spinner' }
+        },
+        whitespace: {
+            html: '<div lx-strategy="  spinner  ">Content</div>',
+            expected: { strategy: 'spinner' }
+        },
+        complexJson: {
+            html: '<div lx-config=\'{"strategy":"skeleton","minHeight":"200px","animate":true}\'>Content</div>',
+            expected: { strategy: 'skeleton', minHeight: '200px', animate: true }
+        }
     }
 };
