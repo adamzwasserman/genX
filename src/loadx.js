@@ -597,7 +597,7 @@
     };
 
     // ============================================================================
-    // LOADING STATE MANAGEMENT (STUBS FOR PHASE 2)
+    // LOADING STATE MANAGEMENT
     // ============================================================================
 
     /**
@@ -607,8 +607,33 @@
      * @param {Object} config - Configuration object
      */
     const applyLoadingState = (el, opts, config) => {
-        // Stub - will be implemented in Phase 2 (Loading Strategies)
-        // Applies appropriate loading strategy based on opts and config
+        if (!el) return;
+
+        const strategy = opts.strategy || 'spinner';
+
+        // Dispatch to appropriate strategy
+        switch (strategy) {
+            case 'spinner':
+                applySpinnerStrategy(el, opts);
+                break;
+            case 'skeleton':
+                applySkeletonStrategy(el, opts);
+                break;
+            case 'progress':
+                applyProgressStrategy(el, opts);
+                break;
+            case 'fade':
+                applyFadeStrategy(el, opts);
+                break;
+            default:
+                applySpinnerStrategy(el, opts);
+        }
+
+        // Add ARIA attributes
+        el.setAttribute('aria-busy', 'true');
+
+        // Announce to screen readers
+        announceLoading('Loading');
     };
 
     /**
@@ -616,8 +641,547 @@
      * @param {HTMLElement} el - Target element
      */
     const removeLoadingState = (el) => {
-        // Stub - will be implemented in Phase 2 (Loading Strategies)
-        // Removes loading indicators and restores original state
+        if (!el) return;
+
+        const strategy = el.getAttribute('data-lx-strategy') || 'spinner';
+
+        // Dispatch to appropriate strategy removal
+        switch (strategy) {
+            case 'spinner':
+                removeSpinnerStrategy(el);
+                break;
+            case 'skeleton':
+                removeSkeletonStrategy(el);
+                break;
+            case 'progress':
+                removeProgressStrategy(el);
+                break;
+            case 'fade':
+                removeFadeStrategy(el);
+                break;
+            default:
+                removeSpinnerStrategy(el);
+        }
+
+        // Remove ARIA attributes
+        el.removeAttribute('aria-busy');
+
+        // Announce completion
+        announceLoading('Loading complete');
+    };
+
+    // ============================================================================
+    // SPINNER STRATEGY
+    // ============================================================================
+
+    /**
+     * Apply spinner loading strategy to element
+     * @param {HTMLElement} el - Target element
+     * @param {Object} opts - Spinner options
+     */
+    const applySpinnerStrategy = (el, opts = {}) => {
+        if (!el) return;
+
+        // Store original content
+        const originalContent = el.innerHTML;
+        el.setAttribute('data-lx-original-content', originalContent);
+        el.setAttribute('data-lx-strategy', 'spinner');
+
+        // Get spinner configuration
+        const spinnerType = opts.spinnerType || el.getAttribute('lx-spinner-type') || 'circle';
+        const spinnerSize = opts.spinnerSize || el.getAttribute('lx-spinner-size') || 'medium';
+        const spinnerColor = opts.spinnerColor || el.getAttribute('lx-spinner-color') || '';
+
+        // Check for reduced motion preference
+        const prefersReducedMotion = window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // Preserve original dimensions to prevent CLS
+        const computedStyle = window.getComputedStyle(el);
+        const originalWidth = el.offsetWidth;
+        const originalHeight = el.offsetHeight;
+
+        if (originalWidth > 0) {
+            el.style.width = originalWidth + 'px';
+        }
+        if (originalHeight > 0) {
+            el.style.minHeight = originalHeight + 'px';
+        }
+
+        // Create spinner element
+        let spinnerHTML;
+        if (prefersReducedMotion) {
+            // Static indicator for reduced motion
+            spinnerHTML = createStaticLoadingIndicator(spinnerSize, spinnerColor);
+        } else {
+            // Animated spinner
+            switch (spinnerType) {
+                case 'dots':
+                    spinnerHTML = createDotsSpinner(spinnerSize, spinnerColor);
+                    break;
+                case 'bars':
+                    spinnerHTML = createBarsSpinner(spinnerSize, spinnerColor);
+                    break;
+                case 'circle':
+                default:
+                    spinnerHTML = createCircleSpinner(spinnerSize, spinnerColor);
+            }
+        }
+
+        // Create wrapper to center spinner
+        const wrapper = document.createElement('div');
+        wrapper.className = 'lx-spinner-wrapper';
+        wrapper.innerHTML = spinnerHTML;
+
+        // Hide original content and show spinner
+        el.innerHTML = '';
+        el.appendChild(wrapper);
+        el.classList.add('lx-loading');
+    };
+
+    /**
+     * Remove spinner loading strategy from element
+     * @param {HTMLElement} el - Target element
+     */
+    const removeSpinnerStrategy = (el) => {
+        if (!el) return;
+
+        // Restore original content
+        const originalContent = el.getAttribute('data-lx-original-content');
+        if (originalContent) {
+            el.innerHTML = originalContent;
+        }
+
+        // Remove data attributes
+        el.removeAttribute('data-lx-original-content');
+        el.removeAttribute('data-lx-strategy');
+
+        // Remove loading class
+        el.classList.remove('lx-loading');
+
+        // Restore original dimensions
+        el.style.width = '';
+        el.style.minHeight = '';
+    };
+
+    /**
+     * Create circle spinner HTML
+     * @param {String} size - Spinner size (small, medium, large)
+     * @param {String} color - Spinner color (CSS color value)
+     * @returns {String} - Spinner HTML
+     */
+    const createCircleSpinner = (size, color) => {
+        const sizeClass = `lx-spinner-${size}`;
+        const colorStyle = color ? `style="border-top-color: ${color};"` : '';
+
+        return `<div class="lx-spinner-circle ${sizeClass}" ${colorStyle}></div>`;
+    };
+
+    /**
+     * Create dots spinner HTML
+     * @param {String} size - Spinner size
+     * @param {String} color - Spinner color
+     * @returns {String} - Spinner HTML
+     */
+    const createDotsSpinner = (size, color) => {
+        const sizeClass = `lx-spinner-${size}`;
+        const colorStyle = color ? `style="background-color: ${color};"` : '';
+
+        return `
+            <div class="lx-spinner-dots ${sizeClass}">
+                <div class="lx-spinner-dot" ${colorStyle}></div>
+                <div class="lx-spinner-dot" ${colorStyle}></div>
+                <div class="lx-spinner-dot" ${colorStyle}></div>
+            </div>
+        `;
+    };
+
+    /**
+     * Create bars spinner HTML
+     * @param {String} size - Spinner size
+     * @param {String} color - Spinner color
+     * @returns {String} - Spinner HTML
+     */
+    const createBarsSpinner = (size, color) => {
+        const sizeClass = `lx-spinner-${size}`;
+        const colorStyle = color ? `style="background-color: ${color};"` : '';
+
+        return `
+            <div class="lx-spinner-bars ${sizeClass}">
+                <div class="lx-spinner-bar" ${colorStyle}></div>
+                <div class="lx-spinner-bar" ${colorStyle}></div>
+                <div class="lx-spinner-bar" ${colorStyle}></div>
+            </div>
+        `;
+    };
+
+    /**
+     * Create static loading indicator for reduced motion
+     * @param {String} size - Indicator size
+     * @param {String} color - Indicator color
+     * @returns {String} - Indicator HTML
+     */
+    const createStaticLoadingIndicator = (size, color) => {
+        const sizeClass = `lx-spinner-${size}`;
+        const colorStyle = color ? `style="color: ${color};"` : '';
+
+        return `<div class="lx-loading-static ${sizeClass}" ${colorStyle}>Loading...</div>`;
+    };
+
+    /**
+     * Announce loading state to screen readers
+     * @param {String} message - Message to announce
+     */
+    const announceLoading = (message) => {
+        const liveRegion = document.getElementById('lx-live-region');
+        if (liveRegion) {
+            liveRegion.textContent = message;
+        }
+    };
+
+    // ============================================================================
+    // SKELETON STRATEGY
+    // ============================================================================
+
+    /**
+     * Apply skeleton loading strategy to element
+     * @param {HTMLElement} el - Target element
+     * @param {Object} opts - Skeleton options
+     */
+    const applySkeletonStrategy = (el, opts = {}) => {
+        if (!el) return;
+
+        // Store original content
+        const originalContent = el.innerHTML;
+        el.setAttribute('data-lx-original-content', originalContent);
+        el.setAttribute('data-lx-strategy', 'skeleton');
+
+        // Get skeleton configuration
+        const rows = opts.rows || parseInt(el.getAttribute('lx-rows'), 10) || 'auto';
+        const animate = opts.animate !== false && el.getAttribute('lx-animate') !== 'false';
+
+        // Preserve original dimensions to prevent CLS
+        const originalWidth = el.offsetWidth;
+        const originalHeight = el.offsetHeight;
+
+        if (originalWidth > 0) {
+            el.style.width = originalWidth + 'px';
+        }
+        if (originalHeight > 0) {
+            el.style.minHeight = originalHeight + 'px';
+        }
+
+        // Analyze content structure and generate skeleton
+        const skeletonHTML = generateSkeletonFromContent(el, rows, animate);
+
+        // Apply skeleton
+        el.innerHTML = skeletonHTML;
+        el.classList.add('lx-loading', 'lx-loading-skeleton');
+    };
+
+    /**
+     * Remove skeleton loading strategy from element
+     * @param {HTMLElement} el - Target element
+     */
+    const removeSkeletonStrategy = (el) => {
+        if (!el) return;
+
+        // Restore original content
+        const originalContent = el.getAttribute('data-lx-original-content');
+        if (originalContent) {
+            el.innerHTML = originalContent;
+        }
+
+        // Remove data attributes
+        el.removeAttribute('data-lx-original-content');
+        el.removeAttribute('data-lx-strategy');
+
+        // Remove loading classes
+        el.classList.remove('lx-loading', 'lx-loading-skeleton');
+
+        // Restore original dimensions
+        el.style.width = '';
+        el.style.minHeight = '';
+    };
+
+    /**
+     * Generate skeleton HTML from content structure
+     * @param {HTMLElement} el - Element to analyze
+     * @param {Number|String} rows - Number of skeleton rows or 'auto'
+     * @param {Boolean} animate - Whether to animate shimmer
+     * @returns {String} - Skeleton HTML
+     */
+    const generateSkeletonFromContent = (el, rows, animate) => {
+        const animateClass = animate ? '' : ' lx-skeleton-no-animate';
+
+        // Auto-detect content type
+        if (rows === 'auto') {
+            return autoGenerateSkeleton(el, animateClass);
+        }
+
+        // Generate fixed number of rows
+        return generateFixedSkeleton(rows, animateClass);
+    };
+
+    /**
+     * Auto-generate skeleton based on content analysis
+     * @param {HTMLElement} el - Element to analyze
+     * @param {String} animateClass - Animation class
+     * @returns {String} - Skeleton HTML
+     */
+    const autoGenerateSkeleton = (el, animateClass) => {
+        const tagName = el.tagName.toLowerCase();
+
+        // Card-like structure
+        if (el.querySelector('img, picture')) {
+            return `
+                <div class="lx-skeleton lx-skeleton-image${animateClass}"></div>
+                <div class="lx-skeleton lx-skeleton-heading${animateClass}"></div>
+                <div class="lx-skeleton lx-skeleton-text${animateClass}"></div>
+                <div class="lx-skeleton lx-skeleton-text${animateClass}" style="width: 80%;"></div>
+            `;
+        }
+
+        // List structure
+        if (tagName === 'ul' || tagName === 'ol' || el.querySelector('li')) {
+            const listItems = el.querySelectorAll('li').length || 3;
+            let skeletonHTML = '<div class="lx-skeleton-list">';
+            for (let i = 0; i < Math.min(listItems, 5); i++) {
+                skeletonHTML += `
+                    <div class="lx-skeleton lx-skeleton-text${animateClass}"></div>
+                `;
+            }
+            skeletonHTML += '</div>';
+            return skeletonHTML;
+        }
+
+        // Table structure
+        if (tagName === 'table' || el.querySelector('table')) {
+            const rows = el.querySelectorAll('tr').length || 3;
+            const cols = el.querySelector('tr') ? el.querySelector('tr').querySelectorAll('td, th').length : 3;
+
+            let tableHTML = '<table class="lx-skeleton-table"><tbody>';
+            for (let i = 0; i < Math.min(rows, 5); i++) {
+                tableHTML += '<tr>';
+                for (let j = 0; j < Math.min(cols, 6); j++) {
+                    tableHTML += `<td><div class="lx-skeleton lx-skeleton-text${animateClass}"></div></td>`;
+                }
+                tableHTML += '</tr>';
+            }
+            tableHTML += '</tbody></table>';
+            return tableHTML;
+        }
+
+        // Article/text content (default)
+        if (tagName === 'article' || tagName === 'section' || el.querySelector('p')) {
+            return `
+                <div class="lx-skeleton lx-skeleton-heading${animateClass}"></div>
+                <div class="lx-skeleton lx-skeleton-text${animateClass}"></div>
+                <div class="lx-skeleton lx-skeleton-text${animateClass}"></div>
+                <div class="lx-skeleton lx-skeleton-text${animateClass}" style="width: 60%;"></div>
+            `;
+        }
+
+        // Fallback: generic text skeleton
+        return `
+            <div class="lx-skeleton lx-skeleton-text${animateClass}"></div>
+            <div class="lx-skeleton lx-skeleton-text${animateClass}"></div>
+        `;
+    };
+
+    /**
+     * Generate fixed number of skeleton rows
+     * @param {Number} count - Number of rows
+     * @param {String} animateClass - Animation class
+     * @returns {String} - Skeleton HTML
+     */
+    const generateFixedSkeleton = (count, animateClass) => {
+        let skeletonHTML = '';
+        for (let i = 0; i < count; i++) {
+            const width = i === count - 1 ? '60%' : '100%';
+            skeletonHTML += `<div class="lx-skeleton lx-skeleton-text${animateClass}" style="width: ${width};"></div>`;
+        }
+        return skeletonHTML;
+    };
+
+    // ============================================================================
+    // PROGRESS STRATEGY
+    // ============================================================================
+
+    /**
+     * Apply progress bar loading strategy to element
+     * @param {HTMLElement} el - Target element
+     * @param {Object} opts - Progress options
+     */
+    const applyProgressStrategy = (el, opts = {}) => {
+        if (!el) return;
+
+        // Store original content
+        const originalContent = el.innerHTML;
+        el.setAttribute('data-lx-original-content', originalContent);
+        el.setAttribute('data-lx-strategy', 'progress');
+
+        // Get progress configuration
+        const mode = opts.mode || el.getAttribute('lx-progress-mode') || 'indeterminate';
+        const value = opts.value !== undefined ? opts.value : parseInt(el.getAttribute('lx-value'), 10);
+        const max = opts.max || parseInt(el.getAttribute('lx-max'), 10) || 100;
+
+        // Create progress bar HTML
+        const progressHTML = createProgressBar(mode, value, max);
+
+        // Preserve original dimensions
+        const originalHeight = el.offsetHeight;
+        if (originalHeight > 0) {
+            el.style.minHeight = originalHeight + 'px';
+        }
+
+        // Apply progress bar
+        el.innerHTML = progressHTML;
+        el.classList.add('lx-loading', 'lx-loading-progress');
+
+        // Store progress state for updates
+        if (mode === 'determinate') {
+            el._lxProgressValue = value || 0;
+            el._lxProgressMax = max;
+        }
+    };
+
+    /**
+     * Remove progress loading strategy from element
+     * @param {HTMLElement} el - Target element
+     */
+    const removeProgressStrategy = (el) => {
+        if (!el) return;
+
+        // Restore original content
+        const originalContent = el.getAttribute('data-lx-original-content');
+        if (originalContent) {
+            el.innerHTML = originalContent;
+        }
+
+        // Remove data attributes
+        el.removeAttribute('data-lx-original-content');
+        el.removeAttribute('data-lx-strategy');
+
+        // Remove loading classes
+        el.classList.remove('lx-loading', 'lx-loading-progress');
+
+        // Clean up progress state
+        delete el._lxProgressValue;
+        delete el._lxProgressMax;
+
+        // Restore dimensions
+        el.style.minHeight = '';
+    };
+
+    /**
+     * Create progress bar HTML
+     * @param {String} mode - 'determinate' or 'indeterminate'
+     * @param {Number} value - Current value (for determinate)
+     * @param {Number} max - Maximum value (for determinate)
+     * @returns {String} - Progress bar HTML
+     */
+    const createProgressBar = (mode, value, max) => {
+        const isIndeterminate = mode === 'indeterminate';
+        const percentage = isIndeterminate ? 0 : Math.min(100, (value / max) * 100);
+
+        const modeClass = isIndeterminate ? 'lx-progress-indeterminate' : 'lx-progress-determinate';
+        const widthStyle = isIndeterminate ? '' : `style="width: ${percentage}%"`;
+
+        return `
+            <div class="lx-progress-bar ${modeClass}">
+                <div class="lx-progress-fill" ${widthStyle}></div>
+            </div>
+            ${!isIndeterminate ? `<div class="lx-progress-label">${Math.round(percentage)}%</div>` : ''}
+        `;
+    };
+
+    /**
+     * Update progress bar value (for determinate mode)
+     * @param {HTMLElement} el - Element with progress bar
+     * @param {Number} value - New value
+     */
+    const updateProgressValue = (el, value) => {
+        if (!el || !el._lxProgressMax) return;
+
+        el._lxProgressValue = value;
+        const percentage = Math.min(100, (value / el._lxProgressMax) * 100);
+
+        const fill = el.querySelector('.lx-progress-fill');
+        const label = el.querySelector('.lx-progress-label');
+
+        if (fill) {
+            fill.style.width = percentage + '%';
+        }
+        if (label) {
+            label.textContent = Math.round(percentage) + '%';
+        }
+    };
+
+    // ============================================================================
+    // FADE STRATEGY
+    // ============================================================================
+
+    /**
+     * Apply fade loading strategy to element
+     * @param {HTMLElement} el - Target element
+     * @param {Object} opts - Fade options
+     */
+    const applyFadeStrategy = (el, opts = {}) => {
+        if (!el) return;
+
+        // Store original content
+        const originalContent = el.innerHTML;
+        el.setAttribute('data-lx-original-content', originalContent);
+        el.setAttribute('data-lx-strategy', 'fade');
+
+        // Get fade configuration
+        const duration = opts.duration || parseInt(el.getAttribute('lx-duration'), 10) || 300;
+        const message = opts.message || el.getAttribute('lx-message') || 'Loading...';
+
+        // Apply fade-out transition
+        el.style.transition = `opacity ${duration}ms ease-out`;
+        el.style.opacity = '0.3';
+
+        // Add loading message if content is replaced
+        if (opts.replaceContent !== false) {
+            el.innerHTML = `<div class="lx-fade-message">${message}</div>`;
+        }
+
+        el.classList.add('lx-loading', 'lx-loading-fade');
+    };
+
+    /**
+     * Remove fade loading strategy from element
+     * @param {HTMLElement} el - Target element
+     */
+    const removeFadeStrategy = (el) => {
+        if (!el) return;
+
+        // Get fade duration for smooth transition
+        const duration = parseInt(el.style.transition?.match(/(\d+)ms/)?.[1], 10) || 300;
+
+        // Restore original content
+        const originalContent = el.getAttribute('data-lx-original-content');
+        if (originalContent) {
+            el.innerHTML = originalContent;
+        }
+
+        // Fade back in
+        el.style.opacity = '1';
+
+        // Clean up after transition completes
+        setTimeout(() => {
+            el.style.transition = '';
+            el.style.opacity = '';
+
+            // Remove data attributes
+            el.removeAttribute('data-lx-original-content');
+            el.removeAttribute('data-lx-strategy');
+
+            // Remove loading classes
+            el.classList.remove('lx-loading', 'lx-loading-fade');
+        }, duration);
     };
 
     // ============================================================================
@@ -630,6 +1194,17 @@
         window.loadX.initLoadX = initLoadX;
         window.loadX.parseElementAttributes = parseElementAttributes;
         window.loadX.validateConfig = validateConfig;
+        window.loadX.applyLoadingState = applyLoadingState;
+        window.loadX.removeLoadingState = removeLoadingState;
+        window.loadX.applySpinnerStrategy = applySpinnerStrategy;
+        window.loadX.removeSpinnerStrategy = removeSpinnerStrategy;
+        window.loadX.applySkeletonStrategy = applySkeletonStrategy;
+        window.loadX.removeSkeletonStrategy = removeSkeletonStrategy;
+        window.loadX.applyProgressStrategy = applyProgressStrategy;
+        window.loadX.removeProgressStrategy = removeProgressStrategy;
+        window.loadX.updateProgressValue = updateProgressValue;
+        window.loadX.applyFadeStrategy = applyFadeStrategy;
+        window.loadX.removeFadeStrategy = removeFadeStrategy;
     }
 
     // Export for ES6 modules (if needed)
