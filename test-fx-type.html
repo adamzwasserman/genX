@@ -37,5 +37,24 @@
 
     <p>9. Bytes (5000000) - default:</p>
     <div fx-format="filesize">5000000</div>
+
+    <h2>JavaScript Type Aliases</h2>
+    <p>10. Using fx-type="number" (JavaScript Number):</p>
+    <div fx-format="currency" fx-type="number">1234.56</div>
+
+    <p>11. Using fx-type="string" (JavaScript String):</p>
+    <div fx-format="uppercase" fx-type="string">hello world</div>
+
+    <p>12. Using fx-type="boolean" (JavaScript Boolean):</p>
+    <div fx-format="uppercase" fx-type="boolean">true</div>
+
+    <p>13. Using fx-type="date" (JavaScript Date - ISO string):</p>
+    <div fx-format="date" fx-type="date" fx-date-format="long">2025-11-09T12:00:00</div>
+
+    <p>14. Using fx-type="int" (integer):</p>
+    <div fx-format="number" fx-type="int">3.14159</div>
+
+    <p>15. Using fx-type="double" (alias for float):</p>
+    <div fx-format="number" fx-type="double" fx-decimals="4">3.14159265</div>
 </body>
 </html>

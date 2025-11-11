@@ -27,6 +27,7 @@
                 return parseNumber(str) / 100; // convert to decimal for uniform handling
 
             // Date types
+            case 'date':        // JavaScript Date (ISO or parseable string)
             case 'iso':         // ISO 8601 string
             case 'iso8601':
                 return new Date(str);
@@ -62,19 +63,57 @@
             case 'gb':
                 return parseNumber(str) * 1000000000;
 
-            // Number types
-            case 'number':
+            // Number types (JavaScript aliases)
+            case 'number':      // JavaScript Number type
             case 'float':
-            case 'decimal':
+            case 'double':      // alias for float
                 return parseNumber(str);
             case 'integer':
             case 'int':
                 return Math.floor(parseNumber(str));
 
-            // String types
-            case 'string':
+            // String types (JavaScript aliases)
+            case 'string':      // JavaScript String type
             case 'text':
+            case 'str':         // common abbreviation
                 return str;
+
+            // Boolean types (JavaScript aliases)
+            case 'boolean':     // JavaScript Boolean type
+            case 'bool':        // common abbreviation
+                // Handle various boolean representations
+                const lower = str.toLowerCase().trim();
+                if (lower === 'true' || lower === '1' || lower === 'yes' || lower === 'on') return true;
+                if (lower === 'false' || lower === '0' || lower === 'no' || lower === 'off') return false;
+                return Boolean(value);
+
+            // Object types (JavaScript aliases)
+            case 'object':      // JavaScript Object type (parse JSON)
+            case 'obj':
+            case 'json':
+                try {
+                    return JSON.parse(str);
+                } catch {
+                    console.warn(`FormatX: Failed to parse JSON for fx-type="object"`);
+                    return value;
+                }
+
+            // Array types (JavaScript aliases)
+            case 'array':       // JavaScript Array type (parse JSON array)
+            case 'arr':
+                try {
+                    const parsed = JSON.parse(str);
+                    return Array.isArray(parsed) ? parsed : [parsed];
+                } catch {
+                    console.warn(`FormatX: Failed to parse array for fx-type="array"`);
+                    return value;
+                }
+
+            // Null/Undefined handling
+            case 'null':
+                return null;
+            case 'undefined':
+                return undefined;
 
             default:
                 console.warn(`FormatX: Unknown input type '${inputType}'`);
