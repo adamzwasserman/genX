@@ -1224,10 +1224,15 @@
                     currencyInputValue.textContent = inputValue;
                 }
 
-                currencyOutput.setAttribute('fx-type', inputType);
+                // Update both the raw value AND the attributes before formatting
                 const rawValue = inputType === 'string' ? inputValue.replace(/"/g, '') : inputValue;
-                currencyOutput.textContent = rawValue;
 
+                // IMPORTANT: Update textContent FIRST before setting attributes
+                // This ensures the formatter reads the correct value
+                currencyOutput.textContent = rawValue;
+                currencyOutput.setAttribute('fx-type', inputType);
+
+                // Now manually format with the correct type
                 const format = window.fxXFactory?.format || window.FormatX?.format;
                 if (format) {
                     const formatted = format('currency', rawValue, {
@@ -1264,10 +1269,14 @@
                     percentInputValue.textContent = inputValue;
                 }
 
-                percentOutput.setAttribute('fx-type', inputType);
+                // Update both the raw value AND the attributes before formatting
                 const rawValue = inputType === 'string' ? inputValue.replace(/"/g, '') : inputValue;
-                percentOutput.textContent = rawValue;
 
+                // IMPORTANT: Update textContent FIRST before setting attributes
+                percentOutput.textContent = rawValue;
+                percentOutput.setAttribute('fx-type', inputType);
+
+                // Now manually format with the correct type
                 const format = window.fxXFactory?.format || window.FormatX?.format;
                 if (format) {
                     const formatted = format('percent', rawValue, {
