@@ -18,6 +18,11 @@
         const str = String(value);
 
         switch (inputType) {
+            // Currency types
+            case 'cents':       // Integer cents -> convert to dollars
+            case 'pennies':     // alias
+                return parseNumber(str) / 100;
+
             // Percentage types
             case 'decimal':     // 0-1 -> needs *100 for percentage
             case 'fraction':    // same as decimal
@@ -33,6 +38,7 @@
                 return new Date(str);
             case 'unix':        // Unix timestamp (seconds)
             case 'timestamp':
+            case 'epoch':       // Alias for unix timestamp
                 return new Date(parseNumber(str) * 1000);
             case 'milliseconds': // Milliseconds since epoch
             case 'ms':

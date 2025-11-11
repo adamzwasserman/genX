@@ -338,38 +338,73 @@
             <div class="examples-grid">
                 <!-- Example 1: Currency -->
                 <div class="example">
-                    <h4>1. Currency Formatting</h4>
-                    <p>Format numbers as currency with locale support</p>
+                    <h4>1. Currency Formatting with Input Types</h4>
+                    <p>Format numbers as currency from different input types</p>
                     <div class="example-demo">
-                        <span class="original-value">1234.56</span>
-                        <span class="formatted-value" fx-format="currency" fx-currency="USD">1234.56</span>
+                        <label>Input Type:
+                            <select id="currency-input-type-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="number" selected>Number (1234.56)</option>
+                                <option value="cents">Cents (123456 → $1,234.56)</option>
+                                <option value="string">String ("1234.56")</option>
+                                <option value="int">Integer (1234)</option>
+                            </select>
+                        </label>
+                        <br><br>
+                        <div>
+                            <strong>Input:</strong> <span id="currency-input-value" class="original-value">1234.56</span><br>
+                            <strong>Output:</strong> <span id="currency-output" class="formatted-value" fx-format="currency" fx-type="number" fx-currency="USD">1234.56</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Example 2: Percentages -->
                 <div class="example">
-                    <h4>2. Percentage</h4>
-                    <p>Display numbers as percentages</p>
+                    <h4>2. Percentage with Input Types</h4>
+                    <p>Display percentages from decimal (0-1) or percentage (0-100) values</p>
                     <div class="example-demo">
-                        <span class="original-value">0.1234</span>
-                        <span class="formatted-value" fx-format="percent">0.1234</span>
+                        <label>Input Type:
+                            <select id="percent-input-type-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="decimal" selected>Decimal (0.1234 → 12.34%)</option>
+                                <option value="percentage">Percentage (12.34 → 12.34%)</option>
+                                <option value="string">String ("0.5")</option>
+                            </select>
+                        </label>
+                        <br><br>
+                        <div>
+                            <strong>Input:</strong> <span id="percent-input-value" class="original-value">0.1234</span><br>
+                            <strong>Output:</strong> <span id="percent-output" class="formatted-value" fx-format="percent" fx-type="decimal">0.1234</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Example 3: Dates -->
                 <div class="example">
-                    <h4>3. Date Formatting</h4>
-                    <p>Format dates with various styles</p>
+                    <h4>3. Date Formatting with Input Types</h4>
+                    <p>Format dates from various input types (ISO, Unix, milliseconds)</p>
                     <div class="example-demo">
-                        <span class="original-value">2025-11-10</span>
-                        <select id="date-format-selector" style="margin: 0 10px; padding: 5px;">
-                            <option value="short">Short</option>
-                            <option value="medium">Medium</option>
-                            <option value="long" selected>Long</option>
-                            <option value="full">Full</option>
-                            <option value="iso">ISO</option>
-                        </select>
-                        <time id="date-output" class="formatted-value" fx-format="date" fx-date-format="long">2025-11-10</time>
+                        <label>Input Type:
+                            <select id="date-input-type-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="iso" selected>ISO String (2025-11-10)</option>
+                                <option value="unix">Unix Timestamp / Epoch (1762732800)</option>
+                                <option value="milliseconds">Milliseconds (1762732800000)</option>
+                                <option value="date">JavaScript Date String</option>
+                            </select>
+                        </label>
+                        <br><br>
+                        <label>Output Format:
+                            <select id="date-format-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="short">Short</option>
+                                <option value="medium">Medium</option>
+                                <option value="long" selected>Long</option>
+                                <option value="full">Full</option>
+                                <option value="iso">ISO</option>
+                            </select>
+                        </label>
+                        <br><br>
+                        <div>
+                            <strong>Input:</strong> <span id="date-input-value" class="original-value">2025-11-10</span><br>
+                            <strong>Output:</strong> <time id="date-output" class="formatted-value" fx-format="date" fx-type="iso" fx-date-format="long">2025-11-10</time>
+                        </div>
                     </div>
                 </div>
 
@@ -1118,19 +1153,130 @@
 
             console.log('✅ All genX modules initialized');
 
-            // Add date format selector event listener
-            const dateSelector = document.getElementById('date-format-selector');
+            // Date input/output type selectors
+            const dateInputTypeSelector = document.getElementById('date-input-type-selector');
+            const dateFormatSelector = document.getElementById('date-format-selector');
             const dateOutput = document.getElementById('date-output');
-            if (dateSelector && dateOutput) {
-                dateSelector.addEventListener('change', function() {
-                    const format = this.value;
-                    dateOutput.setAttribute('fx-date-format', format);
-                    // Trigger fmtX to reformat
-                    if (window.fmtX && window.fmtX.format) {
-                        const formatted = window.fmtX.format('date', '2025-11-10', { format: format });
-                        dateOutput.textContent = formatted;
-                    }
-                });
+            const dateInputValue = document.getElementById('date-input-value');
+
+            // Input values for different types (all represent Nov 10, 2025)
+            const inputValues = {
+                iso: '2025-11-10',
+                unix: '1762732800',
+                milliseconds: '1762732800000',
+                date: '2025-11-10T00:00:00Z'
+            };
+
+            function updateDateExample() {
+                if (!dateOutput || !dateInputTypeSelector || !dateFormatSelector) return;
+
+                const inputType = dateInputTypeSelector.value;
+                const outputFormat = dateFormatSelector.value;
+                const inputValue = inputValues[inputType];
+
+                // Update displayed input value
+                if (dateInputValue) {
+                    dateInputValue.textContent = inputValue;
+                }
+
+                // Update attributes
+                dateOutput.setAttribute('fx-type', inputType);
+                dateOutput.setAttribute('fx-date-format', outputFormat);
+                dateOutput.textContent = inputValue;
+
+                // Trigger fmtX to reformat
+                if (window.fmtX && window.fmtX.format) {
+                    const formatted = window.fmtX.format('date', inputValue, {
+                        type: inputType,
+                        format: outputFormat
+                    });
+                    dateOutput.textContent = formatted;
+                }
+            }
+
+            if (dateInputTypeSelector && dateFormatSelector) {
+                dateInputTypeSelector.addEventListener('change', updateDateExample);
+                dateFormatSelector.addEventListener('change', updateDateExample);
+                // Initialize on load
+                updateDateExample();
+            }
+
+            // Currency input type selector
+            const currencyInputTypeSelector = document.getElementById('currency-input-type-selector');
+            const currencyOutput = document.getElementById('currency-output');
+            const currencyInputValue = document.getElementById('currency-input-value');
+
+            const currencyInputValues = {
+                number: '1234.56',
+                cents: '123456',
+                string: '"1234.56"',
+                int: '1234'
+            };
+
+            function updateCurrencyExample() {
+                if (!currencyOutput || !currencyInputTypeSelector) return;
+
+                const inputType = currencyInputTypeSelector.value;
+                const inputValue = currencyInputValues[inputType];
+
+                if (currencyInputValue) {
+                    currencyInputValue.textContent = inputValue;
+                }
+
+                currencyOutput.setAttribute('fx-type', inputType);
+                const rawValue = inputType === 'string' ? inputValue.replace(/"/g, '') : inputValue;
+                currencyOutput.textContent = rawValue;
+
+                if (window.fmtX && window.fmtX.format) {
+                    const formatted = window.fmtX.format('currency', rawValue, {
+                        type: inputType,
+                        currency: 'USD'
+                    });
+                    currencyOutput.textContent = formatted;
+                }
+            }
+
+            if (currencyInputTypeSelector) {
+                currencyInputTypeSelector.addEventListener('change', updateCurrencyExample);
+                updateCurrencyExample();
+            }
+
+            // Percentage input type selector
+            const percentInputTypeSelector = document.getElementById('percent-input-type-selector');
+            const percentOutput = document.getElementById('percent-output');
+            const percentInputValue = document.getElementById('percent-input-value');
+
+            const percentInputValues = {
+                decimal: '0.1234',
+                percentage: '12.34',
+                string: '"0.5"'
+            };
+
+            function updatePercentExample() {
+                if (!percentOutput || !percentInputTypeSelector) return;
+
+                const inputType = percentInputTypeSelector.value;
+                const inputValue = percentInputValues[inputType];
+
+                if (percentInputValue) {
+                    percentInputValue.textContent = inputValue;
+                }
+
+                percentOutput.setAttribute('fx-type', inputType);
+                const rawValue = inputType === 'string' ? inputValue.replace(/"/g, '') : inputValue;
+                percentOutput.textContent = rawValue;
+
+                if (window.fmtX && window.fmtX.format) {
+                    const formatted = window.fmtX.format('percent', rawValue, {
+                        type: inputType
+                    });
+                    percentOutput.textContent = formatted;
+                }
+            }
+
+            if (percentInputTypeSelector) {
+                percentInputTypeSelector.addEventListener('change', updatePercentExample);
+                updatePercentExample();
             }
         });
 
