@@ -1185,8 +1185,9 @@
                 dateOutput.textContent = inputValue;
 
                 // Trigger fmtX to reformat
-                if (window.fmtX && window.fmtX.format) {
-                    const formatted = window.fmtX.format('date', inputValue, {
+                const format = window.fxXFactory?.format || window.FormatX?.format;
+                if (format) {
+                    const formatted = format('date', inputValue, {
                         type: inputType,
                         format: outputFormat
                     });
@@ -1227,8 +1228,9 @@
                 const rawValue = inputType === 'string' ? inputValue.replace(/"/g, '') : inputValue;
                 currencyOutput.textContent = rawValue;
 
-                if (window.fmtX && window.fmtX.format) {
-                    const formatted = window.fmtX.format('currency', rawValue, {
+                const format = window.fxXFactory?.format || window.FormatX?.format;
+                if (format) {
+                    const formatted = format('currency', rawValue, {
                         type: inputType,
                         currency: 'USD'
                     });
@@ -1266,8 +1268,9 @@
                 const rawValue = inputType === 'string' ? inputValue.replace(/"/g, '') : inputValue;
                 percentOutput.textContent = rawValue;
 
-                if (window.fmtX && window.fmtX.format) {
-                    const formatted = window.fmtX.format('percent', rawValue, {
+                const format = window.fxXFactory?.format || window.FormatX?.format;
+                if (format) {
+                    const formatted = format('percent', rawValue, {
                         type: inputType
                     });
                     percentOutput.textContent = formatted;
