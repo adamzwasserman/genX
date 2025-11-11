@@ -27,9 +27,9 @@
             case 'decimal':     // 0-1 -> needs *100 for percentage
             case 'fraction':    // same as decimal
                 return parseNumber(str);
-            case 'percentage':  // 0-100 -> already percentage, no conversion
+            case 'percentage':  // 0-100 -> already percentage, keep as-is for percentage formatter
             case 'percent':     // alias
-                return parseNumber(str) / 100; // convert to decimal for uniform handling
+                return parseNumber(str); // DO NOT convert - let percentage formatter handle it
 
             // Date types
             case 'date':        // JavaScript Date (ISO or parseable string)
@@ -199,7 +199,7 @@
             }
             // Dates (shared)
             case 'date': {
-                const df = rest.dateFormat || 'short'; const pat = rest.pattern;
+                const df = rest.dateFormat || rest.format || 'short'; const pat = rest.pattern;
                 const fmts = {short:{month:'numeric',day:'numeric',year:'numeric'},medium:{month:'short',day:'numeric',year:'numeric'},long:{month:'long',day:'numeric',year:'numeric'},full:{weekday:'long',month:'long',day:'numeric',year:'numeric'}};
                 if (df === 'iso') return date.toISOString().split('T')[0]; if (df === 'custom' && pat) return formatCustomDate(date, pat); return date.toLocaleDateString(locale, fmts[df] || fmts.short);
             }

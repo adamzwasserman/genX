@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Input Types Debug</title>
+    <script src="src/fmtx.js"></script>
+</head>
+<body>
+    <h1>Input Type Debugging</h1>
+
+    <h2>1. Currency with Cents</h2>
+    <p>Input: 123456 (cents) → Expected: $1,234.56</p>
+    <div fx-format="currency" fx-type="cents" fx-currency="USD">123456</div>
+    <p>Result: <span id="result-1"></span></p>
+
+    <h2>2. Percentage with Percentage Input</h2>
+    <p>Input: 12.34 (percentage) → Expected: 12% (not 1234%)</p>
+    <div fx-format="percent" fx-type="percentage">12.34</div>
+    <p>Result: <span id="result-2"></span></p>
+
+    <h2>3. Percentage with String</h2>
+    <p>Input: "0.5" (string) → Expected: 50%</p>
+    <div fx-format="percent" fx-type="string">0.5</div>
+    <p>Result: <span id="result-3"></span></p>
+
+    <h2>4. Date with Milliseconds</h2>
+    <p>Input: 1762732800000 (milliseconds) → Expected: November 10, 2025</p>
+    <div fx-format="date" fx-type="milliseconds" fx-date-format="long">1762732800000</div>
+    <p>Result: <span id="result-4"></span></p>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            // Manual tests
+            console.log('=== Manual Format Tests ===');
+            console.log('fxXFactory available:', !!window.fxXFactory);
+            console.log('FormatX available:', !!window.FormatX);
+
+            const format = window.fxXFactory?.format || window.FormatX?.format;
+            if (!format) {
+                console.error('No format function found!');
+                return;
+            }
+
+            // Test 1: Currency cents
+            try {
+                const cents = format('currency', '123456', { type: 'cents', currency: 'USD' });
+                console.log('1. Currency cents:', cents);
+                document.getElementById('result-1').textContent = cents;
+            } catch(e) {
+                console.error('1. Error:', e);
+                document.getElementById('result-1').textContent = 'ERROR: ' + e.message;
+            }
+
+            // Test 2: Percentage percentage
+            try {
+                const pct = format('percent', '12.34', { type: 'percentage' });
+                console.log('2. Percentage percentage:', pct);
+                document.getElementById('result-2').textContent = pct;
+            } catch(e) {
+                console.error('2. Error:', e);
+                document.getElementById('result-2').textContent = 'ERROR: ' + e.message;
+            }
+
+            // Test 3: Percentage string
+            try {
+                const pctStr = format('percent', '0.5', { type: 'string' });
+                console.log('3. Percentage string:', pctStr);
+                document.getElementById('result-3').textContent = pctStr;
+            } catch(e) {
+                console.error('3. Error:', e);
+                document.getElementById('result-3').textContent = 'ERROR: ' + e.message;
+            }
+
+            // Test 4: Date milliseconds
+            try {
+                const dateMs = format('date', '1762732800000', { type: 'milliseconds', format: 'long' });
+                console.log('4. Date milliseconds:', dateMs);
+                document.getElementById('result-4').textContent = dateMs;
+            } catch(e) {
+                console.error('4. Error:', e);
+                document.getElementById('result-4').textContent = 'ERROR: ' + e.message;
+            }
+        });
+    </script>
+</body>
+</html>
