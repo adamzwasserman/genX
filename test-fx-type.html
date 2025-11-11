@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test fx-type Attribute</title>
+    <script src="src/fmtx.js"></script>
+</head>
+<body>
+    <h1>fx-type Attribute Tests</h1>
+
+    <h2>Percentage Tests</h2>
+    <p>1. Decimal input (0.1234) - default behavior:</p>
+    <div fx-format="percent">0.1234</div>
+
+    <p>2. Percentage input (50) with fx-type="percentage":</p>
+    <div fx-format="percent" fx-type="percentage">50</div>
+
+    <p>3. Percentage input (12.34) with fx-type="percent":</p>
+    <div fx-format="percent" fx-type="percent">12.34</div>
+
+    <h2>Date Tests</h2>
+    <p>4. Unix timestamp (1699564800) with fx-type="unix":</p>
+    <div fx-format="date" fx-type="unix" fx-date-format="long">1699564800</div>
+
+    <p>5. ISO date with fx-type="iso":</p>
+    <div fx-format="date" fx-type="iso" fx-date-format="long">2025-11-09</div>
+
+    <h2>Duration Tests</h2>
+    <p>6. Minutes (5) with fx-type="minutes":</p>
+    <div fx-format="duration" fx-type="minutes">5</div>
+
+    <p>7. Seconds (300) - default:</p>
+    <div fx-format="duration">300</div>
+
+    <h2>Filesize Tests</h2>
+    <p>8. Megabytes (5) with fx-type="megabytes":</p>
+    <div fx-format="filesize" fx-type="megabytes">5</div>
+
+    <p>9. Bytes (5000000) - default:</p>
+    <div fx-format="filesize">5000000</div>
+</body>
+</html>

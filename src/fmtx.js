@@ -11,9 +11,83 @@
     const safeJsonParse = v => typeof v === 'string' ? (t => { try { const p = JSON.parse(v); return p?.__proto__ && Object.keys(p.__proto__).length ? ({}) : p; } catch { return v; } })() : v;
     const kebabToCamel = s => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 
+    // Input type converter - handles fx-type attribute
+    const convertInput = (value, inputType) => {
+        if (!inputType || inputType === 'auto') return value;
+
+        const str = String(value);
+
+        switch (inputType) {
+            // Percentage types
+            case 'decimal':     // 0-1 -> needs *100 for percentage
+            case 'fraction':    // same as decimal
+                return parseNumber(str);
+            case 'percentage':  // 0-100 -> already percentage, no conversion
+            case 'percent':     // alias
+                return parseNumber(str) / 100; // convert to decimal for uniform handling
+
+            // Date types
+            case 'iso':         // ISO 8601 string
+            case 'iso8601':
+                return new Date(str);
+            case 'unix':        // Unix timestamp (seconds)
+            case 'timestamp':
+                return new Date(parseNumber(str) * 1000);
+            case 'milliseconds': // Milliseconds since epoch
+            case 'ms':
+                return new Date(parseNumber(str));
+
+            // Duration types
+            case 'seconds':
+            case 'sec':
+                return parseNumber(str);
+            case 'minutes':
+            case 'min':
+                return parseNumber(str) * 60;
+            case 'hours':
+            case 'hr':
+                return parseNumber(str) * 3600;
+
+            // Filesize types
+            case 'bytes':
+            case 'b':
+                return parseNumber(str);
+            case 'kilobytes':
+            case 'kb':
+                return parseNumber(str) * 1000;
+            case 'megabytes':
+            case 'mb':
+                return parseNumber(str) * 1000000;
+            case 'gigabytes':
+            case 'gb':
+                return parseNumber(str) * 1000000000;
+
+            // Number types
+            case 'number':
+            case 'float':
+            case 'decimal':
+                return parseNumber(str);
+            case 'integer':
+            case 'int':
+                return Math.floor(parseNumber(str));
+
+            // String types
+            case 'string':
+            case 'text':
+                return str;
+
+            default:
+                console.warn(`FormatX: Unknown input type '${inputType}'`);
+                return value;
+        }
+    };
+
     // Polymorphic format (tightened switch, shared num/date fallbacks)
     const format = (type, value, opts = {}) => {
-        const str = String(value);
+        // Apply input type conversion if specified
+        const convertedValue = opts.type ? convertInput(value, opts.type) : value;
+
+        const str = String(convertedValue);
         const num = parseNumber(str);
         const date = parseDate(str);
         const fallback = () => str;
@@ -42,7 +116,11 @@
             case 'currency':
                 return new Intl.NumberFormat(locale, { style: 'currency', currency: rest.currency || 'USD', minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(num);
             case 'percent':
-                return `${(num * (rest.factor !== false ? 100 : 1)).toFixed(rest.decimals ?? 0)}%`;
+                // If input type is 'percentage', value is already 0-100, don't multiply
+                // If input type is 'decimal' or not specified, multiply by 100
+                const isAlreadyPercent = opts.type === 'percentage' || opts.type === 'percent';
+                const factor = isAlreadyPercent ? 1 : (rest.factor !== false ? 100 : 1);
+                return `${(num * factor).toFixed(rest.decimals ?? 0)}%`;
             case 'scientific':
                 return num.toExponential(rest.decimals ?? 2);
             case 'accounting':
