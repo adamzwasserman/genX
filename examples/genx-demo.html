@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>genX Module Demo - Top 10 Examples Per Module</title>
+
+    <!-- Load genX modules -->
+    <script src="../src/genx-common.js"></script>
+    <script src="../src/fmtx.js"></script>
+    <script src="../src/accx.js"></script>
+    <script src="../src/bindx.js"></script>
+    <script src="../src/dragx.js"></script>
+    <script src="../src/loadx.js"></script>
+    <link rel="stylesheet" href="../src/loadx.css">
+    <script src="../src/navx.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 40px;
+            border-radius: 8px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* Navigation */
+        nav {
+            background: white;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        nav a:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Module sections */
+        .module-section {
+            background: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .module-section h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .module-section .description {
+            color: #666;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .example {
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .example h4 {
+            color: #764ba2;
+            margin-bottom: 10px;
+        }
+
+        .example p {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .example-demo {
+            padding: 15px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .original-value {
+            display: block;
+            font-size: 0.85rem;
+            color: #999;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 8px;
+            padding: 5px 8px;
+            background: #f5f5f5;
+            border-left: 3px solid #ddd;
+        }
+
+        .original-value::before {
+            content: 'Original: ';
+            font-weight: bold;
+        }
+
+        .formatted-value {
+            display: block;
+            font-size: 1.1rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        /* Drag and drop */
+        .draggable {
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border-radius: 6px;
+            cursor: move;
+            margin: 5px 0;
+            user-select: none;
+        }
+
+        .drop-zone {
+            min-height: 100px;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            text-align: center;
+            color: #999;
+            transition: all 0.3s;
+        }
+
+        .drop-zone.dx-drag-over {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        /* Buttons */
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Input fields */
+        input, select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-panel {
+            display: none;
+            padding: 20px;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* Breadcrumbs */
+        .breadcrumb {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .breadcrumb a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .breadcrumb .separator {
+            color: #999;
+        }
+
+        /* Stats display */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .stat {
+            background: #f0f0ff;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 genX Module Demo</h1>
+            <p>Top 10 Examples for Each Module</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav nx-nav="main">
+            <ul>
+                <li><a href="#fmtx">fmtX</a></li>
+                <li><a href="#accx">accX</a></li>
+                <li><a href="#bindx">bindX</a></li>
+                <li><a href="#dragx">dragX</a></li>
+                <li><a href="#loadx">loadX</a></li>
+                <li><a href="#navx">navX</a></li>
+            </ul>
+        </nav>
+
+        <!-- fmtX Examples -->
+        <section id="fmtx" class="module-section">
+            <h2>fmtX - Number & Date Formatting</h2>
+            <p class="description">Declarative formatting for numbers, currency, dates, and more</p>
+
+            <div class="examples-grid">
+                <!-- Example 1: Currency -->
+                <div class="example">
+                    <h4>1. Currency Formatting</h4>
+                    <p>Format numbers as currency with locale support</p>
+                    <div class="example-demo">
+                        <span class="original-value">1234.56</span>
+                        <span class="formatted-value" fx-format="currency" fx-currency="USD">1234.56</span>
+                    </div>
+                </div>
+
+                <!-- Example 2: Percentages -->
+                <div class="example">
+                    <h4>2. Percentage</h4>
+                    <p>Display numbers as percentages</p>
+                    <div class="example-demo">
+                        <span class="original-value">0.1234</span>
+                        <span class="formatted-value" fx-format="percent">0.1234</span>
+                    </div>
+                </div>
+
+                <!-- Example 3: Dates -->
+                <div class="example">
+                    <h4>3. Date Formatting</h4>
+                    <p>Format dates with various styles</p>
+                    <div class="example-demo">
+                        <span class="original-value">2025-11-10</span>
+                        <select id="date-format-selector" style="margin: 0 10px; padding: 5px;">
+                            <option value="short">Short</option>
+                            <option value="medium">Medium</option>
+                            <option value="long" selected>Long</option>
+                            <option value="full">Full</option>
+                            <option value="iso">ISO</option>
+                        </select>
+                        <time id="date-output" class="formatted-value" fx-format="date" fx-date-format="long">2025-11-10</time>
+                    </div>
+                </div>
+
+                <!-- Example 4: Relative Time -->
+                <div class="example">
+                    <h4>4. Relative Time</h4>
+                    <p>Show time relative to now</p>
+                    <div class="example-demo">
+                        <span class="original-value">2025-11-09T12:00:00</span>
+                        <time class="formatted-value" fx-format="relative">2025-11-09T12:00:00</time>
+                    </div>
+                </div>
+
+                <!-- Example 5: File Size -->
+                <div class="example">
+                    <h4>5. File Size</h4>
+                    <p>Human-readable file sizes</p>
+                    <div class="example-demo">
+                        <span class="original-value">1536000</span>
+                        <span class="formatted-value" fx-format="filesize">1536000</span>
+                    </div>
+                </div>
+
+                <!-- Example 6: Decimal Places -->
+                <div class="example">
+                    <h4>6. Decimal Control</h4>
+                    <p>Control decimal precision</p>
+                    <div class="example-demo">
+                        <span class="original-value">3.14159265</span>
+                        <span class="formatted-value" fx-format="number" fx-decimals="2">3.14159265</span>
+                    </div>
+                </div>
+
+                <!-- Example 7: Thousands Separator -->
+                <div class="example">
+                    <h4>7. Large Numbers</h4>
+                    <p>Format with thousands separators</p>
+                    <div class="example-demo">
+                        <span class="original-value">1000000</span>
+                        <span class="formatted-value" fx-format="number">1000000</span>
+                    </div>
+                </div>
+
+                <!-- Example 8: Ordinals -->
+                <div class="example">
+                    <h4>8. Ordinal Numbers</h4>
+                    <p>1st, 2nd, 3rd formatting</p>
+                    <div class="example-demo">
+                        <span class="original-value">1, 2, 3</span>
+                        <div class="formatted-value">
+                            <span fx-format="ordinal">1</span>,
+                            <span fx-format="ordinal">2</span>,
+                            <span fx-format="ordinal">3</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 9: Compact Notation -->
+                <div class="example">
+                    <h4>9. Compact Numbers</h4>
+                    <p>1K, 1M, 1B notation</p>
+                    <div class="example-demo">
+                        <span class="original-value">1500000</span>
+                        <span class="formatted-value" fx-format="compact">1500000</span>
+                    </div>
+                </div>
+
+                <!-- Example 10: Phone Numbers -->
+                <div class="example">
+                    <h4>10. Phone Numbers</h4>
+                    <p>Format phone numbers</p>
+                    <div class="example-demo">
+                        <span class="original-value">5551234567</span>
+                        <span class="formatted-value" fx-format="phone">5551234567</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- accX Examples -->
+        <section id="accx" class="module-section">
+            <h2>accX - Accessibility Enhancements</h2>
+            <p class="description">Automatic WCAG 2.1 AA compliance and accessibility features</p>
+
+            <div class="examples-grid">
+                <!-- Example 1: Button with ARIA -->
+                <div class="example">
+                    <h4>1. Enhanced Buttons</h4>
+                    <p>Automatic ARIA attributes</p>
+                    <div class="example-demo">
+                        <button ax-enhance="button" ax-label="Save your work">Save</button>
+                    </div>
+                </div>
+
+                <!-- Example 2: Form Labels -->
+                <div class="example">
+                    <h4>2. Form Accessibility</h4>
+                    <p>Auto-linked labels and inputs</p>
+                    <div class="example-demo">
+                        <label ax-enhance="label">Email</label>
+                        <input type="email" ax-enhance="input" placeholder="you@example.com">
+                    </div>
+                </div>
+
+                <!-- Example 3: Skip Links -->
+                <div class="example">
+                    <h4>3. Skip Navigation</h4>
+                    <p>Keyboard-only skip links</p>
+                    <div class="example-demo">
+                        <a href="#main-content" ax-enhance="skiplink">Skip to main content</a>
+                    </div>
+                </div>
+
+                <!-- Example 4: Landmarks -->
+                <div class="example">
+                    <h4>4. ARIA Landmarks</h4>
+                    <p>Automatic landmark roles</p>
+                    <div class="example-demo">
+                        <div ax-enhance="landmark" ax-landmark="navigation">Navigation content</div>
+                    </div>
+                </div>
+
+                <!-- Example 5: Live Regions -->
+                <div class="example">
+                    <h4>5. Live Updates</h4>
+                    <p>Screen reader announcements</p>
+                    <div class="example-demo">
+                        <div ax-enhance="live" ax-live="polite">Status: Ready</div>
+                    </div>
+                </div>
+
+                <!-- Example 6: Focus Management -->
+                <div class="example">
+                    <h4>6. Focus Indicators</h4>
+                    <p>Enhanced focus visibility</p>
+                    <div class="example-demo">
+                        <button ax-enhance="focus">Focused Element</button>
+                    </div>
+                </div>
+
+                <!-- Example 7: Error Messages -->
+                <div class="example">
+                    <h4>7. Form Errors</h4>
+                    <p>Accessible error announcements</p>
+                    <div class="example-demo">
+                        <input type="text" ax-enhance="input" aria-invalid="true">
+                        <div ax-enhance="error" role="alert">This field is required</div>
+                    </div>
+                </div>
+
+                <!-- Example 8: Tooltips -->
+                <div class="example">
+                    <h4>8. Accessible Tooltips</h4>
+                    <p>Screen reader friendly tooltips</p>
+                    <div class="example-demo">
+                        <button ax-enhance="tooltip" ax-tooltip="Additional information">Help</button>
+                    </div>
+                </div>
+
+                <!-- Example 9: Modal Dialogs -->
+                <div class="example">
+                    <h4>9. Modal Focus Trap</h4>
+                    <p>Accessible modal dialogs</p>
+                    <div class="example-demo">
+                        <button onclick="showModal()">Open Modal</button>
+                        <div id="modal" ax-enhance="dialog" style="display:none;">
+                            <h3>Dialog Title</h3>
+                            <button onclick="hideModal()">Close</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 10: Status Messages -->
+                <div class="example">
+                    <h4>10. Status Updates</h4>
+                    <p>Non-intrusive status messages</p>
+                    <div class="example-demo">
+                        <div ax-enhance="status" role="status">5 items saved</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- bindX Examples -->
+        <section id="bindx" class="module-section">
+            <h2>bindX - Reactive Data Binding</h2>
+            <p class="description">Two-way data binding with automatic DOM updates</p>
+
+            <div class="examples-grid">
+                <!-- Example 1: Two-way binding -->
+                <div class="example">
+                    <h4>1. Two-Way Binding</h4>
+                    <p>Input automatically updates display</p>
+                    <div class="example-demo">
+                        <span class="original-value">Initial: (empty)</span>
+                        <input type="text" bx-model="name" placeholder="Enter your name">
+                        <p>Hello, <span class="formatted-value" bx-bind="name">World</span>!</p>
+                    </div>
+                </div>
+
+                <!-- Example 2: Number binding -->
+                <div class="example">
+                    <h4>2. Number Binding</h4>
+                    <p>Numeric input with live updates</p>
+                    <div class="example-demo">
+                        <span class="original-value">Initial: 1</span>
+                        <input type="number" bx-model="quantity" value="1" min="1">
+                        <p>Quantity: <span class="formatted-value" bx-bind="quantity">1</span></p>
+                    </div>
+                </div>
+
+                <!-- Example 3: Checkbox -->
+                <div class="example">
+                    <h4>3. Checkbox Binding</h4>
+                    <p>Boolean state binding</p>
+                    <div class="example-demo">
+                        <span class="original-value">Initial: unchecked (false)</span>
+                        <input type="checkbox" bx-model="agreed" id="agree">
+                        <label for="agree">I agree</label>
+                        <p>Status: <span class="formatted-value" bx-bind="agreed">false</span></p>
+                    </div>
+                </div>
+
+                <!-- Example 4: Select dropdown -->
+                <div class="example">
+                    <h4>4. Select Binding</h4>
+                    <p>Dropdown selection binding</p>
+                    <div class="example-demo">
+                        <span class="original-value">Initial: Red</span>
+                        <select bx-model="color">
+                            <option>Red</option>
+                            <option>Blue</option>
+                            <option>Green</option>
+                        </select>
+                        <p>Selected: <span class="formatted-value" bx-bind="color">Red</span></p>
+                    </div>
+                </div>
+
+                <!-- Example 5: Radio buttons -->
+                <div class="example">
+                    <h4>5. Radio Binding</h4>
+                    <p>Radio button group binding</p>
+                    <div class="example-demo">
+                        <span class="original-value">Initial: (none selected)</span>
+                        <label><input type="radio" bx-model="size" value="S"> Small</label>
+                        <label><input type="radio" bx-model="size" value="M"> Medium</label>
+                        <label><input type="radio" bx-model="size" value="L"> Large</label>
+                        <p>Size: <span class="formatted-value" bx-bind="size">-</span></p>
+                    </div>
+                </div>
+
+                <!-- Example 6: Computed properties -->
+                <div class="example">
+                    <h4>6. Computed Properties</h4>
+                    <p>Auto-calculated values</p>
+                    <div class="example-demo">
+                        <span class="original-value">Initial: 10 × 2 = 20</span>
+                        <input type="number" bx-model="price" value="10" placeholder="Price">
+                        <input type="number" bx-model="qty" value="2" placeholder="Quantity">
+                        <p>Total: $<span class="formatted-value" bx-bind="total" bx-computed="price * qty">20</span></p>
+                    </div>
+                </div>
+
+                <!-- Example 7: Multiple inputs -->
+                <div class="example">
+                    <h4>7. Form Binding</h4>
+                    <p>Multiple field binding</p>
+                    <div class="example-demo">
+                        <span class="original-value">Initial: (empty)</span>
+                        <input type="text" bx-model="firstName" placeholder="First">
+                        <input type="text" bx-model="lastName" placeholder="Last">
+                        <p>Full name: <span class="formatted-value" bx-bind="firstName">-</span> <span class="formatted-value" bx-bind="lastName">-</span></p>
+                    </div>
+                </div>
+
+                <!-- Example 8: Textarea -->
+                <div class="example">
+                    <h4>8. Textarea Binding</h4>
+                    <p>Multi-line text binding</p>
+                    <div class="example-demo">
+                        <span class="original-value">Initial: 0 characters</span>
+                        <textarea bx-model="bio" rows="3" placeholder="Bio"></textarea>
+                        <p>Characters: <span class="formatted-value" bx-bind="bio.length">0</span></p>
+                    </div>
+                </div>
+
+                <!-- Example 9: Conditional display -->
+                <div class="example">
+                    <h4>9. Conditional Binding</h4>
+                    <p>Show/hide based on value</p>
+                    <div class="example-demo">
+                        <span class="original-value">Initial: hidden</span>
+                        <input type="checkbox" bx-model="showDetails" id="show">
+                        <label for="show">Show details</label>
+                        <div bx-if="showDetails" style="margin-top:10px;">
+                            <p class="formatted-value">Additional details shown</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 10: Live validation -->
+                <div class="example">
+                    <h4>10. Live Validation</h4>
+                    <p>Instant feedback</p>
+                    <div class="example-demo">
+                        <span class="original-value">Initial: (empty)</span>
+                        <input type="email" bx-model="email" placeholder="Email">
+                        <p bx-bind="email" style="color:red;">
+                            <span class="formatted-value" bx-if="email && !email.includes('@')">Invalid email</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- dragX Examples -->
+        <section id="dragx" class="module-section">
+            <h2>dragX - Drag and Drop</h2>
+            <p class="description">Touch, mouse, and keyboard drag-and-drop with accessibility</p>
+
+            <div class="examples-grid">
+                <!-- Example 1: Basic drag -->
+                <div class="example">
+                    <h4>1. Basic Drag & Drop</h4>
+                    <p>Simple draggable item</p>
+                    <div class="example-demo">
+                        <span class="original-value">State: Item in source position</span>
+                        <div class="draggable" dx-draggable="card" dx-data='{"id":1}'>
+                            Drag me!
+                        </div>
+                        <div class="drop-zone" dx-dropzone dx-accepts="card">
+                            Drop here
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 2: Multiple items -->
+                <div class="example">
+                    <h4>2. Multiple Draggables</h4>
+                    <p>Drag multiple items</p>
+                    <div class="example-demo">
+                        <span class="original-value">State: 3 items in list</span>
+                        <div class="draggable" dx-draggable="item">Item 1</div>
+                        <div class="draggable" dx-draggable="item">Item 2</div>
+                        <div class="draggable" dx-draggable="item">Item 3</div>
+                    </div>
+                </div>
+
+                <!-- Example 3: Type filtering -->
+                <div class="example">
+                    <h4>3. Type-Based Drops</h4>
+                    <p>Accept specific types</p>
+                    <div class="example-demo">
+                        <span class="original-value">State: Zone accepts images only</span>
+                        <div class="draggable" dx-draggable="image" style="background:#e74c3c;">Image</div>
+                        <div class="draggable" dx-draggable="text" style="background:#3498db;">Text</div>
+                        <div class="drop-zone" dx-dropzone dx-accepts="image">Images Only</div>
+                    </div>
+                </div>
+
+                <!-- Example 4: Keyboard drag -->
+                <div class="example">
+                    <h4>4. Keyboard Dragging</h4>
+                    <p>Space + Arrow keys</p>
+                    <div class="example-demo">
+                        <div class="draggable" dx-draggable="kbd" tabindex="0">
+                            Press Space, use arrows
+                        </div>
+                        <div class="drop-zone" dx-dropzone dx-accepts="kbd">
+                            Drop target
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 5: Custom ghost -->
+                <div class="example">
+                    <h4>5. Custom Ghost Image</h4>
+                    <p>Custom drag preview</p>
+                    <div class="example-demo">
+                        <div class="draggable" dx-draggable="custom" dx-ghost="custom">
+                            Custom preview
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 6: Horizontal constraint -->
+                <div class="example">
+                    <h4>6. Axis Constraint</h4>
+                    <p>Horizontal-only drag</p>
+                    <div class="example-demo">
+                        <div class="draggable" dx-draggable="slider" dx-axis="horizontal">
+                            ← Horizontal only →
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 7: Clone on drag -->
+                <div class="example">
+                    <h4>7. Clone Mode</h4>
+                    <p>Leave original in place</p>
+                    <div class="example-demo">
+                        <div class="draggable" dx-draggable="template" dx-clone="true">
+                            Drag to copy
+                        </div>
+                        <div class="drop-zone" dx-dropzone dx-accepts="template">
+                            Drop copies here
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 8: Revert on invalid -->
+                <div class="example">
+                    <h4>8. Revert Animation</h4>
+                    <p>Return to start if invalid</p>
+                    <div class="example-demo">
+                        <div class="draggable" dx-draggable="revert" dx-revert="invalid">
+                            Try dropping outside
+                        </div>
+                        <div class="drop-zone" dx-dropzone dx-accepts="other">
+                            Wrong type
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 9: Snap to grid -->
+                <div class="example">
+                    <h4>9. Grid Snapping</h4>
+                    <p>Snap to 20px grid</p>
+                    <div class="example-demo">
+                        <div class="draggable" dx-draggable="grid" dx-grid="20">
+                            Snaps to grid
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 10: Event handling -->
+                <div class="example">
+                    <h4>10. Drag Events</h4>
+                    <p>Track drag lifecycle</p>
+                    <div class="example-demo">
+                        <div class="draggable" dx-draggable="tracked" id="dragTracked">
+                            Drag to track events
+                        </div>
+                        <div id="dragEvents" style="margin-top:10px;font-size:0.8rem;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- loadX Examples -->
+        <section id="loadx" class="module-section">
+            <h2>loadX - Loading States</h2>
+            <p class="description">Declarative loading indicators with zero layout shift</p>
+
+            <div class="examples-grid">
+                <!-- Example 1: Spinner -->
+                <div class="example">
+                    <h4>1. Spinner Loader</h4>
+                    <p>Circle spinner animation</p>
+                    <div class="example-demo">
+                        <button onclick="simulateLoad(this, 'spinner')">Load with Spinner</button>
+                        <div lx-strategy="spinner" style="min-height:60px;"></div>
+                    </div>
+                </div>
+
+                <!-- Example 2: Skeleton -->
+                <div class="example">
+                    <h4>2. Skeleton Screen</h4>
+                    <p>Content placeholder</p>
+                    <div class="example-demo">
+                        <button onclick="simulateLoad(this, 'skeleton')">Load with Skeleton</button>
+                        <div lx-strategy="skeleton" lx-rows="3" style="min-height:100px;"></div>
+                    </div>
+                </div>
+
+                <!-- Example 3: Progress bar -->
+                <div class="example">
+                    <h4>3. Progress Bar</h4>
+                    <p>Determinate progress</p>
+                    <div class="example-demo">
+                        <button onclick="simulateProgress(this)">Load with Progress</button>
+                        <div lx-strategy="progress" lx-value="0" style="min-height:50px;"></div>
+                    </div>
+                </div>
+
+                <!-- Example 4: Fade -->
+                <div class="example">
+                    <h4>4. Fade Transition</h4>
+                    <p>Smooth opacity fade</p>
+                    <div class="example-demo">
+                        <button onclick="simulateLoad(this, 'fade')">Load with Fade</button>
+                        <div lx-strategy="fade" style="min-height:60px;">Content</div>
+                    </div>
+                </div>
+
+                <!-- Example 5: Auto-detect -->
+                <div class="example">
+                    <h4>5. Auto Strategy</h4>
+                    <p>Automatic strategy selection</p>
+                    <div class="example-demo">
+                        <button onclick="simulateLoad(this, 'auto')">Auto Load</button>
+                        <div lx-auto style="min-height:80px;"></div>
+                    </div>
+                </div>
+
+                <!-- Example 6: Custom duration -->
+                <div class="example">
+                    <h4>6. Custom Duration</h4>
+                    <p>Control animation timing</p>
+                    <div class="example-demo">
+                        <button onclick="simulateLoad(this, 'spinner', 3000)">3 Second Load</button>
+                        <div lx-strategy="spinner" lx-duration="300"></div>
+                    </div>
+                </div>
+
+                <!-- Example 7: HTMX integration -->
+                <div class="example">
+                    <h4>7. HTMX Loading</h4>
+                    <p>Automatic HTMX detection</p>
+                    <div class="example-demo">
+                        <button hx-get="/api/data" hx-target="#htmx-content" lx-strategy="skeleton">
+                            Load via HTMX
+                        </button>
+                        <div id="htmx-content" style="min-height:60px;"></div>
+                    </div>
+                </div>
+
+                <!-- Example 8: Fetch detection -->
+                <div class="example">
+                    <h4>8. Fetch API Loading</h4>
+                    <p>Auto-detect fetch calls</p>
+                    <div class="example-demo">
+                        <button onclick="fetchData(this)">Fetch Data</button>
+                        <div id="fetch-content" lx-strategy="spinner"></div>
+                    </div>
+                </div>
+
+                <!-- Example 9: Form submission -->
+                <div class="example">
+                    <h4>9. Form Loading</h4>
+                    <p>Loading during submission</p>
+                    <div class="example-demo">
+                        <form onsubmit="return simulateSubmit(event)">
+                            <input type="text" placeholder="Enter data" required>
+                            <button type="submit" lx-strategy="spinner">Submit</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Example 10: Multiple states -->
+                <div class="example">
+                    <h4>10. Multi-State Loading</h4>
+                    <p>Different states for different areas</p>
+                    <div class="example-demo">
+                        <button onclick="multiLoad()">Load All</button>
+                        <div style="display:grid;gap:10px;margin-top:10px;">
+                            <div lx-strategy="spinner" class="multi1" style="height:40px;"></div>
+                            <div lx-strategy="skeleton" class="multi2" style="height:40px;"></div>
+                            <div lx-strategy="progress" class="multi3" style="height:40px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- navX Examples -->
+        <section id="navx" class="module-section">
+            <h2>navX - Navigation Patterns</h2>
+            <p class="description">Accessible navigation with keyboard support and ARIA</p>
+
+            <div class="examples-grid">
+                <!-- Example 1: Breadcrumbs -->
+                <div class="example">
+                    <h4>1. Breadcrumb Navigation</h4>
+                    <p>Show current location</p>
+                    <div class="example-demo">
+                        <nav nx-breadcrumb="hierarchical">
+                            <a href="/">Home</a> /
+                            <a href="/products">Products</a> /
+                            <span>Current Page</span>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Example 2: Tabs -->
+                <div class="example">
+                    <h4>2. Tab Navigation</h4>
+                    <p>Arrow key navigation</p>
+                    <div class="example-demo">
+                        <div nx-tabs>
+                            <div class="tabs">
+                                <button class="tab active" data-target="tab1">Tab 1</button>
+                                <button class="tab" data-target="tab2">Tab 2</button>
+                                <button class="tab" data-target="tab3">Tab 3</button>
+                            </div>
+                            <div id="tab1" class="tab-panel active">Content 1</div>
+                            <div id="tab2" class="tab-panel">Content 2</div>
+                            <div id="tab3" class="tab-panel">Content 3</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 3: Dropdown -->
+                <div class="example">
+                    <h4>3. Dropdown Menu</h4>
+                    <p>Keyboard accessible dropdown</p>
+                    <div class="example-demo">
+                        <div nx-dropdown>
+                            <button>Menu ▼</button>
+                            <ul style="display:none;list-style:none;background:white;border:1px solid #ddd;padding:5px;">
+                                <li><a href="#" style="display:block;padding:5px;">Item 1</a></li>
+                                <li><a href="#" style="display:block;padding:5px;">Item 2</a></li>
+                                <li><a href="#" style="display:block;padding:5px;">Item 3</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 4: Scroll spy -->
+                <div class="example">
+                    <h4>4. Scroll Spy</h4>
+                    <p>Track scroll position</p>
+                    <div class="example-demo">
+                        <nav nx-scroll-spy>
+                            <a href="#section1">Section 1</a>
+                            <a href="#section2">Section 2</a>
+                            <a href="#section3">Section 3</a>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Example 5: Sticky nav -->
+                <div class="example">
+                    <h4>5. Sticky Navigation</h4>
+                    <p>Stays visible on scroll</p>
+                    <div class="example-demo">
+                        <div nx-sticky style="background:white;padding:10px;border:1px solid #ddd;">
+                            Sticky Navigation
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 6: Hamburger menu -->
+                <div class="example">
+                    <h4>6. Mobile Menu</h4>
+                    <p>Hamburger with focus trap</p>
+                    <div class="example-demo">
+                        <button nx-hamburger data-target="mobile-menu">☰</button>
+                        <div id="mobile-menu" style="display:none;background:white;padding:20px;border:1px solid #ddd;">
+                            <a href="#" style="display:block;margin:10px 0;">Link 1</a>
+                            <a href="#" style="display:block;margin:10px 0;">Link 2</a>
+                            <button onclick="closeMobileMenu()">Close ✕</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example 7: Smooth scroll -->
+                <div class="example">
+                    <h4>7. Smooth Scrolling</h4>
+                    <p>Animated scroll to target</p>
+                    <div class="example-demo">
+                        <a href="#footer" nx-smooth-scroll>Scroll to footer</a>
+                    </div>
+                </div>
+
+                <!-- Example 8: Pagination -->
+                <div class="example">
+                    <h4>8. Pagination</h4>
+                    <p>Navigate between pages</p>
+                    <div class="example-demo">
+                        <nav nx-pagination aria-label="Pagination">
+                            <button>&lt; Prev</button>
+                            <button>1</button>
+                            <button>2</button>
+                            <button class="active">3</button>
+                            <button>4</button>
+                            <button>Next &gt;</button>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Example 9: Skip link -->
+                <div class="example">
+                    <h4>9. Skip Navigation</h4>
+                    <p>Jump to main content</p>
+                    <div class="example-demo">
+                        <a href="#main-content" nx-skip-link>Skip to content</a>
+                    </div>
+                </div>
+
+                <!-- Example 10: Trail breadcrumbs -->
+                <div class="example">
+                    <h4>10. History Trail</h4>
+                    <p>Show visited pages</p>
+                    <div class="example-demo">
+                        <nav nx-breadcrumb="trail">
+                            <span>Home → Products → Detail</span>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer id="footer" style="margin-top:60px;padding:40px;background:white;text-align:center;border-radius:8px;">
+            <h3>genX Module Suite</h3>
+            <p>Production-ready, accessible, and performant web components</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">6</div>
+                    <div class="stat-label">Modules</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">60</div>
+                    <div class="stat-label">Examples</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">100%</div>
+                    <div class="stat-label">WCAG 2.1 AA</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">&lt;25KB</div>
+                    <div class="stat-label">Total Size</div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize all modules
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize bindX with reactive data
+            if (window.bindX && window.bindX.init && window.bindX.createReactive) {
+                // Create empty reactive object first
+                const reactiveData = window.bindX.createReactive({});
+                window.bindX.init(reactiveData, { auto: true, observe: true });
+                console.log('✅ bindX initialized with reactive data');
+            }
+
+            // Initialize other modules if they have init functions
+            if (window.initFmtX) window.initFmtX();
+            if (window.initAccX) window.initAccX();
+            if (window.initDragX) window.initDragX();
+            if (window.initLoadX) window.initLoadX();
+            if (window.initNavX) window.initNavX();
+
+            console.log('✅ All genX modules initialized');
+
+            // Add date format selector event listener
+            const dateSelector = document.getElementById('date-format-selector');
+            const dateOutput = document.getElementById('date-output');
+            if (dateSelector && dateOutput) {
+                dateSelector.addEventListener('change', function() {
+                    const format = this.value;
+                    dateOutput.setAttribute('fx-date-format', format);
+                    // Trigger fmtX to reformat
+                    if (window.fmtX && window.fmtX.format) {
+                        const formatted = window.fmtX.format('date', '2025-11-10', { format: format });
+                        dateOutput.textContent = formatted;
+                    }
+                });
+            }
+        });
+
+        // Simulate loading
+        function simulateLoad(button, strategy, duration = 2000) {
+            const target = button.nextElementSibling;
+            button.disabled = true;
+
+            // Apply loading state
+            if (window.applyLoading) {
+                window.applyLoading(target);
+            } else {
+                target.textContent = 'Loading...';
+            }
+
+            setTimeout(() => {
+                if (window.removeLoading) {
+                    window.removeLoading(target);
+                }
+                target.textContent = 'Content loaded!';
+                button.disabled = false;
+            }, duration);
+        }
+
+        // Simulate progress
+        function simulateProgress(button) {
+            const target = button.nextElementSibling;
+            button.disabled = true;
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                if (window.updateProgressValue) {
+                    window.updateProgressValue(target, progress);
+                }
+                target.textContent = progress + '%';
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        target.textContent = 'Complete!';
+                        button.disabled = false;
+                    }, 500);
+                }
+            }, 200);
+        }
+
+        // Simulate fetch
+        async function fetchData(button) {
+            const target = document.getElementById('fetch-content');
+            button.disabled = true;
+
+            if (window.applyLoading) window.applyLoading(target);
+
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            if (window.removeLoading) window.removeLoading(target);
+            target.textContent = 'Data loaded from API';
+            button.disabled = false;
+        }
+
+        // Simulate form submission
+        function simulateSubmit(event) {
+            event.preventDefault();
+            const button = event.target.querySelector('button');
+            button.disabled = true;
+
+            setTimeout(() => {
+                alert('Form submitted!');
+                button.disabled = false;
+                event.target.reset();
+            }, 2000);
+
+            return false;
+        }
+
+        // Multi-load
+        function multiLoad() {
+            const targets = ['.multi1', '.multi2', '.multi3'];
+            targets.forEach((selector, index) => {
+                const el = document.querySelector(selector);
+                if (window.applyLoading) {
+                    window.applyLoading(el);
+                    setTimeout(() => {
+                        if (window.removeLoading) window.removeLoading(el);
+                        el.textContent = 'Loaded ' + (index + 1);
+                    }, 1000 + (index * 500));
+                }
+            });
+        }
+
+        // Drag event tracking
+        if (document.getElementById('dragTracked')) {
+            const tracked = document.getElementById('dragTracked');
+            const events = document.getElementById('dragEvents');
+
+            tracked.addEventListener('dx:dragstart', () => {
+                events.innerHTML = 'Drag started...';
+            });
+
+            tracked.addEventListener('dx:dragend', () => {
+                events.innerHTML = 'Drag ended';
+            });
+        }
+
+        // Modal functions
+        function showModal() {
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function hideModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // Mobile menu
+        function closeMobileMenu() {
+            document.getElementById('mobile-menu').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
