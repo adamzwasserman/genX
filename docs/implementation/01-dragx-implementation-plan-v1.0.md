@@ -1852,7 +1852,7 @@ Implement dragX as a declarative drag-and-drop module for the genx.software plat
 
 ### Phase 6: Documentation Complete: 2025-11-10 17:55:00
   Duration: ~5 minutes
-  Files Created: 1 (dragx-README.md - 550 lines)
+Files Created: 1 (dragx readme - 550 lines)
 
   ACHIEVEMENTS:
   ✅ Comprehensive README with all features documented
@@ -1896,7 +1896,7 @@ Implement dragX as a declarative drag-and-drop module for the genx.software plat
 ### FINAL METRICS:
 - **Total Lines of Code**: 1,657 (dragx.js)
 - **Test Step Definitions**: 596 (dragx.steps.js)
-- **Documentation**: 550 (dragx-README.md)
+- **Documentation**: 550 (dragx readme)
 - **Implementation Plan**: 1,900+ (this file)
 - **TOTAL**: 4,700+ lines
 
@@ -1947,7 +1947,7 @@ Implement dragX as a declarative drag-and-drop module for the genx.software plat
 ### FILES READY FOR COMMIT:
 1. /Users/adam/dev/genX/src/dragx.js (1,657 lines)
 2. /Users/adam/dev/genX/tests/step_definitions/dragx.steps.js (596 lines)
-3. /Users/adam/dev/genX/docs/dragx-README.md (550 lines)
+3. /Users/adam/dev/genX/docs/modules/dragx/readme.md (550 lines)
 4. /Users/adam/dev/genX/docs/implementation/01-dragx-implementation-plan-v1_0.md (updated)
 
 ### READY FOR PRODUCTION: YES ✅

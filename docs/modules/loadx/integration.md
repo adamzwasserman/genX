@@ -747,4 +747,4 @@ if ('loadX' in window) {
 
 **Version:** 1.0.0
 **Last Updated:** 2025-11-10
-**Next:** See [Troubleshooting Guide](loadx-troubleshooting.md) for common issues
+**Next:** See [Troubleshooting Guide](troubleshooting.md) for common issues

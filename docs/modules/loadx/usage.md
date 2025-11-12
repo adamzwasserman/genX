@@ -862,4 +862,4 @@ function nextStep() {
 
 **Version:** 1.0.0
 **Last Updated:** 2025-11-10
-**Next:** See [API Reference](loadx-api.md) for detailed API documentation
+**Next:** See [API Reference](api.md) for detailed API documentation

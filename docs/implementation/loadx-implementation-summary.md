@@ -23,7 +23,7 @@ src/loadx.css                                   332 lines  Loading animations
 tests/features/loadx-spinner-strategy.feature    61 lines  BDD specifications
 tests/step_definitions/loadx-spinner-strategy.steps.js  332 lines  Test steps
 tests/unit/loadx-spinner-strategy.test.js      366 lines  Unit tests
-docs/implementation/loadx-implementation-plan-v1_0.md  Updates with timestamps
+docs/implementation/loadx-implementation-plan-v1.0.md  Updates with timestamps
 ```
 
 ## Completed Phases
