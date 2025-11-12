@@ -57,7 +57,7 @@
      * @returns {Object} Batch queue interface
      */
     const createBatchQueue = (updateHandler) => {
-        let pending = new Map(); // path -> value
+        const pending = new Map(); // path -> value
         let scheduled = false;
         let rafId = null;
 
@@ -229,7 +229,9 @@
             getByPath,
             getByPathPattern,
             clear,
-            get size() { return allBindings.size; }
+            get size() {
+                return allBindings.size; 
+            }
         });
     };
 
@@ -341,14 +343,18 @@
         if (!['INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName)) {
             throw new Error(
                 `bx-model requires form control element. Got ${element.tagName}. ` +
-                `Use bx-bind for display-only elements.`
+                'Use bx-bind for display-only elements.'
             );
         }
 
         // Get/set value helpers based on input type
         const getValue = (el) => {
-            if (el.type === 'checkbox') return el.checked;
-            if (el.type === 'number') return parseFloat(el.value) || 0;
+            if (el.type === 'checkbox') {
+                return el.checked;
+            }
+            if (el.type === 'number') {
+                return parseFloat(el.value) || 0;
+            }
             return el.value;
         };
 
@@ -362,7 +368,7 @@
 
         // DOM -> Data (with debouncing)
         let timeoutId = null;
-        const handleInput = (event) => {
+        const handleInput = (_event) => {
             const newValue = getValue(element);
 
             if (debounce > 0) {
@@ -766,7 +772,9 @@
      * @param {Object} state - Computed property state
      */
     const invalidateComputed = (state) => {
-        if (!state.cached) return;
+        if (!state.cached) {
+            return;
+        }
 
         state.cached = false;
         state.value = undefined;
@@ -793,7 +801,9 @@
      */
     const parseBindingAttribute = (element, attrName) => {
         const attrValue = element.getAttribute(attrName);
-        if (!attrValue) return null;
+        if (!attrValue) {
+            return null;
+        }
 
         // Parse path:options format (e.g., "user.name:300")
         const [path, ...optionParts] = attrValue.split(':');
@@ -815,7 +825,7 @@
                 const opts = JSON.parse(optsAttr);
                 Object.assign(config, opts);
             } catch (error) {
-                console.warn(`bindX: Invalid bx-opts JSON on element:`, element, error);
+                console.warn('bindX: Invalid bx-opts JSON on element:', element, error);
             }
         }
 
@@ -842,7 +852,9 @@
      * @returns {Array} Array of created bindings
      */
     const scan = (root = document.body, data = null, options = {}) => {
-        if (!root) return [];
+        if (!root) {
+            return [];
+        }
         if (!data) {
             console.warn('bindX: scan() requires reactive data object');
             return [];
@@ -860,7 +872,7 @@
                     const binding = createModelBinding(element, data, config.path, config);
                     bindings.push(binding);
                 } catch (error) {
-                    console.error(`bindX: Failed to create model binding:`, error, element);
+                    console.error('bindX: Failed to create model binding:', error, element);
                 }
             }
         });
@@ -874,7 +886,7 @@
                     const binding = createOneWayBinding(element, data, config.path, config);
                     bindings.push(binding);
                 } catch (error) {
-                    console.error(`bindX: Failed to create one-way binding:`, error, element);
+                    console.error('bindX: Failed to create one-way binding:', error, element);
                 }
             }
         });
@@ -903,7 +915,9 @@
         };
 
         const scheduleProcess = () => {
-            if (pending) return;
+            if (pending) {
+                return;
+            }
             pending = true;
             timeoutId = setTimeout(processQueue, throttle);
         };
@@ -954,7 +968,9 @@
             observer,
             stop: () => {
                 observer.disconnect();
-                if (timeoutId) clearTimeout(timeoutId);
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
             }
         };
     };

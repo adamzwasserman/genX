@@ -29,7 +29,9 @@
      * @returns {Object|null} Parsed object or null
      */
     const safeJSONParse = (str) => {
-        if (!str) return null;
+        if (!str) {
+            return null;
+        }
 
         try {
             const parsed = JSON.parse(str);
@@ -53,7 +55,9 @@
      */
     const parseAttributes = (element) => {
         const type = element.getAttribute('dx-draggable');
-        if (!type) return null;
+        if (!type) {
+            return null;
+        }
 
         return {
             type,
@@ -73,7 +77,9 @@
      */
     const parseColon = (element) => {
         const dragAttr = element.getAttribute('dx-drag');
-        if (!dragAttr) return null;
+        if (!dragAttr) {
+            return null;
+        }
 
         const parts = dragAttr.split(':');
         const [type, id, ...flags] = parts;
@@ -95,7 +101,9 @@
         const dragClass = Array.from(element.classList)
             .find(cls => cls.startsWith('drag-'));
 
-        if (!dragClass) return null;
+        if (!dragClass) {
+            return null;
+        }
 
         const type = dragClass.replace('drag-', '');
 
@@ -114,10 +122,14 @@
      */
     const parseJSON = (element) => {
         const configAttr = element.getAttribute('dx-config');
-        if (!configAttr) return null;
+        if (!configAttr) {
+            return null;
+        }
 
         const config = safeJSONParse(configAttr);
-        if (!config || !config.draggable) return null;
+        if (!config || !config.draggable) {
+            return null;
+        }
 
         return {
             type: config.draggable,
@@ -153,9 +165,9 @@
 
         if (configs.length === 0) {
             throw new Error(
-                `Element missing dx-draggable attribute. ` +
+                'Element missing dx-draggable attribute. ' +
                 `Add dx-draggable="type" to ${element.tagName}#${element.id || 'unknown'}. ` +
-                `See: https://genx.software/dragx/docs#draggable`
+                'See: https://genx.software/dragx/docs#draggable'
             );
         }
 
@@ -171,7 +183,9 @@
      */
     const parseDropZone = (element) => {
         const zoneName = element.getAttribute('dx-drop-zone');
-        if (!zoneName) return null;
+        if (!zoneName) {
+            return null;
+        }
 
         const acceptsAttr = element.getAttribute('dx-accepts');
         const accepts = acceptsAttr ? acceptsAttr.split(',').map(s => s.trim()) : ['*'];
@@ -477,7 +491,7 @@
      * Handle cancel event (escape key, etc).
      * Any → Idle
      */
-    const handleCancel = (state, event) => {
+    const handleCancel = (state, _event) => {
         if (state.phase !== DragPhase.IDLE) {
             // Animate back to origin
             animateRevert(state.element, state.ghost, state.startPosition);
@@ -648,7 +662,9 @@
      * @returns {Array} Drop zones at point
      */
     const queryQuadTreePoint = (node, x, y) => {
-        if (!node) return [];
+        if (!node) {
+            return [];
+        }
 
         // Check if point is in this node's bounds
         if (!containsPoint(node.bounds, x, y)) {
@@ -725,7 +741,9 @@
      * @returns {HTMLElement} Live region element
      */
     const createAriaLiveRegion = () => {
-        if (ariaLiveRegion) return ariaLiveRegion;
+        if (ariaLiveRegion) {
+            return ariaLiveRegion;
+        }
 
         const region = document.createElement('div');
         region.id = 'dx-aria-live';
@@ -814,7 +832,7 @@
 
         announceToScreenReader(
             `Started dragging ${element.getAttribute('dx-draggable') || 'element'}. ` +
-            `Use arrow keys to move, Enter to drop, Escape to cancel.`
+            'Use arrow keys to move, Enter to drop, Escape to cancel.'
         );
     };
 
@@ -825,7 +843,9 @@
      * @param {number} dy - Y delta
      */
     const moveKeyboardDrag = (dx, dy) => {
-        if (!keyboardDragState.active) return;
+        if (!keyboardDragState.active) {
+            return;
+        }
 
         keyboardDragState.position.x += dx;
         keyboardDragState.position.y += dy;
@@ -864,7 +884,9 @@
      * Cycle to next drop zone with Tab key.
      */
     const cycleToNextDropZone = () => {
-        if (!keyboardDragState.active || dropZones.length === 0) return;
+        if (!keyboardDragState.active || dropZones.length === 0) {
+            return;
+        }
 
         // Remove highlight from current zone
         if (keyboardDragState.dropZoneIndex >= 0) {
@@ -886,7 +908,9 @@
      * Drop element at current keyboard position.
      */
     const dropKeyboardDrag = () => {
-        if (!keyboardDragState.active) return;
+        if (!keyboardDragState.active) {
+            return;
+        }
 
         const dropZone = findDropZoneAt(
             keyboardDragState.position.x,
@@ -911,7 +935,7 @@
             );
         } else {
             announceToScreenReader(
-                `Cannot drop here. No valid drop zone.`
+                'Cannot drop here. No valid drop zone.'
             );
         }
 
@@ -922,7 +946,9 @@
      * Cancel keyboard drag.
      */
     const cancelKeyboardDrag = () => {
-        if (!keyboardDragState.active) return;
+        if (!keyboardDragState.active) {
+            return;
+        }
 
         // Remove ARIA and classes
         keyboardDragState.element.setAttribute('aria-grabbed', 'false');
@@ -952,7 +978,7 @@
     /**
      * Canvas pool for ghost image reuse (memory efficiency).
      */
-    let canvasPool = [];
+    const canvasPool = [];
 
     /**
      * Get or create canvas for ghost rendering.
@@ -1263,7 +1289,7 @@
      * @param {HTMLElement} ghost - Ghost element
      * @param {Object} startPosition - Start position {x, y}
      */
-    const animateRevert = (element, ghost, startPosition) => {
+    const animateRevert = (element, ghost, _startPosition) => {
         // Remove ghost immediately (with canvas cleanup if applicable)
         if (ghost) {
             if (ghost.querySelector('canvas')) {
@@ -1418,30 +1444,30 @@
                 const MOVE_DISTANCE = 10; // pixels per keypress
 
                 switch (e.key) {
-                    case 'ArrowUp':
-                        e.preventDefault();
-                        moveKeyboardDrag(0, -MOVE_DISTANCE);
-                        break;
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        moveKeyboardDrag(0, MOVE_DISTANCE);
-                        break;
-                    case 'ArrowLeft':
-                        e.preventDefault();
-                        moveKeyboardDrag(-MOVE_DISTANCE, 0);
-                        break;
-                    case 'ArrowRight':
-                        e.preventDefault();
-                        moveKeyboardDrag(MOVE_DISTANCE, 0);
-                        break;
-                    case 'Enter':
-                        e.preventDefault();
-                        dropKeyboardDrag();
-                        break;
-                    case 'Tab':
-                        e.preventDefault();
-                        cycleToNextDropZone();
-                        break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    moveKeyboardDrag(0, -MOVE_DISTANCE);
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    moveKeyboardDrag(0, MOVE_DISTANCE);
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    moveKeyboardDrag(-MOVE_DISTANCE, 0);
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    moveKeyboardDrag(MOVE_DISTANCE, 0);
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    dropKeyboardDrag();
+                    break;
+                case 'Tab':
+                    e.preventDefault();
+                    cycleToNextDropZone();
+                    break;
                 }
             }
         });
@@ -1488,7 +1514,7 @@
      * @param {string} label - Metric label
      * @returns {*} Function result
      */
-    const measurePerformance = (fn, label) => {
+    const _measurePerformance = (fn, label) => {
         const start = performance.now();
         const result = fn();
         const duration = performance.now() - start;

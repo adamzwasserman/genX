@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Percent Conversion</title>
+    <script src="src/fmtx.js"></script>
+</head>
+<body>
+    <h1>Percent Conversion Debug</h1>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const format = window.fxXFactory?.format || window.FormatX?.format;
+
+            console.log('=== Percent Conversion Tests ===');
+
+            // Test 1: Decimal (0.1234) should become 12.34% or 12%
+            const test1 = format('percent', '0.1234', { type: 'decimal' });
+            console.log('1. Decimal (0.1234):', test1, '- Expected: 12%');
+
+            // Test 2: Percentage (12.34) should stay 12%
+            const test2 = format('percent', '12.34', { type: 'percentage' });
+            console.log('2. Percentage (12.34):', test2, '- Expected: 12%');
+
+            // Test 3: String ("0.5") should become 50%
+            const test3 = format('percent', '0.5', { type: 'string' });
+            console.log('3. String (0.5):', test3, '- Expected: 50%');
+
+            document.body.innerHTML += `
+                <h2>Results:</h2>
+                <p>1. Decimal (0.1234): <strong>${test1}</strong> - Expected: 12%</p>
+                <p>2. Percentage (12.34): <strong>${test2}</strong> - Expected: 12%</p>
+                <p>3. String (0.5): <strong>${test3}</strong> - Expected: 50%</p>
+            `;
+        });
+    </script>
+</body>
+</html>

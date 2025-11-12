@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Cents Conversion</title>
+    <script src="src/fmtx.js"></script>
+</head>
+<body>
+    <h1>Cents Conversion Debug</h1>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const format = window.fxXFactory?.format || window.FormatX?.format;
+
+            console.log('=== Cents Conversion Test ===');
+            console.log('format function:', !!format);
+
+            // Test cents conversion
+            const result = format('currency', '123456', {
+                type: 'cents',
+                currency: 'USD'
+            });
+
+            console.log('Input: 123456');
+            console.log('Type: cents');
+            console.log('Result:', result);
+            console.log('Expected: $1,234.56');
+            console.log('Match:', result === '$1,234.56');
+
+            document.body.innerHTML += `
+                <p>Input: 123456 (type: cents)</p>
+                <p>Output: ${result}</p>
+                <p>Expected: $1,234.56</p>
+                <p>Status: ${result.includes('1,234.56') ? '✓ PASS' : '✗ FAIL'}</p>
+            `;
+        });
+    </script>
+</body>
+</html>

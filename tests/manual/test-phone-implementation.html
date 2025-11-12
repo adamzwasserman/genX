@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Phone Format Implementation Test</title>
+    <script src="src/fmtx.js"></script>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        table { border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #667eea; color: white; }
+        .pass { color: green; }
+        .fail { color: red; background: #ffeeee; }
+    </style>
+</head>
+<body>
+    <h1>Phone Format Implementation Test</h1>
+    <div id="results"></div>
+
+    <script>
+        const format = window.fxXFactory?.format || window.FormatX?.format;
+
+        const tests = [
+            // US Raw
+            { input: '5551234567', phoneFormat: 'us', expected: '(555) 123-4567', desc: 'Raw digits → US' },
+            { input: '5551234567', phoneFormat: 'us-dash', expected: '555-123-4567', desc: 'Raw digits → US-dash' },
+            { input: '5551234567', phoneFormat: 'us-dot', expected: '555.123.4567', desc: 'Raw digits → US-dot' },
+            { input: '5551234567', phoneFormat: 'intl', expected: '+1 555 123 4567', desc: 'Raw digits → intl' },
+
+            // US formatted input
+            { input: '555-123-4567', phoneFormat: 'us', expected: '(555) 123-4567', desc: 'US-dash input → US' },
+            { input: '(555) 123-4567', phoneFormat: 'us-dash', expected: '555-123-4567', desc: 'US input → US-dash' },
+            { input: '555.123.4567', phoneFormat: 'us-dot', expected: '555.123.4567', desc: 'US-dot input → US-dot' },
+
+            // 11 digit with country code
+            { input: '14155551234', phoneFormat: 'us', expected: '(415) 555-1234', desc: '11 digits → US (strip country code)' },
+            { input: '14155551234', phoneFormat: 'intl', expected: '+1 415 555 1234', desc: '11 digits → intl' },
+
+            // Extra spaces
+            { input: '  555 123 4567  ', phoneFormat: 'us', expected: '(555) 123-4567', desc: 'Extra spaces → US' },
+
+            // EU numbers
+            { input: '+44 20 7946 0958', phoneFormat: 'us', expected: '+44 20 7946 0958', desc: 'UK number → US (return EU)' },
+            { input: '+44 20 7946 0958', phoneFormat: 'intl', expected: '+44 20 7946 0958', desc: 'UK number → intl (normalize)' },
+            { input: '  +44  20  7946  0958  ', phoneFormat: 'intl', expected: '+44 20 7946 0958', desc: 'UK with spaces → intl' },
+            { input: '+33 1 42 86 82 00', phoneFormat: 'us', expected: '+33 1 42 86 82 00', desc: 'France → US (return EU)' },
+        ];
+
+        let html = '<table><tr><th>Test</th><th>Input</th><th>Format</th><th>Expected</th><th>Actual</th><th>Result</th></tr>';
+        let passed = 0;
+        let failed = 0;
+
+        tests.forEach((test, i) => {
+            const actual = format('phone', test.input, { phoneFormat: test.phoneFormat });
+            const pass = actual === test.expected;
+            if (pass) passed++; else failed++;
+
+            html += `<tr class="${pass ? 'pass' : 'fail'}">
+                <td>${i + 1}. ${test.desc}</td>
+                <td>${test.input}</td>
+                <td>${test.phoneFormat}</td>
+                <td>${test.expected}</td>
+                <td>${actual}</td>
+                <td>${pass ? '✓ PASS' : '✗ FAIL'}</td>
+            </tr>`;
+        });
+
+        html += '</table>';
+        html = `<p><strong>Results: ${passed} passed, ${failed} failed</strong></p>` + html;
+
+        document.getElementById('results').innerHTML = html;
+        console.log(`Test Results: ${passed}/${tests.length} passed`);
+    </script>
+</body>
+</html>

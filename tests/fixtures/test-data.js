@@ -43,10 +43,48 @@ module.exports = {
         trillion: { value: 1500000000000, formatted: '1.5T' }
     },
 
-    // Phone numbers
+    // Phone numbers (comprehensive formats)
     phoneNumbers: {
-        us: { value: '5551234567', formatted: '(555) 123-4567', format: 'US' },
-        international: { value: '441234567890', formatted: '+44 123 4567890', format: 'intl' }
+        us: {
+            value: '5551234567',
+            formatted: '(555) 123-4567',
+            format: 'us'
+        },
+        usDash: {
+            value: '5551234567',
+            formatted: '555-123-4567',
+            format: 'us-dash'
+        },
+        usDot: {
+            value: '5551234567',
+            formatted: '555.123.4567',
+            format: 'us-dot'
+        },
+        international: {
+            value: '5551234567',
+            formatted: '+1 555 123 4567',
+            format: 'intl'
+        },
+        uk: {
+            value: '+44 20 7946 0958',
+            formatted: '+44 20 7946 0958',
+            format: 'intl'
+        },
+        france: {
+            value: '+33 1 42 86 82 00',
+            formatted: '+33 1 42 86 82 00',
+            format: 'intl'
+        },
+        usWithCountryCode: {
+            value: '14155551234',
+            formatted: '(415) 555-1234',
+            format: 'us'
+        },
+        usWithSpaces: {
+            value: '  555 123 4567  ',
+            formatted: '(555) 123-4567',
+            format: 'us'
+        }
     },
 
     // Text transformations

@@ -210,7 +210,9 @@
      * @returns {Object} - Parsed configuration object
      */
     const parseElementAttributes = (el) => {
-        if (!el) return { strategy: 'spinner' }; // Default
+        if (!el) {
+            return { strategy: 'spinner' };
+        } // Default
 
         const result = {};
 
@@ -272,7 +274,9 @@
      * @returns {Object} - Parsed configuration
      */
     const parseClassSyntax = (className) => {
-        if (!className) return {};
+        if (!className) {
+            return {};
+        }
 
         const classes = className.split(' ').filter(c => c.trim());
         const result = {};
@@ -364,7 +368,9 @@
      * @returns {String} - Normalized name
      */
     const normalizeStrategyName = (name) => {
-        if (!name || typeof name !== 'string') return 'spinner';
+        if (!name || typeof name !== 'string') {
+            return 'spinner';
+        }
         return name.toLowerCase().trim() || 'spinner';
     };
 
@@ -405,7 +411,9 @@
      * @returns {HTMLElement|null} - Element with lx-loading configuration
      */
     const findLoadingElement = (target) => {
-        if (!target) return null;
+        if (!target) {
+            return null;
+        }
 
         // Check target element
         if (target._lxConfig || target.hasAttribute('lx-loading')) {
@@ -607,26 +615,28 @@
      * @param {Object} config - Configuration object
      */
     const applyLoadingState = (el, opts, config) => {
-        if (!el) return;
+        if (!el) {
+            return;
+        }
 
         const strategy = opts.strategy || 'spinner';
 
         // Dispatch to appropriate strategy
         switch (strategy) {
-            case 'spinner':
-                applySpinnerStrategy(el, opts);
-                break;
-            case 'skeleton':
-                applySkeletonStrategy(el, opts);
-                break;
-            case 'progress':
-                applyProgressStrategy(el, opts);
-                break;
-            case 'fade':
-                applyFadeStrategy(el, opts);
-                break;
-            default:
-                applySpinnerStrategy(el, opts);
+        case 'spinner':
+            applySpinnerStrategy(el, opts);
+            break;
+        case 'skeleton':
+            applySkeletonStrategy(el, opts);
+            break;
+        case 'progress':
+            applyProgressStrategy(el, opts);
+            break;
+        case 'fade':
+            applyFadeStrategy(el, opts);
+            break;
+        default:
+            applySpinnerStrategy(el, opts);
         }
 
         // Add ARIA attributes
@@ -641,26 +651,28 @@
      * @param {HTMLElement} el - Target element
      */
     const removeLoadingState = (el) => {
-        if (!el) return;
+        if (!el) {
+            return;
+        }
 
         const strategy = el.getAttribute('data-lx-strategy') || 'spinner';
 
         // Dispatch to appropriate strategy removal
         switch (strategy) {
-            case 'spinner':
-                removeSpinnerStrategy(el);
-                break;
-            case 'skeleton':
-                removeSkeletonStrategy(el);
-                break;
-            case 'progress':
-                removeProgressStrategy(el);
-                break;
-            case 'fade':
-                removeFadeStrategy(el);
-                break;
-            default:
-                removeSpinnerStrategy(el);
+        case 'spinner':
+            removeSpinnerStrategy(el);
+            break;
+        case 'skeleton':
+            removeSkeletonStrategy(el);
+            break;
+        case 'progress':
+            removeProgressStrategy(el);
+            break;
+        case 'fade':
+            removeFadeStrategy(el);
+            break;
+        default:
+            removeSpinnerStrategy(el);
         }
 
         // Remove ARIA attributes
@@ -680,7 +692,9 @@
      * @param {Object} opts - Spinner options
      */
     const applySpinnerStrategy = (el, opts = {}) => {
-        if (!el) return;
+        if (!el) {
+            return;
+        }
 
         // Store original content
         const originalContent = el.innerHTML;
@@ -716,15 +730,15 @@
         } else {
             // Animated spinner
             switch (spinnerType) {
-                case 'dots':
-                    spinnerHTML = createDotsSpinner(spinnerSize, spinnerColor);
-                    break;
-                case 'bars':
-                    spinnerHTML = createBarsSpinner(spinnerSize, spinnerColor);
-                    break;
-                case 'circle':
-                default:
-                    spinnerHTML = createCircleSpinner(spinnerSize, spinnerColor);
+            case 'dots':
+                spinnerHTML = createDotsSpinner(spinnerSize, spinnerColor);
+                break;
+            case 'bars':
+                spinnerHTML = createBarsSpinner(spinnerSize, spinnerColor);
+                break;
+            case 'circle':
+            default:
+                spinnerHTML = createCircleSpinner(spinnerSize, spinnerColor);
             }
         }
 
@@ -744,7 +758,9 @@
      * @param {HTMLElement} el - Target element
      */
     const removeSpinnerStrategy = (el) => {
-        if (!el) return;
+        if (!el) {
+            return;
+        }
 
         // Restore original content
         const originalContent = el.getAttribute('data-lx-original-content');
@@ -849,7 +865,9 @@
      * @param {Object} opts - Skeleton options
      */
     const applySkeletonStrategy = (el, opts = {}) => {
-        if (!el) return;
+        if (!el) {
+            return;
+        }
 
         // Store original content
         const originalContent = el.innerHTML;
@@ -884,7 +902,9 @@
      * @param {HTMLElement} el - Target element
      */
     const removeSkeletonStrategy = (el) => {
-        if (!el) return;
+        if (!el) {
+            return;
+        }
 
         // Restore original content
         const originalContent = el.getAttribute('data-lx-original-content');
@@ -1014,7 +1034,9 @@
      * @param {Object} opts - Progress options
      */
     const applyProgressStrategy = (el, opts = {}) => {
-        if (!el) return;
+        if (!el) {
+            return;
+        }
 
         // Store original content
         const originalContent = el.innerHTML;
@@ -1051,7 +1073,9 @@
      * @param {HTMLElement} el - Target element
      */
     const removeProgressStrategy = (el) => {
-        if (!el) return;
+        if (!el) {
+            return;
+        }
 
         // Restore original content
         const originalContent = el.getAttribute('data-lx-original-content');
@@ -1102,7 +1126,9 @@
      * @param {Number} value - New value
      */
     const updateProgressValue = (el, value) => {
-        if (!el || !el._lxProgressMax) return;
+        if (!el || !el._lxProgressMax) {
+            return;
+        }
 
         el._lxProgressValue = value;
         const percentage = Math.min(100, (value / el._lxProgressMax) * 100);
@@ -1128,7 +1154,9 @@
      * @param {Object} opts - Fade options
      */
     const applyFadeStrategy = (el, opts = {}) => {
-        if (!el) return;
+        if (!el) {
+            return;
+        }
 
         // Store original content
         const originalContent = el.innerHTML;
@@ -1156,7 +1184,9 @@
      * @param {HTMLElement} el - Target element
      */
     const removeFadeStrategy = (el) => {
-        if (!el) return;
+        if (!el) {
+            return;
+        }
 
         // Get fade duration for smooth transition
         const duration = parseInt(el.style.transition?.match(/(\d+)ms/)?.[1], 10) || 300;
