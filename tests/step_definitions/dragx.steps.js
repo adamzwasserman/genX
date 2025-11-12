@@ -13,12 +13,6 @@ Given('the dragX module is loaded', async function() {
     await this.page.waitForFunction(() => window.DragX !== undefined);
 });
 
-Given('the DOM is ready', async function() {
-    await this.page.evaluate(() => {
-        return document.readyState === 'complete';
-    });
-});
-
 // ============================================================================
 // DRAGGABLE ELEMENTS
 // ============================================================================
