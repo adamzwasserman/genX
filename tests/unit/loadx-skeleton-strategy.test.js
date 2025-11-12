@@ -227,28 +227,34 @@ describe('loadX - Skeleton Strategy', () => {
 
     describe('Auto-detection', () => {
         test('should detect text content elements', () => {
-            mockElement.tagName = 'P';
-            mockElement.innerHTML = 'Some text content';
+            // Create a new element with the desired tagName
+            const pElement = document.createElement('p');
+            pElement.innerHTML = 'Some text content';
+            jest.spyOn(pElement, 'setAttribute');
 
-            window.loadX.applySkeletonStrategy(mockElement, {});
+            window.loadX.applySkeletonStrategy(pElement, {});
 
-            expect(mockElement.setAttribute).toHaveBeenCalled();
+            expect(pElement.setAttribute).toHaveBeenCalled();
         });
 
         test('should detect list elements', () => {
-            mockElement.tagName = 'UL';
+            // Create a new UL element
+            const ulElement = document.createElement('ul');
+            jest.spyOn(ulElement, 'setAttribute');
 
-            window.loadX.applySkeletonStrategy(mockElement, {});
+            window.loadX.applySkeletonStrategy(ulElement, {});
 
-            expect(mockElement.setAttribute).toHaveBeenCalled();
+            expect(ulElement.setAttribute).toHaveBeenCalled();
         });
 
         test('should detect card/container elements', () => {
-            mockElement.classList.contains.mockImplementation((cls) => cls === 'card');
+            const cardElement = document.createElement('div');
+            cardElement.classList.add('card');
+            jest.spyOn(cardElement, 'setAttribute');
 
-            window.loadX.applySkeletonStrategy(mockElement, {});
+            window.loadX.applySkeletonStrategy(cardElement, {});
 
-            expect(mockElement.setAttribute).toHaveBeenCalled();
+            expect(cardElement.setAttribute).toHaveBeenCalled();
         });
     });
 

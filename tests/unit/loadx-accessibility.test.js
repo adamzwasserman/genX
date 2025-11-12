@@ -80,12 +80,18 @@ describe('loadX - Accessibility', () => {
 
     describe('ARIA Live Regions', () => {
         test('should create ARIA live region on initialization', () => {
-            mockDocument.getElementById.mockReturnValue(null);
+            // Remove any existing live region first
+            const existingRegion = document.getElementById('lx-live-region');
+            if (existingRegion) {
+                existingRegion.remove();
+            }
 
             window.loadX.initLoadX();
 
-            // Should attempt to create live region
-            expect(mockDocument.getElementById).toHaveBeenCalledWith('lx-live-region');
+            // Should have created live region
+            const liveRegion = document.getElementById('lx-live-region');
+            expect(liveRegion).toBeTruthy();
+            expect(liveRegion.getAttribute('aria-live')).toBe('polite');
         });
 
         test('should not duplicate ARIA live regions', () => {
@@ -100,29 +106,40 @@ describe('loadX - Accessibility', () => {
         });
 
         test('should set aria-live="polite" on live region', () => {
-            mockDocument.getElementById.mockReturnValue(null);
+            const existingRegion = document.getElementById('lx-live-region');
+            if (existingRegion) {
+                existingRegion.remove();
+            }
 
             window.loadX.initLoadX();
 
-            // createElement should be called for live region
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            const liveRegion = document.getElementById('lx-live-region');
+            expect(liveRegion.getAttribute('aria-live')).toBe('polite');
         });
 
         test('should set aria-atomic="true" on live region', () => {
-            mockDocument.getElementById.mockReturnValue(null);
+            const existingRegion = document.getElementById('lx-live-region');
+            if (existingRegion) {
+                existingRegion.remove();
+            }
 
             window.loadX.initLoadX();
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            const liveRegion = document.getElementById('lx-live-region');
+            expect(liveRegion.getAttribute('aria-atomic')).toBe('true');
         });
 
         test('should hide live region visually', () => {
-            mockDocument.getElementById.mockReturnValue(null);
+            const existingRegion = document.getElementById('lx-live-region');
+            if (existingRegion) {
+                existingRegion.remove();
+            }
 
             window.loadX.initLoadX();
 
-            // Should create element with screen reader only styles
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            const liveRegion = document.getElementById('lx-live-region');
+            // Should have screen reader only class
+            expect(liveRegion.className).toContain('ax-sr-only');
         });
     });
 
@@ -317,33 +334,35 @@ describe('loadX - Accessibility', () => {
         test('should use semantic HTML for spinner', () => {
             window.loadX.applySpinnerStrategy(mockElement, {});
 
-            // Should create semantic elements
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            // Should create wrapper with spinner content
+            expect(mockElement.innerHTML).toContain('lx-spinner-wrapper');
         });
 
         test('should use semantic HTML for skeleton', () => {
             window.loadX.applySkeletonStrategy(mockElement, {});
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            // Should apply skeleton loading class
+            expect(mockElement.classList.contains('lx-loading-skeleton')).toBe(true);
         });
 
         test('should use semantic HTML for progress', () => {
             window.loadX.applyProgressStrategy(mockElement, {});
 
-            // Should create progress element or similar
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            // Should create progress HTML structure
+            expect(mockElement.innerHTML).toContain('lx-progress');
         });
 
         test('should preserve heading hierarchy', () => {
-            mockElement.tagName = 'H1';
-            mockElement.innerHTML = '<span>Heading</span>';
+            const h1Element = document.createElement('h1');
+            h1Element.innerHTML = '<span>Heading</span>';
+            jest.spyOn(h1Element, 'setAttribute');
 
             const api = window.loadX.initLoadX();
 
-            api.applyLoading(mockElement, { strategy: 'skeleton' });
+            api.applyLoading(h1Element, { strategy: 'skeleton' });
 
             // Should preserve heading semantics
-            expect(mockElement.setAttribute).toHaveBeenCalled();
+            expect(h1Element.setAttribute).toHaveBeenCalled();
         });
     });
 
@@ -394,8 +413,8 @@ describe('loadX - Accessibility', () => {
                 max: 100
             });
 
-            // Should create element with progressbar role
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            // Should create progress HTML with role
+            expect(mockElement.innerHTML).toContain('role="progressbar"');
         });
 
         test('should set aria-valuenow for determinate progress', () => {
@@ -404,7 +423,7 @@ describe('loadX - Accessibility', () => {
                 max: 100
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            expect(mockElement.innerHTML).toContain('aria-valuenow="75"');
         });
 
         test('should set aria-valuemin for progress bars', () => {
@@ -413,7 +432,7 @@ describe('loadX - Accessibility', () => {
                 max: 100
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            expect(mockElement.innerHTML).toContain('aria-valuemin="0"');
         });
 
         test('should set aria-valuemax for progress bars', () => {
@@ -422,7 +441,7 @@ describe('loadX - Accessibility', () => {
                 max: 100
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            expect(mockElement.innerHTML).toContain('aria-valuemax="100"');
         });
 
         test('should announce progress updates to screen readers', () => {
@@ -459,28 +478,48 @@ describe('loadX - Accessibility', () => {
         });
 
         test('should handle live region creation failure', () => {
-            mockDocument.createElement.mockImplementation(() => {
-                throw new Error('createElement failed');
+            // Remove any existing live region first
+            const existingRegion = document.getElementById('lx-live-region');
+            if (existingRegion) {
+                existingRegion.remove();
+            }
+
+            // Mock document.body.appendChild to fail
+            const originalAppendChild = document.body.appendChild.bind(document.body);
+            jest.spyOn(document.body, 'appendChild').mockImplementation((node) => {
+                if (node && node.id === 'lx-live-region') {
+                    throw new Error('appendChild failed');
+                }
+                return originalAppendChild(node);
             });
 
             expect(() => {
                 window.loadX.initLoadX();
             }).toThrow();
+
+            // Restore
+            document.body.appendChild.mockRestore();
         });
 
         test('should handle elements without aria support', () => {
-            // Some elements may not support ARIA
-            mockElement.setAttribute.mockImplementation((attr) => {
+            // Create a fresh element for this test
+            const testElement = document.createElement('div');
+            testElement.innerHTML = '<p>Content</p>';
+
+            // Some elements may not support ARIA - mock to silently ignore
+            jest.spyOn(testElement, 'setAttribute').mockImplementation((attr, value) => {
                 if (attr.startsWith('aria-')) {
-                    // Silent failure
+                    // Silent failure for ARIA attributes
                     return;
                 }
+                // Call the real implementation for non-ARIA attributes
+                return HTMLElement.prototype.setAttribute.call(testElement, attr, value);
             });
 
             const api = window.loadX.initLoadX();
 
             expect(() => {
-                api.applyLoading(mockElement, { strategy: 'spinner' });
+                api.applyLoading(testElement, { strategy: 'spinner' });
             }).not.toThrow();
         });
     });

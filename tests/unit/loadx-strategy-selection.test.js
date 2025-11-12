@@ -414,9 +414,9 @@ describe('loadX - Strategy Selection', () => {
 
     describe('Edge Cases', () => {
         test('should handle elements with no attributes', () => {
-            mockElement.getAttribute.mockReturnValue(null);
+            jest.spyOn(mockElement, 'getAttribute').mockReturnValue(null);
             mockElement.className = '';
-            mockElement.hasAttribute.mockReturnValue(false);
+            jest.spyOn(mockElement, 'hasAttribute').mockReturnValue(false);
 
             expect(() => {
                 window.loadX.parseElementAttributes(mockElement);
