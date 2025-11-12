@@ -14,11 +14,15 @@ describe('loadX - Skeleton Strategy', () => {
             tagName: 'DIV',
             innerHTML: '<p>Original content</p>',
             style: {},
+            offsetWidth: 300,
+            offsetHeight: 200,
             setAttribute: jest.fn(),
             getAttribute: jest.fn(),
             hasAttribute: jest.fn(),
             removeAttribute: jest.fn(),
             appendChild: jest.fn(),
+            querySelector: jest.fn(),
+            querySelectorAll: jest.fn(() => []),
             children: [],
             classList: {
                 contains: jest.fn(),
@@ -69,6 +73,11 @@ describe('loadX - Skeleton Strategy', () => {
                 getPropertyValue: jest.fn(() => ''),
                 display: 'block',
                 position: 'static'
+            })),
+            matchMedia: jest.fn(() => ({
+                matches: false,
+                addListener: jest.fn(),
+                removeListener: jest.fn()
             }))
         };
 
@@ -77,6 +86,17 @@ describe('loadX - Skeleton Strategy', () => {
 
         // Load the loadx.js module
         require('../../src/loadx.js');
+
+        // Create real DOM element using JSDOM's document
+        mockElement = document.createElement('div');
+        mockElement.innerHTML = '<p>Original content</p>';
+
+        // Add spy functions to track calls
+        jest.spyOn(mockElement, 'setAttribute');
+        jest.spyOn(mockElement, 'getAttribute');
+        jest.spyOn(mockElement, 'removeAttribute');
+        jest.spyOn(mockElement.classList, 'add');
+        jest.spyOn(mockElement.classList, 'remove');
     });
 
     afterEach(() => {
@@ -97,17 +117,22 @@ describe('loadX - Skeleton Strategy', () => {
         });
 
         test('should preserve element dimensions', () => {
+            // Set dimensions on the element
+            Object.defineProperty(mockElement, 'offsetWidth', { value: 300, writable: true });
+            Object.defineProperty(mockElement, 'offsetHeight', { value: 200, writable: true });
+
             window.loadX.applySkeletonStrategy(mockElement, {});
 
-            // Should get dimensions
-            expect(mockElement.getBoundingClientRect).toHaveBeenCalled();
+            // Should preserve dimensions in style
+            expect(mockElement.style.width).toBe('300px');
+            expect(mockElement.style.minHeight).toBe('200px');
         });
 
         test('should apply skeleton class', () => {
             window.loadX.applySkeletonStrategy(mockElement, {});
 
             // Should add skeleton class
-            expect(mockElement.classList.add).toHaveBeenCalledWith('lx-skeleton');
+            expect(mockElement.classList.add).toHaveBeenCalledWith('lx-loading', 'lx-loading-skeleton');
         });
 
         test('should handle null element gracefully', () => {
@@ -190,7 +215,7 @@ describe('loadX - Skeleton Strategy', () => {
 
             window.loadX.removeSkeletonStrategy(mockElement);
 
-            expect(mockElement.classList.remove).toHaveBeenCalledWith('lx-skeleton');
+            expect(mockElement.classList.remove).toHaveBeenCalledWith('lx-loading', 'lx-loading-skeleton');
         });
 
         test('should handle null element gracefully', () => {
@@ -229,33 +254,27 @@ describe('loadX - Skeleton Strategy', () => {
 
     describe('Layout Preservation', () => {
         test('should preserve element width', () => {
-            mockElement.getBoundingClientRect.mockReturnValue({
-                width: 400,
-                height: 200
-            });
+            Object.defineProperty(mockElement, 'offsetWidth', { value: 400, writable: true });
+            Object.defineProperty(mockElement, 'offsetHeight', { value: 200, writable: true });
 
             window.loadX.applySkeletonStrategy(mockElement, {});
 
-            // Should get dimensions to preserve layout
-            expect(mockElement.getBoundingClientRect).toHaveBeenCalled();
+            // Should preserve width in style
+            expect(mockElement.style.width).toBe('400px');
         });
 
         test('should preserve element height', () => {
-            mockElement.getBoundingClientRect.mockReturnValue({
-                width: 300,
-                height: 150
-            });
+            Object.defineProperty(mockElement, 'offsetWidth', { value: 300, writable: true });
+            Object.defineProperty(mockElement, 'offsetHeight', { value: 150, writable: true });
 
             window.loadX.applySkeletonStrategy(mockElement, {});
 
-            expect(mockElement.getBoundingClientRect).toHaveBeenCalled();
+            expect(mockElement.style.minHeight).toBe('150px');
         });
 
         test('should handle zero dimensions gracefully', () => {
-            mockElement.getBoundingClientRect.mockReturnValue({
-                width: 0,
-                height: 0
-            });
+            Object.defineProperty(mockElement, 'offsetWidth', { value: 0, writable: true });
+            Object.defineProperty(mockElement, 'offsetHeight', { value: 0, writable: true });
 
             expect(() => {
                 window.loadX.applySkeletonStrategy(mockElement, {});
@@ -290,10 +309,8 @@ describe('loadX - Skeleton Strategy', () => {
         });
 
         test('should handle element with no dimensions', () => {
-            mockElement.getBoundingClientRect.mockReturnValue({
-                width: 0,
-                height: 0
-            });
+            Object.defineProperty(mockElement, 'offsetWidth', { value: 0, writable: true });
+            Object.defineProperty(mockElement, 'offsetHeight', { value: 0, writable: true });
 
             expect(() => {
                 window.loadX.applySkeletonStrategy(mockElement, {});

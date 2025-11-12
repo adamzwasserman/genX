@@ -8,39 +8,6 @@ describe('loadX Spinner Strategy', () => {
     let mockWindow, mockDocument, mockElement, loadX;
 
     beforeEach(() => {
-        // Create mock element
-        mockElement = {
-            tagName: 'DIV',
-            id: '',
-            className: '',
-            innerHTML: '',
-            textContent: '',
-            style: {},
-            offsetWidth: 0,
-            offsetHeight: 0,
-            attributes: new Map(),
-            classList: {
-                contains: jest.fn(),
-                add: jest.fn(),
-                remove: jest.fn()
-            },
-            setAttribute: jest.fn((key, value) => {
-                mockElement.attributes.set(key, value);
-            }),
-            getAttribute: jest.fn((key) => {
-                return mockElement.attributes.get(key);
-            }),
-            hasAttribute: jest.fn((key) => {
-                return mockElement.attributes.has(key);
-            }),
-            removeAttribute: jest.fn((key) => {
-                mockElement.attributes.delete(key);
-            }),
-            appendChild: jest.fn(),
-            querySelector: jest.fn(),
-            querySelectorAll: jest.fn(() => [])
-        };
-
         // Create mock live region
         const mockLiveRegion = {
             tagName: 'DIV',
@@ -99,6 +66,17 @@ describe('loadX Spinner Strategy', () => {
 
         // Get loadX from window (set by module)
         loadX = global.window.loadX;
+
+        // Create mock element using JSDOM's document
+        mockElement = document.createElement('div');
+        mockElement.innerHTML = '';
+
+        // Add spy functions to track calls
+        jest.spyOn(mockElement, 'setAttribute');
+        jest.spyOn(mockElement, 'getAttribute');
+        jest.spyOn(mockElement, 'removeAttribute');
+        jest.spyOn(mockElement.classList, 'add');
+        jest.spyOn(mockElement.classList, 'remove');
     });
 
     afterEach(() => {

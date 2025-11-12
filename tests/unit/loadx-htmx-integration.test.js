@@ -58,7 +58,11 @@ describe('loadX - HTMX Integration', () => {
         mockDocument = {
             body: mockBody,
             readyState: 'complete',
-            addEventListener: jest.fn(),
+            addEventListener: jest.fn((event, callback) => {
+                if (htmxCallbacks[event]) {
+                    htmxCallbacks[event].push(callback);
+                }
+            }),
             createElement: jest.fn((tag) => ({
                 tagName: tag.toUpperCase(),
                 id: '',
@@ -92,6 +96,17 @@ describe('loadX - HTMX Integration', () => {
         global.document = mockDocument;
 
         require('../../src/loadx.js');
+
+        // Create real DOM element using JSDOM's document
+        mockElement = document.createElement('div');
+        mockElement.innerHTML = '<p>Content</p>';
+
+        // Add spy functions to track calls
+        jest.spyOn(mockElement, 'setAttribute');
+        jest.spyOn(mockElement, 'getAttribute');
+        jest.spyOn(mockElement, 'removeAttribute');
+        jest.spyOn(mockElement.classList, 'add');
+        jest.spyOn(mockElement.classList, 'remove');
     });
 
     afterEach(() => {
@@ -102,8 +117,8 @@ describe('loadX - HTMX Integration', () => {
         test('should listen for htmx:beforeRequest event', () => {
             window.loadX.initLoadX({ autoDetect: true });
 
-            // Should set up event listeners on document.body
-            expect(mockBody.addEventListener).toHaveBeenCalled();
+            // Should set up event listeners on document
+            expect(mockDocument.addEventListener).toHaveBeenCalled();
         });
 
         test('should apply loading state on htmx:beforeRequest', () => {
@@ -127,7 +142,7 @@ describe('loadX - HTMX Integration', () => {
             });
 
             // Should attempt to process the element
-            expect(mockBody.addEventListener).toHaveBeenCalled();
+            expect(mockDocument.addEventListener).toHaveBeenCalled();
         });
 
         test('should remove loading state on htmx:afterSwap', () => {
@@ -148,7 +163,7 @@ describe('loadX - HTMX Integration', () => {
                 }
             });
 
-            expect(mockBody.addEventListener).toHaveBeenCalled();
+            expect(mockDocument.addEventListener).toHaveBeenCalled();
         });
 
         test('should handle htmx:beforeSwap event', () => {
@@ -189,7 +204,7 @@ describe('loadX - HTMX Integration', () => {
 
             window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockBody.addEventListener).toHaveBeenCalled();
+            expect(mockDocument.addEventListener).toHaveBeenCalled();
         });
 
         test('should handle elements with hx-post attribute', () => {
@@ -201,7 +216,7 @@ describe('loadX - HTMX Integration', () => {
 
             window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockBody.addEventListener).toHaveBeenCalled();
+            expect(mockDocument.addEventListener).toHaveBeenCalled();
         });
 
         test('should handle elements with hx-put attribute', () => {
@@ -209,7 +224,7 @@ describe('loadX - HTMX Integration', () => {
 
             window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockBody.addEventListener).toHaveBeenCalled();
+            expect(mockDocument.addEventListener).toHaveBeenCalled();
         });
 
         test('should handle elements with hx-delete attribute', () => {
@@ -217,7 +232,7 @@ describe('loadX - HTMX Integration', () => {
 
             window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockBody.addEventListener).toHaveBeenCalled();
+            expect(mockDocument.addEventListener).toHaveBeenCalled();
         });
     });
 
@@ -241,7 +256,7 @@ describe('loadX - HTMX Integration', () => {
 
             window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockBody.addEventListener).toHaveBeenCalled();
+            expect(mockDocument.addEventListener).toHaveBeenCalled();
         });
     });
 
@@ -261,7 +276,7 @@ describe('loadX - HTMX Integration', () => {
 
             window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockBody.addEventListener).toHaveBeenCalled();
+            expect(mockDocument.addEventListener).toHaveBeenCalled();
         });
 
         test('should apply loading to target element', () => {
@@ -274,7 +289,7 @@ describe('loadX - HTMX Integration', () => {
 
             window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockBody.addEventListener).toHaveBeenCalled();
+            expect(mockDocument.addEventListener).toHaveBeenCalled();
         });
 
         test('should handle missing target gracefully', () => {
@@ -300,7 +315,7 @@ describe('loadX - HTMX Integration', () => {
 
             window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockBody.addEventListener).toHaveBeenCalled();
+            expect(mockDocument.addEventListener).toHaveBeenCalled();
         });
 
         test('should handle hx-swap="outerHTML"', () => {
@@ -311,7 +326,7 @@ describe('loadX - HTMX Integration', () => {
 
             window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockBody.addEventListener).toHaveBeenCalled();
+            expect(mockDocument.addEventListener).toHaveBeenCalled();
         });
 
         test('should handle hx-swap="beforeend"', () => {
@@ -322,7 +337,7 @@ describe('loadX - HTMX Integration', () => {
 
             window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockBody.addEventListener).toHaveBeenCalled();
+            expect(mockDocument.addEventListener).toHaveBeenCalled();
         });
     });
 
@@ -355,7 +370,7 @@ describe('loadX - HTMX Integration', () => {
             window.loadX.initLoadX({ autoDetect: true });
 
             // Should clean up after errors
-            expect(mockBody.addEventListener).toHaveBeenCalled();
+            expect(mockDocument.addEventListener).toHaveBeenCalled();
         });
     });
 
