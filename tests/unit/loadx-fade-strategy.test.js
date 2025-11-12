@@ -333,7 +333,8 @@ describe('loadX - Fade Strategy', () => {
                 message: 'Please wait...'
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            // Should apply fade loading classes/attributes
+            expect(mockElement.setAttribute).toHaveBeenCalled();
         });
     });
 

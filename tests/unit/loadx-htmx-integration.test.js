@@ -94,6 +94,7 @@ describe('loadX - HTMX Integration', () => {
 
         global.window = mockWindow;
         global.document = mockDocument;
+        global.htmx = mockWindow.htmx;  // Make htmx available globally
 
         require('../../src/loadx.js');
 
@@ -111,59 +112,42 @@ describe('loadX - HTMX Integration', () => {
 
     afterEach(() => {
         delete require.cache[require.resolve('../../src/loadx.js')];
+        delete global.htmx;
     });
 
     describe('HTMX Event Listeners', () => {
         test('should listen for htmx:beforeRequest event', () => {
+            // Spy on the real document's addEventListener
+            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+
             window.loadX.initLoadX({ autoDetect: true });
 
-            // Should set up event listeners on document
-            expect(mockDocument.addEventListener).toHaveBeenCalled();
+            // Should set up event listeners on document for HTMX events
+            expect(addEventListenerSpy).toHaveBeenCalledWith('htmx:beforeRequest', expect.any(Function));
+
+            addEventListenerSpy.mockRestore();
         });
 
         test('should apply loading state on htmx:beforeRequest', () => {
+            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+
             window.loadX.initLoadX({ autoDetect: true });
 
-            // Simulate HTMX beforeRequest event
-            const event = {
-                detail: {
-                    elt: mockElement,
-                    xhr: {}
-                }
-            };
+            // Verify event listener was registered
+            expect(addEventListenerSpy).toHaveBeenCalledWith('htmx:beforeRequest', expect.any(Function));
 
-            // Trigger callbacks
-            htmxCallbacks['htmx:beforeRequest'].forEach(cb => {
-                try {
-                    cb(event);
-                } catch (e) {
-                    // Expected if full implementation not mocked
-                }
-            });
-
-            // Should attempt to process the element
-            expect(mockDocument.addEventListener).toHaveBeenCalled();
+            addEventListenerSpy.mockRestore();
         });
 
         test('should remove loading state on htmx:afterSwap', () => {
+            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+
             window.loadX.initLoadX({ autoDetect: true });
 
-            const event = {
-                detail: {
-                    elt: mockElement,
-                    xhr: {}
-                }
-            };
+            // Verify event listener was registered
+            expect(addEventListenerSpy).toHaveBeenCalledWith('htmx:afterSwap', expect.any(Function));
 
-            htmxCallbacks['htmx:afterSwap'].forEach(cb => {
-                try {
-                    cb(event);
-                } catch (e) {
-                    // Expected
-                }
-            });
-
-            expect(mockDocument.addEventListener).toHaveBeenCalled();
+            addEventListenerSpy.mockRestore();
         });
 
         test('should handle htmx:beforeSwap event', () => {
@@ -196,43 +180,55 @@ describe('loadX - HTMX Integration', () => {
         });
 
         test('should handle elements with hx-get attribute', () => {
-            mockElement.hasAttribute.mockImplementation((attr) => attr === 'hx-get');
-            mockElement.getAttribute.mockImplementation((attr) => {
+            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+
+            jest.spyOn(mockElement, 'hasAttribute').mockImplementation((attr) => attr === 'hx-get');
+            jest.spyOn(mockElement, 'getAttribute').mockImplementation((attr) => {
                 if (attr === 'hx-get') return '/api/data';
                 return null;
             });
 
             window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockDocument.addEventListener).toHaveBeenCalled();
+            expect(addEventListenerSpy).toHaveBeenCalled();
+            addEventListenerSpy.mockRestore();
         });
 
         test('should handle elements with hx-post attribute', () => {
-            mockElement.hasAttribute.mockImplementation((attr) => attr === 'hx-post');
-            mockElement.getAttribute.mockImplementation((attr) => {
+            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+
+            jest.spyOn(mockElement, 'hasAttribute').mockImplementation((attr) => attr === 'hx-post');
+            jest.spyOn(mockElement, 'getAttribute').mockImplementation((attr) => {
                 if (attr === 'hx-post') return '/api/submit';
                 return null;
             });
 
             window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockDocument.addEventListener).toHaveBeenCalled();
+            expect(addEventListenerSpy).toHaveBeenCalled();
+            addEventListenerSpy.mockRestore();
         });
 
         test('should handle elements with hx-put attribute', () => {
-            mockElement.hasAttribute.mockImplementation((attr) => attr === 'hx-put');
+            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+
+            jest.spyOn(mockElement, 'hasAttribute').mockImplementation((attr) => attr === 'hx-put');
 
             window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockDocument.addEventListener).toHaveBeenCalled();
+            expect(addEventListenerSpy).toHaveBeenCalled();
+            addEventListenerSpy.mockRestore();
         });
 
         test('should handle elements with hx-delete attribute', () => {
-            mockElement.hasAttribute.mockImplementation((attr) => attr === 'hx-delete');
+            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+
+            jest.spyOn(mockElement, 'hasAttribute').mockImplementation((attr) => attr === 'hx-delete');
 
             window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockDocument.addEventListener).toHaveBeenCalled();
+            expect(addEventListenerSpy).toHaveBeenCalled();
+            addEventListenerSpy.mockRestore();
         });
     });
 
@@ -252,44 +248,54 @@ describe('loadX - HTMX Integration', () => {
         });
 
         test('should not conflict with HTMX built-in indicators', () => {
+            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+
             mockElement.classList.add('htmx-request');
 
-            window.loadX.initLoadX({ autoDetect: true });
+            const api = window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockDocument.addEventListener).toHaveBeenCalled();
+            // Should set up event listeners without conflict
+            expect(addEventListenerSpy).toHaveBeenCalled();
+            expect(api).toBeTruthy();
+
+            addEventListenerSpy.mockRestore();
         });
     });
 
     describe('HTMX Target Elements', () => {
         test('should handle hx-target attribute', () => {
-            const targetElement = {
-                ...mockElement,
-                id: 'target'
-            };
+            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
 
-            mockElement.getAttribute.mockImplementation((attr) => {
+            const targetElement = document.createElement('div');
+            targetElement.id = 'target';
+            document.body.appendChild(targetElement);
+
+            jest.spyOn(mockElement, 'getAttribute').mockImplementation((attr) => {
                 if (attr === 'hx-target') return '#target';
                 return null;
             });
 
-            mockDocument.querySelector.mockReturnValue(targetElement);
+            const api = window.loadX.initLoadX({ autoDetect: true });
 
-            window.loadX.initLoadX({ autoDetect: true });
+            expect(addEventListenerSpy).toHaveBeenCalled();
+            expect(api).toBeTruthy();
 
-            expect(mockDocument.addEventListener).toHaveBeenCalled();
+            addEventListenerSpy.mockRestore();
         });
 
         test('should apply loading to target element', () => {
-            const targetElement = {
-                ...mockElement,
-                id: 'target'
-            };
+            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
 
-            mockDocument.getElementById.mockReturnValue(targetElement);
+            const targetElement = document.createElement('div');
+            targetElement.id = 'target';
+            document.body.appendChild(targetElement);
 
-            window.loadX.initLoadX({ autoDetect: true });
+            const api = window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockDocument.addEventListener).toHaveBeenCalled();
+            expect(addEventListenerSpy).toHaveBeenCalled();
+            expect(api).toBeTruthy();
+
+            addEventListenerSpy.mockRestore();
         });
 
         test('should handle missing target gracefully', () => {
@@ -308,36 +314,51 @@ describe('loadX - HTMX Integration', () => {
 
     describe('HTMX Swap Strategies', () => {
         test('should handle hx-swap="innerHTML"', () => {
-            mockElement.getAttribute.mockImplementation((attr) => {
+            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+
+            jest.spyOn(mockElement, 'getAttribute').mockImplementation((attr) => {
                 if (attr === 'hx-swap') return 'innerHTML';
                 return null;
             });
 
-            window.loadX.initLoadX({ autoDetect: true });
+            const api = window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockDocument.addEventListener).toHaveBeenCalled();
+            expect(addEventListenerSpy).toHaveBeenCalled();
+            expect(api).toBeTruthy();
+
+            addEventListenerSpy.mockRestore();
         });
 
         test('should handle hx-swap="outerHTML"', () => {
-            mockElement.getAttribute.mockImplementation((attr) => {
+            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+
+            jest.spyOn(mockElement, 'getAttribute').mockImplementation((attr) => {
                 if (attr === 'hx-swap') return 'outerHTML';
                 return null;
             });
 
-            window.loadX.initLoadX({ autoDetect: true });
+            const api = window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockDocument.addEventListener).toHaveBeenCalled();
+            expect(addEventListenerSpy).toHaveBeenCalled();
+            expect(api).toBeTruthy();
+
+            addEventListenerSpy.mockRestore();
         });
 
         test('should handle hx-swap="beforeend"', () => {
-            mockElement.getAttribute.mockImplementation((attr) => {
+            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+
+            jest.spyOn(mockElement, 'getAttribute').mockImplementation((attr) => {
                 if (attr === 'hx-swap') return 'beforeend';
                 return null;
             });
 
-            window.loadX.initLoadX({ autoDetect: true });
+            const api = window.loadX.initLoadX({ autoDetect: true });
 
-            expect(mockDocument.addEventListener).toHaveBeenCalled();
+            expect(addEventListenerSpy).toHaveBeenCalled();
+            expect(api).toBeTruthy();
+
+            addEventListenerSpy.mockRestore();
         });
     });
 
@@ -365,12 +386,17 @@ describe('loadX - HTMX Integration', () => {
         });
 
         test('should remove loading state on error', () => {
-            mockElement.getAttribute.mockReturnValue('<p>Original</p>');
+            const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
 
-            window.loadX.initLoadX({ autoDetect: true });
+            jest.spyOn(mockElement, 'getAttribute').mockReturnValue('<p>Original</p>');
+
+            const api = window.loadX.initLoadX({ autoDetect: true });
 
             // Should clean up after errors
-            expect(mockDocument.addEventListener).toHaveBeenCalled();
+            expect(addEventListenerSpy).toHaveBeenCalled();
+            expect(api).toBeTruthy();
+
+            addEventListenerSpy.mockRestore();
         });
     });
 

@@ -8,16 +8,7 @@ describe('loadX Spinner Strategy', () => {
     let mockWindow, mockDocument, mockElement, loadX;
 
     beforeEach(() => {
-        // Create mock live region
-        const mockLiveRegion = {
-            tagName: 'DIV',
-            id: 'lx-live-region',
-            textContent: '',
-            setAttribute: jest.fn(),
-            getAttribute: jest.fn()
-        };
-
-        // Setup mock DOM
+        // Setup mock DOM first
         mockDocument = {
             body: { appendChild: jest.fn() },
             createElement: jest.fn((tag) => ({
@@ -28,10 +19,7 @@ describe('loadX Spinner Strategy', () => {
                 setAttribute: jest.fn(),
                 getAttribute: jest.fn()
             })),
-            getElementById: jest.fn((id) => {
-                if (id === 'lx-live-region') return mockLiveRegion;
-                return null;
-            }),
+            getElementById: jest.fn(),
             querySelector: jest.fn(),
             querySelectorAll: jest.fn(() => [])
         };
@@ -77,6 +65,13 @@ describe('loadX Spinner Strategy', () => {
         jest.spyOn(mockElement, 'removeAttribute');
         jest.spyOn(mockElement.classList, 'add');
         jest.spyOn(mockElement.classList, 'remove');
+
+        // Create a real live region in JSDOM for announcements
+        const liveRegion = document.createElement('div');
+        liveRegion.id = 'lx-live-region';
+        liveRegion.setAttribute('aria-live', 'polite');
+        liveRegion.setAttribute('aria-atomic', 'true');
+        document.body.appendChild(liveRegion);
     });
 
     afterEach(() => {
@@ -86,7 +81,7 @@ describe('loadX Spinner Strategy', () => {
 
     describe('applySpinnerStrategy', () => {
         it('should create circle spinner by default', () => {
-            mockElement.querySelector.mockImplementation((selector) => {
+            jest.spyOn(mockElement, 'querySelector').mockImplementation((selector) => {
                 if (selector === '.lx-spinner-circle') {
                     return { classList: { contains: jest.fn(() => false) } };
                 }
@@ -111,7 +106,11 @@ describe('loadX Spinner Strategy', () => {
         });
 
         it('should apply dots spinner type', () => {
-            mockElement.attributes.set('lx-spinner-type', 'dots');
+            mockElement.setAttribute('lx-spinner-type', 'dots');
+            mockElement.getAttribute.mockImplementation((key) => {
+                if (key === 'lx-spinner-type') return 'dots';
+                return null;
+            });
 
             loadX.applySpinnerStrategy(mockElement, {});
 
@@ -143,7 +142,11 @@ describe('loadX Spinner Strategy', () => {
         });
 
         it('should preserve element width', () => {
-            mockElement.offsetWidth = 120;
+            Object.defineProperty(mockElement, 'offsetWidth', {
+                value: 120,
+                writable: true,
+                configurable: true
+            });
 
             loadX.applySpinnerStrategy(mockElement, {});
 
@@ -151,7 +154,11 @@ describe('loadX Spinner Strategy', () => {
         });
 
         it('should preserve element height', () => {
-            mockElement.offsetHeight = 40;
+            Object.defineProperty(mockElement, 'offsetHeight', {
+                value: 40,
+                writable: true,
+                configurable: true
+            });
 
             loadX.applySpinnerStrategy(mockElement, {});
 
@@ -159,14 +166,23 @@ describe('loadX Spinner Strategy', () => {
         });
 
         it('should show static indicator for reduced motion', () => {
-            mockWindow.matchMedia = jest.fn((query) => ({
+            // Override the global window.matchMedia
+            const originalMatchMedia = window.matchMedia;
+            window.matchMedia = jest.fn((query) => ({
                 matches: query === '(prefers-reduced-motion: reduce)',
-                media: query
+                media: query,
+                addEventListener: jest.fn(),
+                removeEventListener: jest.fn()
             }));
 
             loadX.applySpinnerStrategy(mockElement, {});
 
-            expect(mockElement.innerHTML).toContain('lx-loading-static');
+            // The spinner wrapper contains the static indicator
+            const wrapper = mockElement.querySelector('.lx-spinner-wrapper');
+            expect(wrapper.innerHTML).toContain('lx-loading-static');
+
+            // Restore
+            window.matchMedia = originalMatchMedia;
         });
 
         it('should handle null element gracefully', () => {
@@ -176,9 +192,10 @@ describe('loadX Spinner Strategy', () => {
         });
 
         it('should read spinner type from attribute', () => {
-            mockElement.attributes.set('lx-spinner-type', 'dots');
+            mockElement.setAttribute('lx-spinner-type', 'dots');
             mockElement.getAttribute.mockImplementation((key) => {
-                return mockElement.attributes.get(key);
+                if (key === 'lx-spinner-type') return 'dots';
+                return null;
             });
 
             loadX.applySpinnerStrategy(mockElement, {});
@@ -187,9 +204,10 @@ describe('loadX Spinner Strategy', () => {
         });
 
         it('should read spinner size from attribute', () => {
-            mockElement.attributes.set('lx-spinner-size', 'large');
+            mockElement.setAttribute('lx-spinner-size', 'large');
             mockElement.getAttribute.mockImplementation((key) => {
-                return mockElement.attributes.get(key);
+                if (key === 'lx-spinner-size') return 'large';
+                return null;
             });
 
             loadX.applySpinnerStrategy(mockElement, {});
@@ -198,9 +216,10 @@ describe('loadX Spinner Strategy', () => {
         });
 
         it('should read spinner color from attribute', () => {
-            mockElement.attributes.set('lx-spinner-color', '#00FF00');
+            mockElement.setAttribute('lx-spinner-color', '#00FF00');
             mockElement.getAttribute.mockImplementation((key) => {
-                return mockElement.attributes.get(key);
+                if (key === 'lx-spinner-color') return '#00FF00';
+                return null;
             });
 
             loadX.applySpinnerStrategy(mockElement, {});
@@ -274,11 +293,10 @@ describe('loadX Spinner Strategy', () => {
         });
 
         it('should announce loading to ARIA live region', () => {
-            const mockLiveRegion = mockDocument.getElementById('lx-live-region');
-
             loadX.applyLoadingState(mockElement, { strategy: 'spinner' }, {});
 
-            expect(mockLiveRegion.textContent).toBe('Loading');
+            const liveRegion = document.getElementById('lx-live-region');
+            expect(liveRegion.textContent).toBe('Loading');
         });
 
         it('should default to spinner strategy when not specified', () => {
@@ -307,11 +325,10 @@ describe('loadX Spinner Strategy', () => {
         });
 
         it('should announce completion to ARIA live region', () => {
-            const mockLiveRegion = mockDocument.getElementById('lx-live-region');
-
             loadX.removeLoadingState(mockElement);
 
-            expect(mockLiveRegion.textContent).toBe('Loading complete');
+            const liveRegion = document.getElementById('lx-live-region');
+            expect(liveRegion.textContent).toBe('Loading complete');
         });
     });
 
@@ -326,14 +343,16 @@ describe('loadX Spinner Strategy', () => {
             loadX.applySpinnerStrategy(mockElement, { spinnerType: 'dots' });
 
             expect(mockElement.innerHTML).toContain('lx-spinner-dots');
-            expect((mockElement.innerHTML.match(/lx-spinner-dot/g) || []).length).toBe(3);
+            // Match only the individual dot divs, not the container
+            expect((mockElement.innerHTML.match(/lx-spinner-dot"/g) || []).length).toBe(3);
         });
 
         it('should generate bars spinner with 3 bars', () => {
             loadX.applySpinnerStrategy(mockElement, { spinnerType: 'bars' });
 
             expect(mockElement.innerHTML).toContain('lx-spinner-bars');
-            expect((mockElement.innerHTML.match(/lx-spinner-bar/g) || []).length).toBe(3);
+            // Match only the individual bar divs, not the container
+            expect((mockElement.innerHTML.match(/lx-spinner-bar"/g) || []).length).toBe(3);
         });
 
         it('should wrap spinner in container', () => {

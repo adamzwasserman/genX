@@ -1084,9 +1084,10 @@
         el.setAttribute('data-lx-strategy', 'progress');
 
         // Get progress configuration
-        const mode = opts.mode || el.getAttribute('lx-progress-mode') || 'indeterminate';
         const value = opts.value !== undefined ? opts.value : parseInt(el.getAttribute('lx-value'), 10);
         const max = opts.max || parseInt(el.getAttribute('lx-max'), 10) || 100;
+        // Auto-detect mode: if value is provided, use determinate mode
+        const mode = opts.mode || el.getAttribute('lx-progress-mode') || (value !== undefined && !isNaN(value) ? 'determinate' : 'indeterminate');
 
         // Create progress bar HTML
         const progressHTML = createProgressBar(mode, value, max);
@@ -1152,8 +1153,13 @@
         const modeClass = isIndeterminate ? 'lx-progress-indeterminate' : 'lx-progress-determinate';
         const widthStyle = isIndeterminate ? '' : `style="width: ${percentage}%"`;
 
+        // Add ARIA attributes for accessibility
+        const ariaAttrs = isIndeterminate
+            ? 'role="progressbar" aria-busy="true"'
+            : `role="progressbar" aria-valuenow="${value || 0}" aria-valuemin="0" aria-valuemax="${max}"`;
+
         return `
-            <div class="lx-progress-bar ${modeClass}">
+            <div class="lx-progress-bar ${modeClass}" ${ariaAttrs}>
                 <div class="lx-progress-fill" ${widthStyle}></div>
             </div>
             ${!isIndeterminate ? `<div class="lx-progress-label">${Math.round(percentage)}%</div>` : ''}
