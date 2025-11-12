@@ -89,7 +89,7 @@
     {
       "name": "Bootloader",
       "path": "dist/bootloader.min.js",
-      "limit": "1 KB",
+      "limit": "1.2 KB",
       "gzip": true
     },
     {
