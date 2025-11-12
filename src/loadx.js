@@ -453,19 +453,10 @@
                 // Call original fetch
                 const promise = Reflect.apply(target, thisArg, argumentsList);
 
-                // Cleanup on completion
+                // Cleanup on completion using enhanced cleanup
                 promise.finally(() => {
                     if (element) {
-                        const startTime = activeLoadingStates.get(element) || Date.now();
-                        const elapsed = Date.now() - startTime;
-                        const minDisplay = config.minDisplayMs || 300;
-
-                        // Respect minimum display time
-                        const delay = Math.max(0, minDisplay - elapsed);
-                        setTimeout(() => {
-                            removeLoadingState(element);
-                            activeLoadingStates.delete(element);
-                        }, delay);
+                        cleanupLoadingState(element, config);
                     }
                 });
 
@@ -501,18 +492,10 @@
                     activeLoadingStates.set(element, Date.now());
                 }
 
-                // Cleanup on completion
+                // Cleanup on completion using enhanced cleanup
                 const cleanup = () => {
                     if (element) {
-                        const startTime = activeLoadingStates.get(element) || Date.now();
-                        const elapsed = Date.now() - startTime;
-                        const minDisplay = config.minDisplayMs || 300;
-
-                        const delay = Math.max(0, minDisplay - elapsed);
-                        setTimeout(() => {
-                            removeLoadingState(element);
-                            activeLoadingStates.delete(element);
-                        }, delay);
+                        cleanupLoadingState(element, config);
                     }
                 };
 
@@ -576,7 +559,33 @@
     };
 
     /**
-     * Monitor form submissions
+     * Enhanced cleanup for loading state with minimum display time
+     * @param {HTMLElement} element - Element to cleanup
+     * @param {Object} config - Configuration object
+     */
+    const cleanupLoadingState = (element, config) => {
+        if (!element) return;
+
+        const startTime = activeLoadingStates.get(element) || Date.now();
+        const elapsed = Date.now() - startTime;
+        const minDisplay = config.minDisplayMs || 300;
+
+        // Clear any fallback timeout
+        if (element._lxFallbackTimeout) {
+            clearTimeout(element._lxFallbackTimeout);
+            delete element._lxFallbackTimeout;
+        }
+
+        // Respect minimum display time
+        const delay = Math.max(0, minDisplay - elapsed);
+        setTimeout(() => {
+            removeLoadingState(element);
+            activeLoadingStates.delete(element);
+        }, delay);
+    };
+
+    /**
+     * Monitor form submissions with accurate completion detection
      * @param {Object} config - Configuration object
      */
     const monitorFormSubmissions = (config) => {
@@ -592,14 +601,44 @@
                 applyLoadingState(element, lxConfig, config);
                 activeLoadingStates.set(element, Date.now());
 
-                // Auto-cleanup after form submission completes
-                // This is a simple timeout - real implementation would listen for response
-                setTimeout(() => {
-                    if (activeLoadingStates.has(element)) {
-                        removeLoadingState(element);
-                        activeLoadingStates.delete(element);
-                    }
-                }, config.minDisplayMs || 300);
+                // Detect if form uses fetch/XHR or native submission
+                const action = form.getAttribute('action');
+                const method = (form.getAttribute('method') || 'GET').toUpperCase();
+
+                // If form has no action or action is '#', assume JavaScript handling
+                if (!action || action === '#' || action === '') {
+                    // Form is handled by JavaScript - loading state will be cleared by fetch/XHR monitors
+                    // Set a safety timeout as fallback (longer timeout since this is edge case)
+                    const fallbackTimeout = setTimeout(() => {
+                        if (activeLoadingStates.has(element)) {
+                            removeLoadingState(element);
+                            activeLoadingStates.delete(element);
+                            console.warn('loadX: Form loading state cleared by fallback timeout. Consider using explicit removeLoadingState() call or ensure fetch/XHR monitoring is enabled.');
+                        }
+                    }, 5000); // 5 second fallback
+
+                    // Store timeout ID for cleanup
+                    element._lxFallbackTimeout = fallbackTimeout;
+                } else {
+                    // Native form submission - use navigation/unload detection
+                    const navigationHandler = () => {
+                        // Form is navigating away - don't try to cleanup
+                        window.removeEventListener('beforeunload', navigationHandler);
+                    };
+
+                    window.addEventListener('beforeunload', navigationHandler);
+
+                    // Also set fallback timeout for AJAX-submitted forms
+                    const fallbackTimeout = setTimeout(() => {
+                        if (activeLoadingStates.has(element)) {
+                            removeLoadingState(element);
+                            activeLoadingStates.delete(element);
+                        }
+                        window.removeEventListener('beforeunload', navigationHandler);
+                    }, 5000);
+
+                    element._lxFallbackTimeout = fallbackTimeout;
+                }
             }
         });
     };
