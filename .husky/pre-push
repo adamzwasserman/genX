@@ -1,1 +1,13 @@
-npm run lint
+#!/usr/bin/env sh
+set -e
+
+echo "Running build..."
+npm run build
+
+echo "Checking size limits..."
+npm run size
+
+echo "Running full test suite..."
+npm run test
+
+echo "All pre-push checks passed!"

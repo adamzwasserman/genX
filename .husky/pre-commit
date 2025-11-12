@@ -1,7 +1,10 @@
 #!/usr/bin/env sh
 
-# Smart pre-commit hook: Run unit tests always, run BDD tests only if affected modules changed
+# Smart pre-commit hook: Run linting, unit tests, and BDD tests based on changes
 set -e
+
+echo "Running linter..."
+npm run lint
 
 echo "Running unit tests (143 tests)..."
 npm run test:unit

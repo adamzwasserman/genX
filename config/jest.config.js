@@ -1,11 +1,11 @@
 module.exports = {
     testEnvironment: 'jsdom',
-    roots: ['<rootDir>/tests/unit', '<rootDir>/tests/integration'],
+    roots: ['<rootDir>/../tests/unit', '<rootDir>/../tests/integration'],
     testMatch: ['**/*.test.js', '**/*.spec.js'],
     collectCoverageFrom: [
-        'src/**/*.js',
-        '!src/**/*.test.js',
-        '!src/**/*.spec.js'
+        '../src/**/*.js',
+        '!../src/**/*.test.js',
+        '!../src/**/*.spec.js'
     ],
     coverageThreshold: {
         global: {
@@ -15,7 +15,7 @@ module.exports = {
             statements: 80
         }
     },
-    coverageDirectory: 'tests/reports/coverage',
+    coverageDirectory: '../tests/reports/coverage',
     verbose: true,
     transform: {
         '^.+\\.js$': 'babel-jest'
