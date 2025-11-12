@@ -281,6 +281,10 @@ See implementation plans in `docs/implementation/` for current development statu
 - ✅ Manual test files for visual verification
 - ✅ Updated demo page with clean, minimal styling
 
+## Development Acknowledgement
+
+This project was developed with extensive use of AI-assisted coding tools. While the architecture, specifications, and testing have been carefully designed and validated, not all code has been manually reviewed line-by-line. Users should conduct their own security audits and testing before using genX in production environments.
+
 ## License
 
 MIT License - See [LICENSE](LICENSE) for details
