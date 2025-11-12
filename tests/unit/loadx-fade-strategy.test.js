@@ -71,6 +71,17 @@ describe('loadX - Fade Strategy', () => {
         global.clearTimeout = mockWindow.clearTimeout;
 
         require('../../src/loadx.js');
+
+        // Create real DOM element using JSDOM's document
+        mockElement = document.createElement('div');
+        mockElement.innerHTML = '<p>Original content</p>';
+
+        // Add spy functions to track calls
+        jest.spyOn(mockElement, 'setAttribute');
+        jest.spyOn(mockElement, 'getAttribute');
+        jest.spyOn(mockElement, 'removeAttribute');
+        jest.spyOn(mockElement.classList, 'add');
+        jest.spyOn(mockElement.classList, 'remove');
     });
 
     afterEach(() => {
@@ -92,7 +103,7 @@ describe('loadX - Fade Strategy', () => {
         test('should apply fade class', () => {
             window.loadX.applyFadeStrategy(mockElement, {});
 
-            expect(mockElement.classList.add).toHaveBeenCalledWith('lx-fade');
+            expect(mockElement.classList.add).toHaveBeenCalledWith('lx-loading', 'lx-loading-fade');
         });
 
         test('should handle null element gracefully', () => {
@@ -248,11 +259,15 @@ describe('loadX - Fade Strategy', () => {
         });
 
         test('should remove fade class', () => {
+            jest.useFakeTimers();
             mockElement.getAttribute.mockReturnValue('<p>Original</p>');
+            mockElement.style.transition = 'opacity 300ms ease-out';
 
             window.loadX.removeFadeStrategy(mockElement);
+            jest.advanceTimersByTime(300);
 
-            expect(mockElement.classList.remove).toHaveBeenCalledWith('lx-fade');
+            expect(mockElement.classList.remove).toHaveBeenCalledWith('lx-loading', 'lx-loading-fade');
+            jest.useRealTimers();
         });
 
         test('should restore original opacity', () => {

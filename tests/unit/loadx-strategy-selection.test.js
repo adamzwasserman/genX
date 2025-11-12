@@ -14,6 +14,8 @@ describe('loadX - Strategy Selection', () => {
             innerHTML: '<p>Content</p>',
             className: '',
             style: {},
+            offsetWidth: 300,
+            offsetHeight: 200,
             setAttribute: jest.fn(),
             getAttribute: jest.fn(),
             hasAttribute: jest.fn(),
@@ -64,13 +66,34 @@ describe('loadX - Strategy Selection', () => {
 
         mockWindow = {
             document: mockDocument,
-            loadX: undefined
+            loadX: undefined,
+            getComputedStyle: jest.fn(() => ({
+                getPropertyValue: jest.fn(() => ''),
+                width: '300px',
+                height: '200px'
+            })),
+            matchMedia: jest.fn(() => ({
+                matches: false,
+                addListener: jest.fn(),
+                removeListener: jest.fn()
+            }))
         };
 
         global.window = mockWindow;
         global.document = mockDocument;
 
         require('../../src/loadx.js');
+
+        // Create real DOM element using JSDOM's document
+        mockElement = document.createElement('div');
+        mockElement.innerHTML = '<p>Content</p>';
+
+        // Add spy functions to track calls
+        jest.spyOn(mockElement, 'setAttribute');
+        jest.spyOn(mockElement, 'getAttribute');
+        jest.spyOn(mockElement, 'removeAttribute');
+        jest.spyOn(mockElement.classList, 'add');
+        jest.spyOn(mockElement.classList, 'remove');
     });
 
     afterEach(() => {

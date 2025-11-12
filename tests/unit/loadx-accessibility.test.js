@@ -9,27 +9,6 @@ describe('loadX - Accessibility', () => {
     let mockElement;
 
     beforeEach(() => {
-        mockElement = {
-            tagName: 'DIV',
-            innerHTML: '<p>Content</p>',
-            className: '',
-            style: {},
-            setAttribute: jest.fn(),
-            getAttribute: jest.fn(),
-            hasAttribute: jest.fn(),
-            removeAttribute: jest.fn(),
-            appendChild: jest.fn(),
-            children: [],
-            classList: {
-                contains: jest.fn(),
-                add: jest.fn(),
-                remove: jest.fn()
-            },
-            getBoundingClientRect: jest.fn(() => ({
-                width: 300,
-                height: 200
-            }))
-        };
 
         mockBody = {
             appendChild: jest.fn(),
@@ -65,9 +44,16 @@ describe('loadX - Accessibility', () => {
         mockWindow = {
             document: mockDocument,
             loadX: undefined,
+            getComputedStyle: jest.fn(() => ({
+                getPropertyValue: jest.fn(() => ''),
+                width: '300px',
+                height: '200px'
+            })),
             matchMedia: jest.fn(() => ({
                 matches: false,
-                addEventListener: jest.fn()
+                addEventListener: jest.fn(),
+                addListener: jest.fn(),
+                removeListener: jest.fn()
             }))
         };
 
@@ -75,6 +61,17 @@ describe('loadX - Accessibility', () => {
         global.document = mockDocument;
 
         require('../../src/loadx.js');
+
+        // Create real DOM element using JSDOM's document
+        mockElement = document.createElement('div');
+        mockElement.innerHTML = '<p>Content</p>';
+
+        // Add spy functions to track calls
+        jest.spyOn(mockElement, 'setAttribute');
+        jest.spyOn(mockElement, 'getAttribute');
+        jest.spyOn(mockElement, 'removeAttribute');
+        jest.spyOn(mockElement.classList, 'add');
+        jest.spyOn(mockElement.classList, 'remove');
     });
 
     afterEach(() => {

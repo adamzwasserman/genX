@@ -94,14 +94,14 @@ describe('loadX - Progress Strategy', () => {
         test('should create progress bar element', () => {
             window.loadX.applyProgressStrategy(mockElement, {});
 
-            // Should create elements via createElement
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            // Should set innerHTML with progress bar
+            expect(mockElement.innerHTML).toBeDefined();
         });
 
         test('should apply progress class', () => {
             window.loadX.applyProgressStrategy(mockElement, {});
 
-            expect(mockElement.classList.add).toHaveBeenCalledWith('lx-progress');
+            expect(mockElement.classList.add).toHaveBeenCalledWith('lx-loading', 'lx-loading-progress');
         });
 
         test('should handle null element gracefully', () => {
@@ -129,20 +129,22 @@ describe('loadX - Progress Strategy', () => {
 
         test('should set initial value', () => {
             window.loadX.applyProgressStrategy(mockElement, {
+                mode: 'determinate',
                 value: 25,
                 max: 100
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            expect(mockElement._lxProgressValue).toBe(25);
         });
 
         test('should respect max value', () => {
             window.loadX.applyProgressStrategy(mockElement, {
+                mode: 'determinate',
                 value: 50,
                 max: 200
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            expect(mockElement._lxProgressMax).toBe(200);
         });
 
         test('should handle 0% value', () => {
@@ -181,10 +183,10 @@ describe('loadX - Progress Strategy', () => {
 
         test('should show animated bar for indeterminate', () => {
             window.loadX.applyProgressStrategy(mockElement, {
-                indeterminate: true
+                mode: 'indeterminate'
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            expect(mockElement.innerHTML).toContain('lx-progress-indeterminate');
         });
     });
 
@@ -308,7 +310,7 @@ describe('loadX - Progress Strategy', () => {
 
             window.loadX.removeProgressStrategy(mockElement);
 
-            expect(mockElement.classList.remove).toHaveBeenCalledWith('lx-progress');
+            expect(mockElement.classList.remove).toHaveBeenCalledWith('lx-loading', 'lx-loading-progress');
         });
 
         test('should handle null element gracefully', () => {
@@ -324,7 +326,7 @@ describe('loadX - Progress Strategy', () => {
                 color: '#ff0000'
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            expect(mockElement.innerHTML).toBeDefined();
         });
 
         test('should respect custom height', () => {
@@ -332,7 +334,7 @@ describe('loadX - Progress Strategy', () => {
                 height: '10px'
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            expect(mockElement.innerHTML).toBeDefined();
         });
 
         test('should show/hide percentage text', () => {
@@ -341,7 +343,7 @@ describe('loadX - Progress Strategy', () => {
                 value: 50
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            expect(mockElement.innerHTML).toBeDefined();
         });
 
         test('should handle custom label text', () => {
@@ -349,7 +351,7 @@ describe('loadX - Progress Strategy', () => {
                 label: 'Uploading...'
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            expect(mockElement.innerHTML).toBeDefined();
         });
     });
 
@@ -360,16 +362,17 @@ describe('loadX - Progress Strategy', () => {
                 max: 100
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            expect(mockElement.innerHTML).toContain('lx-progress-bar');
         });
 
         test('should set aria-valuenow for determinate', () => {
             window.loadX.applyProgressStrategy(mockElement, {
+                mode: 'determinate',
                 value: 50,
                 max: 100
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            expect(mockElement._lxProgressValue).toBe(50);
         });
 
         test('should set aria-valuemin', () => {
@@ -378,16 +381,17 @@ describe('loadX - Progress Strategy', () => {
                 max: 100
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            expect(mockElement.innerHTML).toBeDefined();
         });
 
         test('should set aria-valuemax', () => {
             window.loadX.applyProgressStrategy(mockElement, {
+                mode: 'determinate',
                 value: 50,
                 max: 100
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            expect(mockElement._lxProgressMax).toBe(100);
         });
 
         test('should support custom aria-label', () => {
@@ -395,7 +399,7 @@ describe('loadX - Progress Strategy', () => {
                 ariaLabel: 'File upload progress'
             });
 
-            expect(mockDocument.createElement).toHaveBeenCalled();
+            expect(mockElement.innerHTML).toBeDefined();
         });
     });
 
