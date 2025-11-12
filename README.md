@@ -1,22 +1,32 @@
-# gen<span style="color: #dc3545;">X</span>
+# genX
 
-**Declarative HTML attribute-based formatting and UI enhancement library**
+## Declarative HTML attribute-based formatting and UI enhancement library
 
 genX is a lightweight, modular JavaScript library that enhances HTML elements with formatting, accessibility, drag-and-drop, navigation, and loading state capabilities—all controlled through simple HTML attributes.
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://genx.software/examples/genx-demo.html)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## ✨ Features
+## Table of Contents
 
-- **🎯 Declarative** - Control everything with HTML attributes (`fx-*`, `ax-*`, `dx-*`, etc.)
-- **⚡ Lightweight** - ~1KB bootloader, modules loaded on-demand
-- **🔒 Privacy-First** - 100% client-side processing, no tracking, no external calls
-- **♿ Accessible** - WCAG 2.1 AA compliant by default
-- **🚀 Fast** - Designed for <16ms operations (60 FPS)
-- **🔧 Framework Agnostic** - Works with vanilla HTML, React, Vue, Angular, or anything else
+| | | |
+|---|---|---|
+| [Features](#features) | [Architecture](#architecture) | [Browser Support](#browser-support) |
+| [Quick Start](#quick-start) | [Documentation](#documentation) | [Installation Options](#installation-options) |
+| [Modules](#modules) | [Testing](#testing) | [Contributing](#contributing) |
+| [fmtX Examples](#fmtx-examples) | [Privacy & Security](#privacy--security) | [Project Status](#project-status) |
+| | [License](#license) | [Links](#links) |
 
-## 🚀 Quick Start
+## Features
+
+- **Declarative** - Control everything with HTML attributes (`fx-*`, `ax-*`, `dx-*`, etc.)
+- **Lightweight** - ~1KB bootloader, modules loaded on-demand
+- **Privacy-First** - 100% client-side processing, no tracking, no external calls
+- **Accessible** - WCAG 2.1 AA compliant made easy
+- **Fast** - Designed for <16ms operations (60 FPS)
+- **Framework Agnostic** - Works with vanilla HTML, React, Vue, Angular, htmx, or anything else
+
+## Quick Start
 
 ### View the Live Demo
 
@@ -24,13 +34,32 @@ See all modules in action: **[genX Interactive Demo](https://genx.software/examp
 
 ### Installation
 
-```html
-<!-- Add to your HTML -->
-<script src="https://cdn.genx.software/v1/bootloader.js"></script>
+#### Option 1: CDN (Easiest)
 
-<!-- Or use directly from the repo -->
-<script src="src/bootloader.js"></script>
+```html
+<!-- Add to your HTML <head> with defer attribute -->
+<script src="https://cdn.genx.software/v1/bootloader.js" defer></script>
 ```
+
+#### Option 2: Self-Hosted
+
+1. Copy genX files to your static directory:
+
+```bash
+# Clone the repository
+git clone https://github.com/adamzwasserman/genX.git
+
+# Copy src files to your project's static/js directory
+cp genX/src/*.js your-project/static/js/
+```
+
+2. Add to your HTML `<head>` with `defer` attribute:
+
+```html
+<script src="/static/js/bootloader.js" defer></script>
+```
+
+**Important:** Always use the `defer` attribute to ensure genX loads after the DOM is parsed without blocking page rendering.
 
 ### Basic Usage
 
@@ -52,7 +81,7 @@ See all modules in action: **[genX Interactive Demo](https://genx.software/examp
 <!-- Displays: 15.67% -->
 ```
 
-## 📦 Modules
+## Modules
 
 | Module | Purpose | Prefix | Status | Documentation |
 |--------|---------|--------|--------|---------------|
@@ -64,11 +93,12 @@ See all modules in action: **[genX Interactive Demo](https://genx.software/examp
 | **bindX** | Reactive data binding | `bx-*` | 🚧 In Progress | [Architecture](docs/architecture/bindx-technical-architecture-v1.0.md) |
 | **tableX** | Enhanced tables | `tx-*` | 📋 Planned | [Architecture](docs/architecture/tablex-architecture-v1.0.md) |
 
-## 🎯 fmtX Examples
+## fmtX Examples
 
 The fmtX module supports comprehensive formatting with input type selectors:
 
 ### Currency Formatting
+
 ```html
 <!-- Basic currency -->
 <span fx-format="currency" fx-currency="USD">42.50</span>
@@ -79,6 +109,7 @@ The fmtX module supports comprehensive formatting with input type selectors:
 ```
 
 ### Phone Numbers
+
 Supports multiple US formats and international numbers:
 
 ```html
@@ -98,6 +129,7 @@ Supports multiple US formats and international numbers:
 ```
 
 **Input format flexibility:** Accepts raw digits, pre-formatted numbers, numbers with spaces, or international format. Gracefully handles:
+
 - 10-digit US numbers
 - 11-digit numbers with country code
 - Already-formatted numbers (with parentheses, dashes, or dots)
@@ -105,6 +137,7 @@ Supports multiple US formats and international numbers:
 - European/international numbers (preserved as-is)
 
 ### Date & Time
+
 ```html
 <!-- Date input types: iso, unix, ms -->
 <span fx-format="date" fx-date-format="long" fx-input-type="unix">1710518400</span>
@@ -115,6 +148,7 @@ Supports multiple US formats and international numbers:
 ```
 
 ### Numbers & Percentages
+
 ```html
 <!-- Percentage with decimal control -->
 <span fx-format="percent" fx-decimals="2">0.1567</span>
@@ -133,15 +167,17 @@ Supports multiple US formats and international numbers:
 <!-- Output: 3.142 -->
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 ### Universal Bootloader (~1KB)
+
 - Scans DOM for genX attributes
 - Dynamically loads only required modules
 - Watches for dynamic content via MutationObserver
 - Zero dependencies
 
 ### Module Design
+
 - **Pure functional JavaScript** - No classes, no complex state
 - **Polymorphic processing** - Handles multiple input/output formats
 - **Client-side only** - Privacy-preserving, no external calls
@@ -149,14 +185,14 @@ Supports multiple US formats and international numbers:
 
 See [Architecture Documentation](docs/architecture/) for technical specifications.
 
-## 📚 Documentation
+## Documentation
 
 - **[Live Demo](https://genx.software/examples/genx-demo.html)** - Interactive examples of all modules
 - **[Architecture Specs](docs/architecture/)** - Technical documentation for each module
 - **[Implementation Plans](docs/implementation/)** - Development roadmaps and completion reports
 - **[Testing Guide](docs/testing/getting-started.md)** - BDD/TDD testing framework
 
-## 🧪 Testing
+## Testing
 
 genX uses a comprehensive BDD/TDD testing framework:
 
@@ -179,7 +215,7 @@ npm run test:unit
 npm run test:bdd
 ```
 
-## 🔒 Privacy & Security
+## Privacy & Security
 
 - **100% Client-Side** - No data sent to servers, ever
 - **No Tracking** - No analytics, no telemetry, no cookies
@@ -187,7 +223,7 @@ npm run test:bdd
 - **CSP Compliant** - No eval, no inline scripts
 - **GDPR Compliant** - No PII collection
 
-## 🌐 Browser Support
+## Browser Support
 
 - Chrome 90+
 - Firefox 88+
@@ -196,14 +232,16 @@ npm run test:bdd
 
 Requires modern JavaScript features: ES6+, Proxy, MutationObserver, async/await
 
-## 📦 Installation Options
+## Installation Options
 
 ### Option 1: Direct Script Tag
+
 ```html
 <script src="https://cdn.genx.software/v1/bootloader.js"></script>
 ```
 
 ### Option 2: Local Development
+
 ```bash
 git clone https://github.com/adamzwasserman/genX.git
 cd genX
@@ -211,13 +249,15 @@ cd genX
 ```
 
 ### Option 3: npm (Coming Soon)
+
 ```bash
 npm install @genx/core
 ```
 
-## 🤝 Contributing
+## Contributing
 
 Contributions welcome! This project follows:
+
 - **BDD/TDD** - All features require tests (Cucumber + Playwright + Jest)
 - **Architecture-first** - Specifications before implementation
 - **Performance budget** - <16ms operations, <1KB bootloader
@@ -225,7 +265,7 @@ Contributions welcome! This project follows:
 
 See implementation plans in `docs/implementation/` for current development status.
 
-## 📊 Project Status
+## Project Status
 
 **Version:** 1.0.0-alpha
 **Modules Complete:** fmtX, accX, loadX, navX, dragX
@@ -233,6 +273,7 @@ See implementation plans in `docs/implementation/` for current development statu
 **Planned:** tableX
 
 **Recent Updates:**
+
 - ✅ Phone number formatting with comprehensive US/international support
 - ✅ Input type selectors for dates, currency, percentages
 - ✅ Decimal precision control for percentages and numbers
@@ -240,16 +281,17 @@ See implementation plans in `docs/implementation/` for current development statu
 - ✅ Manual test files for visual verification
 - ✅ Updated demo page with clean, minimal styling
 
-## 📄 License
+## License
 
 MIT License - See [LICENSE](LICENSE) for details
 
-## 🔗 Links
+## Links
 
+- **Website:** [https://genx.software](https://genx.software)
 - **Repository:** [https://github.com/adamzwasserman/genX](https://github.com/adamzwasserman/genX)
 - **Live Demo:** [https://genx.software/examples/genx-demo.html](https://genx.software/examples/genx-demo.html)
 - **Issues:** [https://github.com/adamzwasserman/genX/issues](https://github.com/adamzwasserman/genX/issues)
 
 ---
 
-**Made with ❤️ for developers who value simplicity, privacy, and performance.**
+Made for developers who value simplicity, privacy, and performance.
