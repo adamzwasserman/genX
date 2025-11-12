@@ -7,7 +7,13 @@
 
     // Utils
     const kebabToCamel = s => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-    const safeJsonParse = v => { try { return JSON.parse(v); } catch { return v; } };
+    const safeJsonParse = v => {
+        try {
+            return JSON.parse(v); 
+        } catch {
+            return v; 
+        } 
+    };
     const generateId = () => `ax-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // A11y enhancement functions
@@ -15,7 +21,9 @@
         // Screen reader annotations
         srOnly: (el, opts) => {
             const text = opts.text || el.getAttribute('ax-sr-text');
-            if (!text) return;
+            if (!text) {
+                return;
+            }
             const span = document.createElement('span');
             span.className = 'sr-only ax-sr-only';
             span.textContent = text;
@@ -25,7 +33,7 @@
             if (!document.getElementById('ax-sr-styles')) {
                 const style = document.createElement('style');
                 style.id = 'ax-sr-styles';
-                style.textContent = `.ax-sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }`;
+                style.textContent = '.ax-sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }';
                 document.head.appendChild(style);
             }
         },
@@ -36,37 +44,43 @@
             const context = opts.context || el.textContent?.trim();
 
             switch(type) {
-                case 'currency':
-                    const amount = el.textContent?.trim();
-                    el.setAttribute('aria-label', `${amount} dollars`);
-                    break;
-                case 'icon':
-                    const icon = opts.icon || el.className;
-                    const meaning = opts.meaning || guessIconMeaning(icon);
-                    el.setAttribute('aria-label', meaning);
-                    el.setAttribute('role', 'img');
-                    break;
-                case 'abbreviation':
-                    const full = opts.full || expandAbbreviation(context);
-                    el.setAttribute('aria-label', full);
-                    el.setAttribute('title', full);
-                    break;
-                case 'date':
-                    const date = new Date(context);
-                    if (!isNaN(date)) {
-                        const formatted = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                        el.setAttribute('aria-label', formatted);
-                    }
-                    break;
-                case 'time':
-                    el.setAttribute('aria-label', `${context} ${opts.timezone || ''}`);
-                    break;
-                case 'percentage':
-                    el.setAttribute('aria-label', `${context} percent`);
-                    break;
-                case 'auto':
-                default:
-                    if (context) el.setAttribute('aria-label', opts.label || context);
+            case 'currency': {
+                const amount = el.textContent?.trim();
+                el.setAttribute('aria-label', `${amount} dollars`);
+                break;
+            }
+            case 'icon': {
+                const icon = opts.icon || el.className;
+                const meaning = opts.meaning || guessIconMeaning(icon);
+                el.setAttribute('aria-label', meaning);
+                el.setAttribute('role', 'img');
+                break;
+            }
+            case 'abbreviation': {
+                const full = opts.full || expandAbbreviation(context);
+                el.setAttribute('aria-label', full);
+                el.setAttribute('title', full);
+                break;
+            }
+            case 'date': {
+                const date = new Date(context);
+                if (!isNaN(date)) {
+                    const formatted = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    el.setAttribute('aria-label', formatted);
+                }
+                break;
+            }
+            case 'time':
+                el.setAttribute('aria-label', `${context} ${opts.timezone || ''}`);
+                break;
+            case 'percentage':
+                el.setAttribute('aria-label', `${context} percent`);
+                break;
+            case 'auto':
+            default:
+                if (context) {
+                    el.setAttribute('aria-label', opts.label || context);
+                }
             }
         },
 
@@ -95,12 +109,16 @@
             const describedBy = [];
 
             // Auto-generate IDs if needed
-            if (!el.id) el.id = generateId();
+            if (!el.id) {
+                el.id = generateId();
+            }
 
             // Required field
             if (required) {
                 el.setAttribute('aria-required', 'true');
-                if (!el.hasAttribute('required')) el.setAttribute('required', '');
+                if (!el.hasAttribute('required')) {
+                    el.setAttribute('required', '');
+                }
             }
 
             // Error handling
@@ -269,11 +287,16 @@
                     const current = th.getAttribute('aria-sort');
                     // Reset other columns
                     el.querySelectorAll('th[aria-sort]').forEach(other => {
-                        if (other !== th) other.setAttribute('aria-sort', 'none');
+                        if (other !== th) {
+                            other.setAttribute('aria-sort', 'none');
+                        }
                     });
                     // Toggle this column
-                    if (current === 'ascending') th.setAttribute('aria-sort', 'descending');
-                    else th.setAttribute('aria-sort', 'ascending');
+                    if (current === 'ascending') {
+                        th.setAttribute('aria-sort', 'descending');
+                    } else {
+                        th.setAttribute('aria-sort', 'ascending');
+                    }
                 };
 
                 th.addEventListener('click', toggleSort);
@@ -336,7 +359,7 @@
             // Trap focus
             if (opts.trapFocus !== false) {
                 const focusableSelectors = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
-                let focusableElements = el.querySelectorAll(focusableSelectors);
+                const focusableElements = el.querySelectorAll(focusableSelectors);
 
                 el.addEventListener('keydown', (e) => {
                     if (e.key === 'Tab') {
@@ -374,7 +397,7 @@
             if (!document.getElementById('ax-skip-styles')) {
                 const style = document.createElement('style');
                 style.id = 'ax-skip-styles';
-                style.textContent = `.ax-skip-link { position: absolute; top: -40px; left: 0; background: #000; color: #fff; padding: 8px; text-decoration: none; z-index: 100000; } .ax-skip-link:focus { top: 0; }`;
+                style.textContent = '.ax-skip-link { position: absolute; top: -40px; left: 0; background: #000; color: #fff; padding: 8px; text-decoration: none; z-index: 100000; } .ax-skip-link:focus { top: 0; }';
                 document.head.appendChild(style);
             }
 
@@ -386,22 +409,27 @@
             const role = opts.role || el.getAttribute('ax-role');
             const label = opts.label || el.getAttribute('ax-label');
 
-            if (role) el.setAttribute('role', role);
-            if (label) el.setAttribute('aria-label', label);
+            if (role) {
+                el.setAttribute('role', role);
+            }
+            if (label) {
+                el.setAttribute('aria-label', label);
+            }
 
             // Common landmarks
             switch(role) {
-                case 'main':
-                    if (!document.querySelector('[role="main"], main')) {
-                        el.id = el.id || 'main';
-                    }
-                    break;
-                case 'search':
-                    const searchInput = el.querySelector('input[type="search"], input[type="text"]');
-                    if (searchInput && !searchInput.getAttribute('aria-label')) {
-                        searchInput.setAttribute('aria-label', 'Search');
-                    }
-                    break;
+            case 'main':
+                if (!document.querySelector('[role="main"], main')) {
+                    el.id = el.id || 'main';
+                }
+                break;
+            case 'search': {
+                const searchInput = el.querySelector('input[type="search"], input[type="text"]');
+                if (searchInput && !searchInput.getAttribute('aria-label')) {
+                    searchInput.setAttribute('aria-label', 'Search');
+                }
+                break;
+            }
             }
         },
 
@@ -413,7 +441,7 @@
                 if (!document.getElementById('ax-focus-styles')) {
                     const style = document.createElement('style');
                     style.id = 'ax-focus-styles';
-                    style.textContent = `.ax-focus-enhanced:focus { outline: 3px solid #0066cc !important; outline-offset: 2px !important; }`;
+                    style.textContent = '.ax-focus-enhanced:focus { outline: 3px solid #0066cc !important; outline-offset: 2px !important; }';
                     document.head.appendChild(style);
                 }
             }
@@ -477,8 +505,10 @@
             'info': 'Information'
         };
 
-        for (let [key, value] of Object.entries(iconMap)) {
-            if (className.toLowerCase().includes(key)) return value;
+        for (const [key, value] of Object.entries(iconMap)) {
+            if (className.toLowerCase().includes(key)) {
+                return value;
+            }
         }
         return 'Icon';
     };
@@ -503,11 +533,13 @@
     const processElement = (el, prefix = 'ax-') => {
         // Get enhancement type
         const enhanceType = el.getAttribute(`${prefix}enhance`);
-        if (!enhanceType) return;
+        if (!enhanceType) {
+            return;
+        }
 
         // Parse options
         const opts = {};
-        for (let attr of el.attributes) {
+        for (const attr of el.attributes) {
             if (attr.name.startsWith(prefix) && attr.name !== `${prefix}enhance`) {
                 const optName = kebabToCamel(attr.name.slice(prefix.length));
                 opts[optName] = safeJsonParse(attr.value);
@@ -620,11 +652,15 @@
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', () => {
                     scan(document, prefix);
-                    if (observe) observer.start();
+                    if (observe) {
+                        observer.start();
+                    }
                 });
             } else {
                 scan(document, prefix);
-                if (observe) observer.start();
+                if (observe) {
+                    observer.start();
+                }
             }
         }
 

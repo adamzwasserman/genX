@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Percent Decimal Precision</title>
+    <script src="src/fmtx.js"></script>
+</head>
+<body>
+    <h1>Percent Decimal Precision Test</h1>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const format = window.fxXFactory?.format || window.FormatX?.format;
+
+            console.log('=== Percent Decimal Precision Tests ===');
+
+            // Test 1: Default (0 decimals)
+            const test1 = format('percent', '0.1234', { type: 'decimal' });
+            console.log('1. Default (0 decimals):', test1, '- Expected: 12%');
+
+            // Test 2: 1 decimal
+            const test2 = format('percent', '0.1234', { type: 'decimal', decimals: 1 });
+            console.log('2. With decimals:1:', test2, '- Expected: 12.3%');
+
+            // Test 3: 2 decimals
+            const test3 = format('percent', '0.1234', { type: 'decimal', decimals: 2 });
+            console.log('3. With decimals:2:', test3, '- Expected: 12.34%');
+
+            // Test 4: 3 decimals
+            const test4 = format('percent', '0.123456', { type: 'decimal', decimals: 3 });
+            console.log('4. With decimals:3:', test4, '- Expected: 12.346%');
+
+            // Test 5: Percentage type with decimals
+            const test5 = format('percent', '12.34', { type: 'percentage', decimals: 1 });
+            console.log('5. Percentage type with decimals:1:', test5, '- Expected: 12.3%');
+
+            document.body.innerHTML += `
+                <h2>Results:</h2>
+                <p>1. Default (0 decimals): <strong>${test1}</strong> - Expected: 12%</p>
+                <p>2. With decimals:1: <strong>${test2}</strong> - Expected: 12.3%</p>
+                <p>3. With decimals:2: <strong>${test3}</strong> - Expected: 12.34%</p>
+                <p>4. With decimals:3: <strong>${test4}</strong> - Expected: 12.346%</p>
+                <p>5. Percentage type with decimals:1: <strong>${test5}</strong> - Expected: 12.3%</p>
+            `;
+        });
+    </script>
+</body>
+</html>

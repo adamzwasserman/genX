@@ -95,12 +95,106 @@ Feature: FormatX (fmtX) - Text Formatting Module
       | 1500000000 | 1.5B      |
       | 1.5e12     | 1.5T      |
 
-  # Phone Number Formatting
-  Scenario: US phone number formatting
+  # Phone Number Formatting - Basic US formats
+  Scenario: US phone number formatting with parentheses
     Given an element with fx-format="phone" fx-phone-format="us"
     And the fx-raw value is "5551234567"
     When the element is processed
     Then the element should display "(555) 123-4567"
+
+  Scenario: US phone number formatting with dashes
+    Given an element with fx-format="phone" fx-phone-format="us-dash"
+    And the fx-raw value is "5551234567"
+    When the element is processed
+    Then the element should display "555-123-4567"
+
+  Scenario: US phone number formatting with dots
+    Given an element with fx-format="phone" fx-phone-format="us-dot"
+    And the fx-raw value is "5551234567"
+    When the element is processed
+    Then the element should display "555.123.4567"
+
+  Scenario: International formatting of US number
+    Given an element with fx-format="phone" fx-phone-format="intl"
+    And the fx-raw value is "5551234567"
+    When the element is processed
+    Then the element should display "+1 555 123 4567"
+
+  # Phone Number Formatting - Handle pre-formatted inputs
+  Scenario Outline: Reformat pre-formatted US numbers
+    Given an element with fx-format="phone" fx-phone-format="<output_format>"
+    And the fx-raw value is "<input>"
+    When the element is processed
+    Then the element should display "<expected>"
+
+    Examples:
+      | input           | output_format | expected        |
+      | 555-123-4567    | us           | (555) 123-4567  |
+      | 555-123-4567    | us-dash      | 555-123-4567    |
+      | 555-123-4567    | us-dot       | 555.123.4567    |
+      | (555) 123-4567  | us-dash      | 555-123-4567    |
+      | (555) 123-4567  | us-dot       | 555.123.4567    |
+      | 555.123.4567    | us           | (555) 123-4567  |
+      | 555.123.4567    | us-dash      | 555-123-4567    |
+
+  # Phone Number Formatting - 11-digit US numbers
+  Scenario: Strip country code from 11-digit US number
+    Given an element with fx-format="phone" fx-phone-format="us"
+    And the fx-raw value is "14155551234"
+    When the element is processed
+    Then the element should display "(415) 555-1234"
+
+  Scenario: Format 11-digit US number with dashes
+    Given an element with fx-format="phone" fx-phone-format="us-dash"
+    And the fx-raw value is "14155551234"
+    When the element is processed
+    Then the element should display "415-555-1234"
+
+  Scenario: Format 11-digit US number internationally
+    Given an element with fx-format="phone" fx-phone-format="intl"
+    And the fx-raw value is "14155551234"
+    When the element is processed
+    Then the element should display "+1 415 555 1234"
+
+  # Phone Number Formatting - Extra spaces handling
+  Scenario: Handle extra spaces in phone number
+    Given an element with fx-format="phone" fx-phone-format="us"
+    And the fx-raw value is "  555 123 4567  "
+    When the element is processed
+    Then the element should display "(555) 123-4567"
+
+  # Phone Number Formatting - International/EU numbers
+  Scenario: Keep UK number in EU format when US format requested
+    Given an element with fx-format="phone" fx-phone-format="us"
+    And the fx-raw value is "+44 20 7946 0958"
+    When the element is processed
+    Then the element should display "+44 20 7946 0958"
+
+  Scenario: Clean up extra spaces in EU number
+    Given an element with fx-format="phone" fx-phone-format="intl"
+    And the fx-raw value is "  +44  20  7946  0958  "
+    When the element is processed
+    Then the element should display "+44 20 7946 0958"
+
+  Scenario: Convert 00 prefix to + for EU numbers
+    Given an element with fx-format="phone" fx-phone-format="intl"
+    And the fx-raw value is "004420794609 58"
+    When the element is processed
+    Then the element should display "+44 20 7946 0958"
+
+  Scenario Outline: Handle international numbers correctly
+    Given an element with fx-format="phone" fx-phone-format="<format>"
+    And the fx-raw value is "<input>"
+    When the element is processed
+    Then the element should display "<expected>"
+
+    Examples:
+      | input              | format   | expected           |
+      | +33 1 42 86 82 00  | us       | +33 1 42 86 82 00  |
+      | +33 1 42 86 82 00  | us-dash  | +33 1 42 86 82 00  |
+      | +33 1 42 86 82 00  | us-dot   | +33 1 42 86 82 00  |
+      | +33 1 42 86 82 00  | intl     | +33 1 42 86 82 00  |
+      | 0033142868200      | intl     | +33 1 42 86 82 00  |
 
   # Text Formatting
   Scenario: Uppercase transformation

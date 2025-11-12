@@ -36,7 +36,7 @@
         const needed = new Set();
 
         // Optimized attribute detection using querySelectorAll
-        for (let prefix of Object.keys(modules)) {
+        for (const prefix of Object.keys(modules)) {
             // Check for any attribute starting with prefix
             const selector = `[${prefix}-]`;
             if (root.querySelector(selector)) {
@@ -52,7 +52,9 @@
      * Returns Promise that resolves when module is loaded
      */
     const load = async (prefix) => {
-        if (loaded.has(prefix)) return factories[prefix];
+        if (loaded.has(prefix)) {
+            return factories[prefix];
+        }
         if (pending.has(prefix)) {
             // Wait for pending load to complete
             return new Promise(resolve => {
@@ -129,7 +131,7 @@
         const needed = scan();
         const results = {};
 
-        for (let prefix of needed) {
+        for (const prefix of needed) {
             try {
                 const config = window.genxConfig?.modules?.[prefix] || {};
                 results[prefix] = await init(prefix, config);
@@ -168,7 +170,7 @@
                             clearTimeout(observer._timeout);
                             observer._timeout = setTimeout(() => {
                                 const newModules = scan();
-                                for (let prefix of newModules) {
+                                for (const prefix of newModules) {
                                     if (!loaded.has(prefix)) {
                                         init(prefix);
                                     }
@@ -198,8 +200,10 @@
      * Edge compilation integration (optional)
      * Fetches optimized bundle from edge service
      */
-    const fetchEdgeBundle = async () => {
-        if (!window.genxConfig?.edge?.enabled) return false;
+    const _fetchEdgeBundle = async () => {
+        if (!window.genxConfig?.edge?.enabled) {
+            return false;
+        }
 
         try {
             const patterns = Array.from(scan()).join(',');

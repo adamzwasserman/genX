@@ -26,48 +26,48 @@
  * Provides structured error reporting with code, context, and timestamp
  */
 class GenXError extends Error {
-  constructor(code, message, context = {}) {
-    super(message);
-    this.name = 'GenXError';
-    this.code = code;
-    this.context = Object.freeze({ ...context });
-    this.timestamp = Date.now();
+    constructor(code, message, context = {}) {
+        super(message);
+        this.name = 'GenXError';
+        this.code = code;
+        this.context = Object.freeze({ ...context });
+        this.timestamp = Date.now();
 
-    // Maintain proper stack trace for debugging
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, GenXError);
+        // Maintain proper stack trace for debugging
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, GenXError);
+        }
     }
-  }
 }
 
 /**
  * ParseError - thrown when parsing attribute values fails
  */
 class ParseError extends GenXError {
-  constructor(code, message, context = {}) {
-    super(code, message, context);
-    this.name = 'ParseError';
-  }
+    constructor(code, message, context = {}) {
+        super(code, message, context);
+        this.name = 'ParseError';
+    }
 }
 
 /**
  * EnhancementError - thrown when element enhancement fails
  */
 class EnhancementError extends GenXError {
-  constructor(code, message, context = {}) {
-    super(code, message, context);
-    this.name = 'EnhancementError';
-  }
+    constructor(code, message, context = {}) {
+        super(code, message, context);
+        this.name = 'EnhancementError';
+    }
 }
 
 /**
  * ValidationError - thrown when configuration validation fails
  */
 class ValidationError extends GenXError {
-  constructor(code, message, context = {}) {
-    super(code, message, context);
-    this.name = 'ValidationError';
-  }
+    constructor(code, message, context = {}) {
+        super(code, message, context);
+        this.name = 'ValidationError';
+    }
 }
 
 /* ============================================================================
@@ -80,24 +80,26 @@ class ValidationError extends GenXError {
  * Result.Ok - represents successful computation
  */
 const Ok = (value) => ({
-  isOk: () => true,
-  isErr: () => false,
-  unwrap: () => value,
-  unwrapOr: (_fallback) => value,
-  map: (fn) => Ok(fn(value)),
-  flatMap: (fn) => fn(value)
+    isOk: () => true,
+    isErr: () => false,
+    unwrap: () => value,
+    unwrapOr: (_fallback) => value,
+    map: (fn) => Ok(fn(value)),
+    flatMap: (fn) => fn(value)
 });
 
 /**
  * Result.Err - represents failed computation
  */
 const Err = (error) => ({
-  isOk: () => false,
-  isErr: () => true,
-  unwrap: () => { throw new Error(error); },
-  unwrapOr: (fallback) => fallback,
-  map: (_fn) => Err(error),
-  flatMap: (_fn) => Err(error)
+    isOk: () => false,
+    isErr: () => true,
+    unwrap: () => {
+        throw new Error(error); 
+    },
+    unwrapOr: (fallback) => fallback,
+    map: (_fn) => Err(error),
+    flatMap: (_fn) => Err(error)
 });
 
 const Result = { Ok, Err };
@@ -109,67 +111,67 @@ const Result = { Ok, Err };
  * ============================================================================ */
 
 class CircuitBreaker {
-  constructor(threshold = 5, timeout = 60000) {
-    this.threshold = threshold;
-    this.timeout = timeout;
-    this.failureCount = 0;
-    this.successCount = 0;
-    this.lastFailureTime = null;
-    this.state = 'CLOSED'; // CLOSED, OPEN, HALF_OPEN
-  }
+    constructor(threshold = 5, timeout = 60000) {
+        this.threshold = threshold;
+        this.timeout = timeout;
+        this.failureCount = 0;
+        this.successCount = 0;
+        this.lastFailureTime = null;
+        this.state = 'CLOSED'; // CLOSED, OPEN, HALF_OPEN
+    }
 
-  /**
+    /**
    * Get current circuit breaker state
    * Handles OPEN -> HALF_OPEN transition based on timeout
    */
-  getState() {
-    if (this.state === 'OPEN') {
-      const timeSinceFailure = Date.now() - this.lastFailureTime;
-      if (timeSinceFailure >= this.timeout) {
-        this.state = 'HALF_OPEN';
-      }
+    getState() {
+        if (this.state === 'OPEN') {
+            const timeSinceFailure = Date.now() - this.lastFailureTime;
+            if (timeSinceFailure >= this.timeout) {
+                this.state = 'HALF_OPEN';
+            }
+        }
+        return this.state;
     }
-    return this.state;
-  }
 
-  /**
+    /**
    * Execute function with circuit breaker protection
    * @param {Function} fn - Function to execute
    * @returns {*} Result of function execution
    * @throws {Error} If circuit is OPEN or function fails
    */
-  execute(fn) {
-    const currentState = this.getState();
+    execute(fn) {
+        const currentState = this.getState();
 
-    if (currentState === 'OPEN') {
-      throw new Error('Circuit breaker is OPEN - rejecting request');
+        if (currentState === 'OPEN') {
+            throw new Error('Circuit breaker is OPEN - rejecting request');
+        }
+
+        try {
+            const result = fn();
+
+            // Success handling
+            if (currentState === 'HALF_OPEN') {
+                this.state = 'CLOSED';
+                this.failureCount = 0;
+            }
+
+            this.successCount++;
+            this.failureCount = 0; // Reset failure count on success
+
+            return result;
+        } catch (error) {
+            // Failure handling
+            this.failureCount++;
+            this.lastFailureTime = Date.now();
+
+            if (this.failureCount >= this.threshold) {
+                this.state = 'OPEN';
+            }
+
+            throw error;
+        }
     }
-
-    try {
-      const result = fn();
-
-      // Success handling
-      if (currentState === 'HALF_OPEN') {
-        this.state = 'CLOSED';
-        this.failureCount = 0;
-      }
-
-      this.successCount++;
-      this.failureCount = 0; // Reset failure count on success
-
-      return result;
-    } catch (error) {
-      // Failure handling
-      this.failureCount++;
-      this.lastFailureTime = Date.now();
-
-      if (this.failureCount >= this.threshold) {
-        this.state = 'OPEN';
-      }
-
-      throw error;
-    }
-  }
 }
 
 /* ============================================================================
@@ -186,14 +188,14 @@ class CircuitBreaker {
  * @returns {string} Hash string
  */
 const hashOptions = (obj) => {
-  if (typeof obj !== 'object' || obj === null) {
-    return String(obj);
-  }
+    if (typeof obj !== 'object' || obj === null) {
+        return String(obj);
+    }
 
-  // Sort keys for deterministic hashing
-  const keys = Object.keys(obj).sort();
-  const parts = keys.map(key => `${key}:${hashOptions(obj[key])}`);
-  return parts.join('|');
+    // Sort keys for deterministic hashing
+    const keys = Object.keys(obj).sort();
+    const parts = keys.map(key => `${key}:${hashOptions(obj[key])}`);
+    return parts.join('|');
 };
 
 /**
@@ -205,9 +207,9 @@ const hashOptions = (obj) => {
  * @returns {string} Signature string
  */
 const getSignature = (element, options) => {
-  const elementSig = element?.id || element?.tagName || 'unknown';
-  const optionsSig = hashOptions(options);
-  return `${elementSig}__${optionsSig}`;
+    const elementSig = element?.id || element?.tagName || 'unknown';
+    const optionsSig = hashOptions(options);
+    return `${elementSig}__${optionsSig}`;
 };
 
 /**
@@ -221,96 +223,100 @@ const getSignature = (element, options) => {
  * @returns {Object} Cache API
  */
 const createCache = ({ maxSize = 1000 } = {}) => {
-  const l1 = new WeakMap(); // Object keys
-  const l2 = new Map();     // Primitive keys
-  const l3 = new Map();     // Hashed option objects
+    const l1 = new WeakMap(); // Object keys
+    const l2 = new Map();     // Primitive keys
+    const l3 = new Map();     // Hashed option objects
 
-  return {
-    l1,
-    l2,
-    l3,
+    return {
+        l1,
+        l2,
+        l3,
 
-    /**
+        /**
      * Determine if object is a plain object (for value-based caching in L3)
      * DOM elements and class instances use L1 (reference-based)
      * Plain objects use L3 (value-based hashing)
      */
-    isPlainObject(obj) {
-      if (obj === null || typeof obj !== 'object') return false;
-      // DOM elements and class instances -> L1
-      if (obj instanceof Element || obj.constructor !== Object) return false;
-      // Plain objects -> L3
-      return true;
-    },
+        isPlainObject(obj) {
+            if (obj === null || typeof obj !== 'object') {
+                return false;
+            }
+            // DOM elements and class instances -> L1
+            if (obj instanceof Element || obj.constructor !== Object) {
+                return false;
+            }
+            // Plain objects -> L3
+            return true;
+        },
 
-    /**
+        /**
      * Set value in appropriate cache level
      */
-    set(key, value) {
-      if (typeof key === 'object' && key !== null) {
-        // Check if it's a plain object (configuration) or complex object (DOM element)
-        if (this.isPlainObject(key)) {
-          // L3: Hash plain objects for value-based caching
-          const hash = hashOptions(key);
-          l3.set(hash, value);
+        set(key, value) {
+            if (typeof key === 'object' && key !== null) {
+                // Check if it's a plain object (configuration) or complex object (DOM element)
+                if (this.isPlainObject(key)) {
+                    // L3: Hash plain objects for value-based caching
+                    const hash = hashOptions(key);
+                    l3.set(hash, value);
 
-          // LRU eviction for L3
-          if (l3.size > maxSize) {
-            const firstKey = l3.keys().next().value;
-            l3.delete(firstKey);
-          }
-        } else {
-          // L1: Use WeakMap for DOM elements and class instances
-          l1.set(key, value);
-        }
-      } else if (typeof key === 'string' || typeof key === 'number') {
-        // L2: Use Map for primitives
-        l2.set(key, value);
+                    // LRU eviction for L3
+                    if (l3.size > maxSize) {
+                        const firstKey = l3.keys().next().value;
+                        l3.delete(firstKey);
+                    }
+                } else {
+                    // L1: Use WeakMap for DOM elements and class instances
+                    l1.set(key, value);
+                }
+            } else if (typeof key === 'string' || typeof key === 'number') {
+                // L2: Use Map for primitives
+                l2.set(key, value);
 
-        // LRU eviction for L2
-        if (l2.size > maxSize) {
-          const firstKey = l2.keys().next().value;
-          l2.delete(firstKey);
-        }
-      }
-    },
+                // LRU eviction for L2
+                if (l2.size > maxSize) {
+                    const firstKey = l2.keys().next().value;
+                    l2.delete(firstKey);
+                }
+            }
+        },
 
-    /**
+        /**
      * Get value from appropriate cache level
      */
-    get(key) {
-      if (typeof key === 'object' && key !== null) {
-        // Check if it's a plain object or complex object
-        if (this.isPlainObject(key)) {
-          // L3: Get by hash for plain objects
-          const hash = hashOptions(key);
-          return l3.get(hash);
-        } else {
-          // L1: Get by reference for DOM elements
-          return l1.get(key);
-        }
-      } else if (typeof key === 'string' || typeof key === 'number') {
-        return l2.get(key);
-      }
-      return undefined;
-    },
+        get(key) {
+            if (typeof key === 'object' && key !== null) {
+                // Check if it's a plain object or complex object
+                if (this.isPlainObject(key)) {
+                    // L3: Get by hash for plain objects
+                    const hash = hashOptions(key);
+                    return l3.get(hash);
+                } else {
+                    // L1: Get by reference for DOM elements
+                    return l1.get(key);
+                }
+            } else if (typeof key === 'string' || typeof key === 'number') {
+                return l2.get(key);
+            }
+            return undefined;
+        },
 
-    /**
+        /**
      * Get total cache size (L2 + L3 only, WeakMap size unknown)
      */
-    size() {
-      return l2.size + l3.size;
-    },
+        size() {
+            return l2.size + l3.size;
+        },
 
-    /**
+        /**
      * Clear all cache levels
      */
-    clear() {
-      l2.clear();
-      l3.clear();
-      // L1 (WeakMap) will be GC'd naturally
-    }
-  };
+        clear() {
+            l2.clear();
+            l3.clear();
+            // L1 (WeakMap) will be GC'd naturally
+        }
+    };
 };
 
 /* ============================================================================
@@ -329,8 +335,10 @@ const createCache = ({ maxSize = 1000 } = {}) => {
  * kebabToCamel('data-format-currency') // 'dataFormatCurrency'
  */
 const kebabToCamel = (str) => {
-  if (!str || typeof str !== 'string') return '';
-  return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+    if (!str || typeof str !== 'string') {
+        return '';
+    }
+    return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
 };
 
 /**
@@ -345,15 +353,15 @@ const kebabToCamel = (str) => {
  * safeJsonParse('{bad}').isErr() // true
  */
 const safeJsonParse = (jsonStr) => {
-  try {
-    if (!jsonStr || typeof jsonStr !== 'string') {
-      return Err('Invalid input: expected non-empty string');
+    try {
+        if (!jsonStr || typeof jsonStr !== 'string') {
+            return Err('Invalid input: expected non-empty string');
+        }
+        const parsed = JSON.parse(jsonStr);
+        return Ok(parsed);
+    } catch (error) {
+        return Err(`JSON parse error: ${error.message}`);
     }
-    const parsed = JSON.parse(jsonStr);
-    return Ok(parsed);
-  } catch (error) {
-    return Err(`JSON parse error: ${error.message}`);
-  }
 };
 
 /**
@@ -368,10 +376,10 @@ const safeJsonParse = (jsonStr) => {
  */
 let idCounter = 0;
 const generateId = (prefix = 'genx') => {
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 8);
-  const counter = idCounter++;
-  return `${prefix ? prefix + '-' : ''}${timestamp}-${random}-${counter}`;
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8);
+    const counter = idCounter++;
+    return `${prefix ? prefix + '-' : ''}${timestamp}-${random}-${counter}`;
 };
 
 /**
@@ -388,30 +396,30 @@ const generateId = (prefix = 'genx') => {
  * input.addEventListener('input', debouncedSearch);
  */
 const debounce = (fn, wait, immediate = false) => {
-  let timeout = null;
-  let lastCallTime = null;
+    let timeout = null;
+    let _lastCallTime = null;
 
-  return function debounced(...args) {
-    const context = this;
-    const callTime = Date.now();
+    return function debounced(...args) {
+        const context = this;
+        const callTime = Date.now();
 
-    const later = () => {
-      timeout = null;
-      if (!immediate) {
-        fn.apply(context, args);
-      }
+        const later = () => {
+            timeout = null;
+            if (!immediate) {
+                fn.apply(context, args);
+            }
+        };
+
+        const callNow = immediate && !timeout;
+
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+        _lastCallTime = callTime;
+
+        if (callNow) {
+            fn.apply(context, args);
+        }
     };
-
-    const callNow = immediate && !timeout;
-
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-    lastCallTime = callTime;
-
-    if (callNow) {
-      fn.apply(context, args);
-    }
-  };
 };
 
 /* ============================================================================
@@ -419,52 +427,52 @@ const debounce = (fn, wait, immediate = false) => {
  * ============================================================================ */
 
 const genxCommon = {
-  errors: {
-    GenXError,
-    ParseError,
-    EnhancementError,
-    ValidationError
-  },
-  Result: {
-    Ok,
-    Err
-  },
-  CircuitBreaker,
-  cache: {
-    createCache,
-    hashOptions,
-    getSignature
-  },
-  utils: {
-    kebabToCamel,
-    safeJsonParse,
-    generateId,
-    debounce
-  }
+    errors: {
+        GenXError,
+        ParseError,
+        EnhancementError,
+        ValidationError
+    },
+    Result: {
+        Ok,
+        Err
+    },
+    CircuitBreaker,
+    cache: {
+        createCache,
+        hashOptions,
+        getSignature
+    },
+    utils: {
+        kebabToCamel,
+        safeJsonParse,
+        generateId,
+        debounce
+    }
 };
 
 // Browser global export
 if (typeof window !== 'undefined') {
-  window.genxCommon = genxCommon;
+    window.genxCommon = genxCommon;
 }
 
 // ES Module export
 export {
-  GenXError,
-  ParseError,
-  EnhancementError,
-  ValidationError,
-  Result,
-  Ok,
-  Err,
-  CircuitBreaker,
-  createCache,
-  hashOptions,
-  getSignature,
-  kebabToCamel,
-  safeJsonParse,
-  generateId,
-  debounce
+    GenXError,
+    ParseError,
+    EnhancementError,
+    ValidationError,
+    Result,
+    Ok,
+    Err,
+    CircuitBreaker,
+    createCache,
+    hashOptions,
+    getSignature,
+    kebabToCamel,
+    safeJsonParse,
+    generateId,
+    debounce
 };
 
 export default genxCommon;
