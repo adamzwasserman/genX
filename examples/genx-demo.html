@@ -5,9 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>genX Module Demo - Top 10 Examples Per Module</title>
 
+    <!-- Google Fonts - Dongle, Mulish, Inconsolata -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dongle:wght@400&family=Mulish:wght@400;500;600&family=Inconsolata:wght@400&display=swap" rel="stylesheet">
+
     <!-- Load genX modules -->
     <script src="../src/genx-common.js"></script>
-    <script src="../src/fmtx.js"></script>
+    <script src="../src/fmtx.js?v=2"></script>
     <script src="../src/accx.js"></script>
     <script src="../src/bindx.js"></script>
     <script src="../src/dragx.js"></script>
@@ -23,10 +28,10 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Mulish', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
             color: #333;
-            background: #f5f5f5;
+            background: #fafafa;
         }
 
         .container {
@@ -36,22 +41,30 @@
         }
 
         header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: white;
+            color: #333;
             padding: 40px 20px;
             text-align: center;
             margin-bottom: 40px;
             border-radius: 8px;
+            border: 1px solid #e8e8e8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }
 
         header h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
+            font-family: 'Dongle', sans-serif;
+            font-weight: 400;
+        }
+
+        header h1 .red-x {
+            color: #dc3545;
         }
 
         header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
+            font-size: 1.1rem;
+            color: #666;
         }
 
         /* Navigation */
@@ -60,7 +73,8 @@
             padding: 15px;
             margin-bottom: 30px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid #e8e8e8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }
 
         nav ul {
@@ -71,16 +85,17 @@
         }
 
         nav a {
-            color: #667eea;
+            color: #555;
             text-decoration: none;
             padding: 8px 16px;
             border-radius: 4px;
-            transition: all 0.3s;
+            transition: all 0.2s ease;
+            font-weight: 500;
         }
 
         nav a:hover {
-            background: #667eea;
-            color: white;
+            background: #f5f5f5;
+            color: #333;
         }
 
         /* Module sections */
@@ -89,39 +104,61 @@
             padding: 30px;
             margin-bottom: 30px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #e8e8e8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }
 
         .module-section h2 {
-            color: #667eea;
+            color: #333;
             margin-bottom: 10px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #667eea;
+            border-bottom: 1px solid #e8e8e8;
+            font-weight: 600;
         }
 
         .module-section .description {
             color: #666;
             margin-bottom: 30px;
-            font-style: italic;
+            font-style: normal;
         }
 
         .examples-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             margin-top: 20px;
         }
 
+        @media (max-width: 1200px) {
+            .examples-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .examples-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .example {
             padding: 20px;
-            background: #f9f9f9;
-            border-radius: 6px;
-            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e8e8e8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            transition: all 0.2s ease;
+        }
+
+        .example:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
         }
 
         .example h4 {
-            color: #764ba2;
+            color: #333;
             margin-bottom: 10px;
+            font-weight: 600;
         }
 
         .example p {
@@ -141,7 +178,7 @@
             display: block;
             font-size: 0.85rem;
             color: #999;
-            font-family: 'Courier New', monospace;
+            font-family: 'Inconsolata', 'Courier New', monospace;
             margin-bottom: 8px;
             padding: 5px 8px;
             background: #f5f5f5;
@@ -151,6 +188,7 @@
         .original-value::before {
             content: 'Original: ';
             font-weight: bold;
+            font-family: 'Mulish', sans-serif;
         }
 
         .formatted-value {
@@ -188,33 +226,45 @@
 
         /* Buttons */
         button {
-            background: #667eea;
+            background: #333;
             color: white;
             border: none;
             padding: 10px 20px;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
         }
 
         button:hover {
-            background: #764ba2;
+            background: #555;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
 
         button:disabled {
             background: #ccc;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         /* Input fields */
         input, select {
-            padding: 10px;
+            padding: 8px 12px;
             border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 1rem;
+            border-radius: 6px;
+            font-size: 0.95rem;
             width: 100%;
             margin: 5px 0;
+            transition: border-color 0.2s ease;
+            background: white;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #999;
         }
 
         /* Tables */
@@ -314,9 +364,16 @@
 <body>
     <div class="container">
         <header>
-            <h1>🚀 genX Module Demo</h1>
+            <h1>gen<span class="red-x">X</span> Module Demo</h1>
             <p>Top 10 Examples for Each Module</p>
         </header>
+
+        <!-- Info Banner -->
+        <div style="background: white; padding: 20px; margin-bottom: 30px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e8e8e8; border-left: 4px solid #333;">
+            <h3 style="color: #333; margin-bottom: 10px; font-weight: 600;">📦 Zero-Config Demo</h3>
+            <p style="margin-bottom: 10px;">This demo requires <strong>no build step, no server, no configuration</strong>. It's pure static HTML/CSS/JS that can be served directly from GitHub Pages or opened locally with <code>file://</code>.</p>
+            <p style="color: #666; font-size: 0.95rem;">Enable GitHub Pages in your repo settings and this demo will be live at <code>https://[username].github.io/genX/examples/genx-demo.html</code> - no deployment pipeline needed. This is genX's philosophy: <strong>simplicity that just works</strong>.</p>
+        </div>
 
         <!-- Navigation -->
         <nav nx-nav="main">
@@ -354,6 +411,11 @@
                             <strong>Input:</strong> <span id="currency-input-value" class="original-value">1234.56</span><br>
                             <strong>Output:</strong> <span id="currency-output" class="formatted-value" fx-format="currency" fx-type="number" fx-currency="USD">1234.56</span>
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;span fx-format="currency"
+      fx-type="<span id="currency-type-display">number</span>"
+      fx-currency="<span id="currency-currency-display">USD</span>"&gt;</pre>
                     </div>
                 </div>
 
@@ -369,11 +431,24 @@
                                 <option value="string">String ("0.5")</option>
                             </select>
                         </label>
+                        <label style="margin-left: 20px;">Decimals:
+                            <select id="percent-decimals-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="0" selected>0 (12%)</option>
+                                <option value="1">1 (12.3%)</option>
+                                <option value="2">2 (12.34%)</option>
+                                <option value="3">3 (12.346%)</option>
+                            </select>
+                        </label>
                         <br><br>
                         <div>
                             <strong>Input:</strong> <span id="percent-input-value" class="original-value">0.1234</span><br>
-                            <strong>Output:</strong> <span id="percent-output" class="formatted-value" fx-format="percent" fx-type="decimal">0.1234</span>
+                            <strong>Output:</strong> <span id="percent-output" class="formatted-value">12%</span>
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;span fx-format="percent"
+      fx-type="<span id="percent-type-display">decimal</span>"
+      fx-decimals="<span id="percent-decimals-display">0</span>"&gt;</pre>
                     </div>
                 </div>
 
@@ -405,26 +480,88 @@
                             <strong>Input:</strong> <span id="date-input-value" class="original-value">2025-11-10</span><br>
                             <strong>Output:</strong> <time id="date-output" class="formatted-value" fx-format="date" fx-type="iso" fx-date-format="long">2025-11-10</time>
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;time fx-format="date"
+      fx-type="<span id="date-type-display">iso</span>"
+      fx-date-format="<span id="date-format-display">long</span>"&gt;</pre>
                     </div>
                 </div>
 
                 <!-- Example 4: Relative Time -->
                 <div class="example">
                     <h4>4. Relative Time</h4>
-                    <p>Show time relative to now</p>
+                    <p>Show time relative to now (input times are in UTC)</p>
                     <div class="example-demo">
-                        <span class="original-value">2025-11-09T12:00:00</span>
-                        <time class="formatted-value" fx-format="relative">2025-11-09T12:00:00</time>
+                        <label>Input Type:
+                            <select id="relative-input-type-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="iso" selected>ISO String (UTC)</option>
+                                <option value="unix">Unix Timestamp / Epoch</option>
+                                <option value="milliseconds">Milliseconds</option>
+                            </select>
+                        </label>
+                        <label style="margin-left: 20px;">Time:
+                            <select id="relative-time-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="past-1h">1 hour ago</option>
+                                <option value="past-1d" selected>1 day ago</option>
+                                <option value="past-1w">1 week ago</option>
+                                <option value="past-1m">1 month ago</option>
+                                <option value="now">Right now</option>
+                                <option value="future-1h">1 hour from now</option>
+                                <option value="future-1d">1 day from now</option>
+                            </select>
+                        </label>
+                        <br><br>
+                        <div>
+                            <strong>Input (UTC):</strong> <span id="relative-input-value" class="original-value"></span><br>
+                            <strong>Output:</strong> <time id="relative-output" class="formatted-value" fx-format="relative"></time>
+                        </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;time fx-format="relative"
+      fx-type="<span id="relative-type-display">iso</span>"&gt;</pre>
                     </div>
                 </div>
 
                 <!-- Example 5: File Size -->
                 <div class="example">
                     <h4>5. File Size</h4>
-                    <p>Human-readable file sizes</p>
+                    <p>Human-readable file sizes (automatic unit switching)</p>
                     <div class="example-demo">
-                        <span class="original-value">1536000</span>
-                        <span class="formatted-value" fx-format="filesize">1536000</span>
+                        <label>Size:
+                            <select id="filesize-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="512">512 bytes (displays as B)</option>
+                                <option value="2048">2,048 bytes (displays as KB/KiB)</option>
+                                <option value="1536000" selected>1,536,000 bytes (displays as MB/MiB)</option>
+                                <option value="52428800">52,428,800 bytes (displays as MB/MiB)</option>
+                                <option value="1073741824">1,073,741,824 bytes (displays as GB/GiB)</option>
+                                <option value="5497558138880">5,497,558,138,880 bytes (displays as TB/TiB)</option>
+                            </select>
+                        </label>
+                        <label style="margin-left: 20px;">Mode:
+                            <select id="filesize-mode-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="decimal" selected>Decimal (KB, MB, GB - base 1000)</option>
+                                <option value="binary">Binary (KiB, MiB, GiB - base 1024)</option>
+                            </select>
+                        </label>
+                        <label style="margin-left: 20px;">Decimals:
+                            <select id="filesize-decimals-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2" selected>2</option>
+                                <option value="3">3</option>
+                            </select>
+                        </label>
+                        <br><br>
+                        <div>
+                            <strong>Input (bytes):</strong> <span id="filesize-input-value" class="original-value">1536000</span><br>
+                            <strong>Output:</strong> <span id="filesize-output" class="formatted-value" fx-format="filesize">1536000</span>
+                        </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;span fx-format="filesize"
+      fx-binary="<span id="filesize-binary-display">false</span>"
+      fx-decimals="<span id="filesize-decimals-display">2</span>"&gt;</pre>
                     </div>
                 </div>
 
@@ -433,8 +570,28 @@
                     <h4>6. Decimal Control</h4>
                     <p>Control decimal precision</p>
                     <div class="example-demo">
-                        <span class="original-value">3.14159265</span>
-                        <span class="formatted-value" fx-format="number" fx-decimals="2">3.14159265</span>
+                        <label>Decimals:
+                            <select id="decimal-control-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2" selected>2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                            </select>
+                        </label>
+                        <br><br>
+                        <div>
+                            <strong>Input:</strong> <span class="original-value">3.14159265</span><br>
+                            <strong>Output:</strong> <span id="decimal-control-output" class="formatted-value" fx-format="number" fx-decimals="2">3.14159265</span>
+                        </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;span fx-format="number"
+      fx-decimals="<span id="decimal-control-display">2</span>"&gt;</pre>
                     </div>
                 </div>
 
@@ -445,40 +602,70 @@
                     <div class="example-demo">
                         <span class="original-value">1000000</span>
                         <span class="formatted-value" fx-format="number">1000000</span>
+                        <br><br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;span fx-format="number"&gt;</pre>
                     </div>
                 </div>
 
-                <!-- Example 8: Ordinals -->
+                <!-- Example 8: Compact Notation -->
                 <div class="example">
-                    <h4>8. Ordinal Numbers</h4>
-                    <p>1st, 2nd, 3rd formatting</p>
-                    <div class="example-demo">
-                        <span class="original-value">1, 2, 3</span>
-                        <div class="formatted-value">
-                            <span fx-format="ordinal">1</span>,
-                            <span fx-format="ordinal">2</span>,
-                            <span fx-format="ordinal">3</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Example 9: Compact Notation -->
-                <div class="example">
-                    <h4>9. Compact Numbers</h4>
+                    <h4>8. Compact Numbers</h4>
                     <p>1K, 1M, 1B notation</p>
                     <div class="example-demo">
-                        <span class="original-value">1500000</span>
-                        <span class="formatted-value" fx-format="compact">1500000</span>
+                        <label>Number:
+                            <select id="compact-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="1200">1200</option>
+                                <option value="1500000" selected>1500000</option>
+                                <option value="2500000">2500000</option>
+                                <option value="5000000000">5000000000</option>
+                                <option value="7500000000000">7500000000000</option>
+                            </select>
+                        </label>
+                        <br><br>
+                        <div>
+                            <strong>Input:</strong> <span id="compact-input-value" class="original-value">1500000</span><br>
+                            <strong>Output:</strong> <span id="compact-output" class="formatted-value" fx-format="compact">1500000</span>
+                        </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;span fx-format="compact"&gt;</pre>
                     </div>
                 </div>
 
-                <!-- Example 10: Phone Numbers -->
+                <!-- Example 9: Phone Numbers -->
                 <div class="example">
-                    <h4>10. Phone Numbers</h4>
-                    <p>Format phone numbers</p>
+                    <h4>9. Phone Numbers</h4>
+                    <p>Handles various input formats, outputs to US or international style</p>
                     <div class="example-demo">
-                        <span class="original-value">5551234567</span>
-                        <span class="formatted-value" fx-format="phone">5551234567</span>
+                        <label>Input Format:
+                            <select id="phone-input-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="5551234567" selected>Raw digits (5551234567)</option>
+                                <option value="555-123-4567">US formatted (555-123-4567)</option>
+                                <option value="(555) 123-4567">US with parens ((555) 123-4567)</option>
+                                <option value="555.123.4567">Dot separated (555.123.4567)</option>
+                                <option value="14155551234">US intl (+1 prefix: 14155551234)</option>
+                                <option value="+44 20 7946 0958">UK number (+44 20 7946 0958)</option>
+                                <option value="  +44  20  7946  0958  ">UK with spaces (  +44  20  7946  0958  )</option>
+                            </select>
+                        </label>
+                        <label style="margin-left: 20px;">Output Format:
+                            <select id="phone-format-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="us" selected>US: (555) 123-4567</option>
+                                <option value="us-dash">US Dash: 555-123-4567</option>
+                                <option value="us-dot">US Dot: 555.123.4567</option>
+                                <option value="intl">International: +1 555 123 4567</option>
+                            </select>
+                        </label>
+                        <br><br>
+                        <div>
+                            <strong>Input:</strong> <span id="phone-input-value" class="original-value">5551234567</span><br>
+                            <strong>Output:</strong> <span id="phone-output" class="formatted-value" fx-format="phone" fx-phone-format="us">5551234567</span>
+                        </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;span fx-format="phone"
+      fx-phone-format="<span id="phone-format-display">us</span>"&gt;</pre>
                     </div>
                 </div>
             </div>
@@ -1179,12 +1366,13 @@
                     dateInputValue.textContent = inputValue;
                 }
 
-                // Update attributes
-                dateOutput.setAttribute('fx-type', inputType);
-                dateOutput.setAttribute('fx-date-format', outputFormat);
-                dateOutput.textContent = inputValue;
+                // Update API display
+                const typeDisplay = document.getElementById('date-type-display');
+                const formatDisplay = document.getElementById('date-format-display');
+                if (typeDisplay) typeDisplay.textContent = inputType;
+                if (formatDisplay) formatDisplay.textContent = outputFormat;
 
-                // Trigger fmtX to reformat
+                // Directly format without setting attributes to avoid MutationObserver race condition
                 const format = window.fxXFactory?.format || window.FormatX?.format;
                 if (format) {
                     const formatted = format('date', inputValue, {
@@ -1200,6 +1388,159 @@
                 dateFormatSelector.addEventListener('change', updateDateExample);
                 // Initialize on load
                 updateDateExample();
+            }
+
+            // Relative time selectors
+            const relativeInputTypeSelector = document.getElementById('relative-input-type-selector');
+            const relativeTimeSelector = document.getElementById('relative-time-selector');
+            const relativeOutput = document.getElementById('relative-output');
+            const relativeInputValue = document.getElementById('relative-input-value');
+
+            function updateRelativeExample() {
+                if (!relativeOutput || !relativeInputTypeSelector || !relativeTimeSelector) return;
+
+                const inputType = relativeInputTypeSelector.value;
+                const timeOption = relativeTimeSelector.value;
+
+                // Calculate the timestamp based on selected option
+                const now = new Date();
+                let targetDate;
+
+                switch(timeOption) {
+                    case 'past-1h':
+                        targetDate = new Date(now - 60 * 60 * 1000);
+                        break;
+                    case 'past-1d':
+                        targetDate = new Date(now - 24 * 60 * 60 * 1000);
+                        break;
+                    case 'past-1w':
+                        targetDate = new Date(now - 7 * 24 * 60 * 60 * 1000);
+                        break;
+                    case 'past-1m':
+                        targetDate = new Date(now - 30 * 24 * 60 * 60 * 1000);
+                        break;
+                    case 'now':
+                        targetDate = now;
+                        break;
+                    case 'future-1h':
+                        targetDate = new Date(now.getTime() + 60 * 60 * 1000);
+                        break;
+                    case 'future-1d':
+                        targetDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+                        break;
+                    default:
+                        targetDate = new Date(now - 24 * 60 * 60 * 1000);
+                }
+
+                // Convert to different input types
+                let inputValue;
+                switch(inputType) {
+                    case 'iso':
+                        inputValue = targetDate.toISOString();
+                        break;
+                    case 'unix':
+                        inputValue = Math.floor(targetDate.getTime() / 1000).toString();
+                        break;
+                    case 'milliseconds':
+                        inputValue = targetDate.getTime().toString();
+                        break;
+                }
+
+                // Update displayed input value
+                if (relativeInputValue) {
+                    relativeInputValue.textContent = inputValue;
+                }
+
+                // Update API display
+                const typeDisplay = document.getElementById('relative-type-display');
+                if (typeDisplay) typeDisplay.textContent = inputType;
+
+                // Directly format without setting attributes to avoid MutationObserver race condition
+                const format = window.fxXFactory?.format || window.FormatX?.format;
+                if (format) {
+                    const formatted = format('relative', inputValue, {
+                        type: inputType
+                    });
+                    relativeOutput.textContent = formatted;
+                }
+            }
+
+            if (relativeInputTypeSelector && relativeTimeSelector) {
+                relativeInputTypeSelector.addEventListener('change', updateRelativeExample);
+                relativeTimeSelector.addEventListener('change', updateRelativeExample);
+                updateRelativeExample();
+            }
+
+            // File size selector
+            const filesizeSelector = document.getElementById('filesize-selector');
+            const filesizeModeSelector = document.getElementById('filesize-mode-selector');
+            const filesizeDecimalsSelector = document.getElementById('filesize-decimals-selector');
+            const filesizeOutput = document.getElementById('filesize-output');
+            const filesizeInputValue = document.getElementById('filesize-input-value');
+
+            function updateFilesizeExample() {
+                if (!filesizeOutput || !filesizeSelector || !filesizeModeSelector || !filesizeDecimalsSelector) return;
+
+                const bytes = filesizeSelector.value;
+                const mode = filesizeModeSelector.value;
+                const decimals = parseInt(filesizeDecimalsSelector.value, 10);
+                const binary = mode === 'binary';
+
+                // Update displayed input value
+                if (filesizeInputValue) {
+                    filesizeInputValue.textContent = bytes;
+                }
+
+                // Update API display
+                const binaryDisplay = document.getElementById('filesize-binary-display');
+                const decimalsDisplay = document.getElementById('filesize-decimals-display');
+                if (binaryDisplay) binaryDisplay.textContent = binary;
+                if (decimalsDisplay) decimalsDisplay.textContent = decimals;
+
+                // Directly format without setting attributes to avoid MutationObserver race condition
+                const format = window.fxXFactory?.format || window.FormatX?.format;
+                if (format) {
+                    const formatted = format('filesize', bytes, {
+                        binary: binary,
+                        decimals: decimals
+                    });
+                    filesizeOutput.textContent = formatted;
+                }
+            }
+
+            if (filesizeSelector && filesizeModeSelector && filesizeDecimalsSelector) {
+                filesizeSelector.addEventListener('change', updateFilesizeExample);
+                filesizeModeSelector.addEventListener('change', updateFilesizeExample);
+                filesizeDecimalsSelector.addEventListener('change', updateFilesizeExample);
+                updateFilesizeExample();
+            }
+
+            // Decimal control selector
+            const decimalControlSelector = document.getElementById('decimal-control-selector');
+            const decimalControlOutput = document.getElementById('decimal-control-output');
+
+            function updateDecimalControlExample() {
+                if (!decimalControlOutput || !decimalControlSelector) return;
+
+                const decimals = parseInt(decimalControlSelector.value, 10);
+
+                // Update API display
+                const decimalsDisplay = document.getElementById('decimal-control-display');
+                if (decimalsDisplay) decimalsDisplay.textContent = decimals;
+
+                // Directly format without setting attributes to avoid MutationObserver race condition
+                const format = window.fxXFactory?.format || window.FormatX?.format;
+                if (format) {
+                    const formatted = format('number', '3.14159265', {
+                        decimals: decimals
+                    });
+                    decimalControlOutput.textContent = formatted;
+                }
+            }
+
+            if (decimalControlSelector) {
+                decimalControlSelector.addEventListener('change', updateDecimalControlExample);
+                updateDecimalControlExample();
             }
 
             // Currency input type selector
@@ -1224,15 +1565,16 @@
                     currencyInputValue.textContent = inputValue;
                 }
 
-                // Update both the raw value AND the attributes before formatting
+                // Update API display
+                const typeDisplay = document.getElementById('currency-type-display');
+                const currencyDisplay = document.getElementById('currency-currency-display');
+                if (typeDisplay) typeDisplay.textContent = inputType;
+                if (currencyDisplay) currencyDisplay.textContent = 'USD';
+
+                // Process the raw value
                 const rawValue = inputType === 'string' ? inputValue.replace(/"/g, '') : inputValue;
 
-                // IMPORTANT: Update textContent FIRST before setting attributes
-                // This ensures the formatter reads the correct value
-                currencyOutput.textContent = rawValue;
-                currencyOutput.setAttribute('fx-type', inputType);
-
-                // Now manually format with the correct type
+                // Directly format without setting fx-type attribute to avoid MutationObserver race condition
                 const format = window.fxXFactory?.format || window.FormatX?.format;
                 if (format) {
                     const formatted = format('currency', rawValue, {
@@ -1250,6 +1592,7 @@
 
             // Percentage input type selector
             const percentInputTypeSelector = document.getElementById('percent-input-type-selector');
+            const percentDecimalsSelector = document.getElementById('percent-decimals-selector');
             const percentOutput = document.getElementById('percent-output');
             const percentInputValue = document.getElementById('percent-input-value');
 
@@ -1260,35 +1603,103 @@
             };
 
             function updatePercentExample() {
-                if (!percentOutput || !percentInputTypeSelector) return;
+                if (!percentOutput || !percentInputTypeSelector || !percentDecimalsSelector) return;
 
                 const inputType = percentInputTypeSelector.value;
+                const decimals = parseInt(percentDecimalsSelector.value, 10);
                 const inputValue = percentInputValues[inputType];
 
                 if (percentInputValue) {
                     percentInputValue.textContent = inputValue;
                 }
 
-                // Update both the raw value AND the attributes before formatting
+                // Update API display
+                const typeDisplay = document.getElementById('percent-type-display');
+                const decimalsDisplay = document.getElementById('percent-decimals-display');
+                if (typeDisplay) typeDisplay.textContent = inputType;
+                if (decimalsDisplay) decimalsDisplay.textContent = decimals;
+
+                // Process the raw value
                 const rawValue = inputType === 'string' ? inputValue.replace(/"/g, '') : inputValue;
 
-                // IMPORTANT: Update textContent FIRST before setting attributes
-                percentOutput.textContent = rawValue;
-                percentOutput.setAttribute('fx-type', inputType);
-
-                // Now manually format with the correct type
+                // Directly format without setting fx-type attribute to avoid MutationObserver race condition
                 const format = window.fxXFactory?.format || window.FormatX?.format;
                 if (format) {
                     const formatted = format('percent', rawValue, {
-                        type: inputType
+                        type: inputType,
+                        decimals: decimals
                     });
                     percentOutput.textContent = formatted;
                 }
             }
 
-            if (percentInputTypeSelector) {
+            if (percentInputTypeSelector && percentDecimalsSelector) {
                 percentInputTypeSelector.addEventListener('change', updatePercentExample);
+                percentDecimalsSelector.addEventListener('change', updatePercentExample);
                 updatePercentExample();
+            }
+
+            // Compact numbers selector
+            const compactSelector = document.getElementById('compact-selector');
+            const compactOutput = document.getElementById('compact-output');
+            const compactInputValue = document.getElementById('compact-input-value');
+
+            function updateCompactExample() {
+                if (!compactOutput || !compactSelector) return;
+
+                const value = compactSelector.value;
+
+                if (compactInputValue) {
+                    compactInputValue.textContent = value;
+                }
+
+                // Directly format without setting attributes
+                const format = window.fxXFactory?.format || window.FormatX?.format;
+                if (format) {
+                    const formatted = format('compact', value);
+                    compactOutput.textContent = formatted;
+                }
+            }
+
+            if (compactSelector) {
+                compactSelector.addEventListener('change', updateCompactExample);
+                updateCompactExample();
+            }
+
+            // Phone numbers selector
+            const phoneInputSelector = document.getElementById('phone-input-selector');
+            const phoneFormatSelector = document.getElementById('phone-format-selector');
+            const phoneOutput = document.getElementById('phone-output');
+            const phoneInputValue = document.getElementById('phone-input-value');
+
+            function updatePhoneExample() {
+                if (!phoneOutput || !phoneInputSelector || !phoneFormatSelector) return;
+
+                const inputValue = phoneInputSelector.value;
+                const outputFormat = phoneFormatSelector.value;
+
+                if (phoneInputValue) {
+                    phoneInputValue.textContent = inputValue;
+                }
+
+                // Update API display
+                const formatDisplay = document.getElementById('phone-format-display');
+                if (formatDisplay) formatDisplay.textContent = outputFormat;
+
+                // Directly format without setting attributes
+                const format = window.fxXFactory?.format || window.FormatX?.format;
+                if (format) {
+                    const formatted = format('phone', inputValue, {
+                        phoneFormat: outputFormat
+                    });
+                    phoneOutput.textContent = formatted;
+                }
+            }
+
+            if (phoneInputSelector && phoneFormatSelector) {
+                phoneInputSelector.addEventListener('change', updatePhoneExample);
+                phoneFormatSelector.addEventListener('change', updatePhoneExample);
+                updatePhoneExample();
             }
         });
 
