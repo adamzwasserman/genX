@@ -564,7 +564,9 @@
      * @param {Object} config - Configuration object
      */
     const cleanupLoadingState = (element, config) => {
-        if (!element) return;
+        if (!element) {
+            return;
+        }
 
         const startTime = activeLoadingStates.get(element) || Date.now();
         const elapsed = Date.now() - startTime;
@@ -603,7 +605,6 @@
 
                 // Detect if form uses fetch/XHR or native submission
                 const action = form.getAttribute('action');
-                const method = (form.getAttribute('method') || 'GET').toUpperCase();
 
                 // If form has no action or action is '#', assume JavaScript handling
                 if (!action || action === '#' || action === '') {
