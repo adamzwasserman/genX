@@ -1,162 +1,191 @@
-# genX - Declarative Web Development Platform
+# gen<span style="color: #dc3545;">X</span>
 
-**Make web development simpler with HTML attributes.**
+**Declarative HTML attribute-based formatting and UI enhancement library**
 
-genX is a declarative web development platform that enhances HTML with powerful functionality through simple attributes. No frameworks required, no complex build processes, just add attributes and go.
+genX is a lightweight, modular JavaScript library that enhances HTML elements with formatting, accessibility, drag-and-drop, navigation, and loading state capabilities—all controlled through simple HTML attributes.
 
-```html
-<!-- Before -->
-<span>$25.00</span>
-<input type="email" id="email">
-
-<!-- After: Formatted and accessible -->
-<span fx-format="currency" fx-currency="USD">25.00</span>
-<input type="email" id="email" ax-enhance="field" ax-required="true" ax-help="We'll never share your email">
-```
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://genx.software/examples/genx-demo.html)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## ✨ Features
 
-- **🎯 Declarative** - Control everything with HTML attributes
-- **⚡ Lightweight** - 1KB bootloader, modules loaded on-demand
-- **🔒 Privacy-First** - Client-side processing only, no tracking
+- **🎯 Declarative** - Control everything with HTML attributes (`fx-*`, `ax-*`, `dx-*`, etc.)
+- **⚡ Lightweight** - ~1KB bootloader, modules loaded on-demand
+- **🔒 Privacy-First** - 100% client-side processing, no tracking, no external calls
 - **♿ Accessible** - WCAG 2.1 AA compliant by default
-- **🚀 Fast** - 0ms Total Blocking Time, perfect Lighthouse scores
+- **🚀 Fast** - Designed for <16ms operations (60 FPS)
 - **🔧 Framework Agnostic** - Works with vanilla HTML, React, Vue, Angular, or anything else
 
 ## 🚀 Quick Start
 
-### 1. Add the Bootloader
+### View the Live Demo
+
+See all modules in action: **[genX Interactive Demo](https://genx.software/examples/genx-demo.html)**
+
+### Installation
 
 ```html
+<!-- Add to your HTML -->
 <script src="https://cdn.genx.software/v1/bootloader.js"></script>
+
+<!-- Or use directly from the repo -->
+<script src="src/bootloader.js"></script>
 ```
 
-### 2. Use genX Attributes
+### Basic Usage
 
 ```html
 <!-- Currency Formatting -->
 <span fx-format="currency" fx-currency="USD">1299.99</span>
+<!-- Displays: $1,299.99 -->
 
-<!-- Accessibility Enhancement -->
-<button ax-enhance="button" ax-pressed="false">Toggle</button>
+<!-- Phone Number Formatting -->
+<input type="tel" fx-format="phone" fx-phone-format="us" value="5551234567">
+<!-- Displays: (555) 123-4567 -->
 
 <!-- Date Formatting -->
 <span fx-format="date" fx-date-format="long">2024-03-15</span>
+<!-- Displays: March 15, 2024 -->
+
+<!-- Percentage with Decimal Control -->
+<span fx-format="percent" fx-decimals="2">0.1567</span>
+<!-- Displays: 15.67% -->
 ```
-
-### 3. It Just Works™
-
-The bootloader scans your page, loads only the modules you need, and enhances everything automatically. Dynamic content is handled automatically via MutationObserver.
-
-See the [Quick Start Guide](docs/QUICK-START.md) for more details.
 
 ## 📦 Modules
 
-| Module | Purpose | Attributes | Status |
-|--------|---------|------------|--------|
-| **fmtX** | Text formatting (currency, dates, numbers) | `fx-*` | ✅ Ready |
-| **accX** | Accessibility (WCAG, ARIA) | `ax-*` | ✅ Ready |
-| **bindX** | Reactive data binding | `bx-*` | 📋 Planned |
-| **loadX** | Loading states, skeletons | `lx-*` | 📋 Planned |
-| **dragX** | Drag & drop | `dx-*` | 📋 Planned |
-| **tableX** | Enhanced tables | `tx-*` | 📋 Planned |
-| **navX** | Navigation & routing | `nx-*` | 📋 Planned |
+| Module | Purpose | Prefix | Status | Documentation |
+|--------|---------|--------|--------|---------------|
+| **fmtX** | Text formatting (currency, dates, numbers, phones) | `fx-*` | ✅ v1.0 | [Architecture](docs/architecture/fmtx-architecture-v1.0.md) |
+| **accX** | Accessibility (WCAG, ARIA) | `ax-*` | ✅ v1.0 | [Architecture](docs/architecture/accx-architecture-v1.0.md) |
+| **loadX** | Loading states, skeletons, spinners | `lx-*` | ✅ v1.0 | [Architecture](docs/architecture/loadx-architecture-v1.0.md) |
+| **navX** | Navigation & routing | `nx-*` | ✅ v1.0 | [Architecture](docs/architecture/navx-architecture-v1.0.md) |
+| **dragX** | Drag & drop | `dx-*` | ✅ v1.0 | [Architecture](docs/architecture/dragx-architecture-v1.0.md) |
+| **bindX** | Reactive data binding | `bx-*` | 🚧 In Progress | [Architecture](docs/architecture/bindx-technical-architecture-v1.0.md) |
+| **tableX** | Enhanced tables | `tx-*` | 📋 Planned | [Architecture](docs/architecture/tablex-architecture-v1.0.md) |
 
-## 📚 Documentation
+## 🎯 fmtX Examples
 
-- **[Quick Start Guide](docs/QUICK-START.md)** - Get started in 5 minutes
-- **[Full Documentation](docs/README.md)** - Complete guide to all modules
-- **[Architecture](docs/architecture/)** - Technical specifications
-- **[API Reference](docs/README.md#modules)** - All attributes and options
+The fmtX module supports comprehensive formatting with input type selectors:
 
-## 🎯 Use Cases
-
-### E-commerce
+### Currency Formatting
 ```html
-<div class="product-card">
-    <img ax-enhance="image" alt="Product" src="product.jpg">
-    <h3>Amazing Product</h3>
-    <span fx-format="currency" fx-currency="USD">99.99</span>
-    <button ax-enhance="button">Add to Cart</button>
-</div>
+<!-- Basic currency -->
+<span fx-format="currency" fx-currency="USD">42.50</span>
+
+<!-- Input type selector: dollars or cents -->
+<span fx-format="currency" fx-currency="USD" fx-input-type="cents">4250</span>
+<!-- Input: 4250 cents → Output: $42.50 -->
 ```
 
-### Forms
-```html
-<form>
-    <input type="email"
-           ax-enhance="field"
-           ax-required="true"
-           ax-help="We'll never share your email">
+### Phone Numbers
+Supports multiple US formats and international numbers:
 
-    <input type="tel"
-           fx-format="phone"
-           fx-phone-format="us"
-           ax-enhance="field">
-</form>
+```html
+<!-- US formats -->
+<span fx-format="phone" fx-phone-format="us">5551234567</span>
+<!-- Output: (555) 123-4567 -->
+
+<span fx-format="phone" fx-phone-format="us-dash">5551234567</span>
+<!-- Output: 555-123-4567 -->
+
+<span fx-format="phone" fx-phone-format="us-dot">5551234567</span>
+<!-- Output: 555.123.4567 -->
+
+<!-- International format -->
+<span fx-format="phone" fx-phone-format="intl">+44 20 7946 0958</span>
+<!-- Output: +44 20 7946 0958 (normalized) -->
 ```
 
-### Data Display
+**Input format flexibility:** Accepts raw digits, pre-formatted numbers, numbers with spaces, or international format. Gracefully handles:
+- 10-digit US numbers
+- 11-digit numbers with country code
+- Already-formatted numbers (with parentheses, dashes, or dots)
+- Extra spaces (stripped automatically)
+- European/international numbers (preserved as-is)
+
+### Date & Time
 ```html
-<table ax-enhance="table" ax-caption="Sales Report" ax-sortable="true">
-    <tr>
-        <th>Product</th>
-        <th>Revenue</th>
-        <th>Growth</th>
-    </tr>
-    <tr>
-        <td>Widget A</td>
-        <td><span fx-format="currency">45000</span></td>
-        <td><span fx-format="percent">0.15</span></td>
-    </tr>
-</table>
+<!-- Date input types: iso, unix, ms -->
+<span fx-format="date" fx-date-format="long" fx-input-type="unix">1710518400</span>
+
+<!-- Relative time (always UTC input) -->
+<span fx-format="relative">2024-03-15T12:00:00Z</span>
+<!-- Output: "2 hours ago" or "in 3 days" -->
+```
+
+### Numbers & Percentages
+```html
+<!-- Percentage with decimal control -->
+<span fx-format="percent" fx-decimals="2">0.1567</span>
+<!-- Output: 15.67% -->
+
+<!-- Compact numbers (auto-scales: K, M, B, T) -->
+<span fx-format="compact">1500000</span>
+<!-- Output: 1.5M -->
+
+<!-- File sizes (auto-scales: KB, MB, GB, TB) -->
+<span fx-format="filesize">1073741824</span>
+<!-- Output: 1.00 GB -->
+
+<!-- Decimal precision control -->
+<span fx-format="decimal" fx-decimals="3">3.14159</span>
+<!-- Output: 3.142 -->
 ```
 
 ## 🏗️ Architecture
 
-genX consists of two core components:
-
-### 1. Universal Bootloader (1KB)
-- Loads after first paint for 0ms blocking time
+### Universal Bootloader (~1KB)
 - Scans DOM for genX attributes
 - Dynamically loads only required modules
 - Watches for dynamic content via MutationObserver
+- Zero dependencies
 
-### 2. Polymorphic Processing Engine
-- Pure functional JavaScript
-- Processes multiple notation styles
-- Framework-agnostic design
-- Client-side only (privacy-preserving)
+### Module Design
+- **Pure functional JavaScript** - No classes, no complex state
+- **Polymorphic processing** - Handles multiple input/output formats
+- **Client-side only** - Privacy-preserving, no external calls
+- **Performance-first** - All operations target <16ms (60 FPS)
 
-See [Architecture Documentation](docs/architecture/) for technical details.
+See [Architecture Documentation](docs/architecture/) for technical specifications.
 
-## 🔒 Security & Privacy
+## 📚 Documentation
 
-- **Client-side only** - No data sent to servers
-- **XSS protected** - Safe DOM manipulation, no innerHTML
-- **CSP compliant** - No eval, no inline scripts
-- **SRI supported** - Subresource integrity for CDN
-- **GDPR compliant** - No tracking, no PII collection
+- **[Live Demo](https://genx.software/examples/genx-demo.html)** - Interactive examples of all modules
+- **[Architecture Specs](docs/architecture/)** - Technical documentation for each module
+- **[Implementation Plans](docs/implementation/)** - Development roadmaps and completion reports
+- **[Testing Guide](docs/testing/getting-started.md)** - BDD/TDD testing framework
 
-## 🎨 Visual Tooling (Commercial)
+## 🧪 Testing
 
-Professional point-and-click tools for genX attribute tagging:
+genX uses a comprehensive BDD/TDD testing framework:
 
-- **Chrome Extension** - Visual element inspector and tagger
-- **VSCode Extension** - IDE-integrated tagging with live preview
-- **Collaboration Server** - Team workflows and version control
+- **Cucumber BDD** - Human-readable feature specifications
+- **Playwright** - Browser automation for UI testing
+- **Jest** - Unit tests for pure functions
+- **Manual Test Suite** - Visual verification in `tests/manual/`
 
-**Learn more:** https://visual.genx.software | sales@genx.software
+```bash
+# Run all tests
+npm test
 
-## 🚀 Performance
+# Run browser tests
+npm run test:browser
 
-genX is designed for perfect performance:
+# Run unit tests
+npm run test:unit
 
-- **0ms Total Blocking Time** - Loads after first paint
-- **<16ms Operations** - 60 FPS guaranteed
-- **Perfect Lighthouse Scores** - 100/100/100/100
-- **<1KB Bootloader** - Minimal initial load
-- **On-demand Loading** - Only load what you use
+# Run BDD tests
+npm run test:bdd
+```
+
+## 🔒 Privacy & Security
+
+- **100% Client-Side** - No data sent to servers, ever
+- **No Tracking** - No analytics, no telemetry, no cookies
+- **XSS Protected** - Safe DOM manipulation, no innerHTML
+- **CSP Compliant** - No eval, no inline scripts
+- **GDPR Compliant** - No PII collection
 
 ## 🌐 Browser Support
 
@@ -165,62 +194,62 @@ genX is designed for perfect performance:
 - Safari 14+
 - Edge 90+
 
-Requires ES6+ (Proxy, MutationObserver, async/await)
+Requires modern JavaScript features: ES6+, Proxy, MutationObserver, async/await
 
 ## 📦 Installation Options
 
-### Option 1: CDN (Easiest)
+### Option 1: Direct Script Tag
 ```html
 <script src="https://cdn.genx.software/v1/bootloader.js"></script>
 ```
 
-### Option 2: npm (Coming Soon)
+### Option 2: Local Development
+```bash
+git clone https://github.com/adamzwasserman/genX.git
+cd genX
+# Include src/bootloader.js in your project
+```
+
+### Option 3: npm (Coming Soon)
 ```bash
 npm install @genx/core
 ```
 
-### Option 3: Self-Hosted
-```bash
-# Download and host yourself
-wget https://cdn.genx.software/v1/bootloader.js
-```
-
-See [Deployment Guide](docs/README.md#deployment) for details.
-
 ## 🤝 Contributing
 
-Contributions are welcome! Please see our [Contributing Guide](.claude/CLAUDE.local.md) for:
+Contributions welcome! This project follows:
+- **BDD/TDD** - All features require tests (Cucumber + Playwright + Jest)
+- **Architecture-first** - Specifications before implementation
+- **Performance budget** - <16ms operations, <1KB bootloader
+- **Privacy-first** - No external calls, no tracking
 
-- Code style guidelines
-- Module development standards
-- Testing requirements
-- Documentation standards
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details
-
-## 🙏 Acknowledgments
-
-Built with inspiration from:
-- Alpine.js - For declarative simplicity
-- HTMX - For HTML-first philosophy
-- Tailwind - For utility-first thinking
-
-## 🔗 Links
-
-- **Website:** https://genx.software
-- **Documentation:** [docs/README.md](docs/README.md)
-- **GitHub:** https://github.com/genx-software/genx
-- **Discord:** https://discord.gg/genx
+See implementation plans in `docs/implementation/` for current development status.
 
 ## 📊 Project Status
 
-**Current Phase:** Alpha
 **Version:** 1.0.0-alpha
-**Modules Ready:** fmtX, accX
-**In Development:** bindX, loadX, dragX, tableX, navX
+**Modules Complete:** fmtX, accX, loadX, navX, dragX
+**In Development:** bindX
+**Planned:** tableX
+
+**Recent Updates:**
+- ✅ Phone number formatting with comprehensive US/international support
+- ✅ Input type selectors for dates, currency, percentages
+- ✅ Decimal precision control for percentages and numbers
+- ✅ Comprehensive BDD test suite with Cucumber/Playwright/Jest
+- ✅ Manual test files for visual verification
+- ✅ Updated demo page with clean, minimal styling
+
+## 📄 License
+
+MIT License - See [LICENSE](LICENSE) for details
+
+## 🔗 Links
+
+- **Repository:** [https://github.com/adamzwasserman/genX](https://github.com/adamzwasserman/genX)
+- **Live Demo:** [https://genx.software/examples/genx-demo.html](https://genx.software/examples/genx-demo.html)
+- **Issues:** [https://github.com/adamzwasserman/genX/issues](https://github.com/adamzwasserman/genX/issues)
 
 ---
 
-**Made with ❤️ for developers who value simplicity.**
+**Made with ❤️ for developers who value simplicity, privacy, and performance.**
