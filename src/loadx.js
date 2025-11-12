@@ -682,8 +682,8 @@
         // Add ARIA attributes
         el.setAttribute('aria-busy', 'true');
 
-        // Announce to screen readers
-        announceLoading('Loading');
+        // Announce to screen readers (pass element for urgency detection)
+        announceLoading('Loading', el);
     };
 
     /**
@@ -718,8 +718,8 @@
         // Remove ARIA attributes
         el.removeAttribute('aria-busy');
 
-        // Announce completion
-        announceLoading('Loading complete');
+        // Announce completion (pass element for urgency)
+        announceLoading('Loading complete', el);
     };
 
     // ============================================================================
@@ -888,11 +888,51 @@
      * Announce loading state to screen readers
      * @param {String} message - Message to announce
      */
-    const announceLoading = (message) => {
+    // Track announcement timeout (single timeout per live region)
+    let announcementTimeout = null;
+
+    /**
+     * Announce loading state to screen readers with auto-clear
+     * @param {String} message - Message to announce
+     * @param {HTMLElement} element - Element being loaded (optional, for urgency detection)
+     */
+    const announceLoading = (message, element = null) => {
         const liveRegion = document.getElementById('lx-live-region');
-        if (liveRegion) {
-            liveRegion.textContent = message;
+        if (!liveRegion) {
+            return;
         }
+
+        // Clear any existing timeout
+        if (announcementTimeout) {
+            clearTimeout(announcementTimeout);
+            announcementTimeout = null;
+        }
+
+        // Check for urgency flag
+        const isUrgent = element?.getAttribute('lx-urgent') === 'true' ||
+                        element?.hasAttribute('lx-urgent');
+
+        // Update aria-live based on urgency
+        if (isUrgent) {
+            liveRegion.setAttribute('aria-live', 'assertive');
+        } else {
+            liveRegion.setAttribute('aria-live', 'polite');
+        }
+
+        // Set announcement
+        liveRegion.textContent = message;
+
+        // Auto-clear after 1 second
+        announcementTimeout = setTimeout(() => {
+            if (liveRegion.textContent === message) {
+                liveRegion.textContent = '';
+                // Reset to polite after urgent announcement
+                if (isUrgent) {
+                    liveRegion.setAttribute('aria-live', 'polite');
+                }
+            }
+            announcementTimeout = null;
+        }, 1000);
     };
 
     // ============================================================================
