@@ -73,6 +73,115 @@
     // ============================================================================
 
     /**
+     * Check if element has loadX attributes
+     * @param {HTMLElement} el - Element to check
+     * @returns {Boolean}
+     */
+    const hasLoadXAttributes = (el) => {
+        if (!el || !el.getAttribute) {
+            return false;
+        }
+
+        return el.hasAttribute('lx-strategy') ||
+               el.hasAttribute('lx-loading') ||
+               el.hasAttribute('data-lx-strategy') ||
+               (el.className && el.className.includes('lx-'));
+    };
+
+    /**
+     * Scan mutations for new loadX elements
+     * @param {Array} mutations - MutationRecord array
+     * @param {Object} config - Configuration object
+     */
+    const scanForNewElements = (mutations, config) => {
+        const elementsToProcess = new Set();
+
+        mutations.forEach(mutation => {
+            // Check added nodes
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        // Check if node itself has lx attributes
+                        if (hasLoadXAttributes(node)) {
+                            elementsToProcess.add(node);
+                        }
+
+                        // Check descendants
+                        const descendants = node.querySelectorAll('[class*="lx-"], [lx-strategy], [lx-loading], [data-lx-strategy]');
+                        descendants.forEach(el => elementsToProcess.add(el));
+                    }
+                });
+            }
+
+            // Check attribute changes
+            if (mutation.type === 'attributes') {
+                const target = mutation.target;
+                if (hasLoadXAttributes(target)) {
+                    elementsToProcess.add(target);
+                }
+            }
+        });
+
+        // Process all collected elements
+        elementsToProcess.forEach(el => {
+            // Skip if already tracked
+            if (!el.hasAttribute('data-lx-tracked')) {
+                processElement(el, config);
+            }
+        });
+    };
+
+    /**
+     * Setup MutationObserver for dynamic content
+     * @param {Object} config - Configuration object
+     */
+    const setupMutationObserver = (config) => {
+        // Disconnect existing observer if any
+        if (mutationObserver) {
+            mutationObserver.disconnect();
+        }
+
+        // Create new observer
+        mutationObserver = new MutationObserver((mutations) => {
+            // Debounce scanning for performance
+            clearTimeout(scanDebounceTimer);
+
+            scanDebounceTimer = setTimeout(() => {
+                scanForNewElements(mutations, config);
+            }, SCAN_DEBOUNCE_MS);
+        });
+
+        // Observe entire document for attribute and child changes
+        mutationObserver.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['lx-strategy', 'lx-loading', 'data-lx-strategy', 'class']
+        });
+
+        // Store observer reference for cleanup
+        if (typeof window !== 'undefined') {
+            window.loadX = window.loadX || {};
+            window.loadX._mutationObserver = mutationObserver;
+        }
+    };
+
+    /**
+     * Cleanup mutation observer
+     */
+    const disconnectMutationObserver = () => {
+        if (mutationObserver) {
+            mutationObserver.disconnect();
+            mutationObserver = null;
+        }
+
+        if (scanDebounceTimer) {
+            clearTimeout(scanDebounceTimer);
+            scanDebounceTimer = null;
+        }
+    };
+
+    /**
      * Initialize loadX module with configuration
      * @param {Object} config - Configuration options
      * @returns {Object} - Frozen API object
@@ -140,12 +249,25 @@
             window.loadX.asyncDetectionEnabled = true;
         }
 
+        // Setup MutationObserver for dynamic content
+        if (document.body) {
+            setupMutationObserver(mergedConfig);
+        } else {
+            // Defer until DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    setupMutationObserver(mergedConfig);
+                });
+            }
+        }
+
         // Return frozen API
         return Object.freeze({
             config: mergedConfig,
             registry: strategyRegistry,
             applyLoading: (el, opts) => applyLoadingState(el, opts, mergedConfig),
-            removeLoading: (el) => removeLoadingState(el)
+            removeLoading: (el) => removeLoadingState(el),
+            disconnect: disconnectMutationObserver
         });
     };
 
@@ -890,6 +1012,11 @@
      */
     // Track announcement timeout (single timeout per live region)
     let announcementTimeout = null;
+
+    // Track mutation observer and debounce timer
+    let mutationObserver = null;
+    let scanDebounceTimer = null;
+    const SCAN_DEBOUNCE_MS = 50; // 50ms debounce
 
     /**
      * Announce loading state to screen readers with auto-clear
