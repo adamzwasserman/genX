@@ -189,7 +189,7 @@
     };
 
     /**
-     * Cleanup mutation observer
+     * Cleanup mutation observer and all ResizeObservers
      */
     const disconnectMutationObserver = () => {
         if (mutationObserver) {
@@ -201,6 +201,12 @@
             clearTimeout(scanDebounceTimer);
             scanDebounceTimer = null;
         }
+
+        // v2.0: Disconnect all ResizeObservers for memory cleanup
+        activeObservers.forEach(observer => {
+            observer.disconnect();
+        });
+        activeObservers.clear();
     };
 
     /**
@@ -222,7 +228,8 @@
             strategies: [],         // Available loading strategies
             telemetry: false,       // Telemetry disabled by default (privacy)
             modernSyntax: false,    // v2.0: Disable legacy CSS class and colon syntax
-            silenceDeprecations: false  // v2.0: Silence deprecation warnings
+            silenceDeprecations: false,  // v2.0: Silence deprecation warnings
+            preventCLS: true        // v2.0: Use ResizeObserver to prevent Cumulative Layout Shift
         });
 
         // Merge configuration (only known properties)
@@ -232,7 +239,8 @@
             strategies: normalizedConfig.strategies !== undefined ? normalizedConfig.strategies : defaultConfig.strategies,
             telemetry: normalizedConfig.telemetry !== undefined ? normalizedConfig.telemetry : defaultConfig.telemetry,
             modernSyntax: normalizedConfig.modernSyntax !== undefined ? normalizedConfig.modernSyntax : defaultConfig.modernSyntax,
-            silenceDeprecations: normalizedConfig.silenceDeprecations !== undefined ? normalizedConfig.silenceDeprecations : defaultConfig.silenceDeprecations
+            silenceDeprecations: normalizedConfig.silenceDeprecations !== undefined ? normalizedConfig.silenceDeprecations : defaultConfig.silenceDeprecations,
+            preventCLS: normalizedConfig.preventCLS !== undefined ? normalizedConfig.preventCLS : defaultConfig.preventCLS
         };
 
         // Freeze strategies array if present
@@ -594,9 +602,6 @@
     // ASYNC DETECTION ENGINE
     // ============================================================================
 
-    // Track active loading states (WeakMap for automatic cleanup)
-    const activeLoadingStates = new WeakMap();
-
     /**
      * Setup automatic async operation detection
      * @param {Object} config - Configuration object
@@ -881,6 +886,51 @@
 
         const strategy = opts.strategy || 'spinner';
 
+        // v2.0: Prevent Cumulative Layout Shift with ResizeObserver
+        if (config.preventCLS && typeof ResizeObserver !== 'undefined') {
+            // Measure current dimensions
+            const rect = el.getBoundingClientRect();
+            const computedStyle = window.getComputedStyle(el);
+
+            // Store original dimensions and styles
+            originalDimensions.set(el, {
+                width: rect.width,
+                height: rect.height,
+                minWidth: computedStyle.minWidth,
+                minHeight: computedStyle.minHeight,
+                boxSizing: computedStyle.boxSizing
+            });
+
+            // Reserve space to prevent layout shift
+            if (rect.width > 0 && rect.height > 0) {
+                el.style.minWidth = rect.width + 'px';
+                el.style.minHeight = rect.height + 'px';
+            }
+
+            // Create ResizeObserver to monitor size changes
+            const observer = new ResizeObserver((entries) => {
+                for (const entry of entries) {
+                    // Monitor but don't react during loading state
+                    // This is primarily for cleanup and memory management
+                    if (entry.target === el) {
+                        // Store current size for potential restoration
+                        const currentRect = entry.contentRect;
+                        if (currentRect.width > 0 && currentRect.height > 0) {
+                            const stored = originalDimensions.get(el) || {};
+                            stored.observedWidth = currentRect.width;
+                            stored.observedHeight = currentRect.height;
+                            originalDimensions.set(el, stored);
+                        }
+                    }
+                }
+            });
+
+            // Start observing
+            observer.observe(el);
+            resizeObservers.set(el, observer);
+            activeObservers.add(observer); // Track for bulk cleanup
+        }
+
         // Dispatch to appropriate strategy
         switch (strategy) {
         case 'spinner':
@@ -935,6 +985,23 @@
             removeSpinnerStrategy(el);
         }
 
+        // v2.0: Cleanup ResizeObserver and restore dimensions
+        const observer = resizeObservers.get(el);
+        if (observer) {
+            observer.disconnect();
+            resizeObservers.delete(el);
+            activeObservers.delete(observer); // Remove from bulk cleanup tracking
+        }
+
+        // Restore original dimensions
+        const original = originalDimensions.get(el);
+        if (original) {
+            // Restore original min-width and min-height
+            el.style.minWidth = original.minWidth;
+            el.style.minHeight = original.minHeight;
+            originalDimensions.delete(el);
+        }
+
         // Remove ARIA attributes
         el.removeAttribute('aria-busy');
 
@@ -971,7 +1038,6 @@
             window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         // Preserve original dimensions to prevent CLS
-        const computedStyle = window.getComputedStyle(el);
         const originalWidth = el.offsetWidth;
         const originalHeight = el.offsetHeight;
 
@@ -1115,6 +1181,18 @@
     let mutationObserver = null;
     let scanDebounceTimer = null;
     const SCAN_DEBOUNCE_MS = 50; // 50ms debounce
+
+    // v2.0: Track active loading states (WeakMap for automatic cleanup)
+    const activeLoadingStates = new WeakMap();
+
+    // v2.0: Track ResizeObservers for CLS prevention (WeakMap for automatic cleanup)
+    const resizeObservers = new WeakMap();
+
+    // v2.0: Track original dimensions for CLS restoration (WeakMap for automatic cleanup)
+    const originalDimensions = new WeakMap();
+
+    // v2.0: Track all active observers for bulk cleanup (Set for iteration)
+    const activeObservers = new Set();
 
     /**
      * Announce loading state to screen readers with auto-clear
