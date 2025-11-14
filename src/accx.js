@@ -466,6 +466,178 @@
             }
         },
 
+        // Keyboard navigation with multi-selection
+        keyboardNav: (el, opts) => {
+            const selector = opts.selector || '[role="option"], [role="row"], [role="gridcell"], [role="tab"]';
+            const items = Array.from(el.querySelectorAll(selector));
+
+            if (items.length === 0) {
+                return;
+            }
+
+            // Enable multi-selection if requested
+            const multiSelect = opts.multiselect !== false;
+            if (multiSelect) {
+                el.setAttribute('aria-multiselectable', 'true');
+            }
+
+            // Track selection state
+            let lastSelectedIndex = -1;
+
+            // Helper to get item index
+            const getItemIndex = (item) => items.indexOf(item);
+
+            // Helper to select range
+            const selectRange = (start, end) => {
+                const [min, max] = start < end ? [start, end] : [end, start];
+                for (let i = min; i <= max; i++) {
+                    items[i].setAttribute('aria-selected', 'true');
+                }
+            };
+
+            // Helper to clear all selections
+            const clearSelections = () => {
+                items.forEach(item => item.setAttribute('aria-selected', 'false'));
+            };
+
+            // Helper to toggle selection
+            const toggleSelection = (item) => {
+                const isSelected = item.getAttribute('aria-selected') === 'true';
+                item.setAttribute('aria-selected', String(!isSelected));
+            };
+
+            // Helper to select all
+            const selectAll = () => {
+                items.forEach(item => item.setAttribute('aria-selected', 'true'));
+            };
+
+            // Initialize aria-selected
+            items.forEach((item, index) => {
+                if (!item.hasAttribute('aria-selected')) {
+                    item.setAttribute('aria-selected', 'false');
+                }
+                if (!item.hasAttribute('tabindex')) {
+                    item.setAttribute('tabindex', index === 0 ? '0' : '-1');
+                }
+            });
+
+            // Keyboard event handler
+            el.addEventListener('keydown', (e) => {
+                const target = e.target;
+                const currentIndex = getItemIndex(target);
+
+                if (currentIndex === -1) {
+                    return;
+                }
+
+                let handled = false;
+                let newIndex = currentIndex;
+
+                // Handle arrow keys
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    newIndex = Math.min(currentIndex + 1, items.length - 1);
+                    handled = true;
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    newIndex = Math.max(currentIndex - 1, 0);
+                    handled = true;
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    newIndex = 0;
+                    handled = true;
+                } else if (e.key === 'End') {
+                    e.preventDefault();
+                    newIndex = items.length - 1;
+                    handled = true;
+                } else if ((e.key === 'a' || e.key === 'A') && (e.ctrlKey || e.metaKey) && multiSelect) {
+                    // Ctrl+A / Cmd+A: Select all
+                    e.preventDefault();
+                    selectAll();
+                    enhance.announce(el, { message: `All ${items.length} items selected`, priority: 'polite' });
+                    return;
+                } else if (e.key === ' ' && multiSelect && !e.shiftKey) {
+                    // Space: Toggle selection
+                    e.preventDefault();
+                    toggleSelection(target);
+                    lastSelectedIndex = currentIndex;
+                    const isSelected = target.getAttribute('aria-selected') === 'true';
+                    enhance.announce(el, {
+                        message: isSelected ? 'Selected' : 'Deselected',
+                        priority: 'polite'
+                    });
+                    return;
+                }
+
+                if (handled) {
+                    // Move focus
+                    target.setAttribute('tabindex', '-1');
+                    items[newIndex].setAttribute('tabindex', '0');
+                    items[newIndex].focus();
+
+                    // Handle selection with modifiers
+                    if (multiSelect) {
+                        if (e.shiftKey) {
+                            // Shift+Arrow: Range selection
+                            if (lastSelectedIndex === -1) {
+                                lastSelectedIndex = currentIndex;
+                            }
+                            clearSelections();
+                            selectRange(lastSelectedIndex, newIndex);
+                        } else if (e.ctrlKey || e.metaKey) {
+                            // Ctrl/Cmd+Arrow: Move focus without changing selection
+                            // Do nothing to selection
+                        } else {
+                            // Arrow alone: Move selection to focused item
+                            if (!opts.separateFocusSelection) {
+                                clearSelections();
+                                items[newIndex].setAttribute('aria-selected', 'true');
+                                lastSelectedIndex = newIndex;
+                            }
+                        }
+                    } else {
+                        // Single selection mode
+                        clearSelections();
+                        items[newIndex].setAttribute('aria-selected', 'true');
+                        lastSelectedIndex = newIndex;
+                    }
+                }
+            });
+
+            // Click handler for mouse selection
+            items.forEach((item, index) => {
+                item.addEventListener('click', (e) => {
+                    if (multiSelect) {
+                        if (e.shiftKey && lastSelectedIndex !== -1) {
+                            // Shift+Click: Range selection
+                            clearSelections();
+                            selectRange(lastSelectedIndex, index);
+                        } else if (e.ctrlKey || e.metaKey) {
+                            // Ctrl/Cmd+Click: Toggle selection
+                            toggleSelection(item);
+                            lastSelectedIndex = index;
+                        } else {
+                            // Click alone: Single selection
+                            clearSelections();
+                            item.setAttribute('aria-selected', 'true');
+                            lastSelectedIndex = index;
+                        }
+                    } else {
+                        // Single selection mode
+                        clearSelections();
+                        item.setAttribute('aria-selected', 'true');
+                        lastSelectedIndex = index;
+                    }
+
+                    // Update focus
+                    items.forEach((it, i) => {
+                        it.setAttribute('tabindex', i === index ? '0' : '-1');
+                    });
+                    item.focus();
+                });
+            });
+        },
+
         // Announce changes
         announce: (el, opts) => {
             const message = opts.message || el.textContent;
