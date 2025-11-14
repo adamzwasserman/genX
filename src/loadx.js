@@ -38,13 +38,35 @@
             }
         }
 
-        // Validate autoDetect
+        // Validate autoDetect (boolean or object)
         if ('autoDetect' in config) {
             const value = config.autoDetect;
             const type = typeof value;
 
-            if (type !== 'boolean') {
-                throw new Error(`loadX config error: autoDetect must be a boolean, got ${type}`);
+            if (type !== 'boolean' && type !== 'object') {
+                throw new Error(`loadX config error: autoDetect must be a boolean or object, got ${type}`);
+            }
+
+            // If object, validate properties
+            if (type === 'object' && value !== null) {
+                const validKeys = ['fetch', 'xhr', 'htmx', 'forms'];
+                const invalidKeys = Object.keys(value).filter(k => !validKeys.includes(k));
+
+                if (invalidKeys.length > 0) {
+                    throw new Error(
+                        `loadX config error: autoDetect object has invalid keys: ${invalidKeys.join(', ')}. ` +
+                        `Valid keys are: ${validKeys.join(', ')}`
+                    );
+                }
+
+                // Validate values are booleans
+                Object.entries(value).forEach(([key, val]) => {
+                    if (typeof val !== 'boolean') {
+                        throw new Error(
+                            `loadX config error: autoDetect.${key} must be boolean, got ${typeof val}`
+                        );
+                    }
+                });
             }
         }
 
@@ -214,6 +236,31 @@
             mergedConfig.strategies = Object.freeze([...mergedConfig.strategies]);
         }
 
+        // Normalize autoDetect to object form
+        if (typeof mergedConfig.autoDetect === 'boolean') {
+            // Convert boolean to object (backward compatibility)
+            const enableAll = mergedConfig.autoDetect;
+            mergedConfig.autoDetect = {
+                fetch: enableAll,
+                xhr: enableAll,
+                htmx: enableAll,
+                forms: enableAll
+            };
+        } else if (typeof mergedConfig.autoDetect === 'object' && mergedConfig.autoDetect !== null) {
+            // Fill in defaults for partial config
+            mergedConfig.autoDetect = {
+                fetch: mergedConfig.autoDetect.fetch !== undefined ? mergedConfig.autoDetect.fetch : true,
+                xhr: mergedConfig.autoDetect.xhr !== undefined ? mergedConfig.autoDetect.xhr : true,
+                htmx: mergedConfig.autoDetect.htmx !== undefined ? mergedConfig.autoDetect.htmx : true,
+                forms: mergedConfig.autoDetect.forms !== undefined ? mergedConfig.autoDetect.forms : true
+            };
+        }
+
+        // Freeze autoDetect object
+        if (mergedConfig.autoDetect && typeof mergedConfig.autoDetect === 'object') {
+            Object.freeze(mergedConfig.autoDetect);
+        }
+
         // Freeze final configuration
         Object.freeze(mergedConfig);
 
@@ -238,13 +285,19 @@
             elements.forEach(el => processElement(el, mergedConfig));
         }
 
-        // Setup async detection if enabled
-        if (mergedConfig.autoDetect) {
+        // Setup async detection if any detector is enabled
+        const anyDetectorEnabled = mergedConfig.autoDetect &&
+            (mergedConfig.autoDetect.fetch ||
+             mergedConfig.autoDetect.xhr ||
+             mergedConfig.autoDetect.htmx ||
+             mergedConfig.autoDetect.forms);
+
+        if (anyDetectorEnabled) {
             setupAsyncDetection(mergedConfig);
         }
 
         // Mark async detection as enabled for testing
-        if (mergedConfig.autoDetect && typeof window !== 'undefined') {
+        if (anyDetectorEnabled && typeof window !== 'undefined') {
             window.loadX = window.loadX || {};
             window.loadX.asyncDetectionEnabled = true;
         }
@@ -508,23 +561,27 @@
      * @param {Object} config - Configuration object
      */
     const setupAsyncDetection = (config) => {
-        // Monitor fetch API
-        if (typeof window.fetch !== 'undefined') {
+        const autoDetect = config.autoDetect;
+
+        // Monitor fetch API (if enabled)
+        if (autoDetect.fetch && typeof window.fetch !== 'undefined') {
             monitorFetch(config);
         }
 
-        // Monitor XMLHttpRequest
-        if (typeof window.XMLHttpRequest !== 'undefined') {
+        // Monitor XMLHttpRequest (if enabled)
+        if (autoDetect.xhr && typeof window.XMLHttpRequest !== 'undefined') {
             monitorXHR(config);
         }
 
-        // Monitor HTMX if available
-        if (typeof window.htmx !== 'undefined' || typeof htmx !== 'undefined') {
+        // Monitor HTMX if available (if enabled)
+        if (autoDetect.htmx && (typeof window.htmx !== 'undefined' || typeof htmx !== 'undefined')) {
             monitorHTMX(config);
         }
 
-        // Monitor form submissions
-        monitorFormSubmissions(config);
+        // Monitor form submissions (if enabled)
+        if (autoDetect.forms) {
+            monitorFormSubmissions(config);
+        }
     };
 
     /**
