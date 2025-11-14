@@ -220,7 +220,9 @@
             minDisplayMs: 300,      // Minimum time to display loading indicator
             autoDetect: true,       // Auto-detect async operations
             strategies: [],         // Available loading strategies
-            telemetry: false        // Telemetry disabled by default (privacy)
+            telemetry: false,       // Telemetry disabled by default (privacy)
+            modernSyntax: false,    // v2.0: Disable legacy CSS class and colon syntax
+            silenceDeprecations: false  // v2.0: Silence deprecation warnings
         });
 
         // Merge configuration (only known properties)
@@ -228,7 +230,9 @@
             minDisplayMs: normalizedConfig.minDisplayMs !== undefined ? normalizedConfig.minDisplayMs : defaultConfig.minDisplayMs,
             autoDetect: normalizedConfig.autoDetect !== undefined ? normalizedConfig.autoDetect : defaultConfig.autoDetect,
             strategies: normalizedConfig.strategies !== undefined ? normalizedConfig.strategies : defaultConfig.strategies,
-            telemetry: normalizedConfig.telemetry !== undefined ? normalizedConfig.telemetry : defaultConfig.telemetry
+            telemetry: normalizedConfig.telemetry !== undefined ? normalizedConfig.telemetry : defaultConfig.telemetry,
+            modernSyntax: normalizedConfig.modernSyntax !== undefined ? normalizedConfig.modernSyntax : defaultConfig.modernSyntax,
+            silenceDeprecations: normalizedConfig.silenceDeprecations !== undefined ? normalizedConfig.silenceDeprecations : defaultConfig.silenceDeprecations
         };
 
         // Freeze strategies array if present
@@ -357,7 +361,7 @@
      * @param {Object} config - Configuration object
      */
     const processElement = (el, config) => {
-        const parsed = parseElementAttributes(el);
+        const parsed = parseElementAttributes(el, config);
 
         if (parsed.strategy) {
             // Mark element as tracked
@@ -382,9 +386,10 @@
      * - Data attributes: data-lx-strategy="spinner"
      *
      * @param {HTMLElement} el - Element to parse
+     * @param {Object} config - Configuration object
      * @returns {Object} - Parsed configuration object
      */
-    const parseElementAttributes = (el) => {
+    const parseElementAttributes = (el, config = {}) => {
         if (!el) {
             return { strategy: 'spinner' };
         } // Default
@@ -426,7 +431,7 @@
 
         // Priority 4: CSS class syntax (lx-spinner or lx:spinner:500)
         if (!result.strategy) {
-            const classResult = parseClassSyntax(el.className);
+            const classResult = parseClassSyntax(el.className, config);
             if (classResult.strategy) {
                 Object.assign(result, classResult);
             }
@@ -445,10 +450,12 @@
 
     /**
      * Parse CSS class syntax (supports both lx-strategy and lx:strategy:params)
+     * @deprecated v2.0 - Use data-lx-strategy attribute instead
      * @param {String} className - Element className string
+     * @param {Object} config - Configuration object
      * @returns {Object} - Parsed configuration
      */
-    const parseClassSyntax = (className) => {
+    const parseClassSyntax = (className, config = {}) => {
         if (!className) {
             return {};
         }
@@ -459,6 +466,23 @@
         for (const cls of classes) {
             // Colon syntax: lx:spinner:500 or lx:progress:determinate:500
             if (cls.startsWith('lx:')) {
+                // v2.0: Deprecation handling
+                if (config.modernSyntax) {
+                    throw new Error(
+                        '[loadX v2.0] Colon syntax (' + cls + ') is not supported in strict mode. ' +
+                        'Use data-lx-strategy attribute or lx-config JSON instead. ' +
+                        'See migration guide: https://genx.software/docs/loadx/migration-v2'
+                    );
+                }
+
+                if (!config.silenceDeprecations) {
+                    console.warn(
+                        '[loadX v2.0] Colon syntax (' + cls + ') is deprecated and will be removed in v3.0. ' +
+                        'Use data-lx-strategy attribute or lx-config JSON instead. ' +
+                        'See migration guide: https://genx.software/docs/loadx/migration-v2'
+                    );
+                }
+
                 const parts = cls.split(':').slice(1); // Remove 'lx' prefix
                 if (parts.length > 0) {
                     result.strategy = normalizeStrategyName(parts[0]);
@@ -485,6 +509,23 @@
 
             // Standard class syntax: lx-spinner
             if (cls.startsWith('lx-')) {
+                // v2.0: Deprecation handling
+                if (config.modernSyntax) {
+                    throw new Error(
+                        '[loadX v2.0] CSS class syntax (' + cls + ') is not supported in strict mode. ' +
+                        'Use data-lx-strategy="' + cls.substring(3) + '" instead. ' +
+                        'See migration guide: https://genx.software/docs/loadx/migration-v2'
+                    );
+                }
+
+                if (!config.silenceDeprecations) {
+                    console.warn(
+                        '[loadX v2.0] CSS class syntax (' + cls + ') is deprecated and will be removed in v3.0. ' +
+                        'Use data-lx-strategy="' + cls.substring(3) + '" instead. ' +
+                        'See migration guide: https://genx.software/docs/loadx/migration-v2'
+                    );
+                }
+
                 const strategyName = cls.substring(3); // Remove 'lx-' prefix
                 result.strategy = normalizeStrategyName(strategyName);
                 return result;
@@ -703,7 +744,7 @@
             const element = event.detail?.elt || event.target;
 
             if (element && (element._lxConfig || element.hasAttribute('lx-loading'))) {
-                const lxConfig = element._lxConfig || parseElementAttributes(element);
+                const lxConfig = element._lxConfig || parseElementAttributes(element, config);
                 applyLoadingState(element, lxConfig, config);
                 activeLoadingStates.set(element, Date.now());
             }
@@ -778,7 +819,7 @@
                 const submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
                 const element = submitButton || form;
 
-                const lxConfig = element._lxConfig || parseElementAttributes(element);
+                const lxConfig = element._lxConfig || parseElementAttributes(element, config);
                 applyLoadingState(element, lxConfig, config);
                 activeLoadingStates.set(element, Date.now());
 
