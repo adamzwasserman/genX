@@ -179,7 +179,7 @@
         case 'number':
             return num.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: rest.thousands !== false });
         case 'currency':
-            return new Intl.NumberFormat(locale, { style: 'currency', currency: rest.currency || 'USD', minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(num);
+            return new Intl.NumberFormat(locale, { style: 'currency', currency: rest.currency || 'USD', minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: rest.thousands !== false }).format(num);
         case 'percent': {
             // If input type is 'percentage', value is already 0-100, don't multiply
             // If input type is 'decimal' or not specified, multiply by 100
