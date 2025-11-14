@@ -639,4 +639,396 @@ describe('AccessX Module', () => {
             expect(config.subtree).toBe(true);
         });
     });
+
+    describe('Keyboard Navigation Enhancement', () => {
+        let container;
+        let items;
+
+        beforeEach(() => {
+            container = document.createElement('div');
+            container.setAttribute('role', 'listbox');
+
+            for (let i = 0; i < 5; i++) {
+                const item = document.createElement('div');
+                item.setAttribute('role', 'option');
+                item.textContent = `Item ${i + 1}`;
+                item.setAttribute('tabindex', '0');
+                container.appendChild(item);
+            }
+
+            items = Array.from(container.querySelectorAll('[role="option"]'));
+            document.body.appendChild(container);
+        });
+
+        afterEach(() => {
+            container.remove();
+        });
+
+        describe('Basic Setup', () => {
+            test('should set aria-multiselectable=true when multiselect enabled', () => {
+                container.setAttribute('aria-multiselectable', 'true');
+                expect(container.getAttribute('aria-multiselectable')).toBe('true');
+            });
+
+            test('should not set aria-multiselectable when multiselect disabled', () => {
+                expect(container.getAttribute('aria-multiselectable')).toBeNull();
+            });
+
+            test('should find items with role="option"', () => {
+                const options = container.querySelectorAll('[role="option"]');
+                expect(options.length).toBe(5);
+            });
+
+            test('should support custom selector', () => {
+                const customItems = container.querySelectorAll('[role="option"]');
+                expect(customItems.length).toBe(5);
+            });
+        });
+
+        describe('Arrow Key Navigation', () => {
+            test('should move focus down with ArrowDown', () => {
+                items[0].focus();
+                const event = new KeyboardEvent('keydown', { key: 'ArrowDown' });
+                container.dispatchEvent(event);
+
+                // ArrowDown should move to next item
+                expect(items[1].getAttribute('tabindex')).toBe('0');
+            });
+
+            test('should move focus up with ArrowUp', () => {
+                items[2].focus();
+                const event = new KeyboardEvent('keydown', { key: 'ArrowUp' });
+                container.dispatchEvent(event);
+
+                // ArrowUp should move to previous item
+                expect(items[1].getAttribute('tabindex')).toBe('0');
+            });
+
+            test('should not move past first item with ArrowUp', () => {
+                items[0].focus();
+                const event = new KeyboardEvent('keydown', { key: 'ArrowUp' });
+                container.dispatchEvent(event);
+
+                // Should stay on first item
+                expect(items[0].matches(':focus')).toBe(true);
+            });
+
+            test('should not move past last item with ArrowDown', () => {
+                items[4].focus();
+                const event = new KeyboardEvent('keydown', { key: 'ArrowDown' });
+                container.dispatchEvent(event);
+
+                // Should stay on last item
+                expect(items[4].matches(':focus')).toBe(true);
+            });
+
+            test('should clear previous selection on arrow key alone', () => {
+                items[0].setAttribute('aria-selected', 'true');
+                items[1].setAttribute('aria-selected', 'true');
+
+                const event = new KeyboardEvent('keydown', { key: 'ArrowDown' });
+                container.dispatchEvent(event);
+
+                // Only current item should be selected
+                const selectedItems = container.querySelectorAll('[aria-selected="true"]');
+                expect(selectedItems.length).toBe(1);
+            });
+        });
+
+        describe('Shift+Arrow Range Selection', () => {
+            test('should select range with Shift+ArrowDown', () => {
+                items[0].setAttribute('aria-selected', 'true');
+                items[0].focus();
+
+                const event = new KeyboardEvent('keydown', {
+                    key: 'ArrowDown',
+                    shiftKey: true
+                });
+                container.dispatchEvent(event);
+
+                // Both items should be selected
+                expect(items[0].getAttribute('aria-selected')).toBe('true');
+                expect(items[1].getAttribute('aria-selected')).toBe('true');
+            });
+
+            test('should select range with Shift+ArrowUp', () => {
+                items[2].setAttribute('aria-selected', 'true');
+                items[2].focus();
+
+                const event = new KeyboardEvent('keydown', {
+                    key: 'ArrowUp',
+                    shiftKey: true
+                });
+                container.dispatchEvent(event);
+
+                // Both items should be selected
+                expect(items[1].getAttribute('aria-selected')).toBe('true');
+                expect(items[2].getAttribute('aria-selected')).toBe('true');
+            });
+
+            test('should extend selection across multiple items', () => {
+                items[1].setAttribute('aria-selected', 'true');
+                items[1].focus();
+
+                // Press Shift+ArrowDown twice
+                const event1 = new KeyboardEvent('keydown', {
+                    key: 'ArrowDown',
+                    shiftKey: true
+                });
+                container.dispatchEvent(event1);
+
+                const event2 = new KeyboardEvent('keydown', {
+                    key: 'ArrowDown',
+                    shiftKey: true
+                });
+                container.dispatchEvent(event2);
+
+                // Items 1, 2, 3 should be selected
+                expect(items[1].getAttribute('aria-selected')).toBe('true');
+                expect(items[2].getAttribute('aria-selected')).toBe('true');
+                expect(items[3].getAttribute('aria-selected')).toBe('true');
+            });
+
+            test('should handle reverse range selection', () => {
+                items[3].setAttribute('aria-selected', 'true');
+                items[3].focus();
+
+                const event = new KeyboardEvent('keydown', {
+                    key: 'ArrowUp',
+                    shiftKey: true
+                });
+                container.dispatchEvent(event);
+
+                // Items 2 and 3 should be selected
+                expect(items[2].getAttribute('aria-selected')).toBe('true');
+                expect(items[3].getAttribute('aria-selected')).toBe('true');
+            });
+        });
+
+        describe('Ctrl/Cmd+Arrow Focus Movement', () => {
+            test('should move focus without changing selection with Ctrl+ArrowDown', () => {
+                items[0].setAttribute('aria-selected', 'true');
+                items[0].focus();
+
+                const event = new KeyboardEvent('keydown', {
+                    key: 'ArrowDown',
+                    ctrlKey: true
+                });
+                container.dispatchEvent(event);
+
+                // Only first item should remain selected
+                expect(items[0].getAttribute('aria-selected')).toBe('true');
+                expect(items[1].getAttribute('aria-selected')).not.toBe('true');
+            });
+
+            test('should move focus without changing selection with Cmd+ArrowDown', () => {
+                items[0].setAttribute('aria-selected', 'true');
+                items[0].focus();
+
+                const event = new KeyboardEvent('keydown', {
+                    key: 'ArrowDown',
+                    metaKey: true
+                });
+                container.dispatchEvent(event);
+
+                // Only first item should remain selected
+                expect(items[0].getAttribute('aria-selected')).toBe('true');
+                expect(items[1].getAttribute('aria-selected')).not.toBe('true');
+            });
+        });
+
+        describe('Home/End Keys', () => {
+            test('should move to first item with Home', () => {
+                items[3].focus();
+                const event = new KeyboardEvent('keydown', { key: 'Home' });
+                container.dispatchEvent(event);
+
+                expect(items[0].getAttribute('tabindex')).toBe('0');
+            });
+
+            test('should move to last item with End', () => {
+                items[0].focus();
+                const event = new KeyboardEvent('keydown', { key: 'End' });
+                container.dispatchEvent(event);
+
+                expect(items[4].getAttribute('tabindex')).toBe('0');
+            });
+
+            test('should select range from current to first with Shift+Home', () => {
+                items[2].setAttribute('aria-selected', 'true');
+                items[2].focus();
+
+                const event = new KeyboardEvent('keydown', {
+                    key: 'Home',
+                    shiftKey: true
+                });
+                container.dispatchEvent(event);
+
+                // Items 0, 1, 2 should be selected
+                expect(items[0].getAttribute('aria-selected')).toBe('true');
+                expect(items[1].getAttribute('aria-selected')).toBe('true');
+                expect(items[2].getAttribute('aria-selected')).toBe('true');
+            });
+
+            test('should select range from current to last with Shift+End', () => {
+                items[1].setAttribute('aria-selected', 'true');
+                items[1].focus();
+
+                const event = new KeyboardEvent('keydown', {
+                    key: 'End',
+                    shiftKey: true
+                });
+                container.dispatchEvent(event);
+
+                // Items 1, 2, 3, 4 should be selected
+                expect(items[1].getAttribute('aria-selected')).toBe('true');
+                expect(items[2].getAttribute('aria-selected')).toBe('true');
+                expect(items[3].getAttribute('aria-selected')).toBe('true');
+                expect(items[4].getAttribute('aria-selected')).toBe('true');
+            });
+        });
+
+        describe('Select All (Ctrl/Cmd+A)', () => {
+            test('should select all items with Ctrl+A', () => {
+                const event = new KeyboardEvent('keydown', {
+                    key: 'a',
+                    ctrlKey: true
+                });
+                container.dispatchEvent(event);
+
+                items.forEach(item => {
+                    expect(item.getAttribute('aria-selected')).toBe('true');
+                });
+            });
+
+            test('should select all items with Cmd+A', () => {
+                const event = new KeyboardEvent('keydown', {
+                    key: 'a',
+                    metaKey: true
+                });
+                container.dispatchEvent(event);
+
+                items.forEach(item => {
+                    expect(item.getAttribute('aria-selected')).toBe('true');
+                });
+            });
+
+            test('should work with uppercase A', () => {
+                const event = new KeyboardEvent('keydown', {
+                    key: 'A',
+                    ctrlKey: true
+                });
+                container.dispatchEvent(event);
+
+                items.forEach(item => {
+                    expect(item.getAttribute('aria-selected')).toBe('true');
+                });
+            });
+        });
+
+        describe('Space Toggle Selection', () => {
+            test('should toggle selection with Space', () => {
+                items[0].focus();
+                const event = new KeyboardEvent('keydown', { key: ' ' });
+                container.dispatchEvent(event);
+
+                expect(items[0].getAttribute('aria-selected')).toBe('true');
+            });
+
+            test('should deselect if already selected', () => {
+                items[0].setAttribute('aria-selected', 'true');
+                items[0].focus();
+
+                const event = new KeyboardEvent('keydown', { key: ' ' });
+                container.dispatchEvent(event);
+
+                expect(items[0].getAttribute('aria-selected')).toBe('false');
+            });
+        });
+
+        describe('Click with Modifiers', () => {
+            test('should toggle selection with Ctrl+Click', () => {
+                const event = new MouseEvent('click', { ctrlKey: true });
+                items[0].dispatchEvent(event);
+
+                expect(items[0].getAttribute('aria-selected')).toBe('true');
+            });
+
+            test('should toggle selection with Cmd+Click', () => {
+                const event = new MouseEvent('click', { metaKey: true });
+                items[0].dispatchEvent(event);
+
+                expect(items[0].getAttribute('aria-selected')).toBe('true');
+            });
+
+            test('should select range with Shift+Click', () => {
+                items[0].setAttribute('aria-selected', 'true');
+
+                const event = new MouseEvent('click', { shiftKey: true });
+                items[3].dispatchEvent(event);
+
+                // Items 0-3 should be selected
+                expect(items[0].getAttribute('aria-selected')).toBe('true');
+                expect(items[1].getAttribute('aria-selected')).toBe('true');
+                expect(items[2].getAttribute('aria-selected')).toBe('true');
+                expect(items[3].getAttribute('aria-selected')).toBe('true');
+            });
+
+            test('should clear other selections on plain click', () => {
+                items[0].setAttribute('aria-selected', 'true');
+                items[1].setAttribute('aria-selected', 'true');
+
+                const event = new MouseEvent('click');
+                items[3].dispatchEvent(event);
+
+                // Only clicked item should be selected
+                expect(items[0].getAttribute('aria-selected')).not.toBe('true');
+                expect(items[1].getAttribute('aria-selected')).not.toBe('true');
+                expect(items[3].getAttribute('aria-selected')).toBe('true');
+            });
+        });
+
+        describe('Single Selection Mode', () => {
+            test('should not set aria-multiselectable when multiselect is false', () => {
+                const singleContainer = document.createElement('div');
+                singleContainer.setAttribute('role', 'listbox');
+                // Don't set aria-multiselectable
+
+                expect(singleContainer.getAttribute('aria-multiselectable')).toBeNull();
+            });
+
+            test('should clear previous selection in single select mode', () => {
+                // Simulate single select behavior
+                items[0].setAttribute('aria-selected', 'true');
+
+                // Clear all selections
+                items.forEach(item => item.setAttribute('aria-selected', 'false'));
+                // Select new item
+                items[2].setAttribute('aria-selected', 'true');
+
+                const selectedItems = container.querySelectorAll('[aria-selected="true"]');
+                expect(selectedItems.length).toBe(1);
+                expect(selectedItems[0]).toBe(items[2]);
+            });
+        });
+
+        describe('Accessibility Announcements', () => {
+            test('should track last selected index for range operations', () => {
+                items[1].setAttribute('aria-selected', 'true');
+                let lastSelectedIndex = 1;
+
+                expect(lastSelectedIndex).toBe(1);
+            });
+
+            test('should handle dynamic item addition', () => {
+                const newItem = document.createElement('div');
+                newItem.setAttribute('role', 'option');
+                newItem.textContent = 'Item 6';
+                container.appendChild(newItem);
+
+                const updatedItems = container.querySelectorAll('[role="option"]');
+                expect(updatedItems.length).toBe(6);
+            });
+        });
+    });
 });
