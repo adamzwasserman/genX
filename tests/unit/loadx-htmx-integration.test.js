@@ -170,13 +170,23 @@ describe('loadX - HTMX Integration', () => {
         test('should detect HTMX requests automatically', () => {
             const api = window.loadX.initLoadX({ autoDetect: true });
 
-            expect(api.config.autoDetect).toBe(true);
+            expect(api.config.autoDetect).toEqual({
+                fetch: true,
+                xhr: true,
+                htmx: true,
+                forms: true
+            });
         });
 
         test('should respect autoDetect: false configuration', () => {
             const api = window.loadX.initLoadX({ autoDetect: false });
 
-            expect(api.config.autoDetect).toBe(false);
+            expect(api.config.autoDetect).toEqual({
+                fetch: false,
+                xhr: false,
+                htmx: false,
+                forms: false
+            });
         });
 
         test('should handle elements with hx-get attribute', () => {

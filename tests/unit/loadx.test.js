@@ -73,7 +73,12 @@ describe('loadX - Core Initialization', () => {
             expect(result).toBeDefined();
             expect(result.config).toBeDefined();
             expect(result.config.minDisplayMs).toBe(300);
-            expect(result.config.autoDetect).toBe(true);
+            expect(result.config.autoDetect).toEqual({
+                fetch: true,
+                xhr: true,
+                htmx: true,
+                forms: true
+            });
             expect(result.config.telemetry).toBe(false);
         });
 
@@ -84,7 +89,12 @@ describe('loadX - Core Initialization', () => {
             });
 
             expect(result.config.minDisplayMs).toBe(500);
-            expect(result.config.autoDetect).toBe(false);
+            expect(result.config.autoDetect).toEqual({
+                fetch: false,
+                xhr: false,
+                htmx: false,
+                forms: false
+            });
             expect(result.config.telemetry).toBe(false); // Still uses default
         });
 
