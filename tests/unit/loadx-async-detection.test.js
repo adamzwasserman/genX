@@ -297,14 +297,24 @@ describe('loadX: Async Operation Detection', () => {
         test('should enable auto-detection when configured', () => {
             if (window.loadX && window.loadX.initLoadX) {
                 const api = window.loadX.initLoadX({ autoDetect: true });
-                expect(api.config.autoDetect).toBe(true);
+                expect(api.config.autoDetect).toEqual({
+                    fetch: true,
+                    xhr: true,
+                    htmx: true,
+                    forms: true
+                });
             }
         });
 
         test('should disable auto-detection when configured', () => {
             if (window.loadX && window.loadX.initLoadX) {
                 const api = window.loadX.initLoadX({ autoDetect: false });
-                expect(api.config.autoDetect).toBe(false);
+                expect(api.config.autoDetect).toEqual({
+                    fetch: false,
+                    xhr: false,
+                    htmx: false,
+                    forms: false
+                });
             }
         });
 

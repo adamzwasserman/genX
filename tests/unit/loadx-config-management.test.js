@@ -27,7 +27,12 @@ describe('loadX: Configuration Management', () => {
         test('should have autoDetect enabled by default', () => {
             if (window.loadX && window.loadX.initLoadX) {
                 const api = window.loadX.initLoadX();
-                expect(api.config.autoDetect).toBe(true);
+                expect(api.config.autoDetect).toEqual({
+                    fetch: true,
+                    xhr: true,
+                    htmx: true,
+                    forms: true
+                });
             }
         });
 
@@ -55,7 +60,12 @@ describe('loadX: Configuration Management', () => {
                 });
 
                 expect(api.config.minDisplayMs).toBe(500);
-                expect(api.config.autoDetect).toBe(false);
+                expect(api.config.autoDetect).toEqual({
+                    fetch: false,
+                    xhr: false,
+                    htmx: false,
+                    forms: false
+                });
                 expect(api.config.telemetry).toBe(false); // Default preserved
             }
         });
