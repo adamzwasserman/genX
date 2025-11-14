@@ -1431,31 +1431,164 @@
     // MODULE EXPORT
     // ============================================================================
 
+    /**
+     * Create a deprecated method wrapper with warning
+     * @param {Function} fn - Original function
+     * @param {string} oldName - Deprecated method name
+     * @param {string} newName - Replacement method name
+     * @returns {Function} Wrapped function with deprecation warning
+     */
+    const deprecate = (fn, oldName, newName) => {
+        return function(...args) {
+            console.warn(
+                `[loadX] ${oldName} is deprecated and will be removed in v2.0. ` +
+                `Use ${newName} instead.`
+            );
+            return fn.apply(this, args);
+        };
+    };
+
     // Export for bootloader integration
     if (typeof window !== 'undefined') {
         window.loadX = window.loadX || {};
-        window.loadX.initLoadX = initLoadX;
-        window.loadX.parseElementAttributes = parseElementAttributes;
-        window.loadX.validateConfig = validateConfig;
-        window.loadX.applyLoadingState = applyLoadingState;
-        window.loadX.removeLoadingState = removeLoadingState;
-        window.loadX.applySpinnerStrategy = applySpinnerStrategy;
-        window.loadX.removeSpinnerStrategy = removeSpinnerStrategy;
-        window.loadX.applySkeletonStrategy = applySkeletonStrategy;
-        window.loadX.removeSkeletonStrategy = removeSkeletonStrategy;
-        window.loadX.applyProgressStrategy = applyProgressStrategy;
-        window.loadX.removeProgressStrategy = removeProgressStrategy;
-        window.loadX.updateProgressValue = updateProgressValue;
-        window.loadX.applyFadeStrategy = applyFadeStrategy;
-        window.loadX.removeFadeStrategy = removeFadeStrategy;
+
+        // ============================================================================
+        // CORE PUBLIC API (4 methods)
+        // ============================================================================
+
+        /**
+         * Initialize loadX with configuration
+         * @param {Object} config - Configuration options
+         * @returns {Object} Frozen API object
+         */
+        window.loadX.init = initLoadX;
+
+        /**
+         * Apply loading state to element
+         * @param {HTMLElement} element - Target element
+         * @param {Object} options - Loading options (strategy, color, etc.)
+         * @returns {void}
+         */
+        window.loadX.apply = function(element, options = {}) {
+            const config = (window.loadX.config && window.loadX.config.config) || {};
+            applyLoadingState(element, options, config);
+        };
+
+        /**
+         * Remove loading state from element
+         * @param {HTMLElement} element - Target element
+         * @returns {void}
+         */
+        window.loadX.remove = removeLoadingState;
+
+        /**
+         * Update loading state (e.g., progress value)
+         * @param {HTMLElement} element - Target element
+         * @param {number} value - New value (for progress strategy)
+         * @returns {void}
+         */
+        window.loadX.update = function(element, value) {
+            updateProgressValue(element, value);
+        };
+
+        // ============================================================================
+        // DEPRECATED METHODS (backward compatibility)
+        // ============================================================================
+
+        // Deprecated: Use init() instead
+        window.loadX.initLoadX = deprecate(initLoadX, 'initLoadX', 'init');
+
+        // Deprecated: Use apply() instead
+        window.loadX.applyLoadingState = deprecate(
+            function(el, opts, config) {
+                applyLoadingState(el, opts, config);
+            },
+            'applyLoadingState',
+            'apply'
+        );
+
+        // Deprecated: Use remove() instead
+        window.loadX.removeLoadingState = deprecate(
+            removeLoadingState,
+            'removeLoadingState',
+            'remove'
+        );
+
+        // Deprecated: Use update() instead
+        window.loadX.updateProgressValue = deprecate(
+            updateProgressValue,
+            'updateProgressValue',
+            'update'
+        );
+
+        // Deprecated: Strategy methods are now internal
+        window.loadX.applySpinnerStrategy = deprecate(
+            applySpinnerStrategy,
+            'applySpinnerStrategy',
+            'apply({ strategy: "spinner" })'
+        );
+
+        window.loadX.removeSpinnerStrategy = deprecate(
+            removeSpinnerStrategy,
+            'removeSpinnerStrategy',
+            'remove'
+        );
+
+        window.loadX.applySkeletonStrategy = deprecate(
+            applySkeletonStrategy,
+            'applySkeletonStrategy',
+            'apply({ strategy: "skeleton" })'
+        );
+
+        window.loadX.removeSkeletonStrategy = deprecate(
+            removeSkeletonStrategy,
+            'removeSkeletonStrategy',
+            'remove'
+        );
+
+        window.loadX.applyProgressStrategy = deprecate(
+            applyProgressStrategy,
+            'applyProgressStrategy',
+            'apply({ strategy: "progress" })'
+        );
+
+        window.loadX.removeProgressStrategy = deprecate(
+            removeProgressStrategy,
+            'removeProgressStrategy',
+            'remove'
+        );
+
+        window.loadX.applyFadeStrategy = deprecate(
+            applyFadeStrategy,
+            'applyFadeStrategy',
+            'apply({ strategy: "fade" })'
+        );
+
+        window.loadX.removeFadeStrategy = deprecate(
+            removeFadeStrategy,
+            'removeFadeStrategy',
+            'remove'
+        );
+
+        // Deprecated: Internal helper methods
+        window.loadX.parseElementAttributes = deprecate(
+            parseElementAttributes,
+            'parseElementAttributes',
+            'internal API'
+        );
+
+        window.loadX.validateConfig = deprecate(
+            validateConfig,
+            'validateConfig',
+            'internal API'
+        );
     }
 
     // Export for ES6 modules (if needed)
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
-            initLoadX,
-            parseElementAttributes,
-            validateConfig
+            init: initLoadX,
+            initLoadX // Keep for backward compat
         };
     }
 
