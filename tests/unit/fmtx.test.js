@@ -73,6 +73,35 @@ describe('FormatX Module', () => {
             expect(result).toContain('1,234');
             expect(result).not.toContain('.');
         });
+
+        test('should format large currency values with thousand separators', () => {
+            const formatter = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+                useGrouping: true
+            });
+
+            // Test cases from bug report
+            expect(formatter.format(750391.25)).toBe('$750,391.25');
+            expect(formatter.format(27780.00)).toBe('$27,780.00');
+            expect(formatter.format(5010.01)).toBe('$5,010.01');
+        });
+
+        test('should disable thousand separators when fx-thousands="false"', () => {
+            const formatter = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+                useGrouping: false
+            });
+
+            // With useGrouping: false, no commas
+            expect(formatter.format(750391.25)).toBe('$750391.25');
+            expect(formatter.format(27780.00)).toBe('$27780.00');
+        });
     });
 
     describe('Date Formatting', () => {
