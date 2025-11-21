@@ -668,6 +668,74 @@
       fx-phone-format="<span id="phone-format-display">us</span>"&gt;</pre>
                     </div>
                 </div>
+
+                <!-- Example 10: Time Formatting -->
+                <div class="example">
+                    <h4>10. Time Formatting</h4>
+                    <p>Format time values with various styles and locales</p>
+                    <div class="example-demo">
+                        <label>Input:
+                            <select id="time-input-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="14:30:00" selected>14:30:00 (2:30 PM)</option>
+                                <option value="09:15:00">09:15:00 (9:15 AM)</option>
+                                <option value="00:00:00">00:00:00 (Midnight)</option>
+                                <option value="12:00:00">12:00:00 (Noon)</option>
+                                <option value="23:59:59">23:59:59 (11:59:59 PM)</option>
+                            </select>
+                        </label>
+                        <label style="margin-left: 20px;">Format:
+                            <select id="time-format-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="short" selected>Short (2:30 PM)</option>
+                                <option value="medium">Medium (2:30:00 PM)</option>
+                                <option value="long">Long (2:30:00 PM GMT-6)</option>
+                            </select>
+                        </label>
+                        <br><br>
+                        <div>
+                            <strong>Input:</strong> <time id="time-input-value" class="original-value">14:30:00</time><br>
+                            <strong>Output:</strong> <time id="time-output" class="formatted-value" fx-format="time" fx-time-format="short">14:30:00</time>
+                        </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;time fx-format="time"
+      fx-time-format="<span id="time-format-display">short</span>"&gt;</pre>
+                    </div>
+                </div>
+
+                <!-- Example 11: Duration Formatting -->
+                <div class="example">
+                    <h4>11. Duration Formatting</h4>
+                    <p>Human-readable durations (converts seconds to hours, minutes, seconds)</p>
+                    <div class="example-demo">
+                        <label>Duration (seconds):
+                            <select id="duration-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="45">45 seconds</option>
+                                <option value="90">90 seconds (1m 30s)</option>
+                                <option value="3661" selected>3661 seconds (1h 1m 1s)</option>
+                                <option value="7200">7200 seconds (2 hours)</option>
+                                <option value="86400">86400 seconds (1 day)</option>
+                                <option value="90061">90061 seconds (1d 1h 1m 1s)</option>
+                            </select>
+                        </label>
+                        <label style="margin-left: 20px;">Format Style:
+                            <select id="duration-format-selector" style="margin: 0 10px; padding: 5px;">
+                                <option value="short" selected>Short (1h 1m 1s)</option>
+                                <option value="medium">Medium (1 hr 1 min 1 sec)</option>
+                                <option value="long">Long (1 hour 1 minute 1 second)</option>
+                                <option value="compact">Compact (1:01:01)</option>
+                            </select>
+                        </label>
+                        <br><br>
+                        <div>
+                            <strong>Input (seconds):</strong> <span id="duration-input-value" class="original-value">3661</span><br>
+                            <strong>Output:</strong> <span id="duration-output" class="formatted-value" fx-format="duration" fx-duration-format="short">3661</span>
+                        </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;span fx-format="duration"
+      fx-duration-format="<span id="duration-format-display">short</span>"&gt;</pre>
+                    </div>
+                </div>
             </div>
         </section>
 
