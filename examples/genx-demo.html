@@ -904,6 +904,83 @@
                         </p>
                     </div>
                 </div>
+
+                <!-- Example 11: Polymorphic Syntax -->
+                <div class="example" style="grid-column: 1 / -1;">
+                    <h4>11. Polymorphic Syntax - Three Ways to Achieve the Same Result</h4>
+                    <p>bindX supports multiple notation styles that produce identical behavior. Choose the style that fits your workflow.</p>
+                    <div class="example-demo">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                            <!-- Verbose Style -->
+                            <div style="border: 1px solid #e8e8e8; padding: 15px; border-radius: 6px; background: #fafafa;">
+                                <h5 style="margin-top: 0; color: #555;">Verbose Style (Beginner-Friendly)</h5>
+                                <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Explicit attributes - most readable</p>
+                                <input
+                                    type="text"
+                                    bx-model="search1"
+                                    bx-debounce="300"
+                                    placeholder="Type to search..."
+                                    style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                                <div style="background: white; padding: 10px; border-radius: 4px; min-height: 30px;">
+                                    <strong>Value:</strong> <span bx-bind="search1" class="formatted-value">-</span>
+                                </div>
+                                <pre style="background: #2d2d2d; color: #f8f8f2; padding: 12px; border-radius: 4px; font-size: 11px; margin-top: 10px; overflow-x: auto;">&lt;input bx-model="search1"
+       bx-debounce="300"&gt;</pre>
+                            </div>
+
+                            <!-- Colon Style -->
+                            <div style="border: 1px solid #e8e8e8; padding: 15px; border-radius: 6px; background: #fafafa;">
+                                <h5 style="margin-top: 0; color: #555;">Colon Style (Compact)</h5>
+                                <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Inline configuration - compact syntax</p>
+                                <input
+                                    type="text"
+                                    bx-model="search2:300"
+                                    placeholder="Type to search..."
+                                    style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                                <div style="background: white; padding: 10px; border-radius: 4px; min-height: 30px;">
+                                    <strong>Value:</strong> <span bx-bind="search2" class="formatted-value">-</span>
+                                </div>
+                                <pre style="background: #2d2d2d; color: #f8f8f2; padding: 12px; border-radius: 4px; font-size: 11px; margin-top: 10px; overflow-x: auto;">&lt;input bx-model="search2:300"&gt;</pre>
+                            </div>
+
+                            <!-- JSON Style -->
+                            <div style="border: 1px solid #e8e8e8; padding: 15px; border-radius: 6px; background: #fafafa;">
+                                <h5 style="margin-top: 0; color: #555;">JSON Style (Power-User)</h5>
+                                <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">JSON configuration - maximum flexibility</p>
+                                <input
+                                    type="text"
+                                    bx-model="search3"
+                                    bx-opts='{"debounce":300}'
+                                    placeholder="Type to search..."
+                                    style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                                <div style="background: white; padding: 10px; border-radius: 4px; min-height: 30px;">
+                                    <strong>Value:</strong> <span bx-bind="search3" class="formatted-value">-</span>
+                                </div>
+                                <pre style="background: #2d2d2d; color: #f8f8f2; padding: 12px; border-radius: 4px; font-size: 11px; margin-top: 10px; overflow-x: auto;">&lt;input bx-model="search3"
+       bx-opts='{"debounce":300}'&gt;</pre>
+                            </div>
+                        </div>
+
+                        <div style="background: #e3f2fd; border-left: 4px solid #2196F3; padding: 15px; border-radius: 4px; margin-top: 20px;">
+                            <strong style="color: #1976D2;">💡 All three produce identical behavior:</strong>
+                            <ul style="margin: 10px 0 0 20px; color: #555;">
+                                <li>300ms debounce delay after typing stops</li>
+                                <li>Two-way reactive data binding</li>
+                                <li>Automatic DOM synchronization</li>
+                                <li>Same performance characteristics</li>
+                            </ul>
+                        </div>
+
+                        <div style="margin-top: 20px;">
+                            <h5 style="color: #555; margin-bottom: 10px;">Syntax Precedence (highest to lowest):</h5>
+                            <ol style="color: #666; line-height: 1.8;">
+                                <li><code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">bx-debounce</code> attribute (explicit)</li>
+                                <li><code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">bx-opts</code> JSON configuration</li>
+                                <li><code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">bx-model="field:300"</code> colon syntax</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
