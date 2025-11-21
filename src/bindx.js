@@ -397,6 +397,11 @@
         // Initial sync
         updateDOM();
 
+        // Subscribe to reactive data changes (Data -> DOM)
+        const unsubscribe = subscribeToPath(path, () => {
+            updateDOM();
+        });
+
         // Register binding
         const binding = {
             id: generateBindingId(),
@@ -408,6 +413,7 @@
             destroy: () => {
                 element.removeEventListener('input', handleInput);
                 clearTimeout(timeoutId);
+                unsubscribe();  // Cleanup reactive subscription
                 const registry = getBindingRegistry();
                 registry.unregister(binding);
             }
@@ -649,6 +655,87 @@
             };
         } finally {
             currentTrackingContext = previousContext;
+        }
+    };
+
+    /**
+     * Alias for createReactive for simpler API
+     * @param {Object} data - Object to make reactive
+     * @param {Object} options - Configuration options
+     * @returns {Proxy} Reactive proxy
+     */
+    const reactive = (data, options = {}) => createReactive(data, options);
+
+    /**
+     * Watch a property path for changes
+     * @param {Object} target - Reactive object to watch
+     * @param {string} property - Property path to watch (supports nested paths)
+     * @param {Function} callback - Callback to invoke on changes
+     * @returns {Function} Unwatch function
+     */
+    const watch = (target, property, callback) => {
+        if (typeof callback !== 'function') {
+            throw new TypeError('Callback must be a function');
+        }
+
+        const fullPath = property;
+
+        // Subscribe to path changes
+        let subscribers = pathSubscribers.get(fullPath);
+        if (!subscribers) {
+            subscribers = new Set();
+            pathSubscribers.set(fullPath, subscribers);
+        }
+
+        // Wrapper that calls the callback with new value
+        const wrapper = (path) => {
+            if (path === fullPath || path.startsWith(fullPath + '.')) {
+                // Get current value at path
+                const value = getNestedProperty(target, fullPath);
+                callback(value);
+            }
+        };
+
+        subscribers.add(wrapper);
+
+        // Return unwatch function
+        return () => {
+            subscribers.delete(wrapper);
+            if (subscribers.size === 0) {
+                pathSubscribers.delete(fullPath);
+            }
+        };
+    };
+
+    /**
+     * Disconnect a reactive object and stop all watchers
+     * @param {Object} target - Reactive object to disconnect
+     */
+    const disconnect = (target) => {
+        if (!isReactive(target)) {
+            return;
+        }
+
+        const metadata = reactiveMetadata.get(target);
+        if (metadata) {
+            // Clear all subscribers
+            metadata.subscribers.clear();
+
+            // Clear nested proxies
+            metadata.nestedProxies.clear();
+
+            // Remove from metadata map
+            reactiveMetadata.delete(target);
+        }
+
+        // Clear any path subscribers for this object
+        // Note: This is a simplified cleanup. Full implementation would need
+        // to track which paths belong to which objects
+        for (const [path, subscribers] of pathSubscribers.entries()) {
+            if (path.startsWith(metadata?.path || '')) {
+                subscribers.clear();
+                pathSubscribers.delete(path);
+            }
         }
     };
 
@@ -1064,6 +1151,9 @@
                 scan,
                 init,
                 createReactive,
+                reactive,       // Simpler API alias
+                watch,          // Property watcher
+                disconnect,     // Cleanup function
                 isReactive
             };
         }
@@ -1074,6 +1164,9 @@
         module.exports = {
             bindx,
             createReactive,
+            reactive,           // Simpler API alias
+            watch,              // Property watcher
+            disconnect,         // Cleanup function
             isReactive,
             withTracking,
             subscribeToPath,

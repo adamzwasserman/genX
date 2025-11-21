@@ -355,26 +355,6 @@ Given('{int} elements with {string} attributes', async function(count, moduleNam
   }, { count, config });
 });
 
-When('all elements are processed', async function() {
-  const config = this.moduleConfig;
-
-  this.performanceMetrics.processStartTime = Date.now();
-
-  await page.evaluate((config) => {
-    const globalModule = window[config.globalName];
-    if (globalModule && globalModule.scan) {
-      globalModule.scan();
-    }
-  }, config);
-
-  this.performanceMetrics.processEndTime = Date.now();
-});
-
-Then('the operation should complete in less than {int}ms', function(maxMs) {
-  const duration = this.performanceMetrics.processEndTime - this.performanceMetrics.processStartTime;
-  expect(duration).toBeLessThan(maxMs);
-});
-
 Then('memory usage should not increase by more than {int}MB', async function(maxMB) {
   const memoryIncrease = await page.evaluate(() => {
     if (performance.memory) {
