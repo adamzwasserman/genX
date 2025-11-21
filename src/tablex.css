@@ -1,0 +1,136 @@
+/**
+ * tableX Styles
+ * Declarative table enhancement styles for genx.software
+ */
+
+/* ====================
+   SORTABLE HEADERS
+   ==================== */
+
+/* Sortable header cursor */
+th.tx-sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: 24px; /* Space for sort indicator */
+}
+
+/* Sort indicator base */
+th.tx-sortable::after {
+    content: '⇅';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.3;
+    font-size: 14px;
+    transition: opacity 0.2s;
+}
+
+/* Show indicator on hover */
+th.tx-sortable:hover::after {
+    opacity: 0.6;
+}
+
+/* Active sort column */
+th.tx-sort-active::after {
+    opacity: 1;
+    color: #2196F3;
+}
+
+/* Ascending sort indicator */
+th.tx-sort-asc::after {
+    content: '▲';
+}
+
+/* Descending sort indicator */
+th.tx-sort-desc::after {
+    content: '▼';
+}
+
+/* ====================
+   HOVER STATES
+   ==================== */
+
+/* Highlight sortable header on hover */
+th.tx-sortable:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* ====================
+   SCREEN READER ONLY
+   ==================== */
+
+/* Hide live region visually but keep for screen readers */
+.tx-sr-only {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* ====================
+   ACCESSIBILITY
+   ==================== */
+
+/* Focus styles for keyboard navigation */
+th.tx-sortable:focus {
+    outline: 2px solid #2196F3;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    th.tx-sortable::after {
+        opacity: 1;
+    }
+
+    th.tx-sort-active::after {
+        font-weight: bold;
+    }
+}
+
+/* ====================
+   DARK MODE SUPPORT
+   ==================== */
+
+@media (prefers-color-scheme: dark) {
+    th.tx-sortable:hover {
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    th.tx-sort-active::after {
+        color: #64B5F6;
+    }
+}
+
+/* ====================
+   RESPONSIVE
+   ==================== */
+
+/* Smaller indicators on mobile */
+@media (max-width: 768px) {
+    th.tx-sortable::after {
+        font-size: 12px;
+        right: 4px;
+    }
+
+    th.tx-sortable {
+        padding-right: 20px;
+    }
+}
+
+/* ====================
+   OPTIONAL ENHANCEMENTS
+   ==================== */
+
+/* Subtle transition on sort */
+tbody {
+    transition: opacity 0.15s ease-in-out;
+}
+
+/* Loading state during sort (optional) */
+table[data-tx-sorting="true"] tbody {
+    opacity: 0.6;
+}
