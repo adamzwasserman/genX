@@ -314,7 +314,13 @@
     const setNestedProperty = (obj, path, value) => {
         const keys = path.split('.');
         const lastKey = keys.pop();
-        const target = keys.reduce((acc, key) => acc[key], obj);
+        const target = keys.reduce((acc, key) => {
+            // Create intermediate objects if they don't exist
+            if (!acc[key] || typeof acc[key] !== 'object') {
+                acc[key] = {};
+            }
+            return acc[key];
+        }, obj);
         target[lastKey] = value;
     };
 
@@ -875,6 +881,356 @@
         }
     };
 
+    // ====================================================================
+    // FORM VALIDATION & SERIALIZATION
+    // ====================================================================
+
+    /**
+     * Built-in validation rules
+     */
+    const validationRules = {
+        required: (value) => {
+            if (typeof value === 'string') {
+                return value.trim().length > 0;
+            }
+            return value !== null && value !== undefined && value !== '';
+        },
+
+        email: (value) => {
+            if (!value) {
+                return true;
+            } // Empty is valid (use required for mandatory)
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        },
+
+        min: (value, min) => {
+            if (!value && value !== 0) {
+                return true;
+            }
+            return Number(value) >= Number(min);
+        },
+
+        max: (value, max) => {
+            if (!value && value !== 0) {
+                return true;
+            }
+            return Number(value) <= Number(max);
+        },
+
+        minLength: (value, length) => {
+            if (!value) {
+                return true;
+            }
+            return String(value).length >= Number(length);
+        },
+
+        maxLength: (value, length) => {
+            if (!value) {
+                return true;
+            }
+            return String(value).length <= Number(length);
+        },
+
+        pattern: (value, pattern) => {
+            if (!value) {
+                return true;
+            }
+            const regex = new RegExp(pattern);
+            return regex.test(value);
+        },
+
+        url: (value) => {
+            if (!value) {
+                return true;
+            }
+            try {
+                new URL(value);
+                return true;
+            } catch {
+                return false;
+            }
+        },
+
+        number: (value) => {
+            if (!value && value !== 0) {
+                return true;
+            }
+            return !isNaN(Number(value));
+        },
+
+        integer: (value) => {
+            if (!value && value !== 0) {
+                return true;
+            }
+            return Number.isInteger(Number(value));
+        },
+
+        alpha: (value) => {
+            if (!value) {
+                return true;
+            }
+            return /^[a-zA-Z]+$/.test(value);
+        },
+
+        alphanumeric: (value) => {
+            if (!value) {
+                return true;
+            }
+            return /^[a-zA-Z0-9]+$/.test(value);
+        },
+
+        phone: (value) => {
+            if (!value) {
+                return true;
+            }
+            // Flexible phone validation (digits, spaces, dashes, parens, plus)
+            return /^[\d\s\-()+ ]+$/.test(value) && value.replace(/\D/g, '').length >= 10;
+        },
+
+        custom: (value, validator) => {
+            if (typeof validator === 'function') {
+                return validator(value);
+            }
+            return true;
+        }
+    };
+
+    /**
+     * Form state storage (WeakMap for memory safety)
+     */
+    const formStates = new WeakMap();
+    const fieldValidations = new WeakMap();
+
+    /**
+     * Validate a single field value
+     * @param {*} value - Field value
+     * @param {Object} rules - Validation rules object
+     * @param {HTMLElement} element - Form element (for custom validation)
+     * @returns {Object} { valid: boolean, errors: string[] }
+     */
+    const validateField = (value, rules, element = null) => {
+        const errors = [];
+
+        for (const [ruleName, ruleParam] of Object.entries(rules)) {
+            const validator = validationRules[ruleName];
+            if (!validator) {
+                console.warn(`bindX: Unknown validation rule "${ruleName}"`);
+                continue;
+            }
+
+            const isValid = ruleParam === true
+                ? validator(value)
+                : validator(value, ruleParam);
+
+            if (!isValid) {
+                // Generate default error message
+                let errorMsg = `Field is invalid (${ruleName})`;
+                if (element && element.getAttribute('bx-error-' + ruleName)) {
+                    errorMsg = element.getAttribute('bx-error-' + ruleName);
+                }
+                errors.push(errorMsg);
+            }
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors
+        };
+    };
+
+    /**
+     * Get or create form state
+     * @param {HTMLFormElement} form - Form element
+     * @returns {Object} Form state object
+     */
+    const getFormState = (form) => {
+        if (!formStates.has(form)) {
+            formStates.set(form, {
+                pristine: true,
+                dirty: false,
+                valid: true,
+                invalid: false,
+                errors: {},
+                touched: new Set()
+            });
+        }
+        return formStates.get(form);
+    };
+
+    /**
+     * Update form state
+     * @param {HTMLFormElement} form - Form element
+     * @param {Object} updates - State updates
+     */
+    const updateFormState = (form, updates) => {
+        const state = getFormState(form);
+        Object.assign(state, updates);
+
+        // Update CSS classes for styling
+        if (state.pristine) {
+            form.classList.add('bx-pristine');
+            form.classList.remove('bx-dirty');
+        } else {
+            form.classList.add('bx-dirty');
+            form.classList.remove('bx-pristine');
+        }
+
+        if (state.valid) {
+            form.classList.add('bx-valid');
+            form.classList.remove('bx-invalid');
+        } else {
+            form.classList.add('bx-invalid');
+            form.classList.remove('bx-valid');
+        }
+    };
+
+    /**
+     * Validate entire form
+     * @param {HTMLFormElement} form - Form element
+     * @param {Object} data - Reactive data object
+     * @returns {Object} { valid: boolean, errors: {} }
+     */
+    const validateForm = (form, data) => {
+        const errors = {};
+        let valid = true;
+
+        // Find all fields with validation
+        const fields = form.querySelectorAll('[bx-validate]');
+
+        fields.forEach(field => {
+            const validationAttr = field.getAttribute('bx-validate');
+            const path = field.getAttribute('bx-model') || field.getAttribute('name');
+
+            if (!path) {
+                console.warn('bindX: Field has bx-validate but no bx-model or name attribute', field);
+                return;
+            }
+
+            const value = getNestedProperty(data, path);
+
+            // Parse validation rules
+            let rules = {};
+            try {
+                // Try JSON parse first
+                rules = JSON.parse(validationAttr);
+            } catch {
+                // Fall back to simple rules: bx-validate="required email"
+                const ruleNames = validationAttr.split(/\s+/).filter(Boolean);
+                rules = ruleNames.reduce((acc, name) => {
+                    acc[name] = true;
+                    return acc;
+                }, {});
+            }
+
+            const result = validateField(value, rules, field);
+
+            if (!result.valid) {
+                errors[path] = result.errors;
+                valid = false;
+
+                // Add error class to field
+                field.classList.add('bx-error');
+                field.classList.remove('bx-valid');
+
+                // Display error message
+                const errorContainer = field.parentElement.querySelector('.bx-error-message');
+                if (errorContainer) {
+                    errorContainer.textContent = result.errors[0] || 'Invalid';
+                }
+            } else {
+                field.classList.add('bx-valid');
+                field.classList.remove('bx-error');
+
+                const errorContainer = field.parentElement.querySelector('.bx-error-message');
+                if (errorContainer) {
+                    errorContainer.textContent = '';
+                }
+            }
+        });
+
+        updateFormState(form, { valid, invalid: !valid, errors });
+
+        return { valid, errors };
+    };
+
+    /**
+     * Serialize form to object
+     * @param {HTMLFormElement} form - Form element
+     * @returns {Object} Serialized form data
+     */
+    const serializeForm = (form) => {
+        const data = {};
+        const formData = new FormData(form);
+
+        for (const [key, value] of formData.entries()) {
+            // Handle nested paths (user.name -> {user: {name: value}})
+            if (key.includes('.')) {
+                setNestedProperty(data, key, value);
+            } else {
+                data[key] = value;
+            }
+        }
+
+        return data;
+    };
+
+    /**
+     * Deserialize object to form
+     * @param {HTMLFormElement} form - Form element
+     * @param {Object} data - Data object
+     */
+    const deserializeForm = (form, data) => {
+        const inputs = form.querySelectorAll('input, select, textarea');
+
+        inputs.forEach(input => {
+            const name = input.getAttribute('name') || input.getAttribute('bx-model');
+            if (!name) {
+                return;
+            }
+
+            const value = getNestedProperty(data, name);
+            if (value === undefined) {
+                return;
+            }
+
+            if (input.type === 'checkbox') {
+                input.checked = Boolean(value);
+            } else if (input.type === 'radio') {
+                input.checked = input.value === String(value);
+            } else {
+                input.value = value;
+            }
+        });
+    };
+
+    /**
+     * Reset form to pristine state
+     * @param {HTMLFormElement} form - Form element
+     */
+    const resetForm = (form) => {
+        form.reset();
+        updateFormState(form, {
+            pristine: true,
+            dirty: false,
+            valid: true,
+            invalid: false,
+            errors: {},
+            touched: new Set()
+        });
+
+        // Clear error messages
+        const errorContainers = form.querySelectorAll('.bx-error-message');
+        errorContainers.forEach(container => {
+            container.textContent = '';
+        });
+
+        // Clear field error classes
+        const fields = form.querySelectorAll('.bx-error, .bx-valid');
+        fields.forEach(field => {
+            field.classList.remove('bx-error', 'bx-valid');
+        });
+    };
+
     /**
      * Parse binding attribute configuration
      * Supports:
@@ -978,7 +1334,122 @@
             }
         });
 
+        // Find all forms with bx-form attribute
+        const formElements = root.querySelectorAll(`form[${prefix}form]`);
+        formElements.forEach(form => {
+            try {
+                setupFormHandlers(form, data, prefix);
+            } catch (error) {
+                console.error('bindX: Failed to setup form handlers:', error, form);
+            }
+        });
+
         return bindings;
+    };
+
+    /**
+     * Setup form validation and submit handlers
+     * @param {HTMLFormElement} form - Form element
+     * @param {Object} data - Reactive data object
+     * @param {string} prefix - Attribute prefix
+     */
+    const setupFormHandlers = (form, data, prefix = 'bx-') => {
+        // Initialize form state
+        updateFormState(form, {
+            pristine: true,
+            dirty: false,
+            valid: true,
+            invalid: false
+        });
+
+        // Track field changes for dirty state
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('input', () => {
+                const state = getFormState(form);
+                if (state.pristine) {
+                    updateFormState(form, { pristine: false, dirty: true });
+                }
+
+                // Validate on change if field has bx-validate
+                if (input.getAttribute(`${prefix}validate`)) {
+                    const validationAttr = input.getAttribute(`${prefix}validate`);
+                    const path = input.getAttribute(`${prefix}model`) || input.getAttribute('name');
+
+                    if (path) {
+                        const value = getNestedProperty(data, path);
+                        let rules = {};
+
+                        try {
+                            rules = JSON.parse(validationAttr);
+                        } catch {
+                            const ruleNames = validationAttr.split(/\s+/).filter(Boolean);
+                            rules = ruleNames.reduce((acc, name) => {
+                                acc[name] = true;
+                                return acc;
+                            }, {});
+                        }
+
+                        const result = validateField(value, rules, input);
+
+                        if (!result.valid) {
+                            input.classList.add('bx-error');
+                            input.classList.remove('bx-valid');
+
+                            const errorContainer = input.parentElement.querySelector('.bx-error-message');
+                            if (errorContainer) {
+                                errorContainer.textContent = result.errors[0] || 'Invalid';
+                            }
+                        } else {
+                            input.classList.add('bx-valid');
+                            input.classList.remove('bx-error');
+
+                            const errorContainer = input.parentElement.querySelector('.bx-error-message');
+                            if (errorContainer) {
+                                errorContainer.textContent = '';
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        // Handle form submit
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            // Validate form
+            const validation = validateForm(form, data);
+
+            if (validation.valid) {
+                // Serialize form data
+                const formData = serializeForm(form);
+
+                // Merge into reactive data
+                Object.assign(data, formData);
+
+                // Call custom submit handler if provided
+                const submitHandler = form.getAttribute(`${prefix}form-submit`);
+                if (submitHandler && typeof window[submitHandler] === 'function') {
+                    window[submitHandler](formData, data);
+                }
+
+                // Dispatch custom event
+                form.dispatchEvent(new CustomEvent('bx-form-valid', {
+                    detail: { data: formData }
+                }));
+            } else {
+                // Dispatch invalid event
+                form.dispatchEvent(new CustomEvent('bx-form-invalid', {
+                    detail: { errors: validation.errors }
+                }));
+            }
+        });
+
+        // Handle form reset
+        form.addEventListener('reset', () => {
+            setTimeout(() => resetForm(form), 0);
+        });
     };
 
     /**
@@ -1154,7 +1625,15 @@
                 reactive,       // Simpler API alias
                 watch,          // Property watcher
                 disconnect,     // Cleanup function
-                isReactive
+                isReactive,
+                // Form utilities
+                validateForm,
+                serializeForm,
+                deserializeForm,
+                resetForm,
+                validateField,
+                getFormState,
+                validationRules
             };
         }
     }
@@ -1186,7 +1665,19 @@
             parseBindingAttribute,
             scan,
             createDOMObserver,
-            init
+            init,
+            // Form utilities
+            validateForm,
+            serializeForm,
+            deserializeForm,
+            resetForm,
+            validateField,
+            getFormState,
+            updateFormState,
+            setupFormHandlers,
+            validationRules,
+            formStates,
+            fieldValidations
         };
     }
 })();
