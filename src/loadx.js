@@ -1764,7 +1764,8 @@
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             init: initLoadX,
-            initLoadX // Keep for backward compat
+            initLoadX, // Keep for backward compat
+            parseElementAttributes
         };
     }
 

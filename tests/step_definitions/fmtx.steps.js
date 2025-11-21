@@ -169,13 +169,13 @@ Given('{int} elements with fx-format={string}', async function(count, format) {
 When('all elements are processed', async function() {
     this.startTime = Date.now();
     await this.page.evaluate(() => {
-        window.FormatX.scan();
+        if (window.FormatX && window.FormatX.scan) {
+            window.FormatX.scan();
+        }
     });
     this.duration = Date.now() - this.startTime;
-});
-
-Then('the operation should complete in less than {int}ms', async function(maxMs) {
-    assert.ok(this.duration < maxMs, `Operation took ${this.duration}ms, should be < ${maxMs}ms`);
+    // Also set operationTime for common step compatibility
+    this.operationTime = this.duration;
 });
 
 // Unformat

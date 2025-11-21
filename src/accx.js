@@ -467,7 +467,7 @@
         },
 
         // Keyboard navigation with multi-selection
-        keyboardNav: (el, opts) => {
+        keyboardNav: (el, opts = {}) => {
             const selector = opts.selector || '[role="option"], [role="row"], [role="gridcell"], [role="tab"]';
             const items = Array.from(el.querySelectorAll(selector));
 
