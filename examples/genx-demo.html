@@ -19,6 +19,8 @@
     <script src="../src/loadx.js"></script>
     <link rel="stylesheet" href="../src/loadx.css">
     <script src="../src/navx.js"></script>
+    <script src="../src/tablex.js"></script>
+    <link rel="stylesheet" href="../src/tablex.css">
 
     <style>
         * {
@@ -384,6 +386,7 @@
                 <li><a href="#dragx">dragX</a></li>
                 <li><a href="#loadx">loadX</a></li>
                 <li><a href="#navx">navX</a></li>
+                <li><a href="#tablex">tableX</a></li>
             </ul>
         </nav>
 
@@ -1571,17 +1574,129 @@
             </div>
         </section>
 
+        <!-- tableX Module Examples -->
+        <section id="tablex" class="module-section">
+            <div class="container">
+                <h2>6. tableX - Table Enhancements</h2>
+                <p class="module-desc">Declarative table sorting, pagination, and responsive layouts with <code>tx-*</code> attributes</p>
+
+                <!-- Example 1: Column Sorting -->
+                <div class="example">
+                    <h4>1. Column Sorting</h4>
+                    <p>Click any header to sort. Auto-detects data types (string, number, date). Three-state toggle: ascending → descending → clear.</p>
+                    <div class="example-demo">
+                        <table tx-sortable style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                            <thead>
+                                <tr style="background: #f5f5f5;">
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Name</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Age</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Department</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Hire Date</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Salary</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td style="padding: 8px; border: 1px solid #ddd;">Alice Johnson</td><td style="border: 1px solid #ddd;">32</td><td style="border: 1px solid #ddd;">Engineering</td><td style="border: 1px solid #ddd;">2022-03-15</td><td style="border: 1px solid #ddd;">95000</td></tr>
+                                <tr><td style="padding: 8px; border: 1px solid #ddd;">Bob Smith</td><td style="border: 1px solid #ddd;">28</td><td style="border: 1px solid #ddd;">Marketing</td><td style="border: 1px solid #ddd;">2023-01-10</td><td style="border: 1px solid #ddd;">72000</td></tr>
+                                <tr><td style="padding: 8px; border: 1px solid #ddd;">Charlie Brown</td><td style="border: 1px solid #ddd;">45</td><td style="border: 1px solid #ddd;">Sales</td><td style="border: 1px solid #ddd;">2020-07-22</td><td style="border: 1px solid #ddd;">88000</td></tr>
+                                <tr><td style="padding: 8px; border: 1px solid #ddd;">Diana Prince</td><td style="border: 1px solid #ddd;">29</td><td style="border: 1px solid #ddd;">Engineering</td><td style="border: 1px solid #ddd;">2023-05-03</td><td style="border: 1px solid #ddd;">98000</td></tr>
+                                <tr><td style="padding: 8px; border: 1px solid #ddd;">Eve Martinez</td><td style="border: 1px solid #ddd;">38</td><td style="border: 1px solid #ddd;">HR</td><td style="border: 1px solid #ddd;">2021-11-18</td><td style="border: 1px solid #ddd;">76000</td></tr>
+                                <tr><td style="padding: 8px; border: 1px solid #ddd;">Frank Zhang</td><td style="border: 1px solid #ddd;">51</td><td style="border: 1px solid #ddd;">Engineering</td><td style="border: 1px solid #ddd;">2019-02-14</td><td style="border: 1px solid #ddd;">105000</td></tr>
+                                <tr><td style="padding: 8px; border: 1px solid #ddd;">Grace Lee</td><td style="border: 1px solid #ddd;">26</td><td style="border: 1px solid #ddd;">Design</td><td style="border: 1px solid #ddd;">2023-08-01</td><td style="border: 1px solid #ddd;">68000</td></tr>
+                                <tr><td style="padding: 8px; border: 1px solid #ddd;">Henry Wilson</td><td style="border: 1px solid #ddd;">42</td><td style="border: 1px solid #ddd;">Sales</td><td style="border: 1px solid #ddd;">2020-12-05</td><td style="border: 1px solid #ddd;">91000</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="example-code">
+                        <pre>&lt;table tx-sortable&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Name&lt;/th&gt;
+      &lt;th&gt;Age&lt;/th&gt;
+      &lt;th&gt;Department&lt;/th&gt;
+      &lt;th&gt;Hire Date&lt;/th&gt;
+      &lt;th&gt;Salary&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;!-- Table rows --&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;</pre>
+                    </div>
+                </div>
+
+                <!-- Example 2: Individual Sortable Headers -->
+                <div class="example">
+                    <h4>2. Individual Sortable Headers</h4>
+                    <p>Make specific columns sortable with <code>tx-sortable</code> on individual headers.</p>
+                    <div class="example-demo">
+                        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                            <thead>
+                                <tr style="background: #f5f5f5;">
+                                    <th tx-sortable style="padding: 12px; text-align: left; border: 1px solid #ddd;">Product</th>
+                                    <th tx-sortable style="padding: 12px; text-align: left; border: 1px solid #ddd;">Price</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td style="padding: 8px; border: 1px solid #ddd;">Widget A</td><td style="border: 1px solid #ddd;">29.99</td><td style="border: 1px solid #ddd;"><button>View</button></td></tr>
+                                <tr><td style="padding: 8px; border: 1px solid #ddd;">Widget B</td><td style="border: 1px solid #ddd;">19.99</td><td style="border: 1px solid #ddd;"><button>View</button></td></tr>
+                                <tr><td style="padding: 8px; border: 1px solid #ddd;">Widget C</td><td style="border: 1px solid #ddd;">39.99</td><td style="border: 1px solid #ddd;"><button>View</button></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="example-code">
+                        <pre>&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th tx-sortable&gt;Product&lt;/th&gt;
+      &lt;th tx-sortable&gt;Price&lt;/th&gt;
+      &lt;th&gt;Actions&lt;/th&gt; &lt;!-- Not sortable --&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+&lt;/table&gt;</pre>
+                    </div>
+                </div>
+
+                <!-- Example 3: Data-value Attribute -->
+                <div class="example">
+                    <h4>3. Custom Sort Values</h4>
+                    <p>Use <code>data-value</code> attribute to provide sortable values different from display text.</p>
+                    <div class="example-demo">
+                        <table tx-sortable style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                            <thead>
+                                <tr style="background: #f5f5f5;">
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Status</th>
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Priority</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td style="padding: 8px; border: 1px solid #ddd;" data-value="2">🟢 Active</td><td style="border: 1px solid #ddd;" data-value="3">Low</td></tr>
+                                <tr><td style="padding: 8px; border: 1px solid #ddd;" data-value="1">🔴 Critical</td><td style="border: 1px solid #ddd;" data-value="1">High</td></tr>
+                                <tr><td style="padding: 8px; border: 1px solid #ddd;" data-value="3">⚪ Inactive</td><td style="border: 1px solid #ddd;" data-value="2">Medium</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="example-code">
+                        <pre>&lt;td data-value="2"&gt;🟢 Active&lt;/td&gt;
+&lt;td data-value="1"&gt;🔴 Critical&lt;/td&gt;
+&lt;td data-value="3"&gt;⚪ Inactive&lt;/td&gt;</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Footer -->
         <footer id="footer" style="margin-top:60px;padding:40px;background:white;text-align:center;border-radius:8px;">
             <h3>genX Module Suite</h3>
             <p>Production-ready, accessible, and performant web components</p>
             <div class="stats">
                 <div class="stat">
-                    <div class="stat-value">6</div>
+                    <div class="stat-value">7</div>
                     <div class="stat-label">Modules</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-value">60</div>
+                    <div class="stat-value">63</div>
                     <div class="stat-label">Examples</div>
                 </div>
                 <div class="stat">
