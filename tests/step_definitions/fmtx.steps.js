@@ -39,11 +39,6 @@ Then('in fmtX, the element should display {string}', async function(expected) {
     assert.strictEqual(actual, expected, `Expected "${expected}", got "${actual}"`);
 });
 
-Then('the element should display {string}', async function(expected) {
-    const actual = await this.page.locator('#test').textContent();
-    assert.strictEqual(actual, expected, `Expected "${expected}", got "${actual}"`);
-});
-
 Then('it should display {string}', async function(expected) {
     const actual = await this.page.locator('#test').textContent();
     assert.strictEqual(actual, expected, `Expected "${expected}", got "${actual}"`);
@@ -201,11 +196,6 @@ When('all fmtX elements are processed', async function() {
     this.duration = Date.now() - this.startTime;
     // Also set operationTime for common step compatibility
     this.operationTime = this.duration;
-});
-
-Then('the operation should complete in less than {int}ms', async function(maxDuration) {
-    assert.ok(this.operationTime < maxDuration,
-        `Operation took ${this.operationTime}ms, expected less than ${maxDuration}ms`);
 });
 
 // Unformat
