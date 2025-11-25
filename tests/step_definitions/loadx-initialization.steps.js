@@ -185,7 +185,7 @@ Then('it should have aria-atomic={string}', async function(value) {
     assert.strictEqual(ariaAtomic, value, `Expected aria-atomic="${value}"`);
 });
 
-Then('it should have class {string}', async function(className) {
+Then('in loadx-initialization, it should have class {string}', async function(className) {
     const hasClass = await this.page.evaluate((cls) => {
         const el = document.getElementById('lx-live-region');
         return el ? el.classList.contains(cls) : false;

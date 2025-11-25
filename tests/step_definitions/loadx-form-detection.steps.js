@@ -105,7 +105,7 @@ Then('loading state should disappear after {int}ms \\(not {int}ms)', async funct
     expect(elapsed).toBeLessThan(notExpectedDelay);
 });
 
-Then('loading state should disappear after {int}ms', async function(expectedDelay) {
+Then('in form detection, loading state should disappear after {int}ms', async function(expectedDelay) {
     const element = this.submitButton || this.form;
 
     // Wait for the expected delay plus a buffer

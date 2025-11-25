@@ -193,7 +193,7 @@ Then('the row should be selected', async function() {
     return 'pending';
 });
 
-Then('it should have class {string}', async function(className) {
+Then('in tableX, it should have class {string}', async function(className) {
     const firstRow = await this.page.$('tbody tr:first-child');
     const hasClass = await firstRow.evaluate((el, cls) =>
         el.classList.contains(cls), className);

@@ -68,7 +68,7 @@ Then('loading state should be removed', async function() {
 // LOADING STRATEGIES
 // ============================================================================
 
-Given('an element with lx-strategy={string}', async function(strategy) {
+Given('in loadx, an element with lx-strategy={string}', async function(strategy) {
     await this.page.setContent(`
         <html><body>
             <div id="test-element" lx-loading="true" lx-strategy="${strategy}">
