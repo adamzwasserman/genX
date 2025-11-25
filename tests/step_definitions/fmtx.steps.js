@@ -7,6 +7,11 @@ Given('the fmtX module is loaded', async function() {
     await this.page.addScriptTag({ path: './src/fmtx.js' });
 });
 
+Given('the DOM is ready', async function() {
+    // DOM is ready after page navigation
+    await this.page.waitForLoadState('domcontentloaded');
+});
+
 // Currency Formatting
 Given('an element with attributes:', async function(dataTable) {
     const attrs = {};
@@ -35,6 +40,16 @@ When('the element is processed', async function() {
 });
 
 Then('in fmtX, the element should display {string}', async function(expected) {
+    const actual = await this.page.locator('#test').textContent();
+    assert.strictEqual(actual, expected, `Expected "${expected}", got "${actual}"`);
+});
+
+Then('the element should display {string}', async function(expected) {
+    const actual = await this.page.locator('#test').textContent();
+    assert.strictEqual(actual, expected, `Expected "${expected}", got "${actual}"`);
+});
+
+Then('it should display {string}', async function(expected) {
     const actual = await this.page.locator('#test').textContent();
     assert.strictEqual(actual, expected, `Expected "${expected}", got "${actual}"`);
 });
@@ -76,6 +91,14 @@ Given('an element with fx-format={string}', async function(format) {
     await this.page.setContent(`
         <html><body>
             <span id="test" fx-format="${format}">placeholder</span>
+        </body></html>
+    `);
+});
+
+Given('an element with fx-format={string} fx-raw={string}', async function(format, raw) {
+    await this.page.setContent(`
+        <html><body>
+            <span id="test" fx-format="${format}" fx-raw="${raw}">${raw}</span>
         </body></html>
     `);
 });
@@ -142,6 +165,13 @@ Then('in fmtX, no error should be thrown', async function() {
     assert.strictEqual(errors.length, 0, 'No errors should be thrown');
 });
 
+Then('no error should be thrown', async function() {
+    const errors = await this.page.evaluate(() => {
+        return window.__errors || [];
+    });
+    assert.strictEqual(errors.length, 0, 'No errors should be thrown');
+});
+
 // Missing fx-raw
 Given('the element content is {string}', async function(content) {
     await this.page.evaluate((c) => {
@@ -176,6 +206,11 @@ When('all fmtX elements are processed', async function() {
     this.duration = Date.now() - this.startTime;
     // Also set operationTime for common step compatibility
     this.operationTime = this.duration;
+});
+
+Then('the operation should complete in less than {int}ms', async function(maxDuration) {
+    assert.ok(this.operationTime < maxDuration,
+        `Operation took ${this.operationTime}ms, expected less than ${maxDuration}ms`);
 });
 
 // Unformat
