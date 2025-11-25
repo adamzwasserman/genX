@@ -152,7 +152,7 @@ Then('ARIA should announce {string}', async function(message) {
     expect(announced).to.be.true;
 });
 
-Then('ARIA live region should use aria-live={string}', function(expectedMode) {
+Then('in integration, ARIA live region should use aria-live={string}', function(expectedMode) {
     const mode = getAriaLiveMode();
     expect(mode).to.equal(expectedMode);
 });
@@ -165,7 +165,7 @@ Then('ARIA region should clear after {int} second', async function(seconds) {
     expect(liveRegion.textContent).to.equal('');
 });
 
-Then('loading state should disappear after {int}ms', async function(delayMs) {
+Then('in integration, loading state should disappear after {int}ms', async function(delayMs) {
     const element = this.submitButton || this.form;
 
     // Wait for expected delay plus buffer

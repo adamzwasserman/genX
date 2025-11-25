@@ -118,7 +118,7 @@ Then('ARIA live region should contain latest message', async function() {
     expect(liveRegion.textContent).to.not.be.empty;
 });
 
-Then('ARIA live region should use aria-live={string}', function(mode) {
+Then('in ARIA cleanup, ARIA live region should use aria-live={string}', function(mode) {
     const ariaLiveMode = getAriaLiveMode();
     expect(ariaLiveMode).to.equal(mode);
 });

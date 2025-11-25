@@ -277,7 +277,7 @@ Then('the nav should stick to the top', async function() {
     return 'pending';
 });
 
-Then('it should have class {string}', async function(className) {
+Then('in navX, it should have class {string}', async function(className) {
     const hasClass = await this.element.evaluate((el, cls) =>
         el.classList.contains(cls), className);
     expect(hasClass).toBe(true);
@@ -311,9 +311,7 @@ When('a navigation link is clicked', async function() {
     return 'pending';
 });
 
-Then('event.detail should contain href', async function() {
-    return 'pending';
-});
+// Removed duplicate - handled by common.steps.js "event.detail should contain {word}"
 
 // ============================================================================
 // PLACEHOLDERS FOR REMAINING SCENARIOS
