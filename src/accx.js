@@ -703,19 +703,36 @@
 
     // DOM processing
     const processElement = (el, prefix = 'ax-') => {
-        // Get enhancement type
-        const enhanceType = el.getAttribute(`${prefix}enhance`);
-        if (!enhanceType) {
-            return;
+        let enhanceType = null;
+        let opts = {};
+
+        // Try to get config from bootloader cache first (if using genX bootloader)
+        if (window.genx && window.genx.getConfig) {
+            const cachedConfig = window.genx.getConfig(el);
+            if (cachedConfig && cachedConfig.enhance) {
+                // Got cached config - use it
+                enhanceType = cachedConfig.enhance;
+                // Spread all config except 'enhance' into opts
+                opts = {...cachedConfig};
+                delete opts.enhance;
+            }
         }
 
-        // Parse options
-        const opts = {};
-        for (const attr of el.attributes) {
-            if (attr.name.startsWith(prefix) && attr.name !== `${prefix}enhance`) {
-                const optName = kebabToCamel(attr.name.slice(prefix.length));
-                opts[optName] = safeJsonParse(attr.value);
+        // Fallback to polymorphic notation parsing if no bootloader or no cached config
+        if (!enhanceType) {
+            // Use polymorphic parser from genx-common (supports Verbose, Colon, JSON, CSS Class)
+            const parsed = window.genxCommon
+                ? window.genxCommon.notation.parseNotation(el, prefix.replace('-', ''))
+                : {};  // Fallback if genx-common not loaded
+
+            enhanceType = parsed.enhance;
+            if (!enhanceType) {
+                return;
             }
+
+            // Extract options (everything except 'enhance')
+            opts = {...parsed};
+            delete opts.enhance;
         }
 
         // Apply enhancement
