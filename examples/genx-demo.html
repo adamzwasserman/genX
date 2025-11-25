@@ -1174,6 +1174,7 @@
                             type="text"
                             bx-model="polyDemo1"
                             bx-debounce="500"
+                            value=""
                             placeholder="Type to search..."
                             style="width: 100%; padding: 8px; margin-bottom: 10px;">
                         <div style="background: white; padding: 10px; border-radius: 4px; min-height: 30px;">
@@ -1190,6 +1191,7 @@
                         <input
                             type="text"
                             bx-model="polyDemo2:500"
+                            value=""
                             placeholder="Type to search..."
                             style="width: 100%; padding: 8px; margin-bottom: 10px;">
                         <div style="background: white; padding: 10px; border-radius: 4px; min-height: 30px;">
@@ -1206,6 +1208,7 @@
                             type="text"
                             bx-model="polyDemo3"
                             bx-opts='{"debounce":500}'
+                            value=""
                             placeholder="Type to search..."
                             style="width: 100%; padding: 8px; margin-bottom: 10px;">
                         <div style="background: white; padding: 10px; border-radius: 4px; min-height: 30px;">
@@ -2588,7 +2591,10 @@
                 const reactiveData = window.bindX.createReactive({
                     search1: '',
                     search2: '',
-                    search3: ''
+                    search3: '',
+                    polyDemo1: '',
+                    polyDemo2: '',
+                    polyDemo3: ''
                 });
                 window.bindX.init(reactiveData, { auto: true, observe: true });
                 console.log('✅ bindX initialized with reactive data');
