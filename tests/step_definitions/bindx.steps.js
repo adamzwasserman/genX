@@ -65,7 +65,7 @@ Given('the reactive data has {word}={word}', async function(key, value) {
     }, {k: key, v: parsedValue});
 });
 
-Given('the reactive data has {word}.{word}={string}', async function(obj, prop, value) {
+Given('the nested reactive data has {word}.{word}={string}', async function(obj, prop, value) {
     await this.page.evaluate(({o, p, v}) => {
         window._testData = { [o]: { [p]: v } };
         window._reactive = window.bindx(window._testData);
@@ -237,13 +237,13 @@ Given('an element with bx-bind:style.color={string}', async function(binding) {
     this.element = await this.page.$('#test-element');
 });
 
-When('the data object {word}.{word} changes to {string}', async function(obj, prop, newValue) {
+When('the nested data object {word}.{word} changes to {string}', async function(obj, prop, newValue) {
     await this.page.evaluate(({o, p, v}) => {
         window._testData[o][p] = v;
     }, {o: obj, p: prop, v: newValue});
 });
 
-When('the data object {word}.{word} changes to value {word}', async function(obj, prop, newValue) {
+When('the nested data object {word}.{word} changes to value {word}', async function(obj, prop, newValue) {
     const parsedValue = newValue === 'true' ? true : newValue === 'false' ? false : newValue;
     await this.page.evaluate(({o, p, v}) => {
         window._testData[o][p] = v;

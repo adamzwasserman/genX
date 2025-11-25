@@ -666,7 +666,7 @@ Then('performance should be {int}x+ faster than attribute parsing', async functi
     assert.ok(true, `Performance should be ${speedupFactor}x faster`);
 });
 
-Then('it should return {string}', async function(expectedConfigStr) {
+Then('in cache integration, it should return {string}', async function(expectedConfigStr) {
     const expected = JSON.parse(expectedConfigStr);
 
     // Compare configs

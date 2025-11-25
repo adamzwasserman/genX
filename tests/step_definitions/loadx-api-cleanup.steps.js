@@ -202,7 +202,7 @@ Then('the method should still work', function() {
     expect(true).to.be.true;
 });
 
-Then('loadX should be initialized', async function() {
+Then('in API cleanup, loadX should be initialized', async function() {
     if (this.page) {
         const initialized = await this.page.evaluate(() => {
             return typeof window.loadX !== 'undefined' &&
