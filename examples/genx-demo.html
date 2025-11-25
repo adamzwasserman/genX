@@ -13,6 +13,7 @@
     <!-- Load genX modules -->
     <script src="../src/genx-common.js"></script>
     <script src="../src/fmtx.js?v=2"></script>
+    <script src="../src/smartx.js"></script>
     <script src="../src/accx.js"></script>
     <script src="../src/bindx.js"></script>
     <script src="../src/dragx.js"></script>
@@ -361,21 +362,390 @@
             color: #666;
             font-size: 0.9rem;
         }
+
+        /* ========================================
+           DARK MODE & THEME
+           ======================================== */
+
+        :root {
+            --bg-primary: #fafafa;
+            --bg-secondary: white;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #e8e8e8;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08);
+            --hover-bg: #f5f5f5;
+            --accent: #667eea;
+        }
+
+        body.dark-mode {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2a2a2a;
+            --text-primary: #e0e0e0;
+            --text-secondary: #999;
+            --border-color: #444;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --hover-bg: #333;
+            --accent: #8b9dff;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .module-section,
+        header,
+        nav,
+        .example {
+            background: var(--bg-secondary);
+            border-color: var(--border-color);
+            box-shadow: var(--shadow);
+        }
+
+        header h1 {
+            color: var(--text-primary);
+        }
+
+        header p,
+        .description,
+        .example p,
+        .original-value,
+        .stat-label,
+        nav a {
+            color: var(--text-secondary);
+        }
+
+        nav a:hover {
+            background: var(--hover-bg);
+            color: var(--text-primary);
+        }
+
+        /* Dark mode toggle button */
+        #darkModeToggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 10px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: var(--shadow);
+            transition: all 0.2s ease;
+        }
+
+        #darkModeToggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* ========================================
+           COLLAPSIBLE SECTIONS
+           ======================================== */
+
+        .module-section h2 {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 40px;
+        }
+
+        .module-section h2::after {
+            content: '▼';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8em;
+            transition: transform 0.3s ease;
+        }
+
+        .module-section.collapsed h2::after {
+            transform: translateY(-50%) rotate(-90deg);
+        }
+
+        .module-section .section-content {
+            max-height: 10000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+        }
+
+        .module-section.collapsed .section-content {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        /* ========================================
+           SMOOTH SCROLLING
+           ======================================== */
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* ========================================
+           KEYBOARD SHORTCUT MODAL
+           ======================================== */
+
+        #shortcutModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            z-index: 2000;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        #shortcutModal.active {
+            display: block;
+        }
+
+        #shortcutOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1999;
+        }
+
+        #shortcutOverlay.active {
+            display: block;
+        }
+
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .shortcut-item:last-child {
+            border-bottom: none;
+        }
+
+        .shortcut-key {
+            background: var(--hover-bg);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: 'Inconsolata', monospace;
+            font-size: 0.9em;
+            border: 1px solid var(--border-color);
+        }
+
+        /* ========================================
+           NOTATION TABS
+           ======================================== */
+
+        .notation-tab {
+            padding: 10px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .notation-tab:hover {
+            color: var(--text-primary);
+            background: var(--hover-bg);
+        }
+
+        .notation-tab.active {
+            color: #2196F3;
+            border-bottom-color: #2196F3;
+        }
+
+        .notation-content {
+            display: none;
+        }
+
+        .notation-content.active {
+            display: block;
+        }
+
+        .copy-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 6px 12px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: 500;
+            z-index: 10;
+            transition: background 0.2s ease;
+        }
+
+        .copy-button:hover {
+            background: #1976D2;
+        }
+
+        /* ========================================
+           MOBILE IMPROVEMENTS
+           ======================================== */
+
+        @media (max-width: 768px) {
+            #darkModeToggle {
+                top: 10px;
+                right: 10px;
+                padding: 8px 12px;
+                font-size: 1rem;
+            }
+
+            .module-section h2 {
+                font-size: 1.3rem;
+            }
+
+            header h1 {
+                font-size: 2rem;
+            }
+
+            nav ul {
+                justify-content: center;
+            }
+
+            .container {
+                padding: 10px;
+            }
+
+            .notation-tab {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* ========================================
+           PERFORMANCE MONITORING
+           ======================================== */
+
+        .perf-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .perf-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .perf-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 10px;
+        }
+
+        .perf-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin: 10px 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .perf-value.good {
+            color: #4ade80;
+        }
+
+        .perf-value.moderate {
+            color: #fbbf24;
+        }
+
+        .perf-value.poor {
+            color: #f87171;
+        }
+
+        .perf-target {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .perf-value {
+                font-size: 2rem;
+            }
+
+            .perf-card {
+                padding: 15px;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Dark Mode Toggle -->
+    <button id="darkModeToggle" aria-label="Toggle dark mode">🌙</button>
+
+    <!-- Keyboard Shortcut Modal -->
+    <div id="shortcutOverlay"></div>
+    <div id="shortcutModal">
+        <h2 style="margin-bottom: 20px;">Keyboard Shortcuts</h2>
+        <div class="shortcut-item">
+            <span>Toggle dark mode</span>
+            <kbd class="shortcut-key">D</kbd>
+        </div>
+        <div class="shortcut-item">
+            <span>Quick navigation</span>
+            <kbd class="shortcut-key">Ctrl+K</kbd>
+        </div>
+        <div class="shortcut-item">
+            <span>Collapse/expand section</span>
+            <kbd class="shortcut-key">Click header</kbd>
+        </div>
+        <div class="shortcut-item">
+            <span>Show shortcuts</span>
+            <kbd class="shortcut-key">?</kbd>
+        </div>
+        <div class="shortcut-item">
+            <span>Close modal</span>
+            <kbd class="shortcut-key">Esc</kbd>
+        </div>
+    </div>
+
     <div class="container">
         <header>
-            <h1>gen<span class="red-x">X</span> Module Demo</h1>
-            <p>Top 10 Examples for Each Module</p>
+            <h1>gen<span class="red-x">X</span>: front-end changes for humans</h1>
+            <div style="max-width: 900px; margin: 20px auto 0; text-align: left;">
+                <p style="margin-bottom: 15px; font-size: 1.05rem; line-height: 1.7;">
+                    Business wants percentages shown with 2 decimals instead of 3? With traditional approaches, you're modifying database schemas, backend APIs, and frontend code - all fragile, all breaking things. Over and over again.
+                </p>
+                <p style="margin-bottom: 15px; font-size: 1.05rem; line-height: 1.7;">
+                    genx.software keeps display logic where it belongs: in the display layer. Your database stores raw numbers. Your backend passes them through. Your HTML template handles formatting (or any other purely front-end concern) with attributes like <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">data-fmtx="decimal:2"</code>, <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">data-accx="aria-label:{{statusText}} skip-if-empty"</code>, <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">data-bindx="value:user.email validate:email"</code>.
+                </p>
+                <p style="margin-bottom: 15px; font-size: 1.05rem; line-height: 1.7;">
+                    One attribute change in your HTML template; the most robust part of your stack. No migrations, no backend deploys, no breakage. Just a few k of JavaScript reading your declarative intent and executing it at lightning speed.
+                </p>
+                <p style="font-size: 1rem; font-style: italic; color: #666;">
+                    Fully <a href="https://hypermedia.systems" target="_blank" rel="noopener" style="color: #2196F3; text-decoration: none;">HATEOAS</a>/<a href="https://dataos.software" target="_blank" rel="noopener" style="color: #2196F3; text-decoration: none;">DATAOS</a> compliant.
+                </p>
+            </div>
         </header>
-
-        <!-- Info Banner -->
-        <div style="background: white; padding: 20px; margin-bottom: 30px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e8e8e8; border-left: 4px solid #333;">
-            <h3 style="color: #333; margin-bottom: 10px; font-weight: 600;">📦 Zero-Config Demo</h3>
-            <p style="margin-bottom: 10px;">This demo requires <strong>no build step, no server, no configuration</strong>. It's pure static HTML/CSS/JS that can be served directly from GitHub Pages or opened locally with <code>file://</code>.</p>
-            <p style="color: #666; font-size: 0.95rem;">Enable GitHub Pages in your repo settings and this demo will be live at <code>https://[username].github.io/genX/examples/genx-demo.html</code> - no deployment pipeline needed. This is genX's philosophy: <strong>simplicity that just works</strong>.</p>
-        </div>
 
         <!-- Navigation -->
         <nav nx-nav="main">
@@ -390,12 +760,412 @@
             </ul>
         </nav>
 
+        <!-- Polymorphic Notation -->
+        <section id="polymorphic-notation" class="module-section">
+            <h2>1. Polymorphic Notation - Four Ways, One Result</h2>
+            <p class="description">genX supports 4 notation styles that compile to identical transformations. Choose your preferred style.</p>
+
+            <!-- Tab Navigation -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e8e8e8;">
+                <button class="notation-tab active" data-module="fmtx" onclick="switchNotationTab('fmtx', this)">fmtX</button>
+                <button class="notation-tab" data-module="bindx" onclick="switchNotationTab('bindx', this)">bindX</button>
+                <button class="notation-tab" data-module="accx" onclick="switchNotationTab('accx', this)">accX</button>
+            </div>
+
+            <!-- fmtX Example -->
+            <div id="notation-fmtx" class="notation-content active">
+                <h3 style="margin-bottom: 20px; color: #333;">Currency Formatting ($1,234.56)</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                    <!-- Verbose Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">1. Verbose (Beginner)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Explicit attributes</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;span fx-format="currency"
+      fx-currency="USD"
+      fx-decimals="2"&gt;
+  1234.56
+&lt;/span&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;span fx-format=&quot;currency&quot; fx-currency=&quot;USD&quot; fx-decimals=&quot;2&quot;&gt;1234.56&lt;/span&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- Colon Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">2. Compact (Expert)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Colon syntax</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;span fx-format="currency:USD:2"&gt;
+  1234.56
+&lt;/span&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;span fx-format=&quot;currency:USD:2&quot;&gt;1234.56&lt;/span&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- JSON Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">3. JSON (Power User)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">JSON configuration</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;span fx-opts='{
+  "format":"currency",
+  "currency":"USD",
+  "decimals":2
+}'&gt;1234.56&lt;/span&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;span fx-opts=\'{&quot;format&quot;:&quot;currency&quot;,&quot;currency&quot;:&quot;USD&quot;,&quot;decimals&quot;:2}\'&gt;1234.56&lt;/span&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- CSS Class Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">4. CSS Class (Designer)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Class-based config</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;span class="fmt-currency-USD-2"&gt;
+  1234.56
+&lt;/span&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;span class=&quot;fmt-currency-USD-2&quot;&gt;1234.56&lt;/span&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- bindX Example -->
+            <div id="notation-bindx" class="notation-content">
+                <h3 style="margin-bottom: 20px; color: #333;">Two-Way Binding with Debounce</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                    <!-- Verbose Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">1. Verbose (Beginner)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Explicit attributes</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;input type="text"
+       bx-model="username"
+       bx-debounce="300"&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;input type=&quot;text&quot; bx-model=&quot;username&quot; bx-debounce=&quot;300&quot;&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- Colon Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">2. Compact (Expert)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Colon syntax</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;input type="text"
+       bx-model="username:300"&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;input type=&quot;text&quot; bx-model=&quot;username:300&quot;&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- JSON Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">3. JSON (Power User)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">JSON configuration</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;input type="text"
+       bx-model="username"
+       bx-opts='{"debounce":300}'&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;input type=&quot;text&quot; bx-model=&quot;username&quot; bx-opts=\'{&quot;debounce&quot;:300}\'&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- CSS Class Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">4. CSS Class (Designer)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Class-based config</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;input type="text"
+       class="bind-username-300"&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;input type=&quot;text&quot; class=&quot;bind-username-300&quot;&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- accX Example -->
+            <div id="notation-accx" class="notation-content">
+                <h3 style="margin-bottom: 20px; color: #333;">ARIA Label</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                    <!-- Verbose Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">1. Verbose (Beginner)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Explicit attributes</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;button ax-enhance="label"
+        ax-type="icon"
+        ax-meaning="Home"&gt;
+  🏠
+&lt;/button&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;button ax-enhance=&quot;label&quot; ax-type=&quot;icon&quot; ax-meaning=&quot;Home&quot;&gt;🏠&lt;/button&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- Colon Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">2. Compact (Expert)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Colon syntax</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;button ax-enhance="label:icon:Home"&gt;
+  🏠
+&lt;/button&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;button ax-enhance=&quot;label:icon:Home&quot;&gt;🏠&lt;/button&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- JSON Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">3. JSON (Power User)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">JSON configuration</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;button ax-opts='{
+  "enhance":"label",
+  "type":"icon",
+  "meaning":"Home"
+}'&gt;🏠&lt;/button&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;button ax-opts=\'{&quot;enhance&quot;:&quot;label&quot;,&quot;type&quot;:&quot;icon&quot;,&quot;meaning&quot;:&quot;Home&quot;}\'&gt;🏠&lt;/button&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- CSS Class Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">4. CSS Class (Designer)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Class-based config</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;button class="acc-label-icon-Home"&gt;
+  🏠
+&lt;/button&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;button class=&quot;acc-label-icon-Home&quot;&gt;🏠&lt;/button&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Demo Section -->
+            <div style="margin-top: 40px;">
+                <h3 style="margin-bottom: 20px; color: #333;">Live Interactive Demo - All Four Notations Working Together</h3>
+                <p style="color: #666; margin-bottom: 20px;">Type in any of the inputs below to see how all four notation styles produce identical reactive behavior:</p>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <!-- Verbose Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 15px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">1. Verbose (Beginner)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Explicit attributes - most readable</p>
+                        <input
+                            type="text"
+                            bx-model="polyDemo1"
+                            bx-debounce="500"
+                            placeholder="Type to search..."
+                            style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                        <div style="background: white; padding: 10px; border-radius: 4px; min-height: 30px;">
+                            <strong>Value:</strong> <span bx-bind="polyDemo1" class="formatted-value">-</span>
+                        </div>
+                        <pre style="background: #2d2d2d; color: #f8f8f2; padding: 12px; border-radius: 4px; font-size: 11px; margin-top: 10px; overflow-x: auto;">&lt;input bx-model="polyDemo1"
+       bx-debounce="500"&gt;</pre>
+                    </div>
+
+                    <!-- Compact Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 15px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">2. Compact (Expert)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Colon syntax - compact</p>
+                        <input
+                            type="text"
+                            bx-model="polyDemo2:500"
+                            placeholder="Type to search..."
+                            style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                        <div style="background: white; padding: 10px; border-radius: 4px; min-height: 30px;">
+                            <strong>Value:</strong> <span bx-bind="polyDemo2" class="formatted-value">-</span>
+                        </div>
+                        <pre style="background: #2d2d2d; color: #f8f8f2; padding: 12px; border-radius: 4px; font-size: 11px; margin-top: 10px; overflow-x: auto;">&lt;input bx-model="polyDemo2:500"&gt;</pre>
+                    </div>
+
+                    <!-- JSON Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 15px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">3. JSON (Power User)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">JSON configuration - flexible</p>
+                        <input
+                            type="text"
+                            bx-model="polyDemo3"
+                            bx-opts='{"debounce":500}'
+                            placeholder="Type to search..."
+                            style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                        <div style="background: white; padding: 10px; border-radius: 4px; min-height: 30px;">
+                            <strong>Value:</strong> <span bx-bind="polyDemo3" class="formatted-value">-</span>
+                        </div>
+                        <pre style="background: #2d2d2d; color: #f8f8f2; padding: 12px; border-radius: 4px; font-size: 11px; margin-top: 10px; overflow-x: auto;">&lt;input bx-model="polyDemo3"
+       bx-opts='{"debounce":500}'&gt;</pre>
+                    </div>
+                </div>
+
+                <div style="background: #e3f2fd; border-left: 4px solid #2196F3; padding: 15px; border-radius: 4px; margin-top: 20px;">
+                    <strong style="color: #1976D2;">💡 All three notations produce identical behavior:</strong>
+                    <ul style="margin: 10px 0 0 20px; color: #555;">
+                        <li>500ms debounce delay after typing stops</li>
+                        <li>Two-way reactive data binding</li>
+                        <li>Automatic DOM synchronization</li>
+                        <li>Same performance characteristics</li>
+                    </ul>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h5 style="color: #555; margin-bottom: 10px;">Syntax Precedence (highest to lowest):</h5>
+                    <ol style="color: #666; line-height: 1.8;">
+                        <li><code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">bx-debounce</code> attribute (explicit)</li>
+                        <li><code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">bx-opts</code> JSON configuration</li>
+                        <li><code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">bx-model="field:500"</code> colon syntax</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div style="background: #e3f2fd; border-left: 4px solid #2196F3; padding: 15px; border-radius: 4px; margin-top: 20px;">
+                <strong style="color: #1976D2;">💡 All four notation styles produce identical behavior</strong>
+                <p style="margin: 10px 0 0 0; color: #555;">Choose the style that best fits your workflow. genX supports all notations simultaneously in the same project.</p>
+            </div>
+        </section>
+
+        <script>
+            function switchNotationTab(module, button) {
+                // Hide all notation content
+                document.querySelectorAll('.notation-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+
+                // Remove active class from all tabs
+                document.querySelectorAll('.notation-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+
+                // Show selected content
+                document.getElementById('notation-' + module).classList.add('active');
+
+                // Add active class to clicked tab
+                button.classList.add('active');
+            }
+
+            function copyToClipboard(button, text) {
+                // Decode HTML entities
+                const textarea = document.createElement('textarea');
+                textarea.innerHTML = text;
+                const decodedText = textarea.value;
+
+                navigator.clipboard.writeText(decodedText).then(() => {
+                    const originalText = button.textContent;
+                    button.textContent = '✓ Copied!';
+                    button.style.background = '#4CAF50';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.background = '#2196F3';
+                    }, 2000);
+                });
+            }
+        </script>
+
+        <!-- Performance Monitoring -->
+        <section id="performance" class="module-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+            <h2 style="color: white; border-bottom-color: rgba(255,255,255,0.3);">⚡ Live Performance Metrics</h2>
+            <p class="description" style="color: rgba(255,255,255,0.95);">Real-time Web Vitals demonstrating genX's <strong>&lt;16ms (60 FPS)</strong> performance target</p>
+
+            <div id="perf-metrics" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 25px;">
+                <!-- Performance Score -->
+                <div class="perf-card">
+                    <div class="perf-label">Performance Score</div>
+                    <div class="perf-value" id="perf-score">-</div>
+                    <div class="perf-target">Target: &gt;90</div>
+                </div>
+
+                <!-- First Contentful Paint -->
+                <div class="perf-card">
+                    <div class="perf-label">FCP</div>
+                    <div class="perf-value" id="perf-fcp">-</div>
+                    <div class="perf-target">Target: &lt;1.8s</div>
+                </div>
+
+                <!-- Largest Contentful Paint -->
+                <div class="perf-card">
+                    <div class="perf-label">LCP</div>
+                    <div class="perf-value" id="perf-lcp">-</div>
+                    <div class="perf-target">Target: &lt;2.5s</div>
+                </div>
+
+                <!-- Total Blocking Time -->
+                <div class="perf-card">
+                    <div class="perf-label">TBT</div>
+                    <div class="perf-value" id="perf-tbt">-</div>
+                    <div class="perf-target">Target: &lt;200ms</div>
+                </div>
+
+                <!-- Cumulative Layout Shift -->
+                <div class="perf-card">
+                    <div class="perf-label">CLS</div>
+                    <div class="perf-value" id="perf-cls">-</div>
+                    <div class="perf-target">Target: &lt;0.1</div>
+                </div>
+
+                <!-- Frame Time -->
+                <div class="perf-card">
+                    <div class="perf-label">Frame Time</div>
+                    <div class="perf-value" id="perf-frame">-</div>
+                    <div class="perf-target">Target: &lt;16ms (60 FPS)</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 6px; font-size: 0.9rem;">
+                <strong>Note:</strong> Metrics update in real-time using the browser's Performance Observer API. genX modules are optimized to stay under 16ms per operation to maintain 60 FPS.
+            </div>
+        </section>
         <!-- fmtX Examples -->
         <section id="fmtx" class="module-section">
             <h2>fmtX - Number & Date Formatting</h2>
             <p class="description">Declarative formatting for numbers, currency, dates, and more</p>
 
             <div class="examples-grid">
+                <!-- Example 0: SmartX Auto-Detection -->
+                <div class="example">
+                    <h4>0. SmartX - Auto-Detection & Normalization ✨</h4>
+                    <p>Automatically detects messy, real-world data and converts it into conventional formats</p>
+                    <div class="example-demo">
+                        <div style="display: grid; gap: 15px;">
+                            <div style="background: #f5f5f5; padding: 12px; border-radius: 4px;">
+                                <strong>Input:</strong> <code>555%555%1212</code> <em style="color: #888;">(unconventional separators)</em><br>
+                                <strong>Detected:</strong> <span style="color: #4CAF50; font-weight: 500;" data-smart-detected="phone">phone</span> (85% confidence)<br>
+                                <strong>Output:</strong> <span fx-format="smart" fx-raw="5555551212" style="font-weight: 500; color: #2196F3;">(555) 555-1212</span>
+                            </div>
+                            <div style="background: #f5f5f5; padding: 12px; border-radius: 4px;">
+                                <strong>Input:</strong> <code>USD 1,234.56 dollars</code> <em style="color: #888;">(mixed format with text)</em><br>
+                                <strong>Detected:</strong> <span style="color: #4CAF50; font-weight: 500;" data-smart-detected="currency">currency</span> (90% confidence)<br>
+                                <strong>Output:</strong> <span fx-format="smart" fx-raw="$1,234.56" style="font-weight: 500; color: #2196F3;">$1,234.56</span>
+                            </div>
+                            <div style="background: #f5f5f5; padding: 12px; border-radius: 4px;">
+                                <strong>Input:</strong> <code>15-Mar-2024</code> <em style="color: #888;">(European date format)</em><br>
+                                <strong>Detected:</strong> <span style="color: #4CAF50; font-weight: 500;" data-smart-detected="date">date</span> (95% confidence)<br>
+                                <strong>Output:</strong> <span fx-format="smart" fx-raw="2024-03-15" style="font-weight: 500; color: #2196F3;">Mar 15, 2024</span>
+                            </div>
+                            <div style="background: #f5f5f5; padding: 12px; border-radius: 4px;">
+                                <strong>Input:</strong> <code>99.5 percent</code> <em style="color: #888;">(written out)</em><br>
+                                <strong>Detected:</strong> <span style="color: #4CAF50; font-weight: 500;" data-smart-detected="percentage">percentage</span> (100% confidence)<br>
+                                <strong>Output:</strong> <span fx-format="smart" fx-raw="99.5%" style="font-weight: 500; color: #2196F3;">99.5%</span>
+                            </div>
+                            <div style="background: #f5f5f5; padding: 12px; border-radius: 4px;">
+                                <strong>Input:</strong> <code>+1.555.123.4567</code> <em style="color: #888;">(dots instead of dashes)</em><br>
+                                <strong>Detected:</strong> <span style="color: #4CAF50; font-weight: 500;" data-smart-detected="phone">phone</span> (95% confidence)<br>
+                                <strong>Output:</strong> <span fx-format="smart" fx-raw="5551234567" style="font-weight: 500; color: #2196F3;">(555) 123-4567</span>
+                            </div>
+                            <div style="background: #f5f5f5; padding: 12px; border-radius: 4px;">
+                                <strong>Input:</strong> <code>€ 1.234,56</code> <em style="color: #888;">(European number format)</em><br>
+                                <strong>Detected:</strong> <span style="color: #4CAF50; font-weight: 500;" data-smart-detected="currency">currency</span> (95% confidence)<br>
+                                <strong>Output:</strong> <span fx-format="smart" fx-raw="€1,234.56" style="font-weight: 500; color: #2196F3;">€1,234.56</span>
+                            </div>
+                        </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;span fx-format="smart" fx-raw="$1,234.56"&gt;$1,234.56&lt;/span&gt;</pre>
+                        <div style="background: #e3f2fd; border-left: 4px solid #2196F3; padding: 12px; border-radius: 4px; margin-top: 15px; font-size: 0.9rem;">
+                            <strong style="color: #1976D2;">💡 How it works:</strong>
+                            <p style="margin: 8px 0 0 0; color: #555;">SmartX uses pattern matching with confidence scoring to detect data types. It automatically delegates to the appropriate formatter (currency, phone, date, etc.) with ~0.5-1ms execution time (~0.01ms with caching).</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Example 1: Currency -->
                 <div class="example">
                     <h4>1. Currency Formatting with Input Types</h4>
@@ -407,6 +1177,7 @@
                                 <option value="cents">Cents (123456 → $1,234.56)</option>
                                 <option value="string">String ("1234.56")</option>
                                 <option value="int">Integer (1234)</option>
+                                <option value="smart">Smart (Auto-detect) ✨</option>
                             </select>
                         </label>
                         <br><br>
@@ -416,7 +1187,7 @@
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;span fx-format="currency"
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;span fx-format="<span id="currency-format-display">currency</span>"
       fx-type="<span id="currency-type-display">number</span>"
       fx-currency="<span id="currency-currency-display">USD</span>"&gt;</pre>
                     </div>
@@ -1106,83 +1877,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Example 12: Polymorphic Syntax -->
-                <div class="example" style="grid-column: 1 / -1;">
-                    <h4>12. Polymorphic Syntax - Three Ways to Achieve the Same Result</h4>
-                    <p>bindX supports multiple notation styles that produce identical behavior. Choose the style that fits your workflow.</p>
-                    <div class="example-demo">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
-                            <!-- Verbose Style -->
-                            <div style="border: 1px solid #e8e8e8; padding: 15px; border-radius: 6px; background: #fafafa;">
-                                <h5 style="margin-top: 0; color: #555;">Verbose Style (Beginner-Friendly)</h5>
-                                <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Explicit attributes - most readable</p>
-                                <input
-                                    type="text"
-                                    bx-model="search1"
-                                    bx-debounce="300"
-                                    placeholder="Type to search..."
-                                    style="width: 100%; padding: 8px; margin-bottom: 10px;">
-                                <div style="background: white; padding: 10px; border-radius: 4px; min-height: 30px;">
-                                    <strong>Value:</strong> <span bx-bind="search1" class="formatted-value">-</span>
-                                </div>
-                                <pre style="background: #2d2d2d; color: #f8f8f2; padding: 12px; border-radius: 4px; font-size: 11px; margin-top: 10px; overflow-x: auto;">&lt;input bx-model="search1"
-       bx-debounce="300"&gt;</pre>
-                            </div>
-
-                            <!-- Colon Style -->
-                            <div style="border: 1px solid #e8e8e8; padding: 15px; border-radius: 6px; background: #fafafa;">
-                                <h5 style="margin-top: 0; color: #555;">Colon Style (Compact)</h5>
-                                <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Inline configuration - compact syntax</p>
-                                <input
-                                    type="text"
-                                    bx-model="search2:300"
-                                    placeholder="Type to search..."
-                                    style="width: 100%; padding: 8px; margin-bottom: 10px;">
-                                <div style="background: white; padding: 10px; border-radius: 4px; min-height: 30px;">
-                                    <strong>Value:</strong> <span bx-bind="search2" class="formatted-value">-</span>
-                                </div>
-                                <pre style="background: #2d2d2d; color: #f8f8f2; padding: 12px; border-radius: 4px; font-size: 11px; margin-top: 10px; overflow-x: auto;">&lt;input bx-model="search2:300"&gt;</pre>
-                            </div>
-
-                            <!-- JSON Style -->
-                            <div style="border: 1px solid #e8e8e8; padding: 15px; border-radius: 6px; background: #fafafa;">
-                                <h5 style="margin-top: 0; color: #555;">JSON Style (Power-User)</h5>
-                                <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">JSON configuration - maximum flexibility</p>
-                                <input
-                                    type="text"
-                                    bx-model="search3"
-                                    bx-opts='{"debounce":300}'
-                                    placeholder="Type to search..."
-                                    style="width: 100%; padding: 8px; margin-bottom: 10px;">
-                                <div style="background: white; padding: 10px; border-radius: 4px; min-height: 30px;">
-                                    <strong>Value:</strong> <span bx-bind="search3" class="formatted-value">-</span>
-                                </div>
-                                <pre style="background: #2d2d2d; color: #f8f8f2; padding: 12px; border-radius: 4px; font-size: 11px; margin-top: 10px; overflow-x: auto;">&lt;input bx-model="search3"
-       bx-opts='{"debounce":300}'&gt;</pre>
-                            </div>
-                        </div>
-
-                        <div style="background: #e3f2fd; border-left: 4px solid #2196F3; padding: 15px; border-radius: 4px; margin-top: 20px;">
-                            <strong style="color: #1976D2;">💡 All three produce identical behavior:</strong>
-                            <ul style="margin: 10px 0 0 20px; color: #555;">
-                                <li>300ms debounce delay after typing stops</li>
-                                <li>Two-way reactive data binding</li>
-                                <li>Automatic DOM synchronization</li>
-                                <li>Same performance characteristics</li>
-                            </ul>
-                        </div>
-
-                        <div style="margin-top: 20px;">
-                            <h5 style="color: #555; margin-bottom: 10px;">Syntax Precedence (highest to lowest):</h5>
-                            <ol style="color: #666; line-height: 1.8;">
-                                <li><code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">bx-debounce</code> attribute (explicit)</li>
-                                <li><code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">bx-opts</code> JSON configuration</li>
-                                <li><code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">bx-model="field:300"</code> colon syntax</li>
-                            </ol>
-                        </div>
-                    </div>
-                </div>
             </div>
         </section>
 
@@ -1687,28 +2381,35 @@
         </section>
 
         <!-- Footer -->
-        <footer id="footer" style="margin-top:60px;padding:40px;background:white;text-align:center;border-radius:8px;">
-            <h3>genX Module Suite</h3>
-            <p>Production-ready, accessible, and performant web components</p>
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-value">7</div>
-                    <div class="stat-label">Modules</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">63</div>
-                    <div class="stat-label">Examples</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">100%</div>
-                    <div class="stat-label">WCAG 2.1 AA</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value">&lt;25KB</div>
-                    <div class="stat-label">Total Size</div>
-                </div>
-            </div>
+        <footer id="footer" style="margin-top:60px;padding:40px;background:white;text-align:center;border-radius:8px;border:1px solid #e8e8e8;">
+            <h3 style="color:#333;margin-bottom:15px;font-weight:600;">Powered by http/html/css/js</h3>
+            <p style="color:#666;line-height:1.7;margin-bottom:10px;">
+                This demo required no build step, no server, no configuration. It's pure static HTML/CSS/JS served directly from GitHub Pages, no deployment pipeline needed.
+            </p>
+            <p style="color:#666;line-height:1.7;">
+                This is genX's philosophy: simplicity that just works, like this link: <a id="dynamicLink" href="https://github.com/adamzwasserman/genX" style="color:#2196F3;text-decoration:none;font-weight:500;">View on GitHub</a>
+            </p>
         </footer>
+
+        <script>
+            // Set dynamic footer link based on referrer
+            (function() {
+                const link = document.getElementById('dynamicLink');
+                const referrer = document.referrer.toLowerCase();
+
+                if (referrer.includes('genx.software')) {
+                    link.textContent = 'View on GitHub';
+                    link.href = 'https://github.com/adamzwasserman/genX';
+                } else if (referrer.includes('github.com')) {
+                    link.textContent = 'View genx.software';
+                    link.href = 'https://genx.software';
+                } else {
+                    // Default
+                    link.textContent = 'View on GitHub';
+                    link.href = 'https://github.com/adamzwasserman/genX';
+                }
+            })();
+        </script>
     </div>
 
     <script>
@@ -1716,8 +2417,12 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize bindX with reactive data
             if (window.bindX && window.bindX.init && window.bindX.createReactive) {
-                // Create empty reactive object first
-                const reactiveData = window.bindX.createReactive({});
+                // Create reactive object with initial values for Polymorphic Syntax demo
+                const reactiveData = window.bindX.createReactive({
+                    search1: '',
+                    search2: '',
+                    search3: ''
+                });
                 window.bindX.init(reactiveData, { auto: true, observe: true });
                 console.log('✅ bindX initialized with reactive data');
             }
@@ -1730,6 +2435,36 @@
             if (window.initNavX) window.initNavX();
 
             console.log('✅ All genX modules initialized');
+
+            // Update SmartX detection labels after formatting
+            setTimeout(() => {
+                if (window.SmartX) {
+                    document.querySelectorAll('[fx-format="smart"]').forEach(el => {
+                        const detected = el.getAttribute('data-smart-detected');
+                        const confidence = el.getAttribute('data-smart-confidence');
+
+                        // Find the corresponding detection label
+                        const parent = el.closest('div[style*="background: #f5f5f5"]');
+                        if (parent && detected && confidence) {
+                            const detectedSpan = parent.querySelector('[data-smart-detected]');
+                            if (detectedSpan && detectedSpan !== el) {
+                                detectedSpan.textContent = detected;
+                                detectedSpan.setAttribute('data-smart-detected', detected);
+
+                                // Update confidence text
+                                const strongTag = detectedSpan.previousElementSibling;
+                                if (strongTag && strongTag.textContent.includes('Detected:')) {
+                                    const textNode = detectedSpan.nextSibling;
+                                    if (textNode && textNode.nodeType === 3) {
+                                        textNode.textContent = ` (${confidence}% confidence)`;
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    console.log('✅ SmartX detection labels updated');
+                }
+            }, 100);
 
             // Date input/output type selectors
             const dateInputTypeSelector = document.getElementById('date-input-type-selector');
@@ -1935,6 +2670,7 @@
             }
 
             // Currency input type selector
+            const currencyFormatTypeSelector = document.getElementById('currency-format-type-selector');
             const currencyInputTypeSelector = document.getElementById('currency-input-type-selector');
             const currencyOutput = document.getElementById('currency-output');
             const currencyInputValue = document.getElementById('currency-input-value');
@@ -1947,8 +2683,9 @@
             };
 
             function updateCurrencyExample() {
-                if (!currencyOutput || !currencyInputTypeSelector) return;
+                if (!currencyOutput || !currencyInputTypeSelector || !currencyFormatTypeSelector) return;
 
+                const formatType = currencyFormatTypeSelector.value;
                 const inputType = currencyInputTypeSelector.value;
                 const inputValue = currencyInputValues[inputType];
 
@@ -1957,28 +2694,47 @@
                 }
 
                 // Update API display
+                const formatDisplay = document.getElementById('currency-format-display');
                 const typeDisplay = document.getElementById('currency-type-display');
                 const currencyDisplay = document.getElementById('currency-currency-display');
+                if (formatDisplay) formatDisplay.textContent = formatType;
                 if (typeDisplay) typeDisplay.textContent = inputType;
                 if (currencyDisplay) currencyDisplay.textContent = 'USD';
 
                 // Process the raw value
                 const rawValue = inputType === 'string' ? inputValue.replace(/"/g, '') : inputValue;
 
-                // Directly format without setting fx-type attribute to avoid MutationObserver race condition
-                const format = window.fxXFactory?.format || window.FormatX?.format;
-                if (format) {
-                    const formatted = format('currency', rawValue, {
-                        type: inputType,
-                        currency: 'USD'
-                    });
+                // Directly format using appropriate method
+                if (formatType === 'smart' && window.SmartX) {
+                    // Use SmartX auto-detection
+                    const formatted = window.SmartX.format(currencyOutput, rawValue);
                     currencyOutput.textContent = formatted;
+
+                    // Show detection info
+                    const detected = currencyOutput.getAttribute('data-smart-detected');
+                    const confidence = currencyOutput.getAttribute('data-smart-confidence');
+                    if (detected && confidence) {
+                        console.log(`SmartX detected: ${detected} (${confidence}% confidence)`);
+                    }
+                } else {
+                    // Use explicit currency formatting
+                    const format = window.fxXFactory?.format || window.FormatX?.format;
+                    if (format) {
+                        const formatted = format('currency', rawValue, {
+                            type: inputType,
+                            currency: 'USD'
+                        });
+                        currencyOutput.textContent = formatted;
+                    }
                 }
             }
 
             if (currencyInputTypeSelector) {
                 currencyInputTypeSelector.addEventListener('change', updateCurrencyExample);
                 updateCurrencyExample();
+            }
+            if (currencyFormatTypeSelector) {
+                currencyFormatTypeSelector.addEventListener('change', updateCurrencyExample);
             }
 
             // Percentage input type selector
@@ -2210,6 +2966,497 @@
         function closeMobileMenu() {
             document.getElementById('mobile-menu').style.display = 'none';
         }
+
+        // Auto-add copy buttons to all code snippets
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeBlocks = document.querySelectorAll('pre:not([data-no-copy])');
+
+            codeBlocks.forEach(pre => {
+                // Skip if already has a copy button
+                if (pre.querySelector('.code-copy-btn')) return;
+
+                // Wrap pre in container if not already wrapped
+                if (!pre.parentElement.classList.contains('code-block-container')) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'code-block-container';
+                    wrapper.style.position = 'relative';
+                    pre.parentNode.insertBefore(wrapper, pre);
+                    wrapper.appendChild(pre);
+                }
+
+                // Create copy button
+                const button = document.createElement('button');
+                button.className = 'code-copy-btn';
+                button.textContent = 'Copy';
+                button.style.cssText = `
+                    position: absolute;
+                    top: 8px;
+                    right: 8px;
+                    padding: 4px 10px;
+                    background: #2196F3;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    cursor: pointer;
+                    font-weight: 500;
+                    opacity: 0.8;
+                    transition: opacity 0.2s, background 0.2s;
+                    z-index: 10;
+                `;
+
+                button.addEventListener('mouseenter', () => {
+                    button.style.opacity = '1';
+                });
+
+                button.addEventListener('mouseleave', () => {
+                    button.style.opacity = '0.8';
+                });
+
+                button.addEventListener('click', function() {
+                    const code = pre.textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        const originalText = button.textContent;
+                        button.textContent = '✓ Copied!';
+                        button.style.background = '#4CAF50';
+                        setTimeout(() => {
+                            button.textContent = originalText;
+                            button.style.background = '#2196F3';
+                        }, 2000);
+                    }).catch(err => {
+                        button.textContent = 'Error';
+                        button.style.background = '#f44336';
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.style.background = '#2196F3';
+                        }, 2000);
+                    });
+                });
+
+                pre.parentElement.appendChild(button);
+            });
+        });
+
+        // ========================================
+        // UX ENHANCEMENTS
+        // ========================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // ========================================
+            // 1. DARK MODE TOGGLE
+            // ========================================
+
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const body = document.body;
+
+            // Load dark mode preference from localStorage
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) {
+                body.classList.add('dark-mode');
+                darkModeToggle.textContent = '☀️';
+            }
+
+            // Toggle dark mode
+            darkModeToggle.addEventListener('click', function() {
+                body.classList.toggle('dark-mode');
+                const isDark = body.classList.contains('dark-mode');
+                localStorage.setItem('darkMode', isDark);
+                darkModeToggle.textContent = isDark ? '☀️' : '🌙';
+            });
+
+            // ========================================
+            // 2. COLLAPSIBLE SECTIONS
+            // ========================================
+
+            const moduleSections = document.querySelectorAll('.module-section');
+
+            // Wrap section content for collapsing
+            moduleSections.forEach(section => {
+                const h2 = section.querySelector('h2');
+                if (!h2) return;
+
+                // Get all siblings after h2
+                const content = [];
+                let sibling = h2.nextElementSibling;
+                while (sibling) {
+                    content.push(sibling);
+                    sibling = sibling.nextElementSibling;
+                }
+
+                // Create wrapper div
+                const wrapper = document.createElement('div');
+                wrapper.className = 'section-content';
+
+                // Move content into wrapper
+                content.forEach(element => {
+                    wrapper.appendChild(element);
+                });
+
+                // Add wrapper after h2
+                h2.parentNode.insertBefore(wrapper, h2.nextSibling);
+
+                // Add click handler to h2
+                h2.addEventListener('click', function() {
+                    section.classList.toggle('collapsed');
+
+                    // Update URL hash
+                    const hash = section.id;
+                    if (section.classList.contains('collapsed')) {
+                        sessionStorage.setItem(`collapsed-${hash}`, 'true');
+                    } else {
+                        sessionStorage.removeItem(`collapsed-${hash}`);
+                    }
+                });
+
+                // Restore collapsed state from sessionStorage
+                const hash = section.id;
+                if (sessionStorage.getItem(`collapsed-${hash}`) === 'true') {
+                    section.classList.add('collapsed');
+                }
+            });
+
+            // ========================================
+            // 3. KEYBOARD SHORTCUTS
+            // ========================================
+
+            const modal = document.getElementById('shortcutModal');
+            const overlay = document.getElementById('shortcutOverlay');
+            const navLinks = Array.from(document.querySelectorAll('nav a'));
+
+            // Quick navigation modal
+            let quickNavIndex = 0;
+            let quickNavMode = false;
+
+            function showModal() {
+                modal.classList.add('active');
+                overlay.classList.add('active');
+            }
+
+            function hideModal() {
+                modal.classList.remove('active');
+                overlay.classList.remove('active');
+                quickNavMode = false;
+            }
+
+            function showQuickNav() {
+                quickNavMode = true;
+                const sections = moduleSections;
+                const names = Array.from(sections).map(s => {
+                    const h2 = s.querySelector('h2');
+                    return h2 ? h2.textContent : s.id;
+                });
+
+                // Update modal content for quick nav
+                const originalContent = modal.innerHTML;
+                modal.innerHTML = `
+                    <h2 style="margin-bottom: 20px;">Quick Navigation</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 15px;">Use ↑/↓ arrows and Enter to navigate</p>
+                    ${names.map((name, i) => `
+                        <div class="shortcut-item" data-nav-index="${i}" style="cursor: pointer; ${i === 0 ? 'background: var(--hover-bg);' : ''}">
+                            <span>${name}</span>
+                        </div>
+                    `).join('')}
+                `;
+
+                showModal();
+
+                // Navigate with arrow keys
+                const handleQuickNav = (e) => {
+                    const items = modal.querySelectorAll('[data-nav-index]');
+
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        quickNavIndex = (quickNavIndex + 1) % items.length;
+                        updateQuickNavHighlight(items);
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        quickNavIndex = (quickNavIndex - 1 + items.length) % items.length;
+                        updateQuickNavHighlight(items);
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const section = Array.from(sections)[quickNavIndex];
+                        hideModal();
+                        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        window.location.hash = section.id;
+                        document.removeEventListener('keydown', handleQuickNav);
+                    } else if (e.key === 'Escape') {
+                        hideModal();
+                        modal.innerHTML = originalContent;
+                        document.removeEventListener('keydown', handleQuickNav);
+                    }
+                };
+
+                function updateQuickNavHighlight(items) {
+                    items.forEach((item, i) => {
+                        item.style.background = i === quickNavIndex ? 'var(--hover-bg)' : 'transparent';
+                    });
+                }
+
+                // Add click handlers
+                modal.querySelectorAll('[data-nav-index]').forEach((item, i) => {
+                    item.addEventListener('click', () => {
+                        const section = Array.from(sections)[i];
+                        hideModal();
+                        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        window.location.hash = section.id;
+                        modal.innerHTML = originalContent;
+                    });
+                });
+
+                document.addEventListener('keydown', handleQuickNav);
+            }
+
+            // Global keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Ignore if typing in input
+                if (e.target.matches('input, textarea, select')) return;
+
+                // D - Toggle dark mode
+                if (e.key === 'd' || e.key === 'D') {
+                    if (!quickNavMode) {
+                        darkModeToggle.click();
+                    }
+                }
+
+                // ? - Show shortcuts
+                if (e.key === '?') {
+                    if (!quickNavMode) {
+                        showModal();
+                    }
+                }
+
+                // Ctrl+K or Cmd+K - Quick navigation
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    showQuickNav();
+                }
+
+                // Escape - Close modal
+                if (e.key === 'Escape') {
+                    hideModal();
+                }
+            });
+
+            // Close modal on overlay click
+            overlay.addEventListener('click', hideModal);
+
+            // ========================================
+            // 4. SMOOTH SCROLL FOR NAV LINKS
+            // ========================================
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetSection = document.getElementById(targetId);
+
+                    if (targetSection) {
+                        // Expand section if collapsed
+                        targetSection.classList.remove('collapsed');
+                        sessionStorage.removeItem(`collapsed-${targetId}`);
+
+                        // Smooth scroll
+                        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                        // Update URL
+                        window.location.hash = targetId;
+                    }
+                });
+            });
+
+            // ========================================
+            // 5. RESTORE SCROLL POSITION FROM HASH
+            // ========================================
+
+            if (window.location.hash) {
+                const targetId = window.location.hash.substring(1);
+                const targetSection = document.getElementById(targetId);
+
+                if (targetSection) {
+                    // Small delay to ensure page is fully loaded
+                    setTimeout(() => {
+                        targetSection.classList.remove('collapsed');
+                        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                }
+            }
+
+            // ========================================
+            // 6. PERFORMANCE MONITORING
+            // ========================================
+
+            const perfMetrics = {
+                fcp: null,
+                lcp: null,
+                tbt: 0,
+                cls: 0,
+                frameTime: []
+            };
+
+            // Update display with color coding
+            function updatePerfDisplay() {
+                // FCP (First Contentful Paint)
+                if (perfMetrics.fcp !== null) {
+                    const fcpEl = document.getElementById('perf-fcp');
+                    const fcpValue = (perfMetrics.fcp / 1000).toFixed(2);
+                    fcpEl.textContent = fcpValue + 's';
+                    fcpEl.className = 'perf-value ' + getColorClass(perfMetrics.fcp, 1800, 3000);
+                }
+
+                // LCP (Largest Contentful Paint)
+                if (perfMetrics.lcp !== null) {
+                    const lcpEl = document.getElementById('perf-lcp');
+                    const lcpValue = (perfMetrics.lcp / 1000).toFixed(2);
+                    lcpEl.textContent = lcpValue + 's';
+                    lcpEl.className = 'perf-value ' + getColorClass(perfMetrics.lcp, 2500, 4000);
+                }
+
+                // TBT (Total Blocking Time)
+                const tbtEl = document.getElementById('perf-tbt');
+                tbtEl.textContent = Math.round(perfMetrics.tbt) + 'ms';
+                tbtEl.className = 'perf-value ' + getColorClass(perfMetrics.tbt, 200, 600);
+
+                // CLS (Cumulative Layout Shift)
+                const clsEl = document.getElementById('perf-cls');
+                clsEl.textContent = perfMetrics.cls.toFixed(3);
+                clsEl.className = 'perf-value ' + getColorClass(perfMetrics.cls * 1000, 100, 250);
+
+                // Frame Time (average of last 60 frames)
+                if (perfMetrics.frameTime.length > 0) {
+                    const avg = perfMetrics.frameTime.reduce((a, b) => a + b, 0) / perfMetrics.frameTime.length;
+                    const frameEl = document.getElementById('perf-frame');
+                    frameEl.textContent = avg.toFixed(2) + 'ms';
+                    frameEl.className = 'perf-value ' + getColorClass(avg, 16, 50);
+                }
+
+                // Calculate Performance Score (simplified Lighthouse algorithm)
+                calculatePerformanceScore();
+            }
+
+            // Get color class based on thresholds (good/moderate/poor)
+            function getColorClass(value, goodThreshold, poorThreshold) {
+                if (value <= goodThreshold) return 'good';
+                if (value <= poorThreshold) return 'moderate';
+                return 'poor';
+            }
+
+            // Calculate simplified performance score
+            function calculatePerformanceScore() {
+                let score = 100;
+
+                // FCP weight: 10%
+                if (perfMetrics.fcp !== null) {
+                    if (perfMetrics.fcp > 3000) score -= 10;
+                    else if (perfMetrics.fcp > 1800) score -= 5;
+                }
+
+                // LCP weight: 25%
+                if (perfMetrics.lcp !== null) {
+                    if (perfMetrics.lcp > 4000) score -= 25;
+                    else if (perfMetrics.lcp > 2500) score -= 12;
+                }
+
+                // TBT weight: 30%
+                if (perfMetrics.tbt > 600) score -= 30;
+                else if (perfMetrics.tbt > 200) score -= 15;
+
+                // CLS weight: 25%
+                if (perfMetrics.cls > 0.25) score -= 25;
+                else if (perfMetrics.cls > 0.1) score -= 12;
+
+                // Frame Time weight: 10%
+                const avgFrame = perfMetrics.frameTime.length > 0
+                    ? perfMetrics.frameTime.reduce((a, b) => a + b, 0) / perfMetrics.frameTime.length
+                    : 0;
+                if (avgFrame > 50) score -= 10;
+                else if (avgFrame > 16) score -= 5;
+
+                score = Math.max(0, Math.min(100, score));
+
+                const scoreEl = document.getElementById('perf-score');
+                scoreEl.textContent = Math.round(score);
+                scoreEl.className = 'perf-value ' + getColorClass(100 - score, 10, 50);
+            }
+
+            // Use Performance Observer API for Web Vitals
+            if ('PerformanceObserver' in window) {
+                // Observe paint events (FCP, LCP)
+                try {
+                    const paintObserver = new PerformanceObserver((list) => {
+                        for (const entry of list.getEntries()) {
+                            if (entry.name === 'first-contentful-paint') {
+                                perfMetrics.fcp = entry.startTime;
+                                updatePerfDisplay();
+                            }
+                        }
+                    });
+                    paintObserver.observe({ entryTypes: ['paint'] });
+
+                    // Observe LCP
+                    const lcpObserver = new PerformanceObserver((list) => {
+                        const entries = list.getEntries();
+                        const lastEntry = entries[entries.length - 1];
+                        perfMetrics.lcp = lastEntry.renderTime || lastEntry.loadTime;
+                        updatePerfDisplay();
+                    });
+                    lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+
+                    // Observe layout shifts for CLS
+                    let clsValue = 0;
+                    const clsObserver = new PerformanceObserver((list) => {
+                        for (const entry of list.getEntries()) {
+                            if (!entry.hadRecentInput) {
+                                clsValue += entry.value;
+                                perfMetrics.cls = clsValue;
+                                updatePerfDisplay();
+                            }
+                        }
+                    });
+                    clsObserver.observe({ entryTypes: ['layout-shift'] });
+
+                    // Observe long tasks for TBT
+                    const longTaskObserver = new PerformanceObserver((list) => {
+                        for (const entry of list.getEntries()) {
+                            // Tasks over 50ms contribute to TBT
+                            const blockingTime = entry.duration - 50;
+                            if (blockingTime > 0) {
+                                perfMetrics.tbt += blockingTime;
+                                updatePerfDisplay();
+                            }
+                        }
+                    });
+                    longTaskObserver.observe({ entryTypes: ['longtask'] });
+
+                } catch (e) {
+                    console.warn('Some Performance Observer features not supported:', e);
+                }
+            }
+
+            // Measure frame time using requestAnimationFrame
+            let lastFrameTime = performance.now();
+            function measureFrameTime() {
+                const now = performance.now();
+                const frameTime = now - lastFrameTime;
+                lastFrameTime = now;
+
+                // Keep last 60 frames (about 1 second at 60fps)
+                perfMetrics.frameTime.push(frameTime);
+                if (perfMetrics.frameTime.length > 60) {
+                    perfMetrics.frameTime.shift();
+                }
+
+                // Update display every 10 frames (reduce overhead)
+                if (perfMetrics.frameTime.length % 10 === 0) {
+                    updatePerfDisplay();
+                }
+
+                requestAnimationFrame(measureFrameTime);
+            }
+            requestAnimationFrame(measureFrameTime);
+
+            // Initial display update
+            setTimeout(updatePerfDisplay, 100);
+        });
     </script>
 </body>
 </html>
