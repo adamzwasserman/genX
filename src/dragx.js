@@ -151,19 +151,31 @@
      * @returns {Object} Parsed configuration
      */
     const parseDraggable = (element) => {
-        const parsers = [
-            parseAttributes,
-            parseColon,
-            parseClasses,
-            parseJSON
-        ];
+        // Try to get config from bootloader cache first (if using genX bootloader)
+        if (window.genx && window.genx.getConfig) {
+            const cachedConfig = window.genx.getConfig(element);
+            if (cachedConfig && cachedConfig.draggable) {
+                // Got cached config - convert to expected format
+                return Object.freeze({
+                    type: cachedConfig.draggable,
+                    data: cachedConfig.data || {},
+                    ghost: cachedConfig.ghost !== undefined ? cachedConfig.ghost : false,
+                    constraint: cachedConfig.constraint,
+                    handle: cachedConfig.handle,
+                    mode: cachedConfig.mode || 'move',
+                    effect: cachedConfig.effect || 'move',
+                    axis: cachedConfig.axis
+                });
+            }
+        }
 
-        // Try all parsers, merge results (cascade priority)
-        const configs = parsers
-            .map(parser => parser(element))
-            .filter(config => config !== null);
+        // Fallback to polymorphic notation parsing (legacy standalone mode)
+        // Use polymorphic parser from genx-common (supports Verbose, Colon, JSON, CSS Class)
+        const parsed = window.genxCommon
+            ? window.genxCommon.notation.parseNotation(element, 'dx')
+            : {};  // Fallback if genx-common not loaded
 
-        if (configs.length === 0) {
+        if (!parsed.draggable) {
             throw new Error(
                 'Element missing dx-draggable attribute. ' +
                 `Add dx-draggable="type" to ${element.tagName}#${element.id || 'unknown'}. ` +
@@ -171,10 +183,17 @@
             );
         }
 
-        // Merge configurations (later parsers override earlier)
-        return Object.freeze(
-            configs.reduce((acc, config) => ({...acc, ...config}), {})
-        );
+        // Map parseNotation keys to dragX config format
+        return Object.freeze({
+            type: parsed.draggable,
+            data: parsed.data || {},
+            ghost: parsed.ghost !== undefined ? parsed.ghost : false,
+            constraint: parsed.constraint,
+            handle: parsed.handle,
+            mode: parsed.mode || 'move',
+            effect: parsed.effect || 'move',
+            axis: parsed.axis
+        });
     };
 
     /**
@@ -182,20 +201,46 @@
      * Example: dx-drop-zone="board" dx-accepts="card,image"
      */
     const parseDropZone = (element) => {
-        const zoneName = element.getAttribute('dx-drop-zone');
-        if (!zoneName) {
+        // Try to get config from bootloader cache first (if using genX bootloader)
+        if (window.genx && window.genx.getConfig) {
+            const cachedConfig = window.genx.getConfig(element);
+            if (cachedConfig && cachedConfig.dropZone) {
+                const acceptsAttr = cachedConfig.accepts;
+                const accepts = acceptsAttr ?
+                    (typeof acceptsAttr === 'string' ? acceptsAttr.split(',').map(s => s.trim()) : acceptsAttr) :
+                    ['*'];
+
+                return Object.freeze({
+                    name: cachedConfig.dropZone,
+                    accepts,
+                    element,
+                    priority: parseInt(cachedConfig.priority || '0', 10),
+                    sort: cachedConfig.sort || false
+                });
+            }
+        }
+
+        // Fallback to polymorphic notation parsing (legacy standalone mode)
+        // Use polymorphic parser from genx-common (supports Verbose, Colon, JSON, CSS Class)
+        const parsed = window.genxCommon
+            ? window.genxCommon.notation.parseNotation(element, 'dx')
+            : {};  // Fallback if genx-common not loaded
+
+        if (!parsed.dropZone) {
             return null;
         }
 
-        const acceptsAttr = element.getAttribute('dx-accepts');
-        const accepts = acceptsAttr ? acceptsAttr.split(',').map(s => s.trim()) : ['*'];
+        const acceptsAttr = parsed.accepts;
+        const accepts = acceptsAttr ?
+            (typeof acceptsAttr === 'string' ? acceptsAttr.split(',').map(s => s.trim()) : acceptsAttr) :
+            ['*'];
 
         return Object.freeze({
-            name: zoneName,
+            name: parsed.dropZone,
             accepts,
             element,
-            priority: parseInt(element.getAttribute('dx-priority') || '0', 10),
-            sort: element.hasAttribute('dx-sort')
+            priority: parseInt(parsed.priority || '0', 10),
+            sort: parsed.sort || false
         });
     };
 
