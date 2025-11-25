@@ -292,26 +292,63 @@
    * @returns {Object} Configuration object
    */
     const getElementConfig = (element, baseAttr) => {
-        const elementConfig = {};
+        // Try to get config from bootloader cache first (if using genX bootloader)
+        if (window.genx && window.genx.getConfig) {
+            const cachedConfig = window.genx.getConfig(element);
+            if (cachedConfig) {
+                // Extract configuration relevant to this base attribute
+                // For nx-nav, cache might have: { nav: "basic", navActiveClass: "active", navExact: true }
+                const result = {};
 
-        // Get base attribute value
-        const baseValue = parseAttribute(element, baseAttr);
-        if (baseValue !== null) {
-            elementConfig.value = baseValue;
-        }
+                // Map cache keys to nav config
+                // For baseAttr "nx-nav", look for keys starting with "nav"
+                const prefix = baseAttr.replace('nx-', '');
 
-        // Get related attributes (e.g., nx-nav-active-class)
-        const attrs = element.attributes;
-        const prefix = baseAttr + '-';
+                // Check if we have the base value
+                if (cachedConfig[prefix] !== undefined) {
+                    result.value = cachedConfig[prefix];
+                }
 
-        for (let i = 0; i < attrs.length; i++) {
-            const attr = attrs[i];
-            if (attr.name.startsWith(prefix)) {
-                const key = attr.name.substring(prefix.length);
-                const kebabKey = key.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
-                elementConfig[kebabKey] = parseAttribute(element, attr.name);
+                // Get related attributes (camelCase from cache)
+                Object.keys(cachedConfig).forEach(key => {
+                    if (key.startsWith(prefix) && key !== prefix) {
+                        // Remove prefix and lowercase first char
+                        const configKey = key.charAt(prefix.length).toLowerCase() + key.slice(prefix.length + 1);
+                        result[configKey] = cachedConfig[key];
+                    }
+                });
+
+                if (Object.keys(result).length > 0) {
+                    return result;
+                }
             }
         }
+
+        // Fallback to polymorphic notation parsing (legacy standalone mode)
+        // Use polymorphic parser from genx-common (supports Verbose, Colon, JSON, CSS Class)
+        const parsed = window.genxCommon
+            ? window.genxCommon.notation.parseNotation(element, 'nx')
+            : {};  // Fallback if genx-common not loaded
+
+        const elementConfig = {};
+
+        // Extract base attribute name (e.g., 'nx-nav' -> 'nav')
+        const baseName = baseAttr.replace('nx-', '');
+
+        // Get base attribute value (e.g., parsed.nav -> elementConfig.value)
+        if (parsed[baseName] !== undefined) {
+            elementConfig.value = parsed[baseName];
+        }
+
+        // Get related attributes (e.g., parsed.navActiveClass -> elementConfig.activeClass)
+        // Look for keys that start with baseName in camelCase
+        Object.keys(parsed).forEach(key => {
+            if (key !== baseName && key.startsWith(baseName)) {
+                // Extract the sub-key (e.g., 'navActiveClass' -> 'activeClass')
+                const subKey = key.charAt(baseName.length).toLowerCase() + key.slice(baseName.length + 1);
+                elementConfig[subKey] = parsed[key];
+            }
+        });
 
         return elementConfig;
     };
