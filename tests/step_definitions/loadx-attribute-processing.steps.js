@@ -41,13 +41,13 @@ let processedResult;
 let parseError;
 
 // Background
-Given('loadX is initialized with default configuration', function() {
+Given('in loadx-attribute-processing, loadX is initialized with default configuration', function() {
     createDOM();
     currentConfig = loadX.initLoadX(fixtures.defaultConfig);
 });
 
 // HTML attribute syntax
-Given('an element with lx-strategy={string}', function(strategy) {
+Given('in loadx-attribute-processing, an element with lx-strategy={string}', function(strategy) {
     const html = `<div lx-strategy="${strategy}">Loading...</div>`;
     createDOM(html);
     currentElement = document.querySelector('[lx-strategy]');
@@ -55,7 +55,7 @@ Given('an element with lx-strategy={string}', function(strategy) {
 });
 
 // CSS class syntax
-Given('an element with class={string}', function(className) {
+Given('in loadx-attribute-processing, an element with class={string}', function(className) {
     const html = `<div class="${className}">Content</div>`;
     createDOM(html);
     currentElement = document.querySelector('div');

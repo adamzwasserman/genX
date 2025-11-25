@@ -28,7 +28,7 @@ After(async function() {
     }
 });
 
-Given('an element with lx-strategy={string}', function(strategy) {
+Given('in loadx-aria-cleanup, an element with lx-strategy={string}', function(strategy) {
     this.element = createLoadingElement(strategy);
 });
 

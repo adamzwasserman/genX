@@ -104,7 +104,7 @@ Then('the error should mention {string}', async function(expectedText) {
     );
 });
 
-Then('no errors should occur', async function() {
+Then('in loadx-deprecation-warnings, no errors should occur', async function() {
     assert.strictEqual(
         this.enhanceError,
         null,

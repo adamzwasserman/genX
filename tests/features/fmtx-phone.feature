@@ -146,7 +146,7 @@ Feature: FormatX Phone Number Formatting
   # Performance test with multiple phone numbers
   Scenario: Format 100 phone numbers efficiently
     Given 100 elements with fx-format="phone" fx-phone-format="us"
-    When all elements are processed
+    When all fmtX elements are processed
     Then the operation should complete in less than 50ms
 
   # MutationObserver support
@@ -170,7 +170,7 @@ Feature: FormatX Phone Number Formatting
         <span id="phone4" fx-format="phone" fx-phone-format="intl" fx-raw="5551234567"></span>
       </div>
       """
-    When all elements are processed
+    When all fmtX elements are processed
     Then element "#phone1" should display "(555) 123-4567"
     And element "#phone2" should display "555-123-4567"
     And element "#phone3" should display "555.123.4567"

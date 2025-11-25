@@ -60,7 +60,7 @@ Feature: Base Module Safety Requirements
     Given the "<module>" module is loaded
     And the test environment is clean
     And 1000 elements with "<module>" attributes
-    When all elements are processed
+    When all <module> elements are processed
     Then the operation should complete in less than 100ms
     And memory usage should not increase by more than 5MB
 
@@ -253,7 +253,7 @@ Feature: Base Module Safety Requirements
     Given the "<module>" module is loaded
     And the test environment is clean
     And 5 elements with "<module>" attributes
-    When all elements are processed concurrently
+    When all <module> elements are processed concurrently
     Then no race conditions should occur
     And all elements should be correctly processed
     And the module state should remain consistent

@@ -125,7 +125,7 @@ Given('a filter input', function() {
     return 'pending';
 });
 
-When('the user types {string}', async function(text) {
+When('in tableX, the user types {string}', async function(text) {
     return 'pending';
 });
 
@@ -377,7 +377,7 @@ Given('reactive tableData array', function() {
     return 'pending';
 });
 
-When('an item is added to tableData', async function() {
+When('in tableX, an item is added to tableData', async function() {
     return 'pending';
 });
 

@@ -211,7 +211,7 @@ Then('a drop indicator should be visible', async function() {
     assert.strictEqual(hasHighlight, true, 'Drop indicator should be visible');
 });
 
-Then('a {string} event should be emitted', async function(eventName) {
+Then('in dragX, a {string} event should be emitted', async function(eventName) {
     // We'll need to set up event listeners before the action
     // For now, we verify the state changed appropriately
     const state = await this.page.evaluate(() => window.DragX.getState());
@@ -457,7 +457,7 @@ When('drag starts', async function() {
     await this.step('the user starts dragging the element');
 });
 
-Then('the element should have class {string}', async function(className) {
+Then('in dragX, the element should have class {string}', async function(className) {
     const hasClass = await this.page.evaluate((cls) => {
         const element = document.getElementById('draggable');
         return element.classList.contains(cls);
@@ -533,17 +533,6 @@ Then('hover detection should complete in less than 1ms', async function() {
 // ============================================================================
 // ERROR HANDLING
 // ============================================================================
-
-Given('an element with dx-draggable={string}', async function(type) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="${type}" style="width: 100px; height: 100px; background: blue;">
-                Test
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
-});
 
 When('the module initializes', async function() {
     // Already initialized

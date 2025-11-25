@@ -33,7 +33,7 @@ Given('the reactive data object has {word}.{word}={string}', async function(obj,
     }, {o: obj, p: prop, v: value});
 });
 
-Given('the reactive data object has {word}.{word}={word}', async function(obj, prop, value) {
+Given('the reactive data object has {word}.{word}=value {word}', async function(obj, prop, value) {
     const parsedValue = value === 'true' ? true : value === 'false' ? false : value;
     await this.page.evaluate(({o, p, v}) => {
         if (!window._testData) window._testData = {};
@@ -189,7 +189,7 @@ Then('the data object {word}.{word} should be {string}', async function(obj, pro
     expect(actual).toBe(expected);
 });
 
-Then('the data object {word}.{word} should be {word}', async function(obj, prop, expected) {
+Then('the data object {word}.{word} should be value {word}', async function(obj, prop, expected) {
     const expectedValue = expected === 'true' ? true : expected === 'false' ? false : expected;
     const actual = await this.page.evaluate(({o, p}) => {
         return window._testData[o][p];
@@ -243,7 +243,7 @@ When('the data object {word}.{word} changes to {string}', async function(obj, pr
     }, {o: obj, p: prop, v: newValue});
 });
 
-When('the data object {word}.{word} changes to {word}', async function(obj, prop, newValue) {
+When('the data object {word}.{word} changes to value {word}', async function(obj, prop, newValue) {
     const parsedValue = newValue === 'true' ? true : newValue === 'false' ? false : newValue;
     await this.page.evaluate(({o, p, v}) => {
         window._testData[o][p] = v;
@@ -256,7 +256,7 @@ When('the data object {word} changes to {string}', async function(key, newValue)
     }, {k: key, v: newValue});
 });
 
-When('the data object {word} changes to {int}', async function(key, newValue) {
+When('the data object {word} changes to number {int}', async function(key, newValue) {
     await this.page.evaluate(({k, v}) => {
         window._testData[k] = v;
     }, {k: key, v: newValue});

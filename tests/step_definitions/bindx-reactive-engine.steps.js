@@ -244,7 +244,7 @@ Then('the average time per read should be less than {float} milliseconds', funct
     );
 });
 
-Then('the total time should be less than {int} milliseconds', function(maxMs) {
+Then('in bindx-reactive-engine, the total time should be less than {int} milliseconds', function(maxMs) {
     assert.ok(
         performanceMetrics.total < maxMs,
         `Total time ${performanceMetrics.total.toFixed(2)}ms exceeds ${maxMs}ms`

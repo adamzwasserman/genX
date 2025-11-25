@@ -57,7 +57,7 @@ Given('a nav with nx-nav={string} nx-active-class={string}', async function(navN
     this.element = await this.page.$('#main-nav');
 });
 
-Given('the current URL is {string}', async function(url) {
+Given('in navX, the current URL is {string}', async function(url) {
     await this.page.goto(`http://localhost${url}`);
 });
 
@@ -360,7 +360,7 @@ Then('the URL should update to {string}', async function(url) { return 'pending'
 Then('history should be updated', function() { return 'pending'; });
 Given('tabs with deep linking enabled', function() { return 'pending'; });
 Given('the URL is {string}', async function(url) { return 'pending'; });
-When('the page loads', async function() { return 'pending'; });
+When('in navX, the page loads', async function() { return 'pending'; });
 Then('the {string} tab should be active', async function(tabName) { return 'pending'; });
 Given('a link with confirmation', function() { return 'pending'; });
 When('the user cancels the dialog', async function() { return 'pending'; });

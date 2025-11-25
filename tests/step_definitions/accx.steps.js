@@ -203,7 +203,7 @@ Then('it should display {string}', async function(expected) {
     assert.ok(counterText.includes(expected) || counterText === expected);
 });
 
-When('the user types {string}', async function(text) {
+When('in accX, the user types {string}', async function(text) {
     await this.page.locator('#test').fill(text);
 });
 
@@ -241,7 +241,7 @@ Given('a link href={string}', async function(href) {
     // Already set in previous step
 });
 
-Given('the current URL is {string}', async function(url) {
+Given('in accX, the current URL is {string}', async function(url) {
     await this.page.goto(`about:blank${url}`);
 });
 
@@ -363,7 +363,7 @@ Given('{int} elements with various ax- attributes', async function(count) {
     await this.page.addScriptTag({ path: './src/accx.js' });
 });
 
-When('all elements are processed', async function() {
+When('all accX elements are processed', async function() {
     this.startTime = Date.now();
     await this.page.evaluate(() => {
         if (window.accessX && window.accessX.init) {

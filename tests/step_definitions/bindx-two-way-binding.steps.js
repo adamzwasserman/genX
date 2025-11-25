@@ -139,7 +139,7 @@ Then('after {int} milliseconds the data property {string} should be {string}',
 
 // Checkbox Binding
 
-Given('I have a reactive data object with property {string} set to {word}',
+Given('I have a reactive data object with property {string} set to boolean {word}',
     async function(prop, value) {
     const boolValue = value === 'true';
     await this.page.evaluate(({p, v}) => {
@@ -194,7 +194,7 @@ When('I check the checkbox', async function() {
     await this.page.evaluate(() => new Promise(resolve => setTimeout(resolve, 50)));
 });
 
-Then('the data property {string} should be {word}', async function(prop, value) {
+Then('the data property {string} should be boolean {word}', async function(prop, value) {
     const expected = value === 'true';
     const actual = await this.page.evaluate((p) => {
         return window.bindX.getNestedProperty(window.testData, p);
@@ -282,7 +282,7 @@ When('I select the option {string}', async function(value) {
 
 // Type Coercion
 
-Given('I have a reactive data object with property {string} set to {int}',
+Given('I have a reactive data object with property {string} set to number {int}',
     async function(prop, value) {
     await this.page.evaluate(({p, v}) => {
         window.testData = window.bindX.reactive({ [p]: v });
@@ -367,7 +367,7 @@ Then('all data properties should update correctly', async function() {
     assert.ok(allCorrect, 'All data properties should be updated correctly');
 });
 
-Then('the total time should be less than {int} milliseconds', async function(maxMs) {
+Then('in bindx-two-way-binding, the total time should be less than {int} milliseconds', async function(maxMs) {
     const endTime = await this.page.evaluate(() => performance.now());
     const duration = endTime - this.perfStart;
 

@@ -263,7 +263,7 @@ Feature: FormatX (fmtX) - Text Formatting Module
   # Performance
   Scenario: Format 1000 elements under 10ms
     Given 1000 elements with fx-format="currency"
-    When all elements are processed
+    When all fmtX elements are processed
     Then the operation should complete in less than 10ms
 
   # Unformat functionality

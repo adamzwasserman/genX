@@ -1,0 +1,1038 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - button "Toggle dark mode" [ref=e2] [cursor=pointer]: 🌙
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - 'heading "genX: front-end changes for humans" [level=1] [ref=e5]'
+      - generic [ref=e6]:
+        - paragraph [ref=e7]: Business wants percentages shown with 2 decimals instead of 3? With traditional approaches, you're modifying database schemas, backend APIs, and frontend code - all fragile, all breaking things. Over and over again.
+        - paragraph [ref=e8]:
+          - text: "genx.software keeps display logic where it belongs: in the display layer. Your database stores raw numbers. Your backend passes them through. Your HTML template handles formatting (or any other purely front-end concern) with attributes like"
+          - code [ref=e9]: data-fmtx="decimal:2"
+          - text: ","
+          - code [ref=e10]: "data-accx=\"aria-label:{{statusText}} skip-if-empty\""
+          - text: ","
+          - code [ref=e11]: data-bindx="value:user.email validate:email"
+          - text: .
+        - paragraph [ref=e12]: One attribute change in your HTML template; the most robust part of your stack. No migrations, no backend deploys, no breakage. Just a few k of JavaScript reading your declarative intent and executing it at lightning speed.
+        - paragraph [ref=e13]:
+          - text: Fully
+          - link "HATEOAS" [ref=e14] [cursor=pointer]:
+            - /url: https://hypermedia.systems
+          - text: /
+          - link "DATAOS" [ref=e15] [cursor=pointer]:
+            - /url: https://dataos.software
+          - text: compliant.
+    - navigation [ref=e16]:
+      - list [ref=e17]:
+        - listitem [ref=e18]:
+          - link "fmtX" [ref=e19] [cursor=pointer]:
+            - /url: "#fmtx"
+        - listitem [ref=e20]:
+          - link "accX" [ref=e21] [cursor=pointer]:
+            - /url: "#accx"
+        - listitem [ref=e22]:
+          - link "bindX" [ref=e23] [cursor=pointer]:
+            - /url: "#bindx"
+        - listitem [ref=e24]:
+          - link "dragX" [ref=e25] [cursor=pointer]:
+            - /url: "#dragx"
+        - listitem [ref=e26]:
+          - link "loadX" [ref=e27] [cursor=pointer]:
+            - /url: "#loadx"
+        - listitem [ref=e28]:
+          - link "navX" [ref=e29] [cursor=pointer]:
+            - /url: "#navx"
+        - listitem [ref=e30]:
+          - link "tableX" [ref=e31] [cursor=pointer]:
+            - /url: "#tablex"
+    - generic [ref=e32]:
+      - heading "1. Polymorphic Notation - Four Ways, One Result ▼" [level=2] [ref=e33] [cursor=pointer]
+      - generic [ref=e34]:
+        - paragraph [ref=e35]: genX supports 4 notation styles that compile to identical transformations. Choose your preferred style.
+        - generic [ref=e36]:
+          - button "fmtX" [ref=e37] [cursor=pointer]
+          - button "bindX" [ref=e38] [cursor=pointer]
+          - button "accX" [ref=e39] [cursor=pointer]
+          - button "loadX" [ref=e40] [cursor=pointer]
+          - button "navX" [ref=e41] [cursor=pointer]
+          - button "dragX" [ref=e42] [cursor=pointer]
+        - generic [ref=e43]:
+          - heading "Currency Formatting ($1,234.56)" [level=3] [ref=e44]
+          - generic [ref=e45]:
+            - generic [ref=e46]:
+              - heading "1. Verbose (Beginner)" [level=5] [ref=e47]
+              - paragraph [ref=e48]: Explicit attributes
+              - generic [ref=e49]:
+                - generic [ref=e50]:
+                  - generic [ref=e51]: <span fx-format="currency" fx-currency="USD" fx-decimals="2"> 1234.56 </span>
+                  - button "Copy" [ref=e52] [cursor=pointer]
+                - button "Copy" [ref=e53] [cursor=pointer]
+            - generic [ref=e54]:
+              - heading "2. Compact (Expert)" [level=5] [ref=e55]
+              - paragraph [ref=e56]: Colon syntax
+              - generic [ref=e57]:
+                - generic [ref=e58]:
+                  - generic [ref=e59]: <span fx-format="currency:USD:2"> 1234.56 </span>
+                  - button "Copy" [ref=e60] [cursor=pointer]
+                - button "Copy" [ref=e61] [cursor=pointer]
+            - generic [ref=e62]:
+              - heading "3. JSON (Power User)" [level=5] [ref=e63]
+              - paragraph [ref=e64]: JSON configuration
+              - generic [ref=e65]:
+                - generic [ref=e66]:
+                  - generic [ref=e67]: "<span fx-opts='{ \"format\":\"currency\", \"currency\":\"USD\", \"decimals\":2 }'>1234.56</span>"
+                  - button "Copy" [ref=e68] [cursor=pointer]
+                - button "Copy" [ref=e69] [cursor=pointer]
+            - generic [ref=e70]:
+              - heading "4. CSS Class (Designer)" [level=5] [ref=e71]
+              - paragraph [ref=e72]: Class-based config
+              - generic [ref=e73]:
+                - generic [ref=e74]:
+                  - generic [ref=e75]: <span class="fmt-currency-USD-2"> 1234.56 </span>
+                  - button "Copy" [ref=e76] [cursor=pointer]
+                - button "Copy" [ref=e77] [cursor=pointer]
+        - generic [ref=e78]:
+          - heading "Live Interactive Demo - All Four Notations Working Together" [level=3] [ref=e79]
+          - paragraph [ref=e80]: "Type in any of the inputs below to see how all four notation styles produce identical reactive behavior:"
+          - generic [ref=e81]:
+            - generic [ref=e82]:
+              - heading "1. Verbose (Beginner)" [level=5] [ref=e83]
+              - paragraph [ref=e84]: Explicit attributes - most readable
+              - textbox "Type to search..." [ref=e85]: undefined
+              - strong [ref=e87]: "Value:"
+              - generic [ref=e88]:
+                - generic [ref=e89]: <input bx-model="polyDemo1" bx-debounce="500">
+                - button "Copy" [ref=e90] [cursor=pointer]
+            - generic [ref=e91]:
+              - heading "2. Compact (Expert)" [level=5] [ref=e92]
+              - paragraph [ref=e93]: Colon syntax - compact
+              - textbox "Type to search..." [ref=e94]: undefined
+              - strong [ref=e96]: "Value:"
+              - generic [ref=e97]:
+                - generic [ref=e98]: <input bx-model="polyDemo2:500">
+                - button "Copy" [ref=e99] [cursor=pointer]
+            - generic [ref=e100]:
+              - heading "3. JSON (Power User)" [level=5] [ref=e101]
+              - paragraph [ref=e102]: JSON configuration - flexible
+              - textbox "Type to search..." [ref=e103]: undefined
+              - strong [ref=e105]: "Value:"
+              - generic [ref=e106]:
+                - generic [ref=e107]: "<input bx-model=\"polyDemo3\" bx-opts='{\"debounce\":500}'>"
+                - button "Copy" [ref=e108] [cursor=pointer]
+          - generic [ref=e109]:
+            - strong [ref=e110]: "💡 All three notations produce identical behavior:"
+            - list [ref=e111]:
+              - listitem [ref=e112]: 500ms debounce delay after typing stops
+              - listitem [ref=e113]: Two-way reactive data binding
+              - listitem [ref=e114]: Automatic DOM synchronization
+              - listitem [ref=e115]: Same performance characteristics
+          - generic [ref=e116]:
+            - heading "Syntax Precedence (highest to lowest):" [level=5] [ref=e117]
+            - list [ref=e118]:
+              - listitem [ref=e119]:
+                - code [ref=e120]: bx-debounce
+                - text: attribute (explicit)
+              - listitem [ref=e121]:
+                - code [ref=e122]: bx-opts
+                - text: JSON configuration
+              - listitem [ref=e123]:
+                - code [ref=e124]: bx-model="field:500"
+                - text: colon syntax
+        - generic [ref=e125]:
+          - strong [ref=e126]: 💡 All four notation styles produce identical behavior
+          - paragraph [ref=e127]: Choose the style that best fits your workflow. genX supports all notations simultaneously in the same project.
+    - generic [ref=e128]:
+      - heading "⚡ Live Performance Metrics ▼" [level=2] [ref=e129] [cursor=pointer]
+      - generic [ref=e130]:
+        - paragraph [ref=e131]:
+          - text: Real-time Web Vitals demonstrating genX's
+          - strong [ref=e132]: <16ms (60 FPS)
+          - text: performance target
+        - generic [ref=e133]:
+          - generic [ref=e134]:
+            - generic [ref=e135]: Performance Score
+            - generic [ref=e136]: "95"
+            - generic [ref=e137]: "Target: >90"
+          - generic [ref=e138]:
+            - generic [ref=e139]: FCP
+            - generic [ref=e140]: 0.28s
+            - generic [ref=e141]: "Target: <1.8s"
+          - generic [ref=e142]:
+            - generic [ref=e143]: LCP
+            - generic [ref=e144]: 0.28s
+            - generic [ref=e145]: "Target: <2.5s"
+          - generic [ref=e146]:
+            - generic [ref=e147]: TBT
+            - generic [ref=e148]: 0ms
+            - generic [ref=e149]: "Target: <200ms"
+          - generic [ref=e150]:
+            - generic [ref=e151]: CLS
+            - generic [ref=e152]: "0.007"
+            - generic [ref=e153]: "Target: <0.1"
+          - generic [ref=e154]:
+            - generic [ref=e155]: Frame Time
+            - generic [ref=e156]: 16.65ms
+            - generic [ref=e157]: "Target: <16ms (60 FPS)"
+        - generic [ref=e158]:
+          - strong [ref=e159]: "Note:"
+          - text: Metrics update in real-time using the browser's Performance Observer API. genX modules are optimized to stay under 16ms per operation to maintain 60 FPS.
+    - generic [ref=e160]:
+      - heading "fmtX - Number & Date Formatting ▼" [level=2] [ref=e161] [cursor=pointer]
+      - generic [ref=e162]:
+        - paragraph [ref=e163]: Declarative formatting for numbers, currency, dates, and more
+        - generic [ref=e164]:
+          - generic [ref=e165]:
+            - heading "0. SmartX - Auto-Detection & Normalization ✨" [level=4] [ref=e166]
+            - paragraph [ref=e167]: Automatically detects messy, real-world data and converts it into conventional formats
+            - generic [ref=e168]:
+              - generic [ref=e169]:
+                - generic [ref=e170]:
+                  - strong [ref=e171]: "Input:"
+                  - code [ref=e172]: 555%555%1212
+                  - emphasis [ref=e173]: (unconventional separators)
+                  - strong [ref=e174]: "Detected:"
+                  - text: phone (85% confidence)
+                  - strong [ref=e175]: "Output:"
+                  - text: (555) 555-1212
+                - generic [ref=e176]:
+                  - strong [ref=e177]: "Input:"
+                  - code [ref=e178]: USD 1,234.56 dollars
+                  - emphasis [ref=e179]: (mixed format with text)
+                  - strong [ref=e180]: "Detected:"
+                  - text: currency (95% confidence)
+                  - strong [ref=e181]: "Output:"
+                  - text: $1,234.56
+                - generic [ref=e182]:
+                  - strong [ref=e183]: "Input:"
+                  - code [ref=e184]: 15-Mar-2024
+                  - emphasis [ref=e185]: (European date format)
+                  - strong [ref=e186]: "Detected:"
+                  - text: date (98% confidence)
+                  - strong [ref=e187]: "Output:"
+                  - text: Mar 14, 2024
+                - generic [ref=e188]:
+                  - strong [ref=e189]: "Input:"
+                  - code [ref=e190]: 99.5 percent
+                  - emphasis [ref=e191]: (written out)
+                  - strong [ref=e192]: "Detected:"
+                  - text: percentage (100% confidence)
+                  - strong [ref=e193]: "Output:"
+                  - text: 99.5%
+                - generic [ref=e194]:
+                  - strong [ref=e195]: "Input:"
+                  - code [ref=e196]: +1.555.123.4567
+                  - emphasis [ref=e197]: (dots instead of dashes)
+                  - strong [ref=e198]: "Detected:"
+                  - text: phone (85% confidence)
+                  - strong [ref=e199]: "Output:"
+                  - text: (555) 123-4567
+                - generic [ref=e200]:
+                  - strong [ref=e201]: "Input:"
+                  - code [ref=e202]: € 1.234,56
+                  - emphasis [ref=e203]: (European number format)
+                  - strong [ref=e204]: "Detected:"
+                  - text: currency (95% confidence)
+                  - strong [ref=e205]: "Output:"
+                  - text: €1,234.56
+              - strong [ref=e206]: "genX Attributes:"
+              - generic [ref=e207]:
+                - generic [ref=e208]: <span fx-format="smart" fx-raw="$1,234.56">$1,234.56</span>
+                - button "Copy" [ref=e209] [cursor=pointer]
+              - generic [ref=e210]:
+                - strong [ref=e211]: "💡 How it works:"
+                - paragraph [ref=e212]: SmartX uses pattern matching with confidence scoring to detect data types. It automatically delegates to the appropriate formatter (currency, phone, date, etc.) with ~0.5-1ms execution time (~0.01ms with caching).
+          - generic [ref=e213]:
+            - heading "1. Currency Formatting with Input Types" [level=4] [ref=e214]
+            - paragraph [ref=e215]: Format numbers as currency from different input types
+            - generic [ref=e216]:
+              - generic [ref=e217]:
+                - text: "Input Type:"
+                - combobox "Input Type:" [ref=e218]:
+                  - option "Number (1234.56)" [selected]
+                  - option "Cents (123456 → $1,234.56)"
+                  - option "String (\"1234.56\")"
+                  - option "Integer (1234)"
+                  - option "Smart (Auto-detect) ✨"
+              - generic [ref=e219]:
+                - strong [ref=e220]: "Input:"
+                - generic [ref=e221]: "Original: 1234.56"
+                - strong [ref=e222]: "Output:"
+                - generic [ref=e223]: $1,234.56
+              - strong [ref=e224]: "genX Attributes:"
+              - generic [ref=e225]:
+                - generic [ref=e226]: <span fx-format="currency" fx-type="number" fx-currency="USD">
+                - button "Copy" [ref=e227] [cursor=pointer]
+          - generic [ref=e228]:
+            - heading "2. Percentage with Input Types" [level=4] [ref=e229]
+            - paragraph [ref=e230]: Display percentages from decimal (0-1) or percentage (0-100) values
+            - generic [ref=e231]:
+              - generic [ref=e232]:
+                - text: "Input Type:"
+                - combobox "Input Type:" [ref=e233]:
+                  - option "Decimal (0.1234 → 12.34%)" [selected]
+                  - option "Percentage (12.34 → 12.34%)"
+                  - option "String (\"0.5\")"
+              - generic [ref=e234]:
+                - text: "Decimals:"
+                - combobox "Decimals:" [ref=e235]:
+                  - option "0 (12%)" [selected]
+                  - option "1 (12.3%)"
+                  - option "2 (12.34%)"
+                  - option "3 (12.346%)"
+              - generic [ref=e236]:
+                - strong [ref=e237]: "Input:"
+                - generic [ref=e238]: "Original: 0.1234"
+                - strong [ref=e239]: "Output:"
+                - generic [ref=e240]: 12%
+              - strong [ref=e241]: "genX Attributes:"
+              - generic [ref=e242]:
+                - generic [ref=e243]: <span fx-format="percent" fx-type="decimal" fx-decimals="0">
+                - button "Copy" [ref=e244] [cursor=pointer]
+          - generic [ref=e245]:
+            - heading "3. Date Formatting with Input Types" [level=4] [ref=e246]
+            - paragraph [ref=e247]: Format dates from various input types (ISO, Unix, milliseconds)
+            - generic [ref=e248]:
+              - generic [ref=e249]:
+                - text: "Input Type:"
+                - combobox "Input Type:" [ref=e250]:
+                  - option "ISO String (2025-11-10)" [selected]
+                  - option "Unix Timestamp / Epoch (1762732800)"
+                  - option "Milliseconds (1762732800000)"
+                  - option "JavaScript Date String"
+              - generic [ref=e251]:
+                - text: "Output Format:"
+                - combobox "Output Format:" [ref=e252]:
+                  - option "Short"
+                  - option "Medium"
+                  - option "Long" [selected]
+                  - option "Full"
+                  - option "ISO"
+              - generic [ref=e253]:
+                - strong [ref=e254]: "Input:"
+                - generic [ref=e255]: "Original: 2025-11-10"
+                - strong [ref=e256]: "Output:"
+                - time [ref=e257]: November 9, 2025
+              - strong [ref=e258]: "genX Attributes:"
+              - generic [ref=e259]:
+                - generic [ref=e260]: <time fx-format="date" fx-type="iso" fx-date-format="long">
+                - button "Copy" [ref=e261] [cursor=pointer]
+          - generic [ref=e262]:
+            - heading "4. Relative Time" [level=4] [ref=e263]
+            - paragraph [ref=e264]: Show time relative to now (input times are in UTC)
+            - generic [ref=e265]:
+              - generic [ref=e266]:
+                - text: "Input Type:"
+                - combobox "Input Type:" [ref=e267]:
+                  - option "ISO String (UTC)" [selected]
+                  - option "Unix Timestamp / Epoch"
+                  - option "Milliseconds"
+              - generic [ref=e268]:
+                - text: "Time:"
+                - combobox "Time:" [ref=e269]:
+                  - option "1 hour ago"
+                  - option "1 day ago" [selected]
+                  - option "1 week ago"
+                  - option "1 month ago"
+                  - option "Right now"
+                  - option "1 hour from now"
+                  - option "1 day from now"
+              - generic [ref=e270]:
+                - strong [ref=e271]: "Input (UTC):"
+                - generic [ref=e272]: "Original: 2025-11-24T04:09:37.727Z"
+                - strong [ref=e273]: "Output:"
+                - time [ref=e274]: Sun Nov 23 2025 22:09:37 GMT-0600 (Central Standard Time)
+              - strong [ref=e275]: "genX Attributes:"
+              - generic [ref=e276]:
+                - generic [ref=e277]: <time fx-format="relative" fx-type="iso">
+                - button "Copy" [ref=e278] [cursor=pointer]
+          - generic [ref=e279]:
+            - heading "5. File Size" [level=4] [ref=e280]
+            - paragraph [ref=e281]: Human-readable file sizes (automatic unit switching)
+            - generic [ref=e282]:
+              - generic [ref=e283]:
+                - text: "Size:"
+                - combobox "Size:" [ref=e284]:
+                  - option "512 bytes (displays as B)"
+                  - option "2,048 bytes (displays as KB/KiB)"
+                  - option "1,536,000 bytes (displays as MB/MiB)" [selected]
+                  - option "52,428,800 bytes (displays as MB/MiB)"
+                  - option "1,073,741,824 bytes (displays as GB/GiB)"
+                  - option "5,497,558,138,880 bytes (displays as TB/TiB)"
+              - generic [ref=e285]:
+                - text: "Mode:"
+                - combobox "Mode:" [ref=e286]:
+                  - option "Decimal (KB, MB, GB - base 1000)" [selected]
+                  - option "Binary (KiB, MiB, GiB - base 1024)"
+              - generic [ref=e287]:
+                - text: "Decimals:"
+                - combobox "Decimals:" [ref=e288]:
+                  - option "0"
+                  - option "1"
+                  - option "2" [selected]
+                  - option "3"
+              - generic [ref=e289]:
+                - strong [ref=e290]: "Input (bytes):"
+                - generic [ref=e291]: "Original: 1536000"
+                - strong [ref=e292]: "Output:"
+                - generic [ref=e293]: 1.54 MB
+              - strong [ref=e294]: "genX Attributes:"
+              - generic [ref=e295]:
+                - generic [ref=e296]: <span fx-format="filesize" fx-binary="false" fx-decimals="2">
+                - button "Copy" [ref=e297] [cursor=pointer]
+          - generic [ref=e298]:
+            - heading "6. Decimal Control" [level=4] [ref=e299]
+            - paragraph [ref=e300]: Control decimal precision
+            - generic [ref=e301]:
+              - generic [ref=e302]:
+                - text: "Decimals:"
+                - combobox "Decimals:" [ref=e303]:
+                  - option "0"
+                  - option "1"
+                  - option "2" [selected]
+                  - option "3"
+                  - option "4"
+                  - option "5"
+                  - option "6"
+                  - option "7"
+                  - option "8"
+              - generic [ref=e304]:
+                - strong [ref=e305]: "Input:"
+                - generic [ref=e306]: "Original: 3.14159265"
+                - strong [ref=e307]: "Output:"
+                - generic [ref=e308]: "3.14"
+              - strong [ref=e309]: "genX Attributes:"
+              - generic [ref=e310]:
+                - generic [ref=e311]: <span fx-format="number" fx-decimals="2">
+                - button "Copy" [ref=e312] [cursor=pointer]
+          - generic [ref=e313]:
+            - heading "7. Large Numbers" [level=4] [ref=e314]
+            - paragraph [ref=e315]: Format with thousands separators
+            - generic [ref=e316]:
+              - generic [ref=e317]: "Original: 1000000"
+              - generic [ref=e318]: 1,000,000.00
+              - strong [ref=e319]: "genX Attributes:"
+              - generic [ref=e320]:
+                - generic [ref=e321]: <span fx-format="number">
+                - button "Copy" [ref=e322] [cursor=pointer]
+          - generic [ref=e323]:
+            - heading "8. Compact Numbers" [level=4] [ref=e324]
+            - paragraph [ref=e325]: 1K, 1M, 1B notation
+            - generic [ref=e326]:
+              - generic [ref=e327]:
+                - text: "Number:"
+                - combobox "Number:" [ref=e328]:
+                  - option "1200"
+                  - option "1500000" [selected]
+                  - option "2500000"
+                  - option "5000000000"
+                  - option "7500000000000"
+              - generic [ref=e329]:
+                - strong [ref=e330]: "Input:"
+                - generic [ref=e331]: "Original: 1500000"
+                - strong [ref=e332]: "Output:"
+                - generic [ref=e333]: 1.5M
+              - strong [ref=e334]: "genX Attributes:"
+              - generic [ref=e335]:
+                - generic [ref=e336]: <span fx-format="compact">
+                - button "Copy" [ref=e337] [cursor=pointer]
+          - generic [ref=e338]:
+            - heading "9. Phone Numbers" [level=4] [ref=e339]
+            - paragraph [ref=e340]: Handles various input formats, outputs to US or international style
+            - generic [ref=e341]:
+              - generic [ref=e342]:
+                - text: "Input Format:"
+                - combobox "Input Format:" [ref=e343]:
+                  - option "Raw digits (5551234567)" [selected]
+                  - option "US formatted (555-123-4567)"
+                  - option "US with parens ((555) 123-4567)"
+                  - option "Dot separated (555.123.4567)"
+                  - 'option "US intl (+1 prefix: 14155551234)"'
+                  - option "UK number (+44 20 7946 0958)"
+                  - option "UK with spaces ( +44 20 7946 0958 )"
+              - generic [ref=e344]:
+                - text: "Output Format:"
+                - combobox "Output Format:" [ref=e345]:
+                  - 'option "US: (555) 123-4567" [selected]'
+                  - 'option "US Dash: 555-123-4567"'
+                  - 'option "US Dot: 555.123.4567"'
+                  - 'option "International: +1 555 123 4567"'
+              - generic [ref=e346]:
+                - strong [ref=e347]: "Input:"
+                - generic [ref=e348]: "Original: 5551234567"
+                - strong [ref=e349]: "Output:"
+                - generic [ref=e350]: (555) 123-4567
+              - strong [ref=e351]: "genX Attributes:"
+              - generic [ref=e352]:
+                - generic [ref=e353]: <span fx-format="phone" fx-phone-format="us">
+                - button "Copy" [ref=e354] [cursor=pointer]
+          - generic [ref=e355]:
+            - heading "10. Time Formatting" [level=4] [ref=e356]
+            - paragraph [ref=e357]: Format time values with various styles and locales
+            - generic [ref=e358]:
+              - generic [ref=e359]:
+                - text: "Input:"
+                - combobox "Input:" [ref=e360]:
+                  - option "14:30:00 (2:30 PM)" [selected]
+                  - option "09:15:00 (9:15 AM)"
+                  - option "00:00:00 (Midnight)"
+                  - option "12:00:00 (Noon)"
+                  - option "23:59:59 (11:59:59 PM)"
+              - generic [ref=e361]:
+                - text: "Format:"
+                - combobox "Format:" [ref=e362]:
+                  - option "Short (2:30 PM)" [selected]
+                  - option "Medium (2:30:00 PM)"
+                  - option "Long (2:30:00 PM GMT-6)"
+              - generic [ref=e363]:
+                - strong [ref=e364]: "Input:"
+                - time [ref=e365]: "Original: 14:30:00"
+                - strong [ref=e366]: "Output:"
+                - time [ref=e367]: 14:30:00
+              - strong [ref=e368]: "genX Attributes:"
+              - generic [ref=e369]:
+                - generic [ref=e370]: <time fx-format="time" fx-time-format="short">
+                - button "Copy" [ref=e371] [cursor=pointer]
+          - generic [ref=e372]:
+            - heading "11. Duration Formatting" [level=4] [ref=e373]
+            - paragraph [ref=e374]: Human-readable durations (converts seconds to hours, minutes, seconds)
+            - generic [ref=e375]:
+              - generic [ref=e376]:
+                - text: "Duration (seconds):"
+                - combobox "Duration (seconds):" [ref=e377]:
+                  - option "45 seconds"
+                  - option "90 seconds (1m 30s)"
+                  - option "3661 seconds (1h 1m 1s)" [selected]
+                  - option "7200 seconds (2 hours)"
+                  - option "86400 seconds (1 day)"
+                  - option "90061 seconds (1d 1h 1m 1s)"
+              - generic [ref=e378]:
+                - text: "Format Style:"
+                - combobox "Format Style:" [ref=e379]:
+                  - option "Short (1h 1m 1s)" [selected]
+                  - option "Medium (1 hr 1 min 1 sec)"
+                  - option "Long (1 hour 1 minute 1 second)"
+                  - option "Compact (1:01:01)"
+              - generic [ref=e380]:
+                - strong [ref=e381]: "Input (seconds):"
+                - generic [ref=e382]: "Original: 3661"
+                - strong [ref=e383]: "Output:"
+                - generic [ref=e384]: 01:01:01
+              - strong [ref=e385]: "genX Attributes:"
+              - generic [ref=e386]:
+                - generic [ref=e387]: <span fx-format="duration" fx-duration-format="short">
+                - button "Copy" [ref=e388] [cursor=pointer]
+    - generic [ref=e389]:
+      - heading "accX - Accessibility Enhancements ▼" [level=2] [ref=e390] [cursor=pointer]
+      - generic [ref=e391]:
+        - paragraph [ref=e392]: Automatic WCAG 2.1 AA compliance and accessibility features
+        - generic [ref=e393]:
+          - generic [ref=e394]:
+            - heading "1. Enhanced Buttons" [level=4] [ref=e395]
+            - paragraph [ref=e396]: Automatic ARIA attributes
+            - button "Save" [ref=e398] [cursor=pointer]
+          - generic [ref=e399]:
+            - heading "2. Form Accessibility" [level=4] [ref=e400]
+            - paragraph [ref=e401]: Auto-linked labels and inputs
+            - generic [ref=e402]:
+              - text: Email
+              - textbox "you@example.com" [ref=e403]
+          - generic [ref=e404]:
+            - heading "3. Skip Navigation" [level=4] [ref=e405]
+            - paragraph [ref=e406]: Keyboard-only skip links
+            - link "Skip to main content" [ref=e408] [cursor=pointer]:
+              - /url: "#main-content"
+          - generic [ref=e409]:
+            - heading "4. ARIA Landmarks" [level=4] [ref=e410]
+            - paragraph [ref=e411]: Automatic landmark roles
+            - generic [ref=e413]: Navigation content
+          - generic [ref=e414]:
+            - heading "5. Live Updates" [level=4] [ref=e415]
+            - paragraph [ref=e416]: Screen reader announcements
+            - generic [ref=e418]: "Status: Ready"
+          - generic [ref=e419]:
+            - heading "6. Focus Indicators" [level=4] [ref=e420]
+            - paragraph [ref=e421]: Enhanced focus visibility
+            - button "Focused Element" [ref=e423] [cursor=pointer]
+          - generic [ref=e424]:
+            - heading "7. Form Errors" [level=4] [ref=e425]
+            - paragraph [ref=e426]: Accessible error announcements
+            - generic [ref=e427]:
+              - textbox [ref=e428]
+              - alert [ref=e429]: This field is required
+          - generic [ref=e430]:
+            - heading "8. Accessible Tooltips" [level=4] [ref=e431]
+            - paragraph [ref=e432]: Screen reader friendly tooltips
+            - button "Help" [ref=e434] [cursor=pointer]
+          - generic [ref=e435]:
+            - heading "9. Modal Focus Trap" [level=4] [ref=e436]
+            - paragraph [ref=e437]: Accessible modal dialogs
+            - button "Open Modal" [ref=e439] [cursor=pointer]
+          - generic [ref=e440]:
+            - heading "10. Status Updates" [level=4] [ref=e441]
+            - paragraph [ref=e442]: Non-intrusive status messages
+            - status [ref=e444]: 5 items saved
+    - generic [ref=e445]:
+      - heading "bindX - Reactive Data Binding ▼" [level=2] [ref=e446] [cursor=pointer]
+      - generic [ref=e447]:
+        - paragraph [ref=e448]: Two-way data binding with automatic DOM updates
+        - generic [ref=e449]:
+          - generic [ref=e450]:
+            - heading "1. Two-Way Binding" [level=4] [ref=e451]
+            - paragraph [ref=e452]: Input automatically updates display
+            - generic [ref=e453]:
+              - generic [ref=e454]: "Original: Initial: (empty)"
+              - textbox "Enter your name" [ref=e455]: undefined
+              - paragraph [ref=e456]:
+                - text: Hello,
+                - text: "!"
+          - generic [ref=e457]:
+            - heading "2. Number Binding" [level=4] [ref=e458]
+            - paragraph [ref=e459]: Numeric input with live updates
+            - generic [ref=e460]:
+              - generic [ref=e461]: "Original: Initial: 1"
+              - spinbutton [ref=e462]
+              - paragraph [ref=e463]: "Quantity:"
+          - generic [ref=e464]:
+            - heading "3. Checkbox Binding" [level=4] [ref=e465]
+            - paragraph [ref=e466]: Boolean state binding
+            - generic [ref=e467]:
+              - generic [ref=e468]: "Original: Initial: unchecked (false)"
+              - checkbox "I agree" [ref=e469]
+              - text: I agree
+              - paragraph [ref=e470]: "Status:"
+          - generic [ref=e471]:
+            - heading "4. Select Binding" [level=4] [ref=e472]
+            - paragraph [ref=e473]: Dropdown selection binding
+            - generic [ref=e474]:
+              - generic [ref=e475]: "Original: Initial: Red"
+              - combobox [ref=e476]:
+                - option "Red"
+                - option "Blue"
+                - option "Green"
+              - paragraph [ref=e477]: "Selected:"
+          - generic [ref=e478]:
+            - heading "5. Radio Binding" [level=4] [ref=e479]
+            - paragraph [ref=e480]: Radio button group binding
+            - generic [ref=e481]:
+              - generic [ref=e482]: "Original: Initial: (none selected)"
+              - generic [ref=e483]:
+                - radio "Small" [ref=e484]
+                - text: Small
+              - generic [ref=e485]:
+                - radio "Medium" [ref=e486]
+                - text: Medium
+              - generic [ref=e487]:
+                - radio "Large" [ref=e488]
+                - text: Large
+              - paragraph [ref=e489]: "Size:"
+          - generic [ref=e490]:
+            - heading "6. Computed Properties" [level=4] [ref=e491]
+            - paragraph [ref=e492]: Auto-calculated values
+            - generic [ref=e493]:
+              - generic [ref=e494]: "Original: Initial: 10 × 2 = 20"
+              - spinbutton [ref=e495]
+              - spinbutton [ref=e496]
+              - paragraph [ref=e497]: "Total: $"
+          - generic [ref=e498]:
+            - heading "7. Form Binding" [level=4] [ref=e499]
+            - paragraph [ref=e500]: Multiple field binding
+            - generic [ref=e501]:
+              - generic [ref=e502]: "Original: Initial: (empty)"
+              - textbox "First" [ref=e503]: undefined
+              - textbox "Last" [ref=e504]: undefined
+              - paragraph [ref=e505]: "Full name:"
+          - generic [ref=e506]:
+            - heading "8. Textarea Binding" [level=4] [ref=e507]
+            - paragraph [ref=e508]: Multi-line text binding
+            - generic [ref=e509]:
+              - generic [ref=e510]: "Original: Initial: 0 characters"
+              - textbox "Bio" [ref=e511]: undefined
+              - paragraph [ref=e512]: "Characters:"
+          - generic [ref=e513]:
+            - heading "9. Conditional Binding" [level=4] [ref=e514]
+            - paragraph [ref=e515]: Show/hide based on value
+            - generic [ref=e516]:
+              - generic [ref=e517]: "Original: Initial: hidden"
+              - checkbox "Show details" [ref=e518]
+              - text: Show details
+              - paragraph [ref=e520]: Additional details shown
+          - generic [ref=e521]:
+            - heading "10. Live Validation" [level=4] [ref=e522]
+            - paragraph [ref=e523]: Instant feedback
+            - generic [ref=e524]:
+              - generic [ref=e525]: "Original: Initial: (empty)"
+              - textbox "Email" [ref=e526]: undefined
+              - paragraph
+          - generic [ref=e527]:
+            - heading "11. Form Validation & State Management" [level=4] [ref=e528]
+            - paragraph [ref=e529]: Complete form validation with real-time feedback, multiple validation rules, and form state tracking.
+            - generic [ref=e530]:
+              - generic [ref=e531]:
+                - generic [ref=e532]:
+                  - generic [ref=e533]: Email *
+                  - textbox "user@example.com" [ref=e534]: undefined
+                - generic [ref=e535]:
+                  - generic [ref=e536]: Username *
+                  - textbox "johndoe" [ref=e537]: undefined
+                - generic [ref=e538]:
+                  - generic [ref=e539]: Age *
+                  - spinbutton [ref=e540]
+                - generic [ref=e541]:
+                  - generic [ref=e542]: Website
+                  - textbox "https://example.com" [ref=e543]: undefined
+                - generic [ref=e545] [cursor=pointer]:
+                  - checkbox "I accept the terms and conditions *" [ref=e546]
+                  - generic [ref=e547]: I accept the terms and conditions *
+                - generic [ref=e548]:
+                  - heading "Form State:" [level=5] [ref=e549]
+                  - generic [ref=e550]:
+                    - strong [ref=e552]: "Pristine:"
+                    - strong [ref=e554]: "Dirty:"
+                    - strong [ref=e556]: "Valid:"
+                    - strong [ref=e558]: "Invalid:"
+                - generic [ref=e559]:
+                  - button "Submit" [ref=e560] [cursor=pointer]
+                  - button "Reset" [ref=e561] [cursor=pointer]
+              - generic [ref=e562]:
+                - heading "✨ Validation Features:" [level=5] [ref=e563]
+                - list [ref=e564]:
+                  - listitem [ref=e565]:
+                    - strong [ref=e566]: Real-time validation
+                    - text: "- Errors appear as you type"
+                  - listitem [ref=e567]:
+                    - strong [ref=e568]: 14 built-in rules
+                    - text: "- required, email, min/max, minLength/maxLength, pattern, url, number, integer, alpha, alphanumeric, phone"
+                  - listitem [ref=e569]:
+                    - strong [ref=e570]: Custom error messages
+                    - text: "- bx-error-* attributes"
+                  - listitem [ref=e571]:
+                    - strong [ref=e572]: Form state tracking
+                    - text: "- pristine/dirty, valid/invalid"
+                  - listitem [ref=e573]:
+                    - strong [ref=e574]: CSS classes
+                    - text: "- bx-error, bx-valid, bx-pristine, bx-dirty on fields and form"
+                  - listitem [ref=e575]:
+                    - strong [ref=e576]: Multiple rules per field
+                    - text: "- Space-separated validation rules"
+              - generic [ref=e577]:
+                - heading "Example Code:" [level=5] [ref=e578]
+                - generic [ref=e579]:
+                  - generic [ref=e580]: <form bx-form> <input bx-model="email" bx-validate="required email" bx-error-required="Email is required" bx-error-email="Invalid email"> <input bx-model="username" bx-validate="required minLength:3 alphanumeric"> <button type="submit">Submit</button> </form>
+                  - button "Copy" [ref=e581] [cursor=pointer]
+    - generic [ref=e582]:
+      - heading "dragX - Drag and Drop ▼" [level=2] [ref=e583] [cursor=pointer]
+      - generic [ref=e584]:
+        - paragraph [ref=e585]: Touch, mouse, and keyboard drag-and-drop with accessibility
+        - generic [ref=e586]:
+          - generic [ref=e587]:
+            - heading "1. Basic Drag & Drop" [level=4] [ref=e588]
+            - paragraph [ref=e589]: Simple draggable item
+            - generic [ref=e590]:
+              - generic [ref=e591]: "Original: State: Item in source position"
+              - generic [ref=e592]: Drag me!
+              - generic [ref=e593]: Drop here
+          - generic [ref=e594]:
+            - heading "2. Multiple Draggables" [level=4] [ref=e595]
+            - paragraph [ref=e596]: Drag multiple items
+            - generic [ref=e597]:
+              - generic [ref=e598]: "Original: State: 3 items in list"
+              - generic [ref=e599]: Item 1
+              - generic [ref=e600]: Item 2
+              - generic [ref=e601]: Item 3
+          - generic [ref=e602]:
+            - heading "3. Type-Based Drops" [level=4] [ref=e603]
+            - paragraph [ref=e604]: Accept specific types
+            - generic [ref=e605]:
+              - generic [ref=e606]: "Original: State: Zone accepts images only"
+              - generic [ref=e607]: Image
+              - generic [ref=e608]: Text
+              - generic [ref=e609]: Images Only
+          - generic [ref=e610]:
+            - heading "4. Keyboard Dragging" [level=4] [ref=e611]
+            - paragraph [ref=e612]: Space + Arrow keys
+            - generic [ref=e613]:
+              - generic [ref=e614]: Press Space, use arrows
+              - generic [ref=e615]: Drop target
+          - generic [ref=e616]:
+            - heading "5. Custom Ghost Image" [level=4] [ref=e617]
+            - paragraph [ref=e618]: Custom drag preview
+            - generic [ref=e620]: Custom preview
+          - generic [ref=e621]:
+            - heading "6. Axis Constraint" [level=4] [ref=e622]
+            - paragraph [ref=e623]: Horizontal-only drag
+            - generic [ref=e625]: ← Horizontal only →
+          - generic [ref=e626]:
+            - heading "7. Clone Mode" [level=4] [ref=e627]
+            - paragraph [ref=e628]: Leave original in place
+            - generic [ref=e629]:
+              - generic [ref=e630]: Drag to copy
+              - generic [ref=e631]: Drop copies here
+          - generic [ref=e632]:
+            - heading "8. Revert Animation" [level=4] [ref=e633]
+            - paragraph [ref=e634]: Return to start if invalid
+            - generic [ref=e635]:
+              - generic [ref=e636]: Try dropping outside
+              - generic [ref=e637]: Wrong type
+          - generic [ref=e638]:
+            - heading "9. Grid Snapping" [level=4] [ref=e639]
+            - paragraph [ref=e640]: Snap to 20px grid
+            - generic [ref=e642]: Snaps to grid
+          - generic [ref=e643]:
+            - heading "10. Drag Events" [level=4] [ref=e644]
+            - paragraph [ref=e645]: Track drag lifecycle
+            - generic [ref=e647]: Drag to track events
+    - generic [ref=e648]:
+      - heading "loadX - Loading States ▼" [level=2] [ref=e649] [cursor=pointer]
+      - generic [ref=e650]:
+        - paragraph [ref=e651]: Declarative loading indicators with zero layout shift
+        - generic [ref=e652]:
+          - generic [ref=e653]:
+            - heading "1. Spinner Loader" [level=4] [ref=e654]
+            - paragraph [ref=e655]: Circle spinner animation
+            - button "Load with Spinner" [ref=e657] [cursor=pointer]
+          - generic [ref=e659]:
+            - heading "2. Skeleton Screen" [level=4] [ref=e660]
+            - paragraph [ref=e661]: Content placeholder
+            - button "Load with Skeleton" [ref=e663] [cursor=pointer]
+          - generic [ref=e665]:
+            - heading "3. Progress Bar" [level=4] [ref=e666]
+            - paragraph [ref=e667]: Determinate progress
+            - button "Load with Progress" [ref=e669] [cursor=pointer]
+          - generic [ref=e671]:
+            - heading "4. Fade Transition" [level=4] [ref=e672]
+            - paragraph [ref=e673]: Smooth opacity fade
+            - generic [ref=e674]:
+              - button "Load with Fade" [ref=e675] [cursor=pointer]
+              - generic [ref=e676]: Content
+          - generic [ref=e677]:
+            - heading "5. Auto Strategy" [level=4] [ref=e678]
+            - paragraph [ref=e679]: Automatic strategy selection
+            - button "Auto Load" [ref=e681] [cursor=pointer]
+          - generic [ref=e683]:
+            - heading "6. Custom Duration" [level=4] [ref=e684]
+            - paragraph [ref=e685]: Control animation timing
+            - button "3 Second Load" [ref=e687] [cursor=pointer]
+          - generic [ref=e688]:
+            - heading "7. HTMX Loading" [level=4] [ref=e689]
+            - paragraph [ref=e690]: Automatic HTMX detection
+            - button "Load via HTMX" [ref=e692] [cursor=pointer]
+          - generic [ref=e694]:
+            - heading "8. Fetch API Loading" [level=4] [ref=e695]
+            - paragraph [ref=e696]: Auto-detect fetch calls
+            - button "Fetch Data" [ref=e698] [cursor=pointer]
+          - generic [ref=e699]:
+            - heading "9. Form Loading" [level=4] [ref=e700]
+            - paragraph [ref=e701]: Loading during submission
+            - generic [ref=e703]:
+              - textbox "Enter data" [ref=e704]
+              - button "Submit" [ref=e705] [cursor=pointer]
+          - generic [ref=e706]:
+            - heading "10. Multi-State Loading" [level=4] [ref=e707]
+            - paragraph [ref=e708]: Different states for different areas
+            - button "Load All" [ref=e710] [cursor=pointer]
+    - generic [ref=e715]:
+      - heading "navX - Navigation Patterns ▼" [level=2] [ref=e716] [cursor=pointer]
+      - generic [ref=e717]:
+        - paragraph [ref=e718]: Accessible navigation with keyboard support and ARIA
+        - generic [ref=e719]:
+          - generic [ref=e720]:
+            - heading "1. Breadcrumb Navigation" [level=4] [ref=e721]
+            - paragraph [ref=e722]: Show current location
+            - navigation [ref=e724]:
+              - link "Home" [ref=e725] [cursor=pointer]:
+                - /url: /
+              - text: /
+              - link "Products" [ref=e726] [cursor=pointer]:
+                - /url: /products
+              - text: / Current Page
+          - generic [ref=e727]:
+            - heading "2. Tab Navigation" [level=4] [ref=e728]
+            - paragraph [ref=e729]: Arrow key navigation
+            - generic [ref=e731]:
+              - generic [ref=e732]:
+                - button "Tab 1" [ref=e733] [cursor=pointer]
+                - button "Tab 2" [ref=e734] [cursor=pointer]
+                - button "Tab 3" [ref=e735] [cursor=pointer]
+              - generic [ref=e736]: Content 1
+          - generic [ref=e737]:
+            - heading "3. Dropdown Menu" [level=4] [ref=e738]
+            - paragraph [ref=e739]: Keyboard accessible dropdown
+            - button "Menu ▼" [ref=e742] [cursor=pointer]
+          - generic [ref=e743]:
+            - heading "4. Scroll Spy" [level=4] [ref=e744]
+            - paragraph [ref=e745]: Track scroll position
+            - navigation [ref=e747]:
+              - link "Section 1" [ref=e748] [cursor=pointer]:
+                - /url: "#section1"
+              - link "Section 2" [ref=e749] [cursor=pointer]:
+                - /url: "#section2"
+              - link "Section 3" [ref=e750] [cursor=pointer]:
+                - /url: "#section3"
+          - generic [ref=e751]:
+            - heading "5. Sticky Navigation" [level=4] [ref=e752]
+            - paragraph [ref=e753]: Stays visible on scroll
+            - generic [ref=e755]: Sticky Navigation
+          - generic [ref=e756]:
+            - heading "6. Mobile Menu" [level=4] [ref=e757]
+            - paragraph [ref=e758]: Hamburger with focus trap
+            - button "☰" [ref=e760] [cursor=pointer]
+          - generic [ref=e761]:
+            - heading "7. Smooth Scrolling" [level=4] [ref=e762]
+            - paragraph [ref=e763]: Animated scroll to target
+            - link "Scroll to footer" [ref=e765] [cursor=pointer]:
+              - /url: "#footer"
+          - generic [ref=e766]:
+            - heading "8. Pagination" [level=4] [ref=e767]
+            - paragraph [ref=e768]: Navigate between pages
+            - navigation "Pagination" [ref=e770]:
+              - button "< Prev" [ref=e771] [cursor=pointer]
+              - button "1" [ref=e772] [cursor=pointer]
+              - button "2" [ref=e773] [cursor=pointer]
+              - button "3" [ref=e774] [cursor=pointer]
+              - button "4" [ref=e775] [cursor=pointer]
+              - button "Next >" [ref=e776] [cursor=pointer]
+          - generic [ref=e777]:
+            - heading "9. Skip Navigation" [level=4] [ref=e778]
+            - paragraph [ref=e779]: Jump to main content
+            - link "Skip to content" [ref=e781] [cursor=pointer]:
+              - /url: "#main-content"
+          - generic [ref=e782]:
+            - heading "10. History Trail" [level=4] [ref=e783]
+            - paragraph [ref=e784]: Show visited pages
+            - navigation [ref=e786]: Home → Products → Detail
+    - generic [ref=e788]:
+      - heading "6. tableX - Table Enhancements ▼" [level=2] [ref=e789] [cursor=pointer]
+      - generic [ref=e790]:
+        - paragraph [ref=e791]:
+          - text: Declarative table sorting, pagination, and responsive layouts with
+          - code [ref=e792]: tx-*
+          - text: attributes
+        - generic [ref=e793]:
+          - heading "1. Column Sorting" [level=4] [ref=e794]
+          - paragraph [ref=e795]: "Click any header to sort. Auto-detects data types (string, number, date). Three-state toggle: ascending → descending → clear."
+          - table [ref=e797]:
+            - rowgroup [ref=e798]:
+              - row "Name ⇅ Age ⇅ Department ⇅ Hire Date ⇅ Salary ⇅" [ref=e799]:
+                - columnheader "Name ⇅" [ref=e800] [cursor=pointer]
+                - columnheader "Age ⇅" [ref=e801] [cursor=pointer]
+                - columnheader "Department ⇅" [ref=e802] [cursor=pointer]
+                - columnheader "Hire Date ⇅" [ref=e803] [cursor=pointer]
+                - columnheader "Salary ⇅" [ref=e804] [cursor=pointer]
+            - rowgroup [ref=e805]:
+              - row "Alice Johnson 32 Engineering 2022-03-15 95000" [ref=e806]:
+                - cell "Alice Johnson" [ref=e807]
+                - cell "32" [ref=e808]
+                - cell "Engineering" [ref=e809]
+                - cell "2022-03-15" [ref=e810]
+                - cell "95000" [ref=e811]
+              - row "Bob Smith 28 Marketing 2023-01-10 72000" [ref=e812]:
+                - cell "Bob Smith" [ref=e813]
+                - cell "28" [ref=e814]
+                - cell "Marketing" [ref=e815]
+                - cell "2023-01-10" [ref=e816]
+                - cell "72000" [ref=e817]
+              - row "Charlie Brown 45 Sales 2020-07-22 88000" [ref=e818]:
+                - cell "Charlie Brown" [ref=e819]
+                - cell "45" [ref=e820]
+                - cell "Sales" [ref=e821]
+                - cell "2020-07-22" [ref=e822]
+                - cell "88000" [ref=e823]
+              - row "Diana Prince 29 Engineering 2023-05-03 98000" [ref=e824]:
+                - cell "Diana Prince" [ref=e825]
+                - cell "29" [ref=e826]
+                - cell "Engineering" [ref=e827]
+                - cell "2023-05-03" [ref=e828]
+                - cell "98000" [ref=e829]
+              - row "Eve Martinez 38 HR 2021-11-18 76000" [ref=e830]:
+                - cell "Eve Martinez" [ref=e831]
+                - cell "38" [ref=e832]
+                - cell "HR" [ref=e833]
+                - cell "2021-11-18" [ref=e834]
+                - cell "76000" [ref=e835]
+              - row "Frank Zhang 51 Engineering 2019-02-14 105000" [ref=e836]:
+                - cell "Frank Zhang" [ref=e837]
+                - cell "51" [ref=e838]
+                - cell "Engineering" [ref=e839]
+                - cell "2019-02-14" [ref=e840]
+                - cell "105000" [ref=e841]
+              - row "Grace Lee 26 Design 2023-08-01 68000" [ref=e842]:
+                - cell "Grace Lee" [ref=e843]
+                - cell "26" [ref=e844]
+                - cell "Design" [ref=e845]
+                - cell "2023-08-01" [ref=e846]
+                - cell "68000" [ref=e847]
+              - row "Henry Wilson 42 Sales 2020-12-05 91000" [ref=e848]:
+                - cell "Henry Wilson" [ref=e849]
+                - cell "42" [ref=e850]
+                - cell "Sales" [ref=e851]
+                - cell "2020-12-05" [ref=e852]
+                - cell "91000" [ref=e853]
+          - generic [ref=e855]:
+            - generic [ref=e856]: <table tx-sortable> <thead> <tr> <th>Name</th> <th>Age</th> <th>Department</th> <th>Hire Date</th> <th>Salary</th> </tr> </thead> <tbody> <!-- Table rows --> </tbody> </table>
+            - button "Copy" [ref=e857] [cursor=pointer]
+        - generic [ref=e858]:
+          - heading "2. Individual Sortable Headers" [level=4] [ref=e859]
+          - paragraph [ref=e860]:
+            - text: Make specific columns sortable with
+            - code [ref=e861]: tx-sortable
+            - text: on individual headers.
+          - table [ref=e863]:
+            - rowgroup [ref=e864]:
+              - row "Product ⇅ Price ⇅ Actions" [ref=e865]:
+                - columnheader "Product ⇅" [ref=e866] [cursor=pointer]
+                - columnheader "Price ⇅" [ref=e867] [cursor=pointer]
+                - cell "Actions" [ref=e868] [cursor=pointer]
+            - rowgroup [ref=e869]:
+              - row "Widget A 29.99 View" [ref=e870]:
+                - cell "Widget A" [ref=e871]
+                - cell "29.99" [ref=e872]
+                - cell "View" [ref=e873]:
+                  - button "View" [ref=e874] [cursor=pointer]
+              - row "Widget B 19.99 View" [ref=e875]:
+                - cell "Widget B" [ref=e876]
+                - cell "19.99" [ref=e877]
+                - cell "View" [ref=e878]:
+                  - button "View" [ref=e879] [cursor=pointer]
+              - row "Widget C 39.99 View" [ref=e880]:
+                - cell "Widget C" [ref=e881]
+                - cell "39.99" [ref=e882]
+                - cell "View" [ref=e883]:
+                  - button "View" [ref=e884] [cursor=pointer]
+          - generic [ref=e886]:
+            - generic [ref=e887]: <table> <thead> <tr> <th tx-sortable>Product</th> <th tx-sortable>Price</th> <th>Actions</th> <!-- Not sortable --> </tr> </thead> </table>
+            - button "Copy" [ref=e888] [cursor=pointer]
+        - generic [ref=e889]:
+          - heading "3. Custom Sort Values" [level=4] [ref=e890]
+          - paragraph [ref=e891]:
+            - text: Use
+            - code [ref=e892]: data-value
+            - text: attribute to provide sortable values different from display text.
+          - table [ref=e894]:
+            - rowgroup [ref=e895]:
+              - row "Status ⇅ Priority ⇅" [ref=e896]:
+                - columnheader "Status ⇅" [ref=e897] [cursor=pointer]
+                - columnheader "Priority ⇅" [ref=e898] [cursor=pointer]
+            - rowgroup [ref=e899]:
+              - row "🟢 Active Low" [ref=e900]:
+                - cell "🟢 Active" [ref=e901]
+                - cell "Low" [ref=e902]
+              - row "🔴 Critical High" [ref=e903]:
+                - cell "🔴 Critical" [ref=e904]
+                - cell "High" [ref=e905]
+              - row "⚪ Inactive Medium" [ref=e906]:
+                - cell "⚪ Inactive" [ref=e907]
+                - cell "Medium" [ref=e908]
+          - generic [ref=e910]:
+            - generic [ref=e911]: <td data-value="2">🟢 Active</td> <td data-value="1">🔴 Critical</td> <td data-value="3">⚪ Inactive</td>
+            - button "Copy" [ref=e912] [cursor=pointer]
+    - contentinfo [ref=e913]:
+      - heading "Powered by http/html/css/js" [level=3] [ref=e914]
+      - paragraph [ref=e915]: This demo required no build step, no server, no configuration. It's pure static HTML/CSS/JS served directly from GitHub Pages, no deployment pipeline needed.
+      - paragraph [ref=e916]:
+        - text: "This is genX's philosophy: simplicity that just works, like this link:"
+        - link "View on GitHub" [ref=e917] [cursor=pointer]:
+          - /url: https://github.com/adamzwasserman/genX
+```

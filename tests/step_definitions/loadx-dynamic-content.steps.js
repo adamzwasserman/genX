@@ -31,7 +31,7 @@ After(async function() {
     }
 });
 
-Given('loadX is initialized', async function() {
+Given('in loadx-dynamic-content, loadX is initialized', async function() {
     if (this.page) {
         await this.page.evaluate(() => {
             if (window.loadX && window.loadX.disconnect) {
