@@ -39,11 +39,6 @@ Then('in fmtX, the element should display {string}', async function(expected) {
     assert.strictEqual(actual, expected, `Expected "${expected}", got "${actual}"`);
 });
 
-Then('it should display {string}', async function(expected) {
-    const actual = await this.page.locator('#test').textContent();
-    assert.strictEqual(actual, expected, `Expected "${expected}", got "${actual}"`);
-});
-
 // Different locales
 Given('an element with fx-format={string} fx-currency={string} fx-locale={string}', async function(format, currency, locale) {
     await this.page.setContent(`

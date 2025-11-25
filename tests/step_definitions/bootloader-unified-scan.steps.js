@@ -325,7 +325,7 @@ Then('all selectors should be comma-separated', async function() {
         'Selector should contain commas separating individual selectors');
 });
 
-Then('it should return {string}', async function(expected) {
+Then('in unified scan, it should return {string}', async function(expected) {
     assert.strictEqual(detectPrefixResult, expected,
         `Expected prefix "${expected}", got "${detectPrefixResult}"`);
 });

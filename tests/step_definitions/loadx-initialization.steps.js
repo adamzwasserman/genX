@@ -107,7 +107,7 @@ When('loadX is initialized with invalid configuration', async function() {
     }, fixtures.invalidConfig);
 });
 
-Then('loadX should be initialized', async function() {
+Then('in initialization, loadX should be initialized', async function() {
     assert.ok(this.loadxResult, 'loadX result should exist');
 });
 
@@ -355,11 +355,7 @@ Then('loadX should use default configuration', async function() {
     );
 });
 
-Then('an error should be logged', async function() {
-    // Check if console.error was called (captured in console listener)
-    // For now, just verify initialization completed
-    assert.ok(this.loadxResult, 'loadX should initialize despite invalid config');
-});
+// Removed duplicate - exists in common.steps.js
 
 Given('document.body does not exist', async function() {
     await this.page.evaluate(() => {

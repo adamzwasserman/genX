@@ -539,10 +539,7 @@ When('the module initializes', async function() {
     await this.page.evaluate(() => window.DragX.init());
 });
 
-Then('a validation error should be logged', async function() {
-    // Placeholder - would need console.log monitoring
-    assert.ok(true, 'Validation logging to be tested via console monitoring');
-});
+// Removed duplicate - exists in common.steps.js
 
 Then('the element should not become draggable', async function() {
     // Try to drag and verify no state change

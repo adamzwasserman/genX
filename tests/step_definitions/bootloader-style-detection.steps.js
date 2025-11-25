@@ -160,7 +160,7 @@ When('the bootloader detects notation styles with timing', async function() {
 
 // ===== Then Steps: Assertions =====
 
-Then('it should return {string}', async function(expected) {
+Then('in style detection, it should return {string}', async function(expected) {
     const expectedArray = JSON.parse(expected);
     assert.deepStrictEqual(detectionResult, expectedArray,
         `Expected ${JSON.stringify(expectedArray)}, got ${JSON.stringify(detectionResult)}`);
