@@ -373,16 +373,50 @@
 
     // DOM funcs (inlined helpers)
     const formatElement = (el, pref = 'fx-') => {
-        const typ = el.getAttribute(`${pref}format`); if (!typ) {
-            return;
+        // Try to get config from bootloader cache first (if using genX bootloader)
+        let config = null;
+        let typ = null;
+        let opts = {};
+
+        if (window.genx && window.genx.getConfig) {
+            // Using genX bootloader - get cached config (O(1) lookup)
+            config = window.genx.getConfig(el);
+            if (config) {
+                typ = config.format;
+                // Spread config into opts, excluding 'format' key
+                opts = {...config};
+                delete opts.format;
+            }
         }
+
+        // Fallback to polymorphic notation parsing if no bootloader or no cached config
+        if (!typ) {
+            // Use polymorphic parser from genx-common (supports Verbose, Colon, JSON, CSS Class)
+            const parsed = window.genxCommon
+                ? window.genxCommon.notation.parseNotation(el, pref.replace('-', ''))
+                : {};  // Fallback if genx-common not loaded
+
+            typ = parsed.format;
+            if (!typ) {
+                return;
+            }
+
+            // Extract options (everything except 'format')
+            opts = {...parsed};
+            delete opts.format;
+        }
+
+        // Get raw value (not in cache - dynamic content)
         const raw = el.getAttribute(`${pref}raw`) || el.getAttribute(`${pref}value`) || el.textContent?.trim() || el.value || '';
-        const opts = {}; for (const a of el.attributes) {
-            if (a.name.startsWith(pref) && a.name !== `${pref}format`) {
-                const n = a.name.slice(pref.length); opts[kebabToCamel(n)] = safeJsonParse(a.value); 
-            } 
+
+        // SmartX integration - auto-detect format type
+        let fmt;
+        if (typ === 'smart' && window.SmartX) {
+            fmt = window.SmartX.format(el, raw);
+        } else {
+            fmt = format(typ, raw, opts);
         }
-        const fmt = format(typ, raw, opts);
+
         // Prevent infinite loop: only update if value changed
         if (['INPUT','TEXTAREA'].includes(el.tagName)) {
             if (el.value !== fmt) {
