@@ -7,11 +7,6 @@ Given('the fmtX module is loaded', async function() {
     await this.page.addScriptTag({ path: './src/fmtx.js' });
 });
 
-Given('the DOM is ready', async function() {
-    // DOM is ready after page navigation
-    await this.page.waitForLoadState('domcontentloaded');
-});
-
 // Currency Formatting
 Given('an element with attributes:', async function(dataTable) {
     const attrs = {};
