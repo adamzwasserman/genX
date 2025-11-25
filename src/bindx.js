@@ -1243,44 +1243,66 @@
      * @returns {Object|null} Parsed configuration
      */
     const parseBindingAttribute = (element, attrName) => {
-        const attrValue = element.getAttribute(attrName);
-        if (!attrValue) {
+        // Try to get config from bootloader cache first (if using genX bootloader)
+        if (window.genx && window.genx.getConfig) {
+            const cachedConfig = window.genx.getConfig(element);
+            if (cachedConfig) {
+                // Config from cache - check if it has the required binding path
+                // For bx-model/bx-bind, the 'model' or 'bind' key contains the path
+                const bindingKey = attrName.replace('bx-', '');
+                if (cachedConfig[bindingKey]) {
+                    // Parse path:options format if needed (e.g., "user.name:300")
+                    const bindingValue = cachedConfig[bindingKey];
+                    const [path, ...optionParts] = String(bindingValue).split(':');
+                    const config = { ...cachedConfig, path: path.trim() };
+
+                    // Parse inline debounce option (numeric after colon)
+                    if (optionParts.length > 0) {
+                        const optionValue = optionParts.join(':').trim();
+                        if (/^\d+$/.test(optionValue)) {
+                            config.debounce = parseInt(optionValue, 10);
+                        }
+                    }
+
+                    // Normalize: 'format' key becomes 'formatter' for compatibility
+                    if (config.format && !config.formatter) {
+                        config.formatter = config.format;
+                    }
+
+                    return config;
+                }
+            }
+        }
+
+        // Fallback to polymorphic notation parsing (legacy standalone mode)
+        // Use polymorphic parser from genx-common (supports Verbose, Colon, JSON, CSS Class)
+        const parsed = window.genxCommon
+            ? window.genxCommon.notation.parseNotation(element, 'bx')
+            : {};  // Fallback if genx-common not loaded
+
+        // Get binding path from the specific attribute name (model or bind)
+        const bindingKey = attrName.replace('bx-', '');
+        const bindingValue = parsed[bindingKey];
+
+        if (!bindingValue) {
             return null;
         }
 
-        // Parse path:options format (e.g., "user.name:300")
-        const [path, ...optionParts] = attrValue.split(':');
-        const config = { path: path.trim() };
+        // Parse path (and possibly inline options like "user.name:300")
+        const [path, ...optionParts] = String(bindingValue).split(':');
+        const config = { ...parsed, path: path.trim() };
 
-        // Parse inline options
+        // Parse inline debounce option (numeric after colon)
         if (optionParts.length > 0) {
             const optionValue = optionParts.join(':').trim();
-            // If numeric, treat as debounce
             if (/^\d+$/.test(optionValue)) {
                 config.debounce = parseInt(optionValue, 10);
             }
         }
 
-        // Parse bx-opts attribute for structured options
-        const optsAttr = element.getAttribute('bx-opts');
-        if (optsAttr) {
-            try {
-                const opts = JSON.parse(optsAttr);
-                Object.assign(config, opts);
-            } catch (error) {
-                console.warn('bindX: Invalid bx-opts JSON on element:', element, error);
-            }
-        }
-
-        // Parse individual option attributes
-        const debounceAttr = element.getAttribute('bx-debounce');
-        if (debounceAttr) {
-            config.debounce = parseInt(debounceAttr, 10);
-        }
-
-        const formatterAttr = element.getAttribute('bx-format');
-        if (formatterAttr) {
-            config.formatter = formatterAttr;
+        // Normalize: 'format' key becomes 'formatter' for compatibility
+        if (config.format && !config.formatter) {
+            config.formatter = config.format;
         }
 
         return config;
