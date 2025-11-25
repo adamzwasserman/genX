@@ -342,6 +342,228 @@ const kebabToCamel = (str) => {
 };
 
 /**
+ * Module-specific cardinality orders for colon syntax
+ * Defines parameter order by importance for each module
+ */
+const CARDINALITY_ORDERS = {
+    fx: ['format', 'currency', 'decimals', 'symbol'],
+    bx: ['bind', 'debounce', 'throttle'],
+    ax: ['label', 'icon', 'value', 'role'],
+    dx: ['type', 'id', 'style', 'group'],
+    lx: ['type', 'color', 'size'],
+    nx: ['type', 'label', 'href', 'target']
+};
+
+/**
+ * Map CSS class prefixes to attribute prefixes
+ * Using full module names to avoid conflicts
+ */
+const CLASS_PREFIX_MAP = {
+    'fmtx': 'fx',
+    'bindx': 'bx',
+    'accx': 'ax',
+    'dragx': 'dx',
+    'loadx': 'lx',
+    'navx': 'nx',
+    'tablex': 'tx'
+};
+
+/**
+ * Parse polymorphic notation from element
+ * Supports 4 notation styles with priority: JSON > Colon > Verbose > CSS Classes
+ *
+ * @param {HTMLElement} element - DOM element to parse
+ * @param {string} prefix - Module prefix (fx, bx, ax, dx, lx, nx)
+ * @returns {Object} Parsed configuration object
+ *
+ * @example
+ * // Verbose: <span fx-format="currency" fx-currency="USD">
+ * parseNotation(el, 'fx') // {format: 'currency', currency: 'USD'}
+ *
+ * // Colon: <span fx-format="currency:USD:2">
+ * parseNotation(el, 'fx') // {format: 'currency', currency: 'USD', decimals: '2'}
+ *
+ * // JSON: <span fx-opts='{"format":"currency","currency":"USD"}'>
+ * parseNotation(el, 'fx') // {format: 'currency', currency: 'USD'}
+ *
+ * // CSS: <span class="fmt-currency-USD-2">
+ * parseNotation(el, 'fx') // {format: 'currency', currency: 'USD', decimals: '2'}
+ */
+const parseNotation = (element, prefix) => {
+    if (!element || !prefix) {
+        return {};
+    }
+
+    const config = {};
+
+    // 1. Parse CSS Classes (lowest priority)
+    const cssConfig = parseClassNotation(element, prefix);
+    Object.assign(config, cssConfig);
+
+    // 2. Parse Verbose Attributes
+    const verboseConfig = parseVerboseAttributes(element, prefix);
+    Object.assign(config, verboseConfig);
+
+    // 3. Parse Colon Syntax (overrides verbose)
+    const colonConfig = parseColonSyntax(element, prefix);
+    Object.assign(config, colonConfig);
+
+    // 4. Parse JSON Config (highest priority, overrides all)
+    const jsonConfig = parseJsonConfig(element, prefix);
+    Object.assign(config, jsonConfig);
+
+    return config;
+};
+
+/**
+ * Parse CSS class notation
+ * Format: class="prefix-param1-param2-param3"
+ *
+ * @param {HTMLElement} element - DOM element
+ * @param {string} prefix - Module prefix (fx, bx, ax, etc.)
+ * @returns {Object} Parsed config
+ */
+const parseClassNotation = (element, prefix) => {
+    const config = {};
+    const classList = element.className;
+
+    if (!classList || typeof classList !== 'string') {
+        return config;
+    }
+
+    // Find the CSS class prefix that maps to this module prefix
+    let classPrefix = null;
+    for (const [cssPrefix, attrPrefix] of Object.entries(CLASS_PREFIX_MAP)) {
+        if (attrPrefix === prefix) {
+            classPrefix = cssPrefix;
+            break;
+        }
+    }
+
+    if (!classPrefix) {
+        return config;
+    }
+
+    // Find class matching pattern: prefix-param1-param2-param3
+    const classes = classList.split(/\s+/);
+    const regex = new RegExp(`^${classPrefix}-(.+)$`);
+
+    for (const cls of classes) {
+        const match = cls.match(regex);
+        if (match) {
+            const parts = match[1].split('-');
+            const cardinalityOrder = CARDINALITY_ORDERS[prefix] || [];
+
+            // Map parts to config keys using cardinality order
+            parts.forEach((part, index) => {
+                if (cardinalityOrder[index]) {
+                    config[cardinalityOrder[index]] = part;
+                }
+            });
+            break; // Only parse first matching class
+        }
+    }
+
+    return config;
+};
+
+/**
+ * Parse verbose attribute notation
+ * Format: fx-format="currency" fx-currency="USD"
+ *
+ * @param {HTMLElement} element - DOM element
+ * @param {string} prefix - Module prefix
+ * @returns {Object} Parsed config
+ */
+const parseVerboseAttributes = (element, prefix) => {
+    const config = {};
+    const attributes = element.attributes;
+
+    for (let i = 0; i < attributes.length; i++) {
+        const attr = attributes[i];
+        const attrName = attr.name;
+
+        // Check if attribute starts with prefix-
+        if (attrName.startsWith(`${prefix}-`)) {
+            // Skip -opts and -raw attributes (handled separately)
+            if (attrName === `${prefix}-opts` || attrName === `${prefix}-raw`) {
+                continue;
+            }
+
+            // Extract key: fx-currency -> currency
+            const key = attrName.substring(prefix.length + 1);
+            config[key] = attr.value;
+        }
+    }
+
+    return config;
+};
+
+/**
+ * Parse colon syntax notation
+ * Format: fx-format="currency:USD:2"
+ *
+ * @param {HTMLElement} element - DOM element
+ * @param {string} prefix - Module prefix
+ * @returns {Object} Parsed config
+ */
+const parseColonSyntax = (element, prefix) => {
+    const config = {};
+    const cardinalityOrder = CARDINALITY_ORDERS[prefix] || [];
+
+    if (cardinalityOrder.length === 0) {
+        return config;
+    }
+
+    // Look for the primary attribute (first in cardinality order)
+    const primaryKey = cardinalityOrder[0];
+    const attrName = `${prefix}-${primaryKey}`;
+    const attrValue = element.getAttribute(attrName);
+
+    if (!attrValue || !attrValue.includes(':')) {
+        return config;
+    }
+
+    // Split by colon and map to cardinality order
+    const parts = attrValue.split(':');
+    parts.forEach((part, index) => {
+        if (part && cardinalityOrder[index]) {
+            config[cardinalityOrder[index]] = part;
+        }
+    });
+
+    return config;
+};
+
+/**
+ * Parse JSON configuration notation
+ * Format: fx-opts='{"format":"currency","currency":"USD"}'
+ *
+ * @param {HTMLElement} element - DOM element
+ * @param {string} prefix - Module prefix
+ * @returns {Object} Parsed config
+ */
+const parseJsonConfig = (element, prefix) => {
+    const optsAttr = element.getAttribute(`${prefix}-opts`);
+
+    if (!optsAttr) {
+        return {};
+    }
+
+    const result = safeJsonParse(optsAttr);
+
+    if (result.isErr()) {
+        // Log warning for malformed JSON
+        if (typeof console !== 'undefined') {
+            console.warn(`genX: Failed to parse ${prefix}-opts JSON:`, result.unwrapOr(''));
+        }
+        return {};
+    }
+
+    return result.unwrap();
+};
+
+/**
  * Safe JSON parsing that returns Result monad
  * Never throws - returns Err on parse failure
  *
@@ -448,6 +670,15 @@ const genxCommon = {
         safeJsonParse,
         generateId,
         debounce
+    },
+    notation: {
+        parseNotation,
+        parseClassNotation,
+        parseVerboseAttributes,
+        parseColonSyntax,
+        parseJsonConfig,
+        CARDINALITY_ORDERS,
+        CLASS_PREFIX_MAP
     }
 };
 
@@ -472,7 +703,14 @@ export {
     kebabToCamel,
     safeJsonParse,
     generateId,
-    debounce
+    debounce,
+    parseNotation,
+    parseClassNotation,
+    parseVerboseAttributes,
+    parseColonSyntax,
+    parseJsonConfig,
+    CARDINALITY_ORDERS,
+    CLASS_PREFIX_MAP
 };
 
 export default genxCommon;
