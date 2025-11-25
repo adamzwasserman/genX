@@ -108,7 +108,7 @@ Given('rendered breadcrumbs', function() {
     return 'pending';
 });
 
-When('the user clicks {string}', async function(text) {
+When('in navX, the user clicks {string}', async function(text) {
     await this.page.click(`text=${text}`);
 });
 
@@ -269,7 +269,7 @@ Given('a nav with nx-sticky={string}', async function(enabled) {
     return 'pending';
 });
 
-When('the user scrolls down', async function() {
+When('in navX, the user scrolls down', async function() {
     await this.page.evaluate(() => window.scrollBy(0, 500));
 });
 

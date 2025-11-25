@@ -504,10 +504,6 @@ When('the user types {string} quickly', async function(text) {
     return 'pending';
 });
 
-Then('the data should not update immediately', async function() {
-    return 'pending';
-});
-
 Given('computed {string} depends on computed {string}', async function(comp1, comp2) {
     return 'pending';
 });

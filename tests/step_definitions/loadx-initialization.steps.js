@@ -414,7 +414,7 @@ Then('only visible images should load', async function() {
     assert.ok(true, 'Lazy loading will be implemented');
 });
 
-When('the user scrolls down', async function() {
+When('in loadX, the user scrolls down', async function() {
     await this.page.evaluate(() => {
         window.scrollTo(0, 1000);
     });
