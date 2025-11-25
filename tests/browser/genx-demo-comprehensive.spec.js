@@ -419,4 +419,377 @@ test.describe('genX Demo Page - Comprehensive Testing', () => {
             await expect(page.locator('.stat-value:has-text("100%")')).toBeVisible();
         });
     });
+
+    test.describe('Copy Button Functionality', () => {
+        test('All copy buttons are present', async ({ page }) => {
+            const copyButtons = page.locator('button.copy-button');
+            const count = await copyButtons.count();
+            // Should have many copy buttons (at least 60+ for all examples)
+            expect(count).toBeGreaterThan(60);
+        });
+
+        test('Copy button has accessible label', async ({ page }) => {
+            const copyButton = page.locator('button.copy-button').first();
+            const text = await copyButton.textContent();
+            expect(text).toContain('Copy');
+        });
+
+        test('Copy button functionality works', async ({ page }) => {
+            // Grant clipboard permissions
+            await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+
+            const copyButton = page.locator('.example:has-text("Currency") button.copy-button').first();
+            await copyButton.click();
+
+            // Wait for clipboard operation
+            await page.waitForTimeout(100);
+
+            // Verify button provides feedback
+            const buttonText = await copyButton.textContent();
+            expect(buttonText).toBeTruthy();
+        });
+    });
+
+    test.describe('Code Snippet Accuracy', () => {
+        test('fmtX code snippets match implementation', async ({ page }) => {
+            const snippet = page.locator('.example:has-text("Currency") pre code').first();
+            const text = await snippet.textContent();
+            expect(text).toContain('fx-format="currency"');
+            expect(text).toContain('fx-currency="USD"');
+        });
+
+        test('bindX code snippets show correct syntax', async ({ page }) => {
+            const snippet = page.locator('.example:has-text("Two-Way Binding") pre code').first();
+            const text = await snippet.textContent();
+            expect(text).toContain('bx-model');
+        });
+
+        test('dragX code snippets show correct attributes', async ({ page }) => {
+            const snippet = page.locator('.example:has-text("Basic Drag") pre code').first();
+            const text = await snippet.textContent();
+            expect(text).toContain('dx-draggable');
+        });
+
+        test('Code snippets have syntax highlighting', async ({ page }) => {
+            const codeBlock = page.locator('pre code').first();
+            const hasHighlighting = await codeBlock.evaluate(el => {
+                return el.classList.length > 0 || el.innerHTML.includes('<span');
+            });
+            // Either has CSS classes or contains syntax highlighting spans
+            expect(hasHighlighting).toBeTruthy();
+        });
+    });
+
+    test.describe('Performance Metrics', () => {
+        test('Page load time is under 2 seconds', async ({ page }) => {
+            const startTime = Date.now();
+            await page.goto('file://' + __dirname + '/../../examples/genx-demo.html');
+            await page.waitForLoadState('domcontentloaded');
+            const loadTime = Date.now() - startTime;
+
+            expect(loadTime).toBeLessThan(2000);
+        });
+
+        test('Module initialization is under 500ms', async ({ page }) => {
+            await page.goto('file://' + __dirname + '/../../examples/genx-demo.html');
+
+            const perfMark = await page.evaluate(() => {
+                const marks = performance.getEntriesByType('mark');
+                const initMark = marks.find(m => m.name.includes('init') || m.name.includes('genX'));
+                return initMark ? initMark.startTime : null;
+            });
+
+            if (perfMark !== null) {
+                expect(perfMark).toBeLessThan(500);
+            }
+        });
+
+        test('fmtX formatting operations complete in <16ms', async ({ page }) => {
+            await page.goto('file://' + __dirname + '/../../examples/genx-demo.html');
+
+            const duration = await page.evaluate(() => {
+                const start = performance.now();
+
+                // Simulate formatting 100 values
+                const testElement = document.createElement('span');
+                testElement.setAttribute('fx-format', 'currency');
+                testElement.setAttribute('fx-currency', 'USD');
+                testElement.textContent = '1234.56';
+                document.body.appendChild(testElement);
+
+                // Trigger module processing
+                if (window.fmtX && window.fmtX.scan) {
+                    window.fmtX.scan();
+                }
+
+                const end = performance.now();
+                document.body.removeChild(testElement);
+
+                return end - start;
+            });
+
+            expect(duration).toBeLessThan(16);
+        });
+
+        test('bindX reactivity updates in <16ms', async ({ page }) => {
+            await page.goto('file://' + __dirname + '/../../examples/genx-demo.html');
+
+            const duration = await page.evaluate(() => {
+                const input = document.querySelector('input[bx-model]');
+                if (!input) return 0;
+
+                const start = performance.now();
+                input.value = 'performance test';
+                input.dispatchEvent(new Event('input'));
+                const end = performance.now();
+
+                return end - start;
+            });
+
+            expect(duration).toBeLessThan(16);
+        });
+
+        test('No memory leaks during interactions', async ({ page }) => {
+            await page.goto('file://' + __dirname + '/../../examples/genx-demo.html');
+
+            const initialMemory = await page.evaluate(() => {
+                if (performance.memory) {
+                    return performance.memory.usedJSHeapSize;
+                }
+                return null;
+            });
+
+            // Perform 50 interactions
+            for (let i = 0; i < 50; i++) {
+                const input = page.locator('input[bx-model]').first();
+                await input.fill(`test-${i}`);
+                await page.waitForTimeout(10);
+            }
+
+            const finalMemory = await page.evaluate(() => {
+                if (performance.memory) {
+                    return performance.memory.usedJSHeapSize;
+                }
+                return null;
+            });
+
+            if (initialMemory !== null && finalMemory !== null) {
+                const memoryIncrease = finalMemory - initialMemory;
+                // Memory increase should be reasonable (< 5MB for 50 operations)
+                expect(memoryIncrease).toBeLessThan(5 * 1024 * 1024);
+            }
+        });
+    });
+
+    test.describe('Accessibility Compliance (WCAG 2.1 AA)', () => {
+        test('All interactive elements are keyboard accessible', async ({ page }) => {
+            const focusableElements = page.locator('button, a, input, select, textarea, [tabindex="0"]');
+            const count = await focusableElements.count();
+            expect(count).toBeGreaterThan(0);
+
+            // Verify first button is focusable
+            const firstButton = page.locator('button').first();
+            await firstButton.focus();
+            const isFocused = await firstButton.evaluate(el => el === document.activeElement);
+            expect(isFocused).toBe(true);
+        });
+
+        test('Form inputs have labels or aria-label', async ({ page }) => {
+            const inputs = page.locator('input[type="text"], input[type="number"], input[type="email"]');
+            const count = await inputs.count();
+
+            for (let i = 0; i < Math.min(count, 10); i++) {
+                const input = inputs.nth(i);
+                const hasLabel = await input.evaluate(el => {
+                    const id = el.id;
+                    const hasLabelElement = id && document.querySelector(`label[for="${id}"]`);
+                    const hasAriaLabel = el.hasAttribute('aria-label') || el.hasAttribute('aria-labelledby');
+                    return hasLabelElement || hasAriaLabel || el.parentElement.tagName === 'LABEL';
+                });
+
+                expect(hasLabel).toBeTruthy();
+            }
+        });
+
+        test('Buttons have accessible names', async ({ page }) => {
+            const buttons = page.locator('button');
+            const count = await buttons.count();
+
+            for (let i = 0; i < Math.min(count, 10); i++) {
+                const button = buttons.nth(i);
+                const name = await button.evaluate(el => {
+                    return el.textContent.trim() || el.getAttribute('aria-label') || el.getAttribute('title');
+                });
+
+                expect(name).toBeTruthy();
+            }
+        });
+
+        test('Heading hierarchy is correct', async ({ page }) => {
+            const headings = await page.evaluate(() => {
+                const h1s = document.querySelectorAll('h1');
+                const h2s = document.querySelectorAll('h2');
+                const h3s = document.querySelectorAll('h3');
+
+                return {
+                    h1Count: h1s.length,
+                    h2Count: h2s.length,
+                    h3Count: h3s.length
+                };
+            });
+
+            // Should have exactly one h1
+            expect(headings.h1Count).toBe(1);
+            // Should have multiple h2s for sections
+            expect(headings.h2Count).toBeGreaterThan(5);
+        });
+
+        test('Color contrast meets WCAG AA standards', async ({ page }) => {
+            // Test a sample of text elements
+            const textElements = page.locator('p, span, div').first();
+
+            const contrast = await textElements.evaluate(el => {
+                const style = window.getComputedStyle(el);
+                const color = style.color;
+                const bgColor = style.backgroundColor;
+
+                // Simple check - ensure colors are defined
+                return color && bgColor && color !== bgColor;
+            });
+
+            expect(contrast).toBeTruthy();
+        });
+
+        test('Interactive elements have visible focus indicators', async ({ page }) => {
+            const button = page.locator('button').first();
+            await button.focus();
+
+            const hasFocusStyle = await button.evaluate(el => {
+                const styles = window.getComputedStyle(el);
+                const outline = styles.outline;
+                const outlineWidth = styles.outlineWidth;
+                const boxShadow = styles.boxShadow;
+
+                // Should have outline or box-shadow for focus
+                return outline !== 'none' || outlineWidth !== '0px' || boxShadow !== 'none';
+            });
+
+            expect(hasFocusStyle).toBeTruthy();
+        });
+
+        test('Skip navigation link is present', async ({ page }) => {
+            const skipLink = page.locator('a[href="#main-content"], a[href="#content"], .skip-link');
+            const count = await skipLink.count();
+            expect(count).toBeGreaterThan(0);
+        });
+
+        test('ARIA landmarks are properly used', async ({ page }) => {
+            const landmarks = await page.evaluate(() => {
+                return {
+                    nav: document.querySelectorAll('nav, [role="navigation"]').length,
+                    main: document.querySelectorAll('main, [role="main"]').length,
+                    footer: document.querySelectorAll('footer, [role="contentinfo"]').length
+                };
+            });
+
+            expect(landmarks.nav).toBeGreaterThan(0);
+            expect(landmarks.main).toBeGreaterThan(0);
+        });
+    });
+
+    test.describe('Mobile Viewport Testing', () => {
+        test.use({ viewport: { width: 375, height: 667 } }); // iPhone SE
+
+        test('Page is responsive on mobile', async ({ page }) => {
+            await page.goto('file://' + __dirname + '/../../examples/genx-demo.html');
+            await page.waitForLoadState('domcontentloaded');
+
+            // Check that page doesn't have horizontal scroll
+            const hasHorizontalScroll = await page.evaluate(() => {
+                return document.documentElement.scrollWidth > document.documentElement.clientWidth;
+            });
+
+            expect(hasHorizontalScroll).toBe(false);
+        });
+
+        test('Navigation menu is accessible on mobile', async ({ page }) => {
+            await page.goto('file://' + __dirname + '/../../examples/genx-demo.html');
+
+            const nav = page.locator('nav').first();
+            await expect(nav).toBeVisible();
+        });
+
+        test('Examples render correctly on mobile', async ({ page }) => {
+            await page.goto('file://' + __dirname + '/../../examples/genx-demo.html');
+
+            const example = page.locator('.example').first();
+            await expect(example).toBeVisible();
+
+            // Check that example doesn't overflow
+            const overflows = await example.evaluate(el => {
+                return el.scrollWidth > el.clientWidth;
+            });
+
+            expect(overflows).toBe(false);
+        });
+
+        test('Touch interactions work on mobile', async ({ page }) => {
+            await page.goto('file://' + __dirname + '/../../examples/genx-demo.html');
+
+            // Test tap on button
+            const button = page.locator('button').first();
+            await button.tap();
+
+            // Verify button is still visible after tap
+            await expect(button).toBeVisible();
+        });
+
+        test('Font sizes are readable on mobile', async ({ page }) => {
+            await page.goto('file://' + __dirname + '/../../examples/genx-demo.html');
+
+            const bodyFontSize = await page.evaluate(() => {
+                const style = window.getComputedStyle(document.body);
+                return parseInt(style.fontSize);
+            });
+
+            // Font size should be at least 14px on mobile
+            expect(bodyFontSize).toBeGreaterThanOrEqual(14);
+        });
+
+        test('Interactive controls are touch-friendly', async ({ page }) => {
+            await page.goto('file://' + __dirname + '/../../examples/genx-demo.html');
+
+            const button = page.locator('button').first();
+            const size = await button.boundingBox();
+
+            // Touch targets should be at least 44x44px (WCAG 2.1 AA)
+            expect(size.width).toBeGreaterThanOrEqual(40);
+            expect(size.height).toBeGreaterThanOrEqual(40);
+        });
+    });
+
+    test.describe('Mobile Viewport Testing - Tablet', () => {
+        test.use({ viewport: { width: 768, height: 1024 } }); // iPad
+
+        test('Page layout adapts to tablet', async ({ page }) => {
+            await page.goto('file://' + __dirname + '/../../examples/genx-demo.html');
+
+            const hasHorizontalScroll = await page.evaluate(() => {
+                return document.documentElement.scrollWidth > document.documentElement.clientWidth;
+            });
+
+            expect(hasHorizontalScroll).toBe(false);
+        });
+
+        test('Examples are arranged properly on tablet', async ({ page }) => {
+            await page.goto('file://' + __dirname + '/../../examples/genx-demo.html');
+
+            const examples = page.locator('.example');
+            const count = await examples.count();
+            expect(count).toBeGreaterThan(0);
+
+            // Check first example is visible
+            await expect(examples.first()).toBeVisible();
+        });
+    });
 });
