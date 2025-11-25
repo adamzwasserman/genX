@@ -62,7 +62,7 @@ Given('a mock fetch that can be aborted', function() {
     }
 });
 
-When('I submit the form', async function() {
+When('in form detection, I submit the form', async function() {
     this.submitTime = Date.now();
 
     // Trigger submit event

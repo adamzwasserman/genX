@@ -278,10 +278,7 @@ Then('all ResizeObservers should be disconnected', async function() {
     assert.strictEqual(count, 0, 'Expected all ResizeObservers to be disconnected');
 });
 
-Then('{int} ResizeObservers should be active', async function(expectedCount) {
-    const count = await getActiveObserverCount(this.page);
-    assert.strictEqual(count, expectedCount, `Expected ${expectedCount} active observers`);
-});
+// Removed duplicate '{int} ResizeObservers should be active' - already defined at line 271
 
 Then('the element should not have min-width set', async function() {
     const minWidth = await this.page.evaluate(() => {
