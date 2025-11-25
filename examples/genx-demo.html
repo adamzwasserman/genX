@@ -770,6 +770,9 @@
                 <button class="notation-tab active" data-module="fmtx" onclick="switchNotationTab('fmtx', this)">fmtX</button>
                 <button class="notation-tab" data-module="bindx" onclick="switchNotationTab('bindx', this)">bindX</button>
                 <button class="notation-tab" data-module="accx" onclick="switchNotationTab('accx', this)">accX</button>
+                <button class="notation-tab" data-module="loadx" onclick="switchNotationTab('loadx', this)">loadX</button>
+                <button class="notation-tab" data-module="navx" onclick="switchNotationTab('navx', this)">navX</button>
+                <button class="notation-tab" data-module="dragx" onclick="switchNotationTab('dragx', this)">dragX</button>
             </div>
 
             <!-- fmtX Example -->
@@ -935,6 +938,175 @@
   🏠
 &lt;/button&gt;</pre>
                             <button onclick="copyToClipboard(this, '&lt;button class=&quot;acc-label-icon-Home&quot;&gt;🏠&lt;/button&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- loadX Example -->
+            <div id="notation-loadx" class="notation-content">
+                <h3 style="margin-bottom: 20px; color: #333;">Loading Spinner</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                    <!-- Verbose Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">1. Verbose (Beginner)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Explicit attributes</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;div lx-loading="true"
+     lx-strategy="spinner"
+     lx-type="dots"&gt;
+&lt;/div&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;div lx-loading=&quot;true&quot; lx-strategy=&quot;spinner&quot; lx-type=&quot;dots&quot;&gt;&lt;/div&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- Colon Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">2. Compact (Expert)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Colon syntax</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;div lx-loading="spinner:dots"&gt;
+&lt;/div&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;div lx-loading=&quot;spinner:dots&quot;&gt;&lt;/div&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- JSON Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">3. JSON (Power User)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">JSON configuration</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;div lx-opts='{
+  "loading":true,
+  "strategy":"spinner",
+  "type":"dots"
+}'&gt;&lt;/div&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;div lx-opts=\'{&quot;loading&quot;:true,&quot;strategy&quot;:&quot;spinner&quot;,&quot;type&quot;:&quot;dots&quot;}\'&gt;&lt;/div&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- CSS Class Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">4. CSS Class (Designer)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Class-based config</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;div class="loadx-spinner-dots"&gt;
+&lt;/div&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;div class=&quot;loadx-spinner-dots&quot;&gt;&lt;/div&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- navX Example -->
+            <div id="notation-navx" class="notation-content">
+                <h3 style="margin-bottom: 20px; color: #333;">Route Navigation</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                    <!-- Verbose Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">1. Verbose (Beginner)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Explicit attributes</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;a nx-route="/products"
+   nx-transition="fade"&gt;
+  Products
+&lt;/a&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;a nx-route=&quot;/products&quot; nx-transition=&quot;fade&quot;&gt;Products&lt;/a&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- Colon Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">2. Compact (Expert)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Colon syntax</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;a nx-route="/products:fade"&gt;
+  Products
+&lt;/a&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;a nx-route=&quot;/products:fade&quot;&gt;Products&lt;/a&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- JSON Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">3. JSON (Power User)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">JSON configuration</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;a nx-opts='{
+  "route":"/products",
+  "transition":"fade"
+}'&gt;Products&lt;/a&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;a nx-opts=\'{&quot;route&quot;:&quot;/products&quot;,&quot;transition&quot;:&quot;fade&quot;}\'&gt;Products&lt;/a&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- CSS Class Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">4. CSS Class (Designer)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Class-based config</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;a class="navx-route-products-fade"&gt;
+  Products
+&lt;/a&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;a class=&quot;navx-route-products-fade&quot;&gt;Products&lt;/a&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- dragX Example -->
+            <div id="notation-dragx" class="notation-content">
+                <h3 style="margin-bottom: 20px; color: #333;">Draggable Item</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                    <!-- Verbose Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">1. Verbose (Beginner)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Explicit attributes</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;div dx-draggable="true"
+     dx-axis="x"
+     dx-constrain="parent"&gt;
+  Drag me
+&lt;/div&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;div dx-draggable=&quot;true&quot; dx-axis=&quot;x&quot; dx-constrain=&quot;parent&quot;&gt;Drag me&lt;/div&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- Colon Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">2. Compact (Expert)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Colon syntax</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;div dx-draggable="x:parent"&gt;
+  Drag me
+&lt;/div&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;div dx-draggable=&quot;x:parent&quot;&gt;Drag me&lt;/div&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- JSON Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">3. JSON (Power User)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">JSON configuration</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;div dx-opts='{
+  "draggable":true,
+  "axis":"x",
+  "constrain":"parent"
+}'&gt;Drag me&lt;/div&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;div dx-opts=\'{&quot;draggable&quot;:true,&quot;axis&quot;:&quot;x&quot;,&quot;constrain&quot;:&quot;parent&quot;}\'&gt;Drag me&lt;/div&gt;')" class="copy-button">Copy</button>
+                        </div>
+                    </div>
+
+                    <!-- CSS Class Style -->
+                    <div style="border: 1px solid #e8e8e8; padding: 20px; border-radius: 6px; background: #fafafa;">
+                        <h5 style="margin-top: 0; color: #555;">4. CSS Class (Designer)</h5>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Class-based config</p>
+                        <div style="position: relative;">
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;div class="dragx-draggable-x-parent"&gt;
+  Drag me
+&lt;/div&gt;</pre>
+                            <button onclick="copyToClipboard(this, '&lt;div class=&quot;dragx-draggable-x-parent&quot;&gt;Drag me&lt;/div&gt;')" class="copy-button">Copy</button>
                         </div>
                     </div>
                 </div>
