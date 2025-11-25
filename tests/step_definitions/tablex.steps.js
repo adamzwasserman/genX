@@ -165,7 +165,7 @@ Given('a paginated table on page {int}', async function(pageNum) {
     return 'pending';
 });
 
-When('the user clicks {string}', async function(text) {
+When('in tableX, the user clicks {string}', async function(text) {
     await this.page.click(`text=${text}`);
 });
 
