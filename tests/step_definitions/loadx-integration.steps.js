@@ -88,7 +88,7 @@ When('I submit form {int} before form {int} completes', async function(form2Num,
     await new Promise(resolve => setTimeout(resolve, 50));
 });
 
-When('I submit the form', async function() {
+When('in integration, I submit the form', async function() {
     this.mockFetch = createMockFetch(300);
     if (typeof window !== 'undefined') {
         window.fetch = this.mockFetch;
