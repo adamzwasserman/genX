@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bindX Interactive Demo - Reactive Data Binding</title>
+
+  <!-- bindX Library -->
+  <script src="../src/bindx.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 3rem;
+    }
+
+    header h1 {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    header p {
+      font-size: 1.25rem;
+      opacity: 0.95;
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .demo-card {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .demo-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    }
+
+    .demo-card h2 {
+      color: #667eea;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 0.5rem;
+    }
+
+    .demo-card h3 {
+      color: #764ba2;
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+      font-size: 1.1rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #555;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color 0.3s;
+      margin-bottom: 1rem;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    input.bx-error,
+    textarea.bx-error,
+    select.bx-error {
+      border-color: #e74c3c;
+      background: #fff5f5;
+    }
+
+    input.bx-valid,
+    textarea.bx-valid,
+    select.bx-valid {
+      border-color: #27ae60;
+    }
+
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.1s;
+      margin-right: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    button:hover {
+      background: #5568d3;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    button.secondary {
+      background: #95a5a6;
+    }
+
+    button.secondary:hover {
+      background: #7f8c8d;
+    }
+
+    button.danger {
+      background: #e74c3c;
+    }
+
+    button.danger:hover {
+      background: #c0392b;
+    }
+
+    .output {
+      background: #f8f9fa;
+      border-left: 4px solid #667eea;
+      padding: 1rem;
+      border-radius: 6px;
+      margin-top: 1rem;
+      font-family: 'Monaco', 'Courier New', monospace;
+    }
+
+    .output strong {
+      color: #667eea;
+    }
+
+    .bx-error-message {
+      color: #e74c3c;
+      font-size: 0.875rem;
+      margin-top: -0.75rem;
+      margin-bottom: 0.75rem;
+      display: none;
+    }
+
+    input.bx-error ~ .bx-error-message,
+    textarea.bx-error ~ .bx-error-message,
+    select.bx-error ~ .bx-error-message {
+      display: block;
+    }
+
+    form.bx-invalid button[type="submit"] {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .counter-display {
+      font-size: 3rem;
+      font-weight: bold;
+      text-align: center;
+      color: #667eea;
+      margin: 1rem 0;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .cart-item {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cart-item-info {
+      flex: 1;
+    }
+
+    .cart-item-quantity {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .cart-item-quantity button {
+      padding: 0.25rem 0.75rem;
+      margin: 0;
+    }
+
+    .cart-summary {
+      background: #667eea;
+      color: white;
+      padding: 1rem;
+      border-radius: 6px;
+      margin-top: 1rem;
+    }
+
+    .cart-summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .cart-summary-row:last-child {
+      font-size: 1.25rem;
+      font-weight: bold;
+      border-top: 2px solid rgba(255,255,255,0.3);
+      padding-top: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .user-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+    }
+
+    .user-card h3 {
+      color: white;
+      margin-top: 0;
+    }
+
+    .user-card p {
+      margin: 0.5rem 0;
+    }
+
+    .checkbox-group {
+      margin: 1rem 0;
+    }
+
+    .checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 1rem;
+      margin-bottom: 0.5rem;
+      font-weight: normal;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: auto;
+      margin-right: 0.5rem;
+      margin-bottom: 0;
+    }
+
+    .radio-group {
+      margin: 1rem 0;
+    }
+
+    .radio-label {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 1rem;
+      margin-bottom: 0.5rem;
+      font-weight: normal;
+    }
+
+    .radio-label input[type="radio"] {
+      width: auto;
+      margin-right: 0.5rem;
+      margin-bottom: 0;
+    }
+
+    .tag {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      margin: 0.25rem;
+      font-size: 0.875rem;
+    }
+
+    .code-block {
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.875rem;
+      margin: 1rem 0;
+    }
+
+    footer {
+      text-align: center;
+      color: white;
+      margin-top: 3rem;
+      padding: 2rem;
+      background: rgba(0,0,0,0.2);
+      border-radius: 12px;
+    }
+
+    footer a {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 2rem;
+      }
+
+      .demo-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .counter-display {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎯 bindX Interactive Demo</h1>
+      <p>Explore reactive data binding with live examples</p>
+    </header>
+
+    <div class="demo-grid">
+      <!-- Demo 1: Simple Counter -->
+      <div class="demo-card">
+        <h2>1. Simple Counter</h2>
+        <p>Two-way binding with button interactions</p>
+
+        <div class="counter-display" bx-bind="counter.count"></div>
+
+        <div class="button-group">
+          <button onclick="counterData.count--">➖ Decrement</button>
+          <button onclick="counterData.count++">➕ Increment</button>
+          <button onclick="counterData.count = 0" class="secondary">🔄 Reset</button>
+        </div>
+
+        <div>
+          <label>Set Value Directly:</label>
+          <input type="number" bx-model="counter.count" placeholder="Enter a number">
+        </div>
+
+        <div class="output">
+          <strong>Current Value:</strong> <span bx-bind="counter.count"></span><br>
+          <strong>Doubled:</strong> <span bx-bind="counter.doubled"></span><br>
+          <strong>Status:</strong> <span bx-bind="counter.status"></span>
+        </div>
+      </div>
+
+      <!-- Demo 2: Text Input Mirror -->
+      <div class="demo-card">
+        <h2>2. Text Input Mirror</h2>
+        <p>Real-time text binding with character count</p>
+
+        <label>Type something:</label>
+        <input type="text" bx-model="mirror.text" placeholder="Start typing...">
+
+        <div class="output">
+          <strong>You typed:</strong> <span bx-bind="mirror.text"></span><br>
+          <strong>Character count:</strong> <span bx-bind="mirror.length"></span><br>
+          <strong>Word count:</strong> <span bx-bind="mirror.wordCount"></span><br>
+          <strong>Uppercase:</strong> <span bx-bind="mirror.uppercase"></span>
+        </div>
+
+        <h3>With Debouncing</h3>
+        <input
+          type="text"
+          bx-model="mirror.debounced"
+          bx-debounce="500"
+          placeholder="Updates after 500ms...">
+
+        <div class="output">
+          <strong>Debounced value:</strong> <span bx-bind="mirror.debounced"></span>
+        </div>
+      </div>
+
+      <!-- Demo 3: User Profile -->
+      <div class="demo-card">
+        <h2>3. User Profile</h2>
+        <p>Nested properties and computed full name</p>
+
+        <label>First Name:</label>
+        <input type="text" bx-model="user.firstName">
+
+        <label>Last Name:</label>
+        <input type="text" bx-model="user.lastName">
+
+        <label>Email:</label>
+        <input type="email" bx-model="user.email">
+
+        <label>Age:</label>
+        <input type="number" bx-model="user.age" min="1" max="120">
+
+        <div class="user-card">
+          <h3 bx-bind="user.fullName"></h3>
+          <p>📧 <span bx-bind="user.email"></span></p>
+          <p>🎂 <span bx-bind="user.age"></span> years old</p>
+          <p>✨ <span bx-bind="user.greeting"></span></p>
+        </div>
+      </div>
+
+      <!-- Demo 4: Shopping Cart -->
+      <div class="demo-card">
+        <h2>4. Shopping Cart</h2>
+        <p>Arrays, computed totals, and complex state</p>
+
+        <div id="cart-items"></div>
+
+        <div class="button-group">
+          <button onclick="addCartItem()">➕ Add Item</button>
+          <button onclick="clearCart()" class="danger">🗑️ Clear Cart</button>
+        </div>
+
+        <div class="cart-summary">
+          <div class="cart-summary-row">
+            <span>Subtotal:</span>
+            <span>$<span bx-bind="cart.subtotal"></span></span>
+          </div>
+          <div class="cart-summary-row">
+            <span>Tax (10%):</span>
+            <span>$<span bx-bind="cart.tax"></span></span>
+          </div>
+          <div class="cart-summary-row">
+            <span>Total:</span>
+            <span>$<span bx-bind="cart.total"></span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Demo 5: Form Validation -->
+      <div class="demo-card">
+        <h2>5. Form Validation</h2>
+        <p>Real-time validation with custom error messages</p>
+
+        <form bx-form id="registrationForm">
+          <label>Username:</label>
+          <input
+            type="text"
+            bx-model="form.username"
+            bx-validate='{"required":true,"minLength":3,"maxLength":16,"alphanumeric":true}'
+            bx-error-required="Username is required"
+            bx-error-minLength="Username must be at least 3 characters"
+            bx-error-maxLength="Username cannot exceed 16 characters"
+            bx-error-alphanumeric="Username can only contain letters and numbers">
+          <div class="bx-error-message"></div>
+
+          <label>Email:</label>
+          <input
+            type="email"
+            bx-model="form.email"
+            bx-validate='{"required":true,"email":true}'
+            bx-error-required="Email is required"
+            bx-error-email="Please enter a valid email address">
+          <div class="bx-error-message"></div>
+
+          <label>Password:</label>
+          <input
+            type="password"
+            bx-model="form.password"
+            bx-validate='{"required":true,"minLength":8}'
+            bx-error-required="Password is required"
+            bx-error-minLength="Password must be at least 8 characters">
+          <div class="bx-error-message"></div>
+
+          <label>Age:</label>
+          <input
+            type="number"
+            bx-model="form.age"
+            bx-validate='{"required":true,"number":true,"min":18,"max":120}'
+            bx-error-required="Age is required"
+            bx-error-number="Age must be a number"
+            bx-error-min="You must be at least 18 years old"
+            bx-error-max="Age cannot exceed 120">
+          <div class="bx-error-message"></div>
+
+          <button type="submit">✅ Submit</button>
+        </form>
+
+        <div id="form-output" class="output" style="display: none;"></div>
+      </div>
+
+      <!-- Demo 6: Checkboxes and Radio Buttons -->
+      <div class="demo-card">
+        <h2>6. Checkboxes & Radio Buttons</h2>
+        <p>Array binding and value selection</p>
+
+        <h3>Select Your Skills (Checkboxes)</h3>
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" bx-model="preferences.skills" value="javascript">
+            JavaScript
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" bx-model="preferences.skills" value="python">
+            Python
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" bx-model="preferences.skills" value="rust">
+            Rust
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" bx-model="preferences.skills" value="go">
+            Go
+          </label>
+        </div>
+
+        <h3>Preferred Framework (Radio)</h3>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" bx-model="preferences.framework" value="react" name="framework">
+            React
+          </label>
+          <label class="radio-label">
+            <input type="radio" bx-model="preferences.framework" value="vue" name="framework">
+            Vue
+          </label>
+          <label class="radio-label">
+            <input type="radio" bx-model="preferences.framework" value="angular" name="framework">
+            Angular
+          </label>
+          <label class="radio-label">
+            <input type="radio" bx-model="preferences.framework" value="svelte" name="framework">
+            Svelte
+          </label>
+        </div>
+
+        <h3>Newsletter Subscription</h3>
+        <label class="checkbox-label">
+          <input type="checkbox" bx-model="preferences.subscribe">
+          Subscribe to newsletter
+        </label>
+
+        <div class="output">
+          <strong>Selected Skills:</strong>
+          <span id="skills-display"></span><br>
+          <strong>Preferred Framework:</strong> <span bx-bind="preferences.framework"></span><br>
+          <strong>Newsletter:</strong> <span bx-bind="preferences.subscribeText"></span>
+        </div>
+      </div>
+
+      <!-- Demo 7: Select Dropdown -->
+      <div class="demo-card">
+        <h2>7. Select Dropdown</h2>
+        <p>Single and multi-select binding</p>
+
+        <label>Country:</label>
+        <select bx-model="selection.country">
+          <option value="">Select a country...</option>
+          <option value="us">United States</option>
+          <option value="ca">Canada</option>
+          <option value="uk">United Kingdom</option>
+          <option value="de">Germany</option>
+          <option value="fr">France</option>
+          <option value="jp">Japan</option>
+        </select>
+
+        <label>Favorite Colors (Multi-select):</label>
+        <select bx-model="selection.colors" multiple size="5">
+          <option value="red">Red</option>
+          <option value="blue">Blue</option>
+          <option value="green">Green</option>
+          <option value="yellow">Yellow</option>
+          <option value="purple">Purple</option>
+        </select>
+
+        <div class="output">
+          <strong>Selected Country:</strong> <span bx-bind="selection.countryName"></span><br>
+          <strong>Selected Colors:</strong> <span id="colors-display"></span>
+        </div>
+      </div>
+
+      <!-- Demo 8: Textarea -->
+      <div class="demo-card">
+        <h2>8. Textarea Binding</h2>
+        <p>Multi-line text with character limit</p>
+
+        <label>Bio (<span bx-bind="bio.remaining"></span> characters remaining):</label>
+        <textarea
+          bx-model="bio.text"
+          rows="6"
+          maxlength="500"
+          placeholder="Tell us about yourself..."></textarea>
+
+        <div class="output">
+          <strong>Character count:</strong> <span bx-bind="bio.length"></span> / 500<br>
+          <strong>Word count:</strong> <span bx-bind="bio.wordCount"></span><br>
+          <strong>Line count:</strong> <span bx-bind="bio.lineCount"></span>
+        </div>
+      </div>
+
+      <!-- Demo 9: Watchers -->
+      <div class="demo-card">
+        <h2>9. Watchers</h2>
+        <p>React to data changes with callbacks</p>
+
+        <label>Watch this value:</label>
+        <input type="text" bx-model="watcher.value" placeholder="Type something...">
+
+        <div class="output">
+          <strong>Change history:</strong>
+          <div id="watcher-log" style="max-height: 150px; overflow-y: auto; margin-top: 0.5rem;"></div>
+        </div>
+
+        <button onclick="clearWatcherLog()" class="secondary">Clear Log</button>
+      </div>
+
+      <!-- Demo 10: Computed Properties Chain -->
+      <div class="demo-card">
+        <h2>10. Computed Properties Chain</h2>
+        <p>Nested computed properties with dependencies</p>
+
+        <label>Base Value:</label>
+        <input type="number" bx-model="computed.base" value="10">
+
+        <div class="output">
+          <strong>Base:</strong> <span bx-bind="computed.base"></span><br>
+          <strong>Doubled:</strong> <span bx-bind="computed.doubled"></span><br>
+          <strong>Tripled:</strong> <span bx-bind="computed.tripled"></span><br>
+          <strong>Squared:</strong> <span bx-bind="computed.squared"></span><br>
+          <strong>Sum of all:</strong> <span bx-bind="computed.sum"></span>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <h3>🚀 Ready to use bindX?</h3>
+      <p>
+        <a href="../docs/guides/bindx-getting-started.md">Getting Started Guide</a> •
+        <a href="../docs/api/bindx-api.md">API Reference</a> •
+        <a href="https://github.com/genx/genx">GitHub</a>
+      </p>
+      <p style="margin-top: 1rem; opacity: 0.8;">
+        bindX - Lightweight reactive data binding for modern web applications
+      </p>
+    </footer>
+  </div>
+
+  <script>
+    // Demo 1: Counter
+    const counterData = window.bindX.reactive({
+      count: 0
+    });
+
+    // Computed properties for counter
+    const counterDoubled = window.bindX.computed(() => counterData.count * 2);
+    const counterStatus = window.bindX.computed(() => {
+      const count = counterData.count;
+      if (count === 0) return 'Zero';
+      if (count > 0) return 'Positive';
+      return 'Negative';
+    });
+
+    // Demo 2: Mirror
+    const mirrorData = window.bindX.reactive({
+      text: '',
+      debounced: ''
+    });
+
+    const mirrorLength = window.bindX.computed(() => mirrorData.text.length);
+    const mirrorWordCount = window.bindX.computed(() => {
+      const text = mirrorData.text.trim();
+      return text === '' ? 0 : text.split(/\s+/).length;
+    });
+    const mirrorUppercase = window.bindX.computed(() => mirrorData.text.toUpperCase());
+
+    // Demo 3: User
+    const userData = window.bindX.reactive({
+      firstName: 'Alice',
+      lastName: 'Johnson',
+      email: 'alice@example.com',
+      age: 28
+    });
+
+    const userFullName = window.bindX.computed(() =>
+      `${userData.firstName} ${userData.lastName}`
+    );
+
+    const userGreeting = window.bindX.computed(() =>
+      `Welcome, ${userData.firstName}!`
+    );
+
+    // Demo 4: Shopping Cart
+    const cartData = window.bindX.reactive({
+      items: [
+        { name: 'Laptop', price: 999.99, quantity: 1 },
+        { name: 'Mouse', price: 29.99, quantity: 2 },
+        { name: 'Keyboard', price: 79.99, quantity: 1 }
+      ]
+    });
+
+    const cartSubtotal = window.bindX.computed(() =>
+      cartData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)
+    );
+
+    const cartTax = window.bindX.computed(() =>
+      (parseFloat(cartSubtotal()) * 0.1).toFixed(2)
+    );
+
+    const cartTotal = window.bindX.computed(() =>
+      (parseFloat(cartSubtotal()) + parseFloat(cartTax())).toFixed(2)
+    );
+
+    function renderCartItems() {
+      const container = document.getElementById('cart-items');
+      container.innerHTML = cartData.items.map((item, index) => `
+        <div class="cart-item">
+          <div class="cart-item-info">
+            <strong>${item.name}</strong><br>
+            $${item.price.toFixed(2)} each
+          </div>
+          <div class="cart-item-quantity">
+            <button onclick="updateQuantity(${index}, -1)">-</button>
+            <span>${item.quantity}</span>
+            <button onclick="updateQuantity(${index}, 1)">+</button>
+            <button onclick="removeItem(${index})" class="danger">×</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateQuantity(index, delta) {
+      const newQty = cartData.items[index].quantity + delta;
+      if (newQty > 0) {
+        cartData.items[index].quantity = newQty;
+        renderCartItems();
+      }
+    }
+
+    function removeItem(index) {
+      cartData.items.splice(index, 1);
+      renderCartItems();
+    }
+
+    function addCartItem() {
+      const names = ['Monitor', 'Headphones', 'Webcam', 'USB Cable', 'Desk Mat'];
+      const randomName = names[Math.floor(Math.random() * names.length)];
+      const randomPrice = (Math.random() * 100 + 10).toFixed(2);
+
+      cartData.items.push({
+        name: randomName,
+        price: parseFloat(randomPrice),
+        quantity: 1
+      });
+      renderCartItems();
+    }
+
+    function clearCart() {
+      cartData.items = [];
+      renderCartItems();
+    }
+
+    // Demo 5: Form
+    const formData = window.bindX.reactive({
+      username: '',
+      email: '',
+      password: '',
+      age: ''
+    });
+
+    document.getElementById('registrationForm').addEventListener('bx-form-valid', (e) => {
+      const output = document.getElementById('form-output');
+      output.style.display = 'block';
+      output.innerHTML = `
+        <strong>✅ Form submitted successfully!</strong><br>
+        <strong>Username:</strong> ${e.detail.data.username}<br>
+        <strong>Email:</strong> ${e.detail.data.email}<br>
+        <strong>Age:</strong> ${e.detail.data.age}
+      `;
+    });
+
+    document.getElementById('registrationForm').addEventListener('bx-form-invalid', (e) => {
+      const output = document.getElementById('form-output');
+      output.style.display = 'block';
+      output.innerHTML = '<strong>❌ Please fix the errors above</strong>';
+    });
+
+    // Demo 6: Preferences
+    const preferencesData = window.bindX.reactive({
+      skills: [],
+      framework: '',
+      subscribe: false
+    });
+
+    const preferencesSubscribeText = window.bindX.computed(() =>
+      preferencesData.subscribe ? 'Yes' : 'No'
+    );
+
+    function updateSkillsDisplay() {
+      const display = document.getElementById('skills-display');
+      if (preferencesData.skills.length === 0) {
+        display.innerHTML = '<em>None selected</em>';
+      } else {
+        display.innerHTML = preferencesData.skills.map(skill =>
+          `<span class="tag">${skill}</span>`
+        ).join('');
+      }
+    }
+
+    window.bindX.watch(() => preferencesData.skills, updateSkillsDisplay, { immediate: true, deep: true });
+
+    // Demo 7: Selection
+    const selectionData = window.bindX.reactive({
+      country: '',
+      colors: []
+    });
+
+    const countryNames = {
+      us: 'United States',
+      ca: 'Canada',
+      uk: 'United Kingdom',
+      de: 'Germany',
+      fr: 'France',
+      jp: 'Japan'
+    };
+
+    const selectionCountryName = window.bindX.computed(() =>
+      countryNames[selectionData.country] || 'None selected'
+    );
+
+    function updateColorsDisplay() {
+      const display = document.getElementById('colors-display');
+      if (selectionData.colors.length === 0) {
+        display.innerHTML = '<em>None selected</em>';
+      } else {
+        display.innerHTML = selectionData.colors.map(color =>
+          `<span class="tag">${color}</span>`
+        ).join('');
+      }
+    }
+
+    window.bindX.watch(() => selectionData.colors, updateColorsDisplay, { immediate: true, deep: true });
+
+    // Demo 8: Bio
+    const bioData = window.bindX.reactive({
+      text: ''
+    });
+
+    const bioLength = window.bindX.computed(() => bioData.text.length);
+    const bioWordCount = window.bindX.computed(() => {
+      const text = bioData.text.trim();
+      return text === '' ? 0 : text.split(/\s+/).length;
+    });
+    const bioLineCount = window.bindX.computed(() => {
+      return bioData.text.split('\n').length;
+    });
+    const bioRemaining = window.bindX.computed(() => 500 - bioData.text.length);
+
+    // Demo 9: Watcher
+    const watcherData = window.bindX.reactive({
+      value: '',
+      history: []
+    });
+
+    let watcherLogElement;
+
+    window.bindX.watch(
+      () => watcherData.value,
+      (newValue, oldValue) => {
+        if (!watcherLogElement) {
+          watcherLogElement = document.getElementById('watcher-log');
+        }
+
+        const timestamp = new Date().toLocaleTimeString();
+        const entry = document.createElement('div');
+        entry.textContent = `[${timestamp}] "${oldValue}" → "${newValue}"`;
+        entry.style.padding = '0.25rem 0';
+        entry.style.borderBottom = '1px solid #eee';
+
+        watcherLogElement.insertBefore(entry, watcherLogElement.firstChild);
+
+        // Keep only last 10 entries
+        while (watcherLogElement.children.length > 10) {
+          watcherLogElement.removeChild(watcherLogElement.lastChild);
+        }
+      }
+    );
+
+    function clearWatcherLog() {
+      const log = document.getElementById('watcher-log');
+      log.innerHTML = '<em>No changes yet</em>';
+    }
+
+    // Demo 10: Computed Chain
+    const computedData = window.bindX.reactive({
+      base: 10
+    });
+
+    const computedDoubled = window.bindX.computed(() => computedData.base * 2);
+    const computedTripled = window.bindX.computed(() => computedData.base * 3);
+    const computedSquared = window.bindX.computed(() => computedData.base * computedData.base);
+    const computedSum = window.bindX.computed(() =>
+      computedData.base + computedDoubled() + computedTripled() + computedSquared()
+    );
+
+    // Initialize bindX with all data
+    const allData = window.bindX.reactive({
+      counter: counterData,
+      mirror: {
+        ...mirrorData,
+        length: mirrorLength,
+        wordCount: mirrorWordCount,
+        uppercase: mirrorUppercase
+      },
+      user: {
+        ...userData,
+        fullName: userFullName,
+        greeting: userGreeting
+      },
+      cart: {
+        ...cartData,
+        subtotal: cartSubtotal,
+        tax: cartTax,
+        total: cartTotal
+      },
+      form: formData,
+      preferences: {
+        ...preferencesData,
+        subscribeText: preferencesSubscribeText
+      },
+      selection: {
+        ...selectionData,
+        countryName: selectionCountryName
+      },
+      bio: {
+        ...bioData,
+        length: bioLength,
+        wordCount: bioWordCount,
+        lineCount: bioLineCount,
+        remaining: bioRemaining
+      },
+      watcher: watcherData,
+      computed: {
+        ...computedData,
+        doubled: computedDoubled,
+        tripled: computedTripled,
+        squared: computedSquared,
+        sum: computedSum
+      }
+    });
+
+    // Additional computed properties that need to be in the main data object
+    allData.counter.doubled = counterDoubled;
+    allData.counter.status = counterStatus;
+
+    // Initialize bindX
+    window.bindX.init(allData);
+
+    // Initial render for cart
+    renderCartItems();
+
+    // Initialize watcher log
+    clearWatcherLog();
+
+    console.log('✅ bindX demo initialized successfully!');
+    console.log('📊 All reactive data:', allData);
+  </script>
+</body>
+</html>

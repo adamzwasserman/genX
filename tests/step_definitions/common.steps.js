@@ -15,10 +15,6 @@ Given('the DOM is ready', async function() {
     await this.page.waitForLoadState('domcontentloaded');
 });
 
-Given('the page is rendered', async function() {
-    await this.page.waitForLoadState('load');
-});
-
 When('the page is rendered', async function() {
     await this.page.waitForLoadState('load');
 });

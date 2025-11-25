@@ -149,7 +149,7 @@ Then('the configuration should remain unchanged', async function() {
     assert.strictEqual(actualValue, 300, 'Configuration should not have been modified');
 });
 
-Then('no errors should occur', async function() {
+Then('in loadx-initialization, no errors should occur', async function() {
     assert.strictEqual(this.modificationError, null, 'No error should occur when attempting to modify frozen config');
 });
 
@@ -201,7 +201,7 @@ Then('only one element with id {string} should exist', async function(id) {
 });
 
 // DOM Scanning
-Given('an element with lx-strategy={string}', async function(strategy) {
+Given('in loadx-initialization, an element with lx-strategy={string}', async function(strategy) {
     await this.page.evaluate((strat) => {
         const el = document.createElement('div');
         el.setAttribute('lx-strategy', strat);
@@ -210,7 +210,7 @@ Given('an element with lx-strategy={string}', async function(strategy) {
     }, strategy);
 });
 
-Given('an element with lx-loading={string}', async function(loading) {
+Given('in loadx-initialization, an element with lx-loading={string}', async function(loading) {
     await this.page.evaluate((loadingVal) => {
         const el = document.createElement('div');
         el.setAttribute('lx-loading', loadingVal);

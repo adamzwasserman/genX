@@ -6,7 +6,7 @@ const { Given, When, Then } = require('@cucumber/cucumber');
 const assert = require('assert');
 
 // Background steps
-Given('loadX is initialized with default configuration', function() {
+Given('in loadx-spinner-strategy, loadX is initialized with default configuration', function() {
     this.config = {
         minDisplayMs: 300,
         autoDetect: true,

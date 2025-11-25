@@ -34,7 +34,7 @@ When('the element is processed', async function() {
     });
 });
 
-Then('the element should display {string}', async function(expected) {
+Then('in fmtX, the element should display {string}', async function(expected) {
     const actual = await this.page.locator('#test').textContent();
     assert.strictEqual(actual, expected, `Expected "${expected}", got "${actual}"`);
 });
@@ -135,7 +135,7 @@ Then('the element should display the original value {string}', async function(ex
     assert.strictEqual(actual, expected);
 });
 
-Then('no error should be thrown', async function() {
+Then('in fmtX, no error should be thrown', async function() {
     const errors = await this.page.evaluate(() => {
         return window.__errors || [];
     });
@@ -166,7 +166,7 @@ Given('{int} elements with fx-format={string}', async function(count, format) {
     await this.page.addScriptTag({ path: './src/fmtx.js' });
 });
 
-When('all elements are processed', async function() {
+When('all fmtX elements are processed', async function() {
     this.startTime = Date.now();
     await this.page.evaluate(() => {
         if (window.FormatX && window.FormatX.scan) {

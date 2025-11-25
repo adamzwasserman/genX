@@ -253,7 +253,7 @@ Feature: AccessX (accX) - Accessibility Enhancement Module
   # Performance
   Scenario: Process 1000 accessible elements under 16ms
     Given 1000 elements with various ax- attributes
-    When all elements are processed
+    When all accX elements are processed
     Then the operation should complete in less than 16ms
     And it should maintain 60 FPS
 

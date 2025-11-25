@@ -22,7 +22,7 @@ Given('the loadX module is loaded', async function() {
 // BASIC LOADING STATE
 // ============================================================================
 
-Given('an element with lx-loading={string}', async function(enabled) {
+Given('in loadx, an element with lx-loading={string}', async function(enabled) {
     await this.page.setContent(`
         <html><body>
             <div id="test-element" lx-loading="${enabled}">
@@ -337,7 +337,7 @@ Given('multiple async operations in scope', async function() { return 'pending';
 Then('loading should wait for all to complete', function() { return 'pending'; });
 Given('an element with custom loading content', async function() { return 'pending'; });
 Then('custom content should be shown', function() { return 'pending'; });
-Given('an event listener for {string}', async function(event) { return 'pending'; });
+Given('in loadx, an event listener for {string}', async function(event) { return 'pending'; });
 Then('loading animation should respect prefers-reduced-motion', function() { return 'pending'; });
 Given('loading state is applied', async function() { return 'pending'; });
 When('the element is removed', async function() { return 'pending'; });
