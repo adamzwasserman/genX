@@ -387,6 +387,7 @@
     /**
      * Parse loadX attributes from element (polymorphic attribute processing)
      * Supports multiple syntax styles:
+     * - Bootloader cache: window.genx.getConfig() (O(1) lookup)
      * - HTML attributes: lx-strategy="spinner"
      * - CSS classes: class="lx-spinner"
      * - JSON config: lx-config='{"strategy":"spinner","duration":500}'
@@ -402,51 +403,27 @@
             return { strategy: 'spinner' };
         } // Default
 
-        const result = {};
-
-        // Priority 1: lx-config JSON (highest priority)
-        const jsonConfig = el.getAttribute('lx-config');
-        if (jsonConfig) {
-            try {
-                const parsed = JSON.parse(jsonConfig);
-                Object.assign(result, parsed);
-
-                // Normalize strategy name
-                if (result.strategy) {
-                    result.strategy = normalizeStrategyName(result.strategy);
-                }
-
+        // Priority 0: Bootloader cache (highest priority, O(1) lookup)
+        if (window.genx && window.genx.getConfig) {
+            const cachedConfig = window.genx.getConfig(el);
+            if (cachedConfig && cachedConfig.strategy) {
+                // Got cached config - normalize and return
+                const result = {...cachedConfig};
+                result.strategy = normalizeStrategyName(result.strategy);
                 return result;
-            } catch (error) {
-                // Invalid JSON - log error and continue to other methods
-                console.warn('loadX: Invalid JSON in lx-config:', error.message);
             }
         }
 
-        // Priority 2: lx-strategy HTML attribute
-        const strategyAttr = el.getAttribute('lx-strategy');
-        if (strategyAttr) {
-            result.strategy = normalizeStrategyName(strategyAttr);
-        }
+        // Fallback to polymorphic notation parsing (legacy standalone mode)
+        // Use polymorphic parser from genx-common (supports Verbose, Colon, JSON, CSS Class)
+        const result = window.genxCommon
+            ? window.genxCommon.notation.parseNotation(el, 'lx')
+            : {};  // Fallback if genx-common not loaded
 
-        // Priority 3: data-lx-strategy attribute
-        if (!result.strategy) {
-            const dataStrategy = el.getAttribute('data-lx-strategy');
-            if (dataStrategy) {
-                result.strategy = normalizeStrategyName(dataStrategy);
-            }
+        // Normalize strategy name
+        if (result.strategy) {
+            result.strategy = normalizeStrategyName(result.strategy);
         }
-
-        // Priority 4: CSS class syntax (lx-spinner or lx:spinner:500)
-        if (!result.strategy) {
-            const classResult = parseClassSyntax(el.className, config);
-            if (classResult.strategy) {
-                Object.assign(result, classResult);
-            }
-        }
-
-        // Parse additional attributes
-        parseAdditionalAttributes(el, result);
 
         // Apply defaults if no strategy found
         if (!result.strategy) {
