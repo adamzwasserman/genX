@@ -1403,10 +1403,10 @@
                     <div class="example-demo">
                         <label>Input Type:
                             <select id="date-input-type-selector" style="margin: 0 10px; padding: 5px;">
-                                <option value="iso" selected>ISO String (2025-11-10)</option>
-                                <option value="unix">Unix Timestamp / Epoch (1762732800)</option>
-                                <option value="milliseconds">Milliseconds (1762732800000)</option>
-                                <option value="date">JavaScript Date String</option>
+                                <option value="iso" selected>ISO String (2025-03-15)</option>
+                                <option value="unix">Unix Timestamp (1735689600 → Jan 1, 2025)</option>
+                                <option value="milliseconds">Milliseconds (1751328000000 → July 1, 2025)</option>
+                                <option value="date">JS Date String (Dec 25, 2025)</option>
                             </select>
                         </label>
                         <br><br>
@@ -1421,8 +1421,8 @@
                         </label>
                         <br><br>
                         <div>
-                            <strong>Input:</strong> <span id="date-input-value" class="original-value">2025-11-10</span><br>
-                            <strong>Output:</strong> <time id="date-output" class="formatted-value" fx-format="date" fx-type="iso" fx-date-format="long">2025-11-10</time>
+                            <strong>Input:</strong> <span id="date-input-value" class="original-value">2025-03-15</span><br>
+                            <strong>Output:</strong> <time id="date-output" class="formatted-value" fx-format="date" fx-type="iso" fx-date-format="long">2025-03-15</time>
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
@@ -1694,7 +1694,11 @@
                     <h4>1. Enhanced Buttons</h4>
                     <p>Automatic ARIA attributes</p>
                     <div class="example-demo">
+                        <span class="original-value">Before: &lt;button&gt;Save&lt;/button&gt;</span>
                         <button ax-enhance="button" ax-label="Save your work">Save</button>
+                        <br><br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;button ax-enhance="button" ax-label="Save your work"&gt;</pre>
                     </div>
                 </div>
 
@@ -1703,8 +1707,13 @@
                     <h4>2. Form Accessibility</h4>
                     <p>Auto-linked labels and inputs</p>
                     <div class="example-demo">
+                        <span class="original-value">Before: Unlinked label and input</span>
                         <label ax-enhance="label">Email</label>
                         <input type="email" ax-enhance="input" placeholder="you@example.com">
+                        <br><br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;label ax-enhance="label"&gt;
+&lt;input ax-enhance="input"&gt;</pre>
                     </div>
                 </div>
 
@@ -1713,7 +1722,11 @@
                     <h4>3. Skip Navigation</h4>
                     <p>Keyboard-only skip links</p>
                     <div class="example-demo">
+                        <span class="original-value">Before: Regular anchor link</span>
                         <a href="#main-content" ax-enhance="skiplink">Skip to main content</a>
+                        <br><br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;a ax-enhance="skiplink"&gt;</pre>
                     </div>
                 </div>
 
@@ -1722,7 +1735,11 @@
                     <h4>4. ARIA Landmarks</h4>
                     <p>Automatic landmark roles</p>
                     <div class="example-demo">
+                        <span class="original-value">Before: &lt;div&gt; with no role</span>
                         <div ax-enhance="landmark" ax-landmark="navigation">Navigation content</div>
+                        <br><br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div ax-enhance="landmark" ax-landmark="navigation"&gt;</pre>
                     </div>
                 </div>
 
@@ -1731,7 +1748,11 @@
                     <h4>5. Live Updates</h4>
                     <p>Screen reader announcements</p>
                     <div class="example-demo">
+                        <span class="original-value">Before: Static text, no announcements</span>
                         <div ax-enhance="live" ax-live="polite">Status: Ready</div>
+                        <br><br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div ax-enhance="live" ax-live="polite"&gt;</pre>
                     </div>
                 </div>
 
@@ -1740,7 +1761,11 @@
                     <h4>6. Focus Indicators</h4>
                     <p>Enhanced focus visibility</p>
                     <div class="example-demo">
+                        <span class="original-value">Before: Browser default focus ring</span>
                         <button ax-enhance="focus">Focused Element</button>
+                        <br><br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;button ax-enhance="focus"&gt;</pre>
                     </div>
                 </div>
 
@@ -1749,8 +1774,13 @@
                     <h4>7. Form Errors</h4>
                     <p>Accessible error announcements</p>
                     <div class="example-demo">
+                        <span class="original-value">Before: Error not linked to input</span>
                         <input type="text" ax-enhance="input" aria-invalid="true">
                         <div ax-enhance="error" role="alert">This field is required</div>
+                        <br><br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;input ax-enhance="input" aria-invalid="true"&gt;
+&lt;div ax-enhance="error" role="alert"&gt;</pre>
                     </div>
                 </div>
 
@@ -1759,7 +1789,11 @@
                     <h4>8. Accessible Tooltips</h4>
                     <p>Screen reader friendly tooltips</p>
                     <div class="example-demo">
+                        <span class="original-value">Before: No tooltip accessible to AT</span>
                         <button ax-enhance="tooltip" ax-tooltip="Additional information">Help</button>
+                        <br><br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;button ax-enhance="tooltip" ax-tooltip="..."&gt;</pre>
                     </div>
                 </div>
 
@@ -1768,11 +1802,15 @@
                     <h4>9. Modal Focus Trap</h4>
                     <p>Accessible modal dialogs</p>
                     <div class="example-demo">
+                        <span class="original-value">Before: No focus trap, no ARIA dialog</span>
                         <button onclick="showModal()">Open Modal</button>
                         <div id="modal" ax-enhance="dialog" style="display:none;">
                             <h3>Dialog Title</h3>
                             <button onclick="hideModal()">Close</button>
                         </div>
+                        <br><br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div ax-enhance="dialog"&gt;</pre>
                     </div>
                 </div>
 
@@ -1781,7 +1819,11 @@
                     <h4>10. Status Updates</h4>
                     <p>Non-intrusive status messages</p>
                     <div class="example-demo">
+                        <span class="original-value">Before: Status not announced</span>
                         <div ax-enhance="status" role="status">5 items saved</div>
+                        <br><br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div ax-enhance="status" role="status"&gt;</pre>
                     </div>
                 </div>
             </div>
@@ -1801,6 +1843,10 @@
                         <span class="original-value">Initial: (empty)</span>
                         <input type="text" bx-model="name" placeholder="Enter your name">
                         <p>Hello, <span class="formatted-value" bx-bind="name">World</span>!</p>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;input bx-model="name"&gt;
+&lt;span bx-bind="name"&gt;</pre>
                     </div>
                 </div>
 
@@ -1812,6 +1858,10 @@
                         <span class="original-value">Initial: 1</span>
                         <input type="number" bx-model="quantity" value="1" min="1">
                         <p>Quantity: <span class="formatted-value" bx-bind="quantity">1</span></p>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;input type="number" bx-model="quantity"&gt;
+&lt;span bx-bind="quantity"&gt;</pre>
                     </div>
                 </div>
 
@@ -1824,6 +1874,10 @@
                         <input type="checkbox" bx-model="agreed" id="agree">
                         <label for="agree">I agree</label>
                         <p>Status: <span class="formatted-value" bx-bind="agreed">false</span></p>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;input type="checkbox" bx-model="agreed"&gt;
+&lt;span bx-bind="agreed"&gt;</pre>
                     </div>
                 </div>
 
@@ -1839,6 +1893,10 @@
                             <option>Green</option>
                         </select>
                         <p>Selected: <span class="formatted-value" bx-bind="color">Red</span></p>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;select bx-model="color"&gt;
+&lt;span bx-bind="color"&gt;</pre>
                     </div>
                 </div>
 
@@ -1852,6 +1910,10 @@
                         <label><input type="radio" bx-model="size" value="M"> Medium</label>
                         <label><input type="radio" bx-model="size" value="L"> Large</label>
                         <p>Size: <span class="formatted-value" bx-bind="size">-</span></p>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;input type="radio" bx-model="size" value="S"&gt;
+&lt;span bx-bind="size"&gt;</pre>
                     </div>
                 </div>
 
@@ -1864,6 +1926,11 @@
                         <input type="number" bx-model="price" value="10" placeholder="Price">
                         <input type="number" bx-model="qty" value="2" placeholder="Quantity">
                         <p>Total: $<span class="formatted-value" bx-bind="total" bx-computed="price * qty">20</span></p>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;input bx-model="price"&gt;
+&lt;input bx-model="qty"&gt;
+&lt;span bx-bind="total" bx-computed="price * qty"&gt;</pre>
                     </div>
                 </div>
 
@@ -1876,6 +1943,10 @@
                         <input type="text" bx-model="firstName" placeholder="First">
                         <input type="text" bx-model="lastName" placeholder="Last">
                         <p>Full name: <span class="formatted-value" bx-bind="firstName">-</span> <span class="formatted-value" bx-bind="lastName">-</span></p>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;input bx-model="firstName"&gt;
+&lt;span bx-bind="firstName"&gt;</pre>
                     </div>
                 </div>
 
@@ -1887,6 +1958,10 @@
                         <span class="original-value">Initial: 0 characters</span>
                         <textarea bx-model="bio" rows="3" placeholder="Bio"></textarea>
                         <p>Characters: <span class="formatted-value" bx-bind="bio.length">0</span></p>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;textarea bx-model="bio"&gt;
+&lt;span bx-bind="bio.length"&gt;</pre>
                     </div>
                 </div>
 
@@ -1901,6 +1976,10 @@
                         <div bx-if="showDetails" style="margin-top:10px;">
                             <p class="formatted-value">Additional details shown</p>
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;input bx-model="showDetails"&gt;
+&lt;div bx-if="showDetails"&gt;</pre>
                     </div>
                 </div>
 
@@ -1914,6 +1993,10 @@
                         <p bx-bind="email" style="color:red;">
                             <span class="formatted-value" bx-if="email && !email.includes('@')">Invalid email</span>
                         </p>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;input bx-model="email"&gt;
+&lt;span bx-if="email &amp;&amp; !email.includes('@')"&gt;</pre>
                     </div>
                 </div>
 
@@ -2065,9 +2148,13 @@
                         <div class="draggable" dx-draggable="card" dx-data='{"id":1}'>
                             Drag me!
                         </div>
-                        <div class="drop-zone" dx-dropzone dx-accepts="card">
+                        <div class="drop-zone" dx-drop-zone dx-accepts="card">
                             Drop here
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="card" dx-data='{"id":1}'&gt;
+&lt;div dx-drop-zone dx-accepts="card"&gt;</pre>
                     </div>
                 </div>
 
@@ -2080,6 +2167,9 @@
                         <div class="draggable" dx-draggable="item">Item 1</div>
                         <div class="draggable" dx-draggable="item">Item 2</div>
                         <div class="draggable" dx-draggable="item">Item 3</div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="item"&gt;</pre>
                     </div>
                 </div>
 
@@ -2091,7 +2181,11 @@
                         <span class="original-value">State: Zone accepts images only</span>
                         <div class="draggable" dx-draggable="image" style="background:#e74c3c;">Image</div>
                         <div class="draggable" dx-draggable="text" style="background:#3498db;">Text</div>
-                        <div class="drop-zone" dx-dropzone dx-accepts="image">Images Only</div>
+                        <div class="drop-zone" dx-drop-zone dx-accepts="image">Images Only</div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="image"&gt;
+&lt;div dx-drop-zone dx-accepts="image"&gt;</pre>
                     </div>
                 </div>
 
@@ -2100,12 +2194,16 @@
                     <h4>4. Keyboard Dragging</h4>
                     <p>Space + Arrow keys</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Keyboard accessible drag</span>
                         <div class="draggable" dx-draggable="kbd" tabindex="0">
                             Press Space, use arrows
                         </div>
-                        <div class="drop-zone" dx-dropzone dx-accepts="kbd">
+                        <div class="drop-zone" dx-drop-zone dx-accepts="kbd">
                             Drop target
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="kbd" tabindex="0"&gt;</pre>
                     </div>
                 </div>
 
@@ -2114,9 +2212,13 @@
                     <h4>5. Custom Ghost Image</h4>
                     <p>Custom drag preview</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Custom preview on drag</span>
                         <div class="draggable" dx-draggable="custom" dx-ghost="custom">
                             Custom preview
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="custom" dx-ghost="custom"&gt;</pre>
                     </div>
                 </div>
 
@@ -2125,9 +2227,13 @@
                     <h4>6. Axis Constraint</h4>
                     <p>Horizontal-only drag</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Horizontal movement only</span>
                         <div class="draggable" dx-draggable="slider" dx-axis="horizontal">
                             ← Horizontal only →
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="slider" dx-axis="horizontal"&gt;</pre>
                     </div>
                 </div>
 
@@ -2136,12 +2242,16 @@
                     <h4>7. Clone Mode</h4>
                     <p>Leave original in place</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Original stays, copy created</span>
                         <div class="draggable" dx-draggable="template" dx-clone="true">
                             Drag to copy
                         </div>
-                        <div class="drop-zone" dx-dropzone dx-accepts="template">
+                        <div class="drop-zone" dx-drop-zone dx-accepts="template">
                             Drop copies here
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="template" dx-clone="true"&gt;</pre>
                     </div>
                 </div>
 
@@ -2150,12 +2260,16 @@
                     <h4>8. Revert Animation</h4>
                     <p>Return to start if invalid</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Reverts on invalid drop</span>
                         <div class="draggable" dx-draggable="revert" dx-revert="invalid">
                             Try dropping outside
                         </div>
-                        <div class="drop-zone" dx-dropzone dx-accepts="other">
+                        <div class="drop-zone" dx-drop-zone dx-accepts="other">
                             Wrong type
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="revert" dx-revert="invalid"&gt;</pre>
                     </div>
                 </div>
 
@@ -2164,9 +2278,13 @@
                     <h4>9. Grid Snapping</h4>
                     <p>Snap to 20px grid</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Snaps to 20px increments</span>
                         <div class="draggable" dx-draggable="grid" dx-grid="20">
                             Snaps to grid
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="grid" dx-grid="20"&gt;</pre>
                     </div>
                 </div>
 
@@ -2175,10 +2293,14 @@
                     <h4>10. Drag Events</h4>
                     <p>Track drag lifecycle</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Events logged on drag</span>
                         <div class="draggable" dx-draggable="tracked" id="dragTracked">
                             Drag to track events
                         </div>
                         <div id="dragEvents" style="margin-top:10px;font-size:0.8rem;"></div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="tracked"&gt;</pre>
                     </div>
                 </div>
             </div>
@@ -2195,8 +2317,12 @@
                     <h4>1. Spinner Loader</h4>
                     <p>Circle spinner animation</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Idle (click to load)</span>
                         <button onclick="simulateLoad(this, 'spinner')">Load with Spinner</button>
                         <div lx-strategy="spinner" style="min-height:60px;"></div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="spinner"&gt;</pre>
                     </div>
                 </div>
 
@@ -2205,8 +2331,12 @@
                     <h4>2. Skeleton Screen</h4>
                     <p>Content placeholder</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Idle (click to load)</span>
                         <button onclick="simulateLoad(this, 'skeleton')">Load with Skeleton</button>
                         <div lx-strategy="skeleton" lx-rows="3" style="min-height:100px;"></div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="skeleton" lx-rows="3"&gt;</pre>
                     </div>
                 </div>
 
@@ -2215,8 +2345,12 @@
                     <h4>3. Progress Bar</h4>
                     <p>Determinate progress</p>
                     <div class="example-demo">
+                        <span class="original-value">State: 0% progress</span>
                         <button onclick="simulateProgress(this)">Load with Progress</button>
                         <div lx-strategy="progress" lx-value="0" style="min-height:50px;"></div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="progress" lx-value="0"&gt;</pre>
                     </div>
                 </div>
 
@@ -2225,8 +2359,12 @@
                     <h4>4. Fade Transition</h4>
                     <p>Smooth opacity fade</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Content visible</span>
                         <button onclick="simulateLoad(this, 'fade')">Load with Fade</button>
                         <div lx-strategy="fade" style="min-height:60px;">Content</div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="fade"&gt;</pre>
                     </div>
                 </div>
 
@@ -2235,8 +2373,12 @@
                     <h4>5. Auto Strategy</h4>
                     <p>Automatic strategy selection</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Auto-detects best strategy</span>
                         <button onclick="simulateLoad(this, 'auto')">Auto Load</button>
                         <div lx-auto style="min-height:80px;"></div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-auto&gt;</pre>
                     </div>
                 </div>
 
@@ -2245,8 +2387,12 @@
                     <h4>6. Custom Duration</h4>
                     <p>Control animation timing</p>
                     <div class="example-demo">
+                        <span class="original-value">State: 3s custom duration</span>
                         <button onclick="simulateLoad(this, 'spinner', 3000)">3 Second Load</button>
                         <div lx-strategy="spinner" lx-duration="300"></div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="spinner" lx-duration="300"&gt;</pre>
                     </div>
                 </div>
 
@@ -2255,10 +2401,14 @@
                     <h4>7. HTMX Loading</h4>
                     <p>Automatic HTMX detection</p>
                     <div class="example-demo">
+                        <span class="original-value">State: HTMX-triggered loading</span>
                         <button hx-get="/api/data" hx-target="#htmx-content" lx-strategy="skeleton">
                             Load via HTMX
                         </button>
                         <div id="htmx-content" style="min-height:60px;"></div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;button hx-get="/api/data" lx-strategy="skeleton"&gt;</pre>
                     </div>
                 </div>
 
@@ -2267,8 +2417,12 @@
                     <h4>8. Fetch API Loading</h4>
                     <p>Auto-detect fetch calls</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Fetch-triggered loading</span>
                         <button onclick="fetchData(this)">Fetch Data</button>
                         <div id="fetch-content" lx-strategy="spinner"></div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="spinner"&gt;</pre>
                     </div>
                 </div>
 
@@ -2277,10 +2431,14 @@
                     <h4>9. Form Loading</h4>
                     <p>Loading during submission</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Form ready</span>
                         <form onsubmit="return simulateSubmit(event)">
                             <input type="text" placeholder="Enter data" required>
                             <button type="submit" lx-strategy="spinner">Submit</button>
                         </form>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;button type="submit" lx-strategy="spinner"&gt;</pre>
                     </div>
                 </div>
 
@@ -2289,12 +2447,18 @@
                     <h4>10. Multi-State Loading</h4>
                     <p>Different states for different areas</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Multiple loaders</span>
                         <button onclick="multiLoad()">Load All</button>
                         <div style="display:grid;gap:10px;margin-top:10px;">
                             <div lx-strategy="spinner" class="multi1" style="height:40px;"></div>
                             <div lx-strategy="skeleton" class="multi2" style="height:40px;"></div>
                             <div lx-strategy="progress" class="multi3" style="height:40px;"></div>
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="spinner"&gt;
+&lt;div lx-strategy="skeleton"&gt;
+&lt;div lx-strategy="progress"&gt;</pre>
                     </div>
                 </div>
             </div>
@@ -2311,11 +2475,15 @@
                     <h4>1. Breadcrumb Navigation</h4>
                     <p>Show current location</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Hierarchical breadcrumb</span>
                         <nav nx-breadcrumb="hierarchical">
                             <a href="/">Home</a> /
                             <a href="/products">Products</a> /
                             <span>Current Page</span>
                         </nav>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;nav nx-breadcrumb="hierarchical"&gt;</pre>
                     </div>
                 </div>
 
@@ -2324,6 +2492,7 @@
                     <h4>2. Tab Navigation</h4>
                     <p>Arrow key navigation</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Tab 1 active</span>
                         <div nx-tabs>
                             <div class="tabs">
                                 <button class="tab active" data-target="tab1">Tab 1</button>
@@ -2334,6 +2503,9 @@
                             <div id="tab2" class="tab-panel">Content 2</div>
                             <div id="tab3" class="tab-panel">Content 3</div>
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div nx-tabs&gt;</pre>
                     </div>
                 </div>
 
@@ -2342,6 +2514,7 @@
                     <h4>3. Dropdown Menu</h4>
                     <p>Keyboard accessible dropdown</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Menu collapsed</span>
                         <div nx-dropdown>
                             <button>Menu ▼</button>
                             <ul style="display:none;list-style:none;background:white;border:1px solid #ddd;padding:5px;">
@@ -2350,6 +2523,9 @@
                                 <li><a href="#" style="display:block;padding:5px;">Item 3</a></li>
                             </ul>
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div nx-dropdown&gt;</pre>
                     </div>
                 </div>
 
@@ -2358,11 +2534,15 @@
                     <h4>4. Scroll Spy</h4>
                     <p>Track scroll position</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Tracks active section</span>
                         <nav nx-scroll-spy>
                             <a href="#section1">Section 1</a>
                             <a href="#section2">Section 2</a>
                             <a href="#section3">Section 3</a>
                         </nav>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;nav nx-scroll-spy&gt;</pre>
                     </div>
                 </div>
 
@@ -2371,9 +2551,13 @@
                     <h4>5. Sticky Navigation</h4>
                     <p>Stays visible on scroll</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Becomes fixed on scroll</span>
                         <div nx-sticky style="background:white;padding:10px;border:1px solid #ddd;">
                             Sticky Navigation
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div nx-sticky&gt;</pre>
                     </div>
                 </div>
 
@@ -2382,12 +2566,16 @@
                     <h4>6. Mobile Menu</h4>
                     <p>Hamburger with focus trap</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Menu closed</span>
                         <button nx-hamburger data-target="mobile-menu">☰</button>
                         <div id="mobile-menu" style="display:none;background:white;padding:20px;border:1px solid #ddd;">
                             <a href="#" style="display:block;margin:10px 0;">Link 1</a>
                             <a href="#" style="display:block;margin:10px 0;">Link 2</a>
                             <button onclick="closeMobileMenu()">Close ✕</button>
                         </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;button nx-hamburger data-target="mobile-menu"&gt;</pre>
                     </div>
                 </div>
 
@@ -2396,7 +2584,11 @@
                     <h4>7. Smooth Scrolling</h4>
                     <p>Animated scroll to target</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Click to scroll</span>
                         <a href="#footer" nx-smooth-scroll>Scroll to footer</a>
+                        <br><br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;a nx-smooth-scroll&gt;</pre>
                     </div>
                 </div>
 
@@ -2405,6 +2597,7 @@
                     <h4>8. Pagination</h4>
                     <p>Navigate between pages</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Page 3 active</span>
                         <nav nx-pagination aria-label="Pagination">
                             <button>&lt; Prev</button>
                             <button>1</button>
@@ -2413,6 +2606,9 @@
                             <button>4</button>
                             <button>Next &gt;</button>
                         </nav>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;nav nx-pagination&gt;</pre>
                     </div>
                 </div>
 
@@ -2421,7 +2617,11 @@
                     <h4>9. Skip Navigation</h4>
                     <p>Jump to main content</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Tab to reveal</span>
                         <a href="#main-content" nx-skip-link>Skip to content</a>
+                        <br><br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;a nx-skip-link&gt;</pre>
                     </div>
                 </div>
 
@@ -2430,9 +2630,13 @@
                     <h4>10. History Trail</h4>
                     <p>Show visited pages</p>
                     <div class="example-demo">
+                        <span class="original-value">State: Trail breadcrumb</span>
                         <nav nx-breadcrumb="trail">
                             <span>Home → Products → Detail</span>
                         </nav>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;nav nx-breadcrumb="trail"&gt;</pre>
                     </div>
                 </div>
             </div>
@@ -2587,14 +2791,33 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize bindX with reactive data
             if (window.bindX && window.bindX.init && window.bindX.createReactive) {
-                // Create reactive object with initial values for Polymorphic Syntax demo
+                // Create reactive object with initial values for all demos
                 const reactiveData = window.bindX.createReactive({
+                    // Polymorphic Syntax demo
                     search1: '',
                     search2: '',
                     search3: '',
                     polyDemo1: '',
                     polyDemo2: '',
-                    polyDemo3: ''
+                    polyDemo3: '',
+                    // bindX Examples section
+                    name: '',
+                    quantity: 1,
+                    agreed: false,
+                    color: 'Red',
+                    size: '',
+                    price: 10,
+                    qty: 2,
+                    total: 20,
+                    firstName: '',
+                    lastName: '',
+                    bio: '',
+                    showDetails: false,
+                    email: '',
+                    // Form Validation demo
+                    userEmail: '',
+                    username: '',
+                    userPassword: ''
                 });
                 window.bindX.init(reactiveData, { auto: true, observe: true });
                 console.log('✅ bindX initialized with reactive data');
@@ -2645,12 +2868,12 @@
             const dateOutput = document.getElementById('date-output');
             const dateInputValue = document.getElementById('date-input-value');
 
-            // Input values for different types (all represent Nov 10, 2025)
+            // Input values for different types (different dates to show distinct changes)
             const inputValues = {
-                iso: '2025-11-10',
-                unix: '1762732800',
-                milliseconds: '1762732800000',
-                date: '2025-11-10T00:00:00Z'
+                iso: '2025-03-15',
+                unix: '1735689600',
+                milliseconds: '1751328000000',
+                date: '2025-12-25T00:00:00Z'
             };
 
             function updateDateExample() {
@@ -2843,22 +3066,21 @@
             }
 
             // Currency input type selector
-            const currencyFormatTypeSelector = document.getElementById('currency-format-type-selector');
             const currencyInputTypeSelector = document.getElementById('currency-input-type-selector');
             const currencyOutput = document.getElementById('currency-output');
             const currencyInputValue = document.getElementById('currency-input-value');
 
             const currencyInputValues = {
-                number: '1234.56',
-                cents: '123456',
-                string: '"1234.56"',
-                int: '1234'
+                number: '2499.99',
+                cents: '87543',
+                string: '"1599.50"',
+                int: '750',
+                smart: '$3,200 dollars'
             };
 
             function updateCurrencyExample() {
-                if (!currencyOutput || !currencyInputTypeSelector || !currencyFormatTypeSelector) return;
+                if (!currencyOutput || !currencyInputTypeSelector) return;
 
-                const formatType = currencyFormatTypeSelector.value;
                 const inputType = currencyInputTypeSelector.value;
                 const inputValue = currencyInputValues[inputType];
 
@@ -2870,7 +3092,7 @@
                 const formatDisplay = document.getElementById('currency-format-display');
                 const typeDisplay = document.getElementById('currency-type-display');
                 const currencyDisplay = document.getElementById('currency-currency-display');
-                if (formatDisplay) formatDisplay.textContent = formatType;
+                if (formatDisplay) formatDisplay.textContent = inputType === 'smart' ? 'smart' : 'currency';
                 if (typeDisplay) typeDisplay.textContent = inputType;
                 if (currencyDisplay) currencyDisplay.textContent = 'USD';
 
@@ -2878,7 +3100,7 @@
                 const rawValue = inputType === 'string' ? inputValue.replace(/"/g, '') : inputValue;
 
                 // Directly format using appropriate method
-                if (formatType === 'smart' && window.SmartX) {
+                if (inputType === 'smart' && window.SmartX) {
                     // Use SmartX auto-detection
                     const formatted = window.SmartX.format(currencyOutput, rawValue);
                     currencyOutput.textContent = formatted;
@@ -2906,9 +3128,6 @@
                 currencyInputTypeSelector.addEventListener('change', updateCurrencyExample);
                 updateCurrencyExample();
             }
-            if (currencyFormatTypeSelector) {
-                currencyFormatTypeSelector.addEventListener('change', updateCurrencyExample);
-            }
 
             // Percentage input type selector
             const percentInputTypeSelector = document.getElementById('percent-input-type-selector');
@@ -2917,9 +3136,9 @@
             const percentInputValue = document.getElementById('percent-input-value');
 
             const percentInputValues = {
-                decimal: '0.1234',
-                percentage: '12.34',
-                string: '"0.5"'
+                decimal: '0.2567',
+                percentage: '78.4',
+                string: '"0.333"'
             };
 
             function updatePercentExample() {

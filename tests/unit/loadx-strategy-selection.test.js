@@ -2,6 +2,13 @@
  * Unit tests for loadX Strategy Selection Logic
  */
 
+// Mock genxCommon for parseElementAttributes
+const genxCommon = require('../../src/genx-common.js');
+if (typeof global.window === 'undefined') {
+    global.window = {};
+}
+global.window.genxCommon = genxCommon;
+
 describe('loadX - Strategy Selection', () => {
     let mockWindow;
     let mockDocument;

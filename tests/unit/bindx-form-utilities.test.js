@@ -18,6 +18,13 @@ describe('bindX Form Utilities', () => {
         jest.resetModules();
         delete require.cache[require.resolve('../../src/bindx.js')];
         bindX = require('../../src/bindx.js');
+
+        // Mock genxCommon for parseBindingAttribute
+        const genxCommon = require('../../src/genx-common.js');
+        if (typeof global.window === 'undefined') {
+            global.window = {};
+        }
+        global.window.genxCommon = genxCommon;
     });
 
     afterEach(() => {

@@ -38,14 +38,27 @@
 
     /**
      * Notify path subscribers (for computed invalidation)
+     * Also notifies subscribers of child paths when parent changes
+     * e.g., when 'bio' changes, also notify 'bio.length', 'bio.wordCount', etc.
      * @param {string} path - Path that changed
      * @param {*} value - New value
      */
     const notifyPathSubscribers = (path) => {
+        // Notify exact path subscribers
         const subscribers = pathSubscribers.get(path);
         if (subscribers) {
             for (const callback of subscribers) {
                 callback(path);
+            }
+        }
+
+        // Also notify child path subscribers (e.g., 'bio' changing should notify 'bio.length')
+        const pathPrefix = path + '.';
+        for (const [subscribedPath, childSubscribers] of pathSubscribers.entries()) {
+            if (typeof subscribedPath === 'string' && subscribedPath.startsWith(pathPrefix)) {
+                for (const callback of childSubscribers) {
+                    callback(subscribedPath);
+                }
             }
         }
     };
@@ -358,6 +371,10 @@
             if (el.type === 'checkbox') {
                 return el.checked;
             }
+            if (el.type === 'radio') {
+                // For radio buttons, return the value attribute if checked
+                return el.checked ? el.value : null;
+            }
             if (el.type === 'number') {
                 return parseFloat(el.value) || 0;
             }
@@ -367,6 +384,9 @@
         const setValue = (el, val) => {
             if (el.type === 'checkbox') {
                 el.checked = Boolean(val);
+            } else if (el.type === 'radio') {
+                // For radio buttons, check if value matches - don't overwrite value attribute!
+                el.checked = el.value === String(val);
             } else {
                 el.value = String(val);
             }
@@ -376,6 +396,11 @@
         let timeoutId = null;
         const handleInput = (_event) => {
             const newValue = getValue(element);
+
+            // For radio buttons, only update data if this radio is checked
+            if (element.type === 'radio' && !element.checked) {
+                return;
+            }
 
             if (debounce > 0) {
                 clearTimeout(timeoutId);
@@ -387,7 +412,14 @@
             }
         };
 
-        element.addEventListener('input', handleInput);
+        // Use 'change' for radio buttons and checkboxes, 'input' for others
+        const eventType = (element.type === 'radio' || element.type === 'checkbox') ? 'change' : 'input';
+        element.addEventListener(eventType, handleInput);
+
+        // Also listen to 'input' for checkboxes to support programmatic input handling
+        if (element.type === 'checkbox') {
+            element.addEventListener('input', handleInput);
+        }
 
         // Data -> DOM (on changes)
         const updateDOM = () => {
@@ -417,7 +449,7 @@
             options,
             updateDOM,
             destroy: () => {
-                element.removeEventListener('input', handleInput);
+                element.removeEventListener(eventType, handleInput);
                 clearTimeout(timeoutId);
                 unsubscribe();  // Cleanup reactive subscription
                 const registry = getBindingRegistry();
@@ -481,6 +513,12 @@
         // Initial sync
         updateDOM();
 
+        // Subscribe to reactive data changes (Data -> DOM)
+        // For nested paths like 'bio.length', also subscribe to root path 'bio'
+        const rootPath = path.includes('.') ? path.split('.')[0] : path;
+        const unsubscribePath = subscribeToPath(path, () => updateDOM());
+        const unsubscribeRoot = rootPath !== path ? subscribeToPath(rootPath, () => updateDOM()) : null;
+
         // Register binding
         const binding = {
             id: generateBindingId(),
@@ -490,6 +528,8 @@
             options,
             updateDOM,
             destroy: () => {
+                unsubscribePath();
+                if (unsubscribeRoot) unsubscribeRoot();
                 const registry = getBindingRegistry();
                 registry.unregister(binding);
             }
@@ -1274,14 +1314,18 @@
             }
         }
 
+        // Extract prefix from attrName (e.g., 'bx-model' -> 'bx', 'data-model' -> 'data')
+        const prefixMatch = attrName.match(/^([a-z]+)-/);
+        const prefix = prefixMatch ? prefixMatch[1] : 'bx';
+
         // Fallback to polymorphic notation parsing (legacy standalone mode)
         // Use polymorphic parser from genx-common (supports Verbose, Colon, JSON, CSS Class)
         const parsed = window.genxCommon
-            ? window.genxCommon.notation.parseNotation(element, 'bx')
+            ? window.genxCommon.notation.parseNotation(element, prefix)
             : {};  // Fallback if genx-common not loaded
 
         // Get binding path from the specific attribute name (model or bind)
-        const bindingKey = attrName.replace('bx-', '');
+        const bindingKey = attrName.replace(`${prefix}-`, '');
         const bindingValue = parsed[bindingKey];
 
         if (!bindingValue) {
@@ -1290,7 +1334,20 @@
 
         // Parse path (and possibly inline options like "user.name:300")
         const [path, ...optionParts] = String(bindingValue).split(':');
-        const config = { ...parsed, path: path.trim() };
+        const config = { path: path.trim() };
+
+        // Add other relevant options from parsed (debounce, formatter, etc.)
+        // but exclude the binding key itself (model, bind, etc.)
+        Object.entries(parsed).forEach(([key, value]) => {
+            if (key !== bindingKey && key !== 'path') {
+                // Convert numeric strings to numbers for debounce
+                if (key === 'debounce' && /^\d+$/.test(String(value))) {
+                    config[key] = parseInt(value, 10);
+                } else {
+                    config[key] = value;
+                }
+            }
+        });
 
         // Parse inline debounce option (numeric after colon)
         if (optionParts.length > 0) {
@@ -1354,6 +1411,112 @@
                     console.error('bindX: Failed to create one-way binding:', error, element);
                 }
             }
+        });
+
+        // Find all elements with bx-computed attributes
+        const computedElements = root.querySelectorAll(`[${prefix}computed]`);
+        computedElements.forEach(element => {
+            const expression = element.getAttribute(`${prefix}computed`);
+            const targetPath = element.getAttribute(`${prefix}bind`);
+
+            if (expression && targetPath) {
+                try {
+                    // Extract variable names from expression (simple: word characters)
+                    const varNames = expression.match(/[a-zA-Z_$][a-zA-Z0-9_$]*/g) || [];
+                    const uniqueVars = [...new Set(varNames)].filter(v => {
+                        // Filter out JavaScript keywords and functions
+                        const reserved = ['true', 'false', 'null', 'undefined', 'Math', 'Number', 'String', 'parseFloat', 'parseInt'];
+                        return !reserved.includes(v);
+                    });
+
+                    // Function to evaluate expression and update target
+                    const evaluate = () => {
+                        try {
+                            // Create a safe evaluation context with data properties
+                            const context = {};
+                            uniqueVars.forEach(v => {
+                                context[v] = getNestedProperty(data, v);
+                            });
+
+                            // Evaluate the expression using Function constructor
+                            const fn = new Function(...uniqueVars, `return ${expression}`);
+                            const result = fn(...uniqueVars.map(v => context[v]));
+
+                            // Update the target property
+                            setNestedProperty(data, targetPath, result);
+                        } catch (e) {
+                            console.warn(`bindX: bx-computed expression failed: ${expression}`, e);
+                        }
+                    };
+
+                    // Subscribe to changes on all referenced variables
+                    uniqueVars.forEach(varName => {
+                        subscribeToPath(varName, evaluate);
+                    });
+
+                    // Initial evaluation
+                    evaluate();
+                } catch (error) {
+                    console.error('bindX: Failed to setup computed binding:', error, element);
+                }
+            }
+        });
+
+        // Find all elements with bx-if attributes (conditional rendering)
+        const ifElements = root.querySelectorAll(`[${prefix}if]`);
+        ifElements.forEach(element => {
+            const expression = element.getAttribute(`${prefix}if`);
+            if (!expression) return;
+
+            // Store original display style
+            const originalDisplay = element.style.display || '';
+
+            // Function to evaluate the condition
+            const evaluateCondition = () => {
+                try {
+                    // Extract variable names from expression
+                    const varNames = expression.match(/[a-zA-Z_$][a-zA-Z0-9_$]*/g) || [];
+                    const uniqueVars = [...new Set(varNames)].filter(v => {
+                        const reserved = ['true', 'false', 'null', 'undefined', 'Math', 'Number', 'String', 'includes', 'length'];
+                        return !reserved.includes(v);
+                    });
+
+                    // Create evaluation context
+                    const context = {};
+                    uniqueVars.forEach(v => {
+                        context[v] = getNestedProperty(data, v);
+                    });
+
+                    // Evaluate the expression
+                    const fn = new Function(...uniqueVars, `return Boolean(${expression})`);
+                    const result = fn(...uniqueVars.map(v => context[v]));
+
+                    // Show/hide element based on result
+                    if (result) {
+                        element.style.display = originalDisplay;
+                        element.removeAttribute('hidden');
+                    } else {
+                        element.style.display = 'none';
+                        element.setAttribute('hidden', '');
+                    }
+                } catch (e) {
+                    console.warn(`bindX: bx-if expression failed: ${expression}`, e);
+                }
+            };
+
+            // Extract variables and subscribe to changes
+            const varNames = expression.match(/[a-zA-Z_$][a-zA-Z0-9_$]*/g) || [];
+            const uniqueVars = [...new Set(varNames)].filter(v => {
+                const reserved = ['true', 'false', 'null', 'undefined', 'Math', 'Number', 'String', 'includes', 'length'];
+                return !reserved.includes(v);
+            });
+
+            uniqueVars.forEach(varName => {
+                subscribeToPath(varName, evaluateCondition);
+            });
+
+            // Initial evaluation
+            evaluateCondition();
         });
 
         // Find all forms with bx-form attribute

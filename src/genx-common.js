@@ -350,21 +350,28 @@ const CARDINALITY_ORDERS = {
     bx: ['bind', 'debounce', 'throttle'],
     ax: ['label', 'icon', 'value', 'role'],
     dx: ['type', 'id', 'style', 'group'],
-    lx: ['type', 'color', 'size'],
+    lx: ['strategy', 'duration', 'mode'],
     nx: ['type', 'label', 'href', 'target']
 };
 
 /**
  * Map CSS class prefixes to attribute prefixes
- * Using full module names to avoid conflicts
+ * Supports both short (fx, bx, lx) and full (fmtx, bindx, loadx) formats
  */
 const CLASS_PREFIX_MAP = {
+    'fx': 'fx',
     'fmtx': 'fx',
+    'bx': 'bx',
     'bindx': 'bx',
+    'ax': 'ax',
     'accx': 'ax',
+    'dx': 'dx',
     'dragx': 'dx',
+    'lx': 'lx',
     'loadx': 'lx',
+    'nx': 'nx',
     'navx': 'nx',
+    'tx': 'tx',
     'tablex': 'tx'
 };
 
@@ -444,15 +451,17 @@ const parseClassNotation = (element, prefix) => {
         return config;
     }
 
-    // Find class matching pattern: prefix-param1-param2-param3
+    // Find class matching pattern: prefix-param1-param2-param3 or prefix:param1:param2:param3
     const classes = classList.split(/\s+/);
-    const regex = new RegExp(`^${classPrefix}-(.+)$`);
+    const dashRegex = new RegExp(`^${classPrefix}-(.+)$`);
+    const colonRegex = new RegExp(`^${classPrefix}:(.+)$`);
+    const cardinalityOrder = CARDINALITY_ORDERS[prefix] || [];
 
     for (const cls of classes) {
-        const match = cls.match(regex);
+        // Try dash syntax first (e.g., lx-spinner-500)
+        let match = cls.match(dashRegex);
         if (match) {
             const parts = match[1].split('-');
-            const cardinalityOrder = CARDINALITY_ORDERS[prefix] || [];
 
             // Map parts to config keys using cardinality order
             parts.forEach((part, index) => {
@@ -460,6 +469,34 @@ const parseClassNotation = (element, prefix) => {
                     config[cardinalityOrder[index]] = part;
                 }
             });
+            break; // Only parse first matching class
+        }
+
+        // Try colon syntax (e.g., lx:spinner:500 or lx:progress:determinate:500)
+        match = cls.match(colonRegex);
+        if (match) {
+            const parts = match[1].split(':');
+
+            // For colon syntax, handle smart mapping:
+            // position 0: strategy (always)
+            // remaining positions: find mode (non-numeric) and duration (numeric)
+            if (parts.length > 0 && parts[0]) {
+                config['strategy'] = parts[0]; // First position is always strategy
+            }
+
+            // Process remaining parts smartly
+            for (let i = 1; i < parts.length; i++) {
+                const part = parts[i];
+                if (!part) continue;
+
+                // Check if this is a numeric value (duration)
+                if (/^\d+$/.test(part)) {
+                    config['duration'] = parseInt(part, 10);
+                } else {
+                    // Non-numeric, treat as mode
+                    config['mode'] = part;
+                }
+            }
             break; // Only parse first matching class
         }
     }
@@ -479,20 +516,119 @@ const parseVerboseAttributes = (element, prefix) => {
     const config = {};
     const attributes = element.attributes;
 
+    // Fallback: if attributes is empty or unavailable, try using getAttribute for common keys
+    if (!attributes || attributes.length === 0) {
+        // Try to read common attributes using getAttribute
+        const commonKeys = ['strategy', 'duration', 'mode', 'value', 'rows', 'animate', 'loading'];
+
+        for (const key of commonKeys) {
+            // Try both prefix-key and prefix-kebab-key (for hyphenated keys)
+            const attrNames = [
+                `${prefix}-${key}`,
+                `data-${prefix}-${key}`
+            ];
+
+            // Also try the kebab-case version of the key
+            const kebabKey = key.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, '');
+            if (kebabKey !== key) {
+                attrNames.push(`${prefix}-${kebabKey}`, `data-${prefix}-${kebabKey}`);
+            }
+
+            for (const attrName of attrNames) {
+                if (element.getAttribute && typeof element.getAttribute === 'function') {
+                    const value = element.getAttribute(attrName);
+                    if (value !== null) {
+                        // Trim whitespace
+                        let finalValue = typeof value === 'string' ? value.trim() : value;
+                        let shouldSet = true;
+
+                        // These attributes MUST be numeric
+                        const numericOnlyAttrs = ['duration', 'value', 'rows'];
+                        if (numericOnlyAttrs.includes(key)) {
+                            if (/^\d+$/.test(finalValue)) {
+                                finalValue = parseInt(finalValue, 10);
+                            } else {
+                                // Don't set non-numeric values for numeric-only attributes
+                                shouldSet = false;
+                            }
+                        }
+                        // Convert "true"/"false" strings to booleans
+                        else if (finalValue === 'true') {
+                            finalValue = true;
+                        } else if (finalValue === 'false') {
+                            finalValue = false;
+                        }
+
+                        if (shouldSet) {
+                            config[key] = finalValue;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        return config;
+    }
+
     for (let i = 0; i < attributes.length; i++) {
         const attr = attributes[i];
         const attrName = attr.name;
 
-        // Check if attribute starts with prefix-
+        // Check if attribute starts with prefix- or data-prefix-
+        let isMatch = false;
+        let keyPrefix = '';
+
         if (attrName.startsWith(`${prefix}-`)) {
-            // Skip -opts and -raw attributes (handled separately)
-            if (attrName === `${prefix}-opts` || attrName === `${prefix}-raw`) {
+            isMatch = true;
+            keyPrefix = `${prefix}-`;
+        } else if (attrName.startsWith(`data-${prefix}-`)) {
+            isMatch = true;
+            keyPrefix = `data-${prefix}-`;
+        }
+
+        if (isMatch) {
+            // Skip -opts, -config, and -raw attributes (handled separately)
+            if (attrName === `${keyPrefix}opts` || attrName === `${keyPrefix}config` || attrName === `${keyPrefix}raw`) {
                 continue;
             }
 
-            // Extract key: fx-currency -> currency
-            const key = attrName.substring(prefix.length + 1);
-            config[key] = attr.value;
+            // Extract key: fx-currency -> currency, lx-min-height -> minHeight, data-lx-strategy -> strategy
+            let key = attrName.substring(keyPrefix.length);
+            // Convert kebab-case to camelCase if it contains hyphens
+            if (key.includes('-')) {
+                key = kebabToCamel(key);
+            }
+
+            // Convert values to appropriate types
+            let value = attr.value;
+            let shouldSet = true;
+
+            // These attributes MUST be numeric
+            const numericOnlyAttrs = ['duration', 'value', 'rows'];
+            if (numericOnlyAttrs.includes(key)) {
+                if (/^\d+$/.test(value)) {
+                    value = parseInt(value, 10);
+                } else {
+                    // Don't set non-numeric values for numeric-only attributes
+                    shouldSet = false;
+                }
+            }
+            // These attributes CAN be numeric
+            else if (/^\d+$/.test(value) && ['size', 'minHeight', 'maxHeight', 'min', 'max', 'columns'].includes(key)) {
+                value = parseInt(value, 10);
+            }
+            // Convert "true"/"false" strings to booleans
+            else if (value === 'true') {
+                value = true;
+            } else if (value === 'false') {
+                value = false;
+            }
+
+            // Prioritize prefix- over data-prefix- (don't overwrite if already set from prefix-)
+            if (shouldSet && (!config.hasOwnProperty(key) || keyPrefix === `${prefix}-`)) {
+                config[key] = value;
+            }
         }
     }
 
@@ -520,12 +656,12 @@ const parseColonSyntax = (element, prefix) => {
     const attrName = `${prefix}-${primaryKey}`;
     const attrValue = element.getAttribute(attrName);
 
-    if (!attrValue || !attrValue.includes(':')) {
+    if (!attrValue || !String(attrValue).includes(':')) {
         return config;
     }
 
     // Split by colon and map to cardinality order
-    const parts = attrValue.split(':');
+    const parts = String(attrValue).split(':');
     parts.forEach((part, index) => {
         if (part && cardinalityOrder[index]) {
             config[cardinalityOrder[index]] = part;
@@ -544,18 +680,22 @@ const parseColonSyntax = (element, prefix) => {
  * @returns {Object} Parsed config
  */
 const parseJsonConfig = (element, prefix) => {
-    const optsAttr = element.getAttribute(`${prefix}-opts`);
+    // Try both -config and -opts attribute names
+    let jsonAttr = element.getAttribute(`${prefix}-config`);
+    if (!jsonAttr) {
+        jsonAttr = element.getAttribute(`${prefix}-opts`);
+    }
 
-    if (!optsAttr) {
+    if (!jsonAttr) {
         return {};
     }
 
-    const result = safeJsonParse(optsAttr);
+    const result = safeJsonParse(jsonAttr);
 
     if (result.isErr()) {
         // Log warning for malformed JSON
         if (typeof console !== 'undefined') {
-            console.warn(`genX: Failed to parse ${prefix}-opts JSON:`, result.unwrapOr(''));
+            console.warn(`genX: Failed to parse ${prefix}-config JSON:`, result.unwrapOr(''));
         }
         return {};
     }
@@ -687,30 +827,35 @@ if (typeof window !== 'undefined') {
     window.genxCommon = genxCommon;
 }
 
-// ES Module export
-export {
-    GenXError,
-    ParseError,
-    EnhancementError,
-    ValidationError,
-    Result,
-    Ok,
-    Err,
-    CircuitBreaker,
-    createCache,
-    hashOptions,
-    getSignature,
-    kebabToCamel,
-    safeJsonParse,
-    generateId,
-    debounce,
-    parseNotation,
-    parseClassNotation,
-    parseVerboseAttributes,
-    parseColonSyntax,
-    parseJsonConfig,
-    CARDINALITY_ORDERS,
-    CLASS_PREFIX_MAP
-};
-
-export default genxCommon;
+// CommonJS export (for Node.js/Jest tests)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        ...genxCommon,
+        // Export individual classes for destructuring
+        GenXError,
+        ParseError,
+        EnhancementError,
+        ValidationError,
+        CircuitBreaker,
+        Ok,
+        Err,
+        Result,
+        // Flatten cache functions
+        createCache,
+        hashOptions,
+        getSignature,
+        // Flatten utility functions
+        kebabToCamel,
+        safeJsonParse,
+        generateId,
+        debounce,
+        // Flatten notation functions
+        parseNotation,
+        parseClassNotation,
+        parseVerboseAttributes,
+        parseColonSyntax,
+        parseJsonConfig,
+        CARDINALITY_ORDERS,
+        CLASS_PREFIX_MAP
+    };
+}
