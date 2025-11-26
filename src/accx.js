@@ -86,7 +86,7 @@
 
         // Live regions for dynamic content
         live: (el, opts) => {
-            const priority = opts.priority || 'polite';
+            const priority = opts.priority || opts.live || 'polite';
             const atomic = opts.atomic !== false;
             const relevant = opts.relevant || 'additions text';
 
@@ -94,11 +94,11 @@
             el.setAttribute('aria-atomic', atomic);
             el.setAttribute('aria-relevant', relevant);
 
-            if (opts.status) {
-                el.setAttribute('role', 'status');
-            }
-            if (opts.alert) {
+            // Always add a role for live regions
+            if (opts.alert || priority === 'assertive') {
                 el.setAttribute('role', 'alert');
+            } else {
+                el.setAttribute('role', 'status');
             }
         },
 
@@ -202,8 +202,15 @@
 
         // Button enhancements
         button: (el, opts) => {
-            if (!el.hasAttribute('role') && el.tagName !== 'BUTTON') {
+            // Always add role for discoverability (even native buttons)
+            if (!el.hasAttribute('role')) {
                 el.setAttribute('role', 'button');
+            }
+
+            // Add aria-label from opts or ax-label attribute
+            const label = opts.label || el.getAttribute('ax-label');
+            if (label && !el.hasAttribute('aria-label')) {
+                el.setAttribute('aria-label', label);
             }
 
             // Ensure keyboard accessibility
@@ -385,13 +392,8 @@
 
         // Skip links
         skipLink: (el, opts) => {
-            const target = opts.target || '#main';
-            const text = opts.text || 'Skip to main content';
-
-            const link = document.createElement('a');
-            link.href = target;
-            link.className = 'ax-skip-link';
-            link.textContent = text;
+            const target = opts.target || el.getAttribute('href') || '#main';
+            const text = opts.text || el.textContent?.trim() || 'Skip to main content';
 
             // Add CSS for skip link
             if (!document.getElementById('ax-skip-styles')) {
@@ -401,17 +403,32 @@
                 document.head.appendChild(style);
             }
 
-            document.body.insertBefore(link, document.body.firstChild);
+            // If element is already a link, enhance it in place
+            if (el.tagName === 'A') {
+                el.classList.add('ax-skip-link');
+                el.setAttribute('role', 'link');
+                el.setAttribute('tabindex', '0');
+                if (!el.getAttribute('href')) {
+                    el.setAttribute('href', target);
+                }
+            } else {
+                // Create a new skip link and insert at body start
+                const link = document.createElement('a');
+                link.href = target;
+                link.className = 'ax-skip-link';
+                link.textContent = text;
+                link.setAttribute('role', 'link');
+                link.setAttribute('tabindex', '0');
+                document.body.insertBefore(link, document.body.firstChild);
+            }
         },
 
         // Landmark roles
         landmark: (el, opts) => {
-            const role = opts.role || el.getAttribute('ax-role');
-            const label = opts.label || el.getAttribute('ax-label');
+            const role = opts.role || opts.landmark || el.getAttribute('ax-role') || el.getAttribute('ax-landmark') || 'region';
+            const label = opts.label || el.getAttribute('ax-label') || el.textContent?.trim().substring(0, 50);
 
-            if (role) {
-                el.setAttribute('role', role);
-            }
+            el.setAttribute('role', role);
             if (label) {
                 el.setAttribute('aria-label', label);
             }
@@ -435,6 +452,20 @@
 
         // Focus management
         focus: (el, opts) => {
+            // Make element focusable if not naturally focusable
+            const focusableTags = ['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'];
+            if (!focusableTags.includes(el.tagName) && !el.hasAttribute('tabindex')) {
+                el.setAttribute('tabindex', '0');
+            }
+
+            // Always add aria-label if element has text content
+            if (!el.hasAttribute('aria-label')) {
+                const label = el.textContent?.trim();
+                if (label) {
+                    el.setAttribute('aria-label', label);
+                }
+            }
+
             // Visual focus indicator
             if (opts.enhance !== false) {
                 el.classList.add('ax-focus-enhanced');
@@ -656,8 +687,88 @@
             // Clear and announce (force screen reader to announce)
             announcer.textContent = '';
             setTimeout(() => announcer.textContent = message, 100);
+        },
+
+        // Input field enhancements (alias for field)
+        input: (el, opts) => {
+            // Ensure input has proper labeling
+            if (!el.id) {
+                el.id = generateId();
+            }
+
+            // Check for associated label
+            const labelledBy = el.getAttribute('aria-labelledby');
+            const labelFor = document.querySelector(`label[for="${el.id}"]`);
+
+            if (!labelledBy && !labelFor && !el.getAttribute('aria-label')) {
+                // Auto-generate label from placeholder or name
+                const labelText = el.getAttribute('placeholder') || el.getAttribute('name') || 'Input field';
+                el.setAttribute('aria-label', labelText);
+            }
+
+            // Add tabindex if not naturally focusable
+            if (!['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName)) {
+                el.setAttribute('tabindex', '0');
+            }
+        },
+
+        // Tooltip enhancements
+        tooltip: (el, opts) => {
+            const tooltipText = opts.tooltip || el.getAttribute('ax-tooltip') || opts.text;
+
+            if (!tooltipText) {
+                return;
+            }
+
+            const tooltipId = generateId();
+
+            // Create tooltip element
+            const tooltip = document.createElement('span');
+            tooltip.id = tooltipId;
+            tooltip.className = 'ax-tooltip';
+            tooltip.textContent = tooltipText;
+            tooltip.setAttribute('role', 'tooltip');
+            tooltip.style.cssText = 'position: absolute; visibility: hidden; background: #333; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 12px; z-index: 10000;';
+
+            el.parentNode.insertBefore(tooltip, el.nextSibling);
+            el.setAttribute('aria-describedby', tooltipId);
+
+            // Show/hide on focus/hover
+            el.addEventListener('mouseenter', () => tooltip.style.visibility = 'visible');
+            el.addEventListener('mouseleave', () => tooltip.style.visibility = 'hidden');
+            el.addEventListener('focus', () => tooltip.style.visibility = 'visible');
+            el.addEventListener('blur', () => tooltip.style.visibility = 'hidden');
+        },
+
+        // Error message enhancements
+        error: (el, opts) => {
+            el.setAttribute('role', 'alert');
+            el.setAttribute('aria-live', 'assertive');
+
+            // Ensure visibility to screen readers
+            if (!el.getAttribute('aria-label')) {
+                const errorText = el.textContent?.trim();
+                if (errorText) {
+                    el.setAttribute('aria-label', `Error: ${errorText}`);
+                }
+            }
+        },
+
+        // Status message enhancements
+        status: (el, opts) => {
+            el.setAttribute('role', 'status');
+            el.setAttribute('aria-live', 'polite');
+            el.setAttribute('aria-atomic', 'true');
+        },
+
+        // Dialog enhancements (alias for modal)
+        dialog: (el, opts) => {
+            enhance.modal(el, opts);
         }
     };
+
+    // Add lowercase aliases for case-insensitive matching
+    enhance.skiplink = enhance.skipLink;
 
     // Helper functions
     const guessIconMeaning = (className) => {

@@ -261,11 +261,48 @@
             } return date.toLocaleDateString(locale, fmts[df] || fmts.short);
         }
         case 'time': {
-            const tf = rest.timeFormat || 'short'; const fmts = {short:{hour:'numeric',minute:'numeric'},medium:{hour:'numeric',minute:'numeric',second:'numeric'},long:{hour:'numeric',minute:'numeric',second:'numeric',timeZoneName:'short'}};
-            return date.toLocaleTimeString(locale, fmts[tf] || fmts.short);
+            const tf = rest.timeFormat || 'short';
+            const fmts = {short:{hour:'numeric',minute:'numeric'},medium:{hour:'numeric',minute:'numeric',second:'numeric'},long:{hour:'numeric',minute:'numeric',second:'numeric',timeZoneName:'short'}};
+            // Handle time-only strings like "14:30:00"
+            let timeDate = date;
+            if (!timeDate && str.match(/^\d{1,2}:\d{2}(:\d{2})?$/)) {
+                timeDate = new Date(`1970-01-01T${str}`);
+            }
+            if (!timeDate) return str; // fallback to original
+            return timeDate.toLocaleTimeString(locale, fmts[tf] || fmts.short);
         }
         case 'datetime':
             return date.toLocaleString(locale);
+        case 'relative': {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffSec = Math.floor(diffMs / 1000);
+            const diffMin = Math.floor(diffSec / 60);
+            const diffHour = Math.floor(diffMin / 60);
+            const diffDay = Math.floor(diffHour / 24);
+            const diffWeek = Math.floor(diffDay / 7);
+            const diffMonth = Math.floor(diffDay / 30);
+            const diffYear = Math.floor(diffDay / 365);
+
+            if (diffSec < 0) {
+                // Future dates
+                const absSec = Math.abs(diffSec);
+                const absMin = Math.floor(absSec / 60);
+                const absHour = Math.floor(absMin / 60);
+                const absDay = Math.floor(absHour / 24);
+                if (absDay > 0) return `in ${absDay} day${absDay > 1 ? 's' : ''}`;
+                if (absHour > 0) return `in ${absHour} hour${absHour > 1 ? 's' : ''}`;
+                if (absMin > 0) return `in ${absMin} minute${absMin > 1 ? 's' : ''}`;
+                return 'in a moment';
+            }
+            if (diffSec < 60) return 'just now';
+            if (diffMin < 60) return `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`;
+            if (diffHour < 24) return `${diffHour} hour${diffHour > 1 ? 's' : ''} ago`;
+            if (diffDay < 7) return `${diffDay} day${diffDay > 1 ? 's' : ''} ago`;
+            if (diffWeek < 4) return `${diffWeek} week${diffWeek > 1 ? 's' : ''} ago`;
+            if (diffMonth < 12) return `${diffMonth} month${diffMonth > 1 ? 's' : ''} ago`;
+            return `${diffYear} year${diffYear > 1 ? 's' : ''} ago`;
+        }
             // Text
         case 'uppercase': return str.toUpperCase();
         case 'lowercase': return str.toLowerCase();
@@ -404,6 +441,13 @@
             // Extract options (everything except 'format')
             opts = {...parsed};
             delete opts.format;
+
+            // Convert kebab-case keys to camelCase
+            const camelOpts = {};
+            for (const [k, v] of Object.entries(opts)) {
+                camelOpts[kebabToCamel(k)] = v;
+            }
+            opts = camelOpts;
         }
 
         // Get raw value (not in cache - dynamic content)

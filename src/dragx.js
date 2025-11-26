@@ -826,7 +826,7 @@
      */
     const initKeyboardAccessibility = () => {
         // Add tabindex and ARIA attributes to draggables
-        document.querySelectorAll('[dx-draggable], [dx-drag], .drag-*').forEach(el => {
+        document.querySelectorAll('[dx-draggable], [dx-drag], [class*="drag-"]').forEach(el => {
             if (!el.hasAttribute('tabindex')) {
                 el.setAttribute('tabindex', '0');
             }

@@ -5,6 +5,13 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { bindx, scan, parseBindingAttribute, init } from '../../src/bindx.js';
 
+// Mock genxCommon for parseBindingAttribute
+const genxCommon = require('../../src/genx-common.js');
+if (typeof global.window === 'undefined') {
+    global.window = {};
+}
+global.window.genxCommon = genxCommon;
+
 describe('DOM Integration', () => {
     let container;
 

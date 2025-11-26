@@ -23,6 +23,13 @@ describe('bindX Edge Cases and Error Handling', () => {
         delete require.cache[require.resolve('../../src/bindx.js')];
         bindX = require('../../src/bindx.js');
 
+        // Mock genxCommon for parseBindingAttribute
+        const genxCommon = require('../../src/genx-common.js');
+        if (typeof global.window === 'undefined') {
+            global.window = {};
+        }
+        global.window.genxCommon = genxCommon;
+
         // Spy on console methods
         jest.spyOn(console, 'error').mockImplementation(() => {});
         jest.spyOn(console, 'warn').mockImplementation(() => {});

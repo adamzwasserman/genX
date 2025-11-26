@@ -2,19 +2,32 @@
  * Unit tests for loadX attribute processing (Task 1.2)
  */
 
+// Import genx-common first to set up window.genxCommon
+const genxCommon = require('../../src/genx-common.js');
+
+// Set up window.genxCommon mock for loadx
+if (typeof global.window === 'undefined') {
+    global.window = {};
+}
+global.window.genxCommon = genxCommon;
+
 // Import the module directly for testing
 const { parseElementAttributes } = require('../../src/loadx.js');
 
 describe('loadX Attribute Processing', () => {
     // Create mock element helper
     const createMockElement = (attrs = {}, className = '') => {
-        return {
+        const el = {
             getAttribute: jest.fn((key) => attrs[key] || null),
             setAttribute: jest.fn(),
             hasAttribute: jest.fn((key) => key in attrs),
+            attributes: Object.keys(attrs).map(key => ({ name: key, value: attrs[key] })),
             className: className,
             _lxConfig: null
         };
+        // Make attributes iterable with length
+        el.attributes.length = el.attributes.length;
+        return el;
     };
 
     beforeEach(() => {
