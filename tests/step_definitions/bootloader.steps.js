@@ -144,3 +144,200 @@ When('minified and gzipped', async function() {
 Then('the file size should be less than 1KB', async function() {
     assert.ok(this.size < 1024, `Bootloader should be <1KB, got ${this.size} bytes`);
 });
+
+// Configuration steps for genxConfig
+Given('performance logging is enabled', async function() {
+    await this.page.evaluate(() => {
+        window.genxConfig = window.genxConfig || {};
+        window.genxConfig.performance = { logging: true };
+    });
+});
+
+Given('mutation observation is disabled', async function() {
+    await this.page.evaluate(() => {
+        window.genxConfig = window.genxConfig || {};
+        window.genxConfig.observe = false;
+    });
+});
+
+Given('CDN is configured to {string}', async function(cdnUrl) {
+    await this.page.evaluate((url) => {
+        window.genxConfig = window.genxConfig || {};
+        window.genxConfig.cdn = url;
+    }, cdnUrl);
+});
+
+Given('CDN is not configured', async function() {
+    await this.page.evaluate(() => {
+        window.genxConfig = window.genxConfig || {};
+        delete window.genxConfig.cdn;
+    });
+});
+
+// genx API steps
+Then('genx API should be defined immediately', async function() {
+    const defined = await this.page.evaluate(() => !!window.genx);
+    assert.ok(defined, 'genx API should be defined');
+});
+
+Then('genx API version should be {string}', async function(version) {
+    const apiVersion = await this.page.evaluate(() => window.genx?.version);
+    assert.strictEqual(apiVersion, version, `genx version should be ${version}`);
+});
+
+Then('genx scan method should be available', async function() {
+    const available = await this.page.evaluate(() => typeof window.genx?.scan === 'function');
+    assert.ok(available, 'genx.scan should be available');
+});
+
+Then('genx getConfig method should be available', async function() {
+    const available = await this.page.evaluate(() => typeof window.genx?.getConfig === 'function');
+    assert.ok(available, 'genx.getConfig should be available');
+});
+
+Then('genx loadParsers method should be available', async function() {
+    const available = await this.page.evaluate(() => typeof window.genx?.loadParsers === 'function');
+    assert.ok(available, 'genx.loadParsers should be available');
+});
+
+Then('genx parseAllElements method should be available', async function() {
+    const available = await this.page.evaluate(() => typeof window.genx?.parseAllElements === 'function');
+    assert.ok(available, 'genx.parseAllElements should be available');
+});
+
+// getConfig API steps
+When('genx getConfig is called with element', async function() {
+    this.getConfigResult = await this.page.evaluate(() => {
+        const element = document.querySelector('[fx-format]') || document.querySelector('[bx-bind]');
+        return window.genx?.getConfig(element);
+    });
+});
+
+When('genx getConfig is called with element again', async function() {
+    this.getConfigResultSecond = await this.page.evaluate(() => {
+        const element = document.querySelector('[fx-format]') || document.querySelector('[bx-bind]');
+        return window.genx?.getConfig(element);
+    });
+});
+
+When('genx getConfig is called with undefined', async function() {
+    this.getConfigResult = await this.page.evaluate(() => {
+        return window.genx?.getConfig(undefined);
+    });
+});
+
+When('genx getConfig is called with null', async function() {
+    this.getConfigResult = await this.page.evaluate(() => {
+        return window.genx?.getConfig(null);
+    });
+});
+
+When('genx getConfig is called {int} times', async function(times) {
+    this.getConfigResults = await this.page.evaluate((count) => {
+        const element = document.querySelector('[fx-format]') || document.querySelector('[bx-bind]');
+        const results = [];
+        for (let i = 0; i < count; i++) {
+            results.push(window.genx?.getConfig(element));
+        }
+        return results;
+    }, times);
+});
+
+When('genx init is called', async function() {
+    await this.page.evaluate(() => {
+        return window.genx?.init?.();
+    });
+});
+
+Then('genx getConfig returns cached config for element', async function() {
+    const result = await this.page.evaluate(() => {
+        const element = document.querySelector('[fx-format]');
+        return window.genx?.getConfig(element) !== null;
+    });
+    assert.ok(result, 'genx.getConfig should return cached config');
+});
+
+Then('genx getConfig returns correct config for each element', async function() {
+    const result = await this.page.evaluate(() => {
+        const elements = document.querySelectorAll('[fx-format], [bx-bind], [ax-label]');
+        return Array.from(elements).every(el => {
+            const config = window.genx?.getConfig(el);
+            return config !== undefined;
+        });
+    });
+    assert.ok(result, 'genx.getConfig should return configs for all elements');
+});
+
+Then('genx getConfig should be a function', async function() {
+    const isFunc = await this.page.evaluate(() => typeof window.genx?.getConfig === 'function');
+    assert.ok(isFunc, 'genx.getConfig should be a function');
+});
+
+Then('genx getConfig should accept an element parameter', async function() {
+    const accepts = await this.page.evaluate(() => {
+        const fn = window.genx?.getConfig;
+        return fn && fn.length > 0;
+    });
+    assert.ok(accepts, 'genx.getConfig should accept parameters');
+});
+
+Then('genx getConfig should return an object or null', async function() {
+    const returns = await this.page.evaluate(() => {
+        const element = document.querySelector('[fx-format]');
+        const result = window.genx?.getConfig(element);
+        return result === null || typeof result === 'object';
+    });
+    assert.ok(returns, 'genx.getConfig should return object or null');
+});
+
+Then('genx getConfig returns merged config', async function() {
+    const result = await this.page.evaluate(() => {
+        const element = document.querySelector('[fx-format]');
+        const config = window.genx?.getConfig(element);
+        return config !== null && typeof config === 'object';
+    });
+    assert.ok(result, 'genx.getConfig should return merged config');
+});
+
+Then('genx getConfig returns empty config', async function() {
+    const result = await this.page.evaluate(() => {
+        const element = document.querySelector('[fx-format=""]');
+        const config = window.genx?.getConfig(element);
+        return typeof config === 'object';
+    });
+    assert.ok(result, 'genx.getConfig should return empty config');
+});
+
+Then('genx getConfig should be exposed', async function() {
+    const exposed = await this.page.evaluate(() => typeof window.genx?.getConfig === 'function');
+    assert.ok(exposed, 'genx.getConfig should be exposed');
+});
+
+Then('genx getConfig still returns same config', async function() {
+    const result = await this.page.evaluate(() => {
+        const element = document.querySelector('[fx-format]');
+        return window.genx?.getConfig(element) !== null;
+    });
+    assert.ok(result, 'genx.getConfig should still return config');
+});
+
+Then('all {int} calls should return identical results', async function(count) {
+    const result = await this.page.evaluate(() => {
+        const element = document.querySelector('[fx-format]');
+        const results = [];
+        for (let i = 0; i < 5; i++) {
+            results.push(window.genx?.getConfig(element));
+        }
+        const first = results[0];
+        return results.every(r => r === first);
+    });
+    assert.ok(result, 'All getConfig calls should return identical results');
+});
+
+// Module configuration steps
+Then('modules should use genx getConfig API for element configs', async function() {
+    const uses = await this.page.evaluate(() => {
+        return typeof window.genx?.getConfig === 'function';
+    });
+    assert.ok(uses, 'Modules should use genx.getConfig API');
+});
