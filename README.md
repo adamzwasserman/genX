@@ -1,21 +1,32 @@
 # genX
 
-## Declarative HTML attribute-based formatting and UI enhancement library
+## The Tailwind of Frontend Behavior
 
-genX is a lightweight, modular JavaScript library that enhances HTML elements with formatting, accessibility, drag-and-drop, navigation, and loading state capabilities—all controlled through simple HTML attributes.
+**Tailwind gave us utility-first CSS. genX gives us utility-first JavaScript.**
+
+Just as Tailwind lets you style elements with `class="bg-blue-500 text-center"`, genX lets you add behavior with `fx-format="currency"` or `dx-draggable="card"`. No JavaScript to write. No frameworks to learn. Just HTML attributes.
+
+```html
+<!-- Format as currency - no JS needed -->
+<span fx-format="currency">1299.99</span>  →  $1,299.99
+
+<!-- Make draggable - no JS needed -->
+<div dx-draggable="card">Drag me</div>
+
+<!-- Add loading state - no JS needed -->
+<button lx-loading="true">Saving...</button>
+```
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://genx.software/examples/genx-demo.html)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Table of Contents
 
-| | | |
-|---|---|---|
-| [Features](#features) | [Architecture](#architecture) | [Browser Support](#browser-support) |
-| [Quick Start](#quick-start) | [Documentation](#documentation) | [Installation Options](#installation-options) |
-| [Modules](#modules) | [Testing](#testing) | [Contributing](#contributing) |
-| [fmtX Examples](#fmtx-examples) | [Privacy & Security](#privacy--security) | [Project Status](#project-status) |
-| | [License](#license) | [Links](#links) |
+| | | | | |
+|---|---|---|---|---|
+| [Features](#features) | [Quick Start](#quick-start) | [Modules](#modules) | [fmtX Examples](#fmtx-examples) | [tableX Examples](#tablex-examples) |
+| [Architecture](#architecture) | [Documentation](#documentation) | [Testing](#testing) | [Privacy & Security](#privacy--security) | [Browser Support](#browser-support) |
+| [Installation](#installation-options) | [Contributing](#contributing) | [Project Status](#project-status) | [License](#license) | [Links](#links) |
 
 ## Features
 

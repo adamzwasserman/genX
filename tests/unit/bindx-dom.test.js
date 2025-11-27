@@ -175,16 +175,20 @@ describe('DOM Integration', () => {
             expect(bindings.length).toBe(0);
         });
 
-        it('should warn when data is not provided', () => {
-            const consoleWarn = jest.spyOn(console, 'warn').mockImplementation();
+        it('should auto-create data from DOM when data is not provided (DATAOS pattern)', () => {
+            const consoleLog = jest.spyOn(console, 'log').mockImplementation();
 
-            container.innerHTML = '<input bx-model="test">';
+            container.innerHTML = '<input bx-model="test" value="hello">';
             const bindings = scan(container, null);
 
-            expect(bindings.length).toBe(0);
-            expect(consoleWarn).toHaveBeenCalled();
+            // DATAOS pattern: When no data provided, scan() extracts from DOM
+            // and creates reactive bindings automatically
+            expect(bindings.length).toBe(1);
+            expect(consoleLog).toHaveBeenCalledWith(
+                expect.stringContaining('DATAOS pattern')
+            );
 
-            consoleWarn.mockRestore();
+            consoleLog.mockRestore();
         });
     });
 

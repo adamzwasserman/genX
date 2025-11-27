@@ -66,6 +66,7 @@
   },
   "homepage": "https://genx.software",
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
     "@babel/core": "^7.28.5",
     "@babel/preset-env": "^7.28.5",
     "@babel/register": "^7.28.3",

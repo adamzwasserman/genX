@@ -1371,10 +1371,6 @@
             });
         }
 
-        // Log if performance target missed
-        if (duration > 16) {
-            console.warn(`[tableX] Virtual scroll recycle took ${duration.toFixed(2)}ms (target: <16ms)`);
-        }
     };
 
     /**
@@ -1502,7 +1498,6 @@
 
         // Disable pagination if enabled (conflict)
         if (table.hasAttribute('tx-paginate')) {
-            console.warn('[tableX] Pagination disabled: virtual scrolling active');
             table.removeAttribute('tx-paginate');
         }
 
@@ -1514,11 +1509,6 @@
         const buffer = parseInt(bufferAttr, 10);
         const totalHeight = rowCount * rowHeight;
 
-        // Log auto-enable
-        const virtualAttr = getTableConfig(table, 'tx-virtual');
-        if (virtualAttr === 'auto' || virtualAttr === null) {
-            console.log(`[tableX] Auto-enabled virtual scrolling for ${rowCount} rows`);
-        }
 
         // Create virtual scroll container
         const container = createVirtualScrollContainer(table, totalHeight);
@@ -1599,11 +1589,6 @@
                 start: startTime,
                 duration: initDuration
             });
-        }
-
-        const logPerf = getTableConfig(table, 'tx-log-performance') === 'true';
-        if (logPerf) {
-            console.log(`[tableX] Virtual scroll init: ${initDuration.toFixed(2)}ms`);
         }
 
         // Emit performance event
