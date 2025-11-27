@@ -163,8 +163,14 @@
             }
             break;
             // Dates
-        case 'date': case 'time': case 'datetime':
+        case 'date': case 'datetime':
             if (date === null) {
+                return fallback();
+            }
+            break;
+        case 'time':
+            // Allow time-only strings like "14:30:00" to pass through to the time handler
+            if (date === null && !str.match(/^\d{1,2}:\d{2}(:\d{2})?$/)) {
                 return fallback();
             }
             break;
@@ -232,15 +238,52 @@
             return `${(num / Math.pow(b, i)).toFixed(decimals)} ${u[i]}`;
         }
         case 'duration': {
-            const secs = Math.abs(num); const fmt = rest.durationFormat || 'auto';
-            if (fmt === 'human') {
-                const units = [{n:'y',s:31536000},{n:'d',s:86400},{n:'h',s:3600},{n:'m',s:60},{n:'s',s:1}]; let rem = secs; const parts = []; for (const unit of units) {
-                    const c = Math.floor(rem / unit.s); if (c > 0) {
-                        parts.push(`${c}${unit.n}`); rem -= c * unit.s; 
-                    } 
-                } return parts.join(' ') || '0s'; 
+            const secs = Math.abs(num);
+            const fmt = rest.durationFormat || 'short';
+            const d = Math.floor(secs / 86400);
+            const h = Math.floor((secs % 86400) / 3600);
+            const m = Math.floor((secs % 3600) / 60);
+            const s = Math.floor(secs % 60);
+
+            switch (fmt) {
+            case 'short':
+            case 'human': {
+                // Short: 1d 2h 3m 4s
+                const parts = [];
+                if (d > 0) parts.push(`${d}d`);
+                if (h > 0) parts.push(`${h}h`);
+                if (m > 0) parts.push(`${m}m`);
+                if (s > 0 || parts.length === 0) parts.push(`${s}s`);
+                return parts.join(' ');
             }
-            const h = Math.floor(secs / 3600); const m = Math.floor((secs % 3600) / 60); const ss = Math.floor(secs % 60); return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${ss.toString().padStart(2,'0')}`;
+            case 'medium': {
+                // Medium: 1 day 2 hr 3 min 4 sec
+                const parts = [];
+                if (d > 0) parts.push(`${d} day${d !== 1 ? 's' : ''}`);
+                if (h > 0) parts.push(`${h} hr`);
+                if (m > 0) parts.push(`${m} min`);
+                if (s > 0 || parts.length === 0) parts.push(`${s} sec`);
+                return parts.join(' ');
+            }
+            case 'long': {
+                // Long: 1 day, 2 hours, 3 minutes, 4 seconds
+                const parts = [];
+                if (d > 0) parts.push(`${d} day${d !== 1 ? 's' : ''}`);
+                if (h > 0) parts.push(`${h} hour${h !== 1 ? 's' : ''}`);
+                if (m > 0) parts.push(`${m} minute${m !== 1 ? 's' : ''}`);
+                if (s > 0 || parts.length === 0) parts.push(`${s} second${s !== 1 ? 's' : ''}`);
+                return parts.join(', ');
+            }
+            case 'compact':
+            case 'clock':
+            default: {
+                // Compact/clock: 01:02:03 or 1:01:02:03 (with days)
+                if (d > 0) {
+                    return `${d}:${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+                }
+                return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            }
+            }
         }
         case 'fraction': {
             const den = rest.denominator ?? findBestDenominator(num); const nr = Math.round(num * den); const w = Math.floor(nr / den); const r = nr % den;
@@ -262,7 +305,15 @@
         }
         case 'time': {
             const tf = rest.timeFormat || 'short';
-            const fmts = {short:{hour:'numeric',minute:'numeric'},medium:{hour:'numeric',minute:'numeric',second:'numeric'},long:{hour:'numeric',minute:'numeric',second:'numeric',timeZoneName:'short'}};
+            const hour12 = rest.hour12 !== false && !tf.includes('24'); // Default to 12-hour unless explicitly 24-hour
+            const fmts = {
+                short:{hour:'numeric',minute:'numeric',hour12},
+                medium:{hour:'numeric',minute:'numeric',second:'numeric',hour12},
+                long:{hour:'numeric',minute:'numeric',second:'numeric',timeZoneName:'short',hour12},
+                'short-24':{hour:'2-digit',minute:'2-digit',hour12:false},
+                'medium-24':{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false},
+                'long-24':{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZoneName:'short',hour12:false}
+            };
             // Handle time-only strings like "14:30:00"
             let timeDate = date;
             if (!timeDate && str.match(/^\d{1,2}:\d{2}(:\d{2})?$/)) {

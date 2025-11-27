@@ -12,8 +12,8 @@
 
     <!-- Load genX modules -->
     <script src="../src/genx-common.js"></script>
-    <script src="../src/fmtx.js?v=2"></script>
     <script src="../src/smartx.js"></script>
+    <script src="../src/fmtx.js?v=3"></script>
     <script src="../src/accx.js"></script>
     <script src="../src/bindx.js"></script>
     <script src="../src/dragx.js"></script>
@@ -30,6 +30,19 @@
             box-sizing: border-box;
         }
 
+        /* Screen reader only - visually hidden but accessible */
+        .sr-only {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+
         body {
             font-family: 'Mulish', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
@@ -41,6 +54,7 @@
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
+            box-sizing: border-box;
         }
 
         header {
@@ -210,6 +224,21 @@
             cursor: move;
             margin: 5px 0;
             user-select: none;
+            touch-action: none;  /* Required for pointer events */
+        }
+
+        /* Visual feedback during drag */
+        .draggable.dx-dragging {
+            opacity: 0.5;
+        }
+
+        [dx-draggable] {
+            touch-action: none;
+            cursor: grab;
+        }
+
+        [dx-draggable]:active {
+            cursor: grabbing;
         }
 
         .drop-zone {
@@ -225,6 +254,24 @@
         .drop-zone.dx-drag-over {
             border-color: #667eea;
             background: #f0f0ff;
+        }
+
+        /* Ghost element during drag */
+        .dx-ghost {
+            pointer-events: none;
+            opacity: 0.8;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        /* Drop zone when keyboard focusing */
+        .dx-keyboard-drop-zone {
+            border-color: #667eea;
+        }
+
+        .dx-keyboard-hover {
+            background: #e0e0ff;
+            border-color: #667eea;
         }
 
         /* Buttons */
@@ -319,22 +366,43 @@
         }
 
         /* Breadcrumbs */
-        .breadcrumb {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            padding: 10px;
+        .breadcrumb,
+        .nx-breadcrumb {
+            padding: 8px 10px;
             background: #f9f9f9;
             border-radius: 4px;
+            font-size: 0.85rem;
         }
 
-        .breadcrumb a {
+        .breadcrumb,
+        .nx-breadcrumb-list {
+            display: flex;
+            gap: 0;
+            align-items: center;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nx-breadcrumb-item {
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .breadcrumb a,
+        .nx-breadcrumb-link {
             color: #667eea;
             text-decoration: none;
         }
 
-        .breadcrumb .separator {
+        .breadcrumb .separator,
+        .nx-breadcrumb-separator {
             color: #999;
+        }
+
+        .nx-breadcrumb-current {
+            color: #666;
         }
 
         /* Stats display */
@@ -749,7 +817,7 @@
         </header>
 
         <!-- Navigation -->
-        <nav nx-nav="main">
+        <nav nx-nav="main" nx-sticky>
             <ul>
                 <li><a href="#fmtx">fmtX</a></li>
                 <li><a href="#accx">accX</a></li>
@@ -942,12 +1010,11 @@
                         <h5 style="margin-top: 0; color: #555;">1. Verbose (Beginner)</h5>
                         <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Explicit attributes</p>
                         <div style="position: relative;">
-                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;button ax-enhance="label"
-        ax-type="icon"
-        ax-meaning="Home"&gt;
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;button ax-enhance="button"
+        ax-label="Home"&gt;
   🏠
 &lt;/button&gt;</pre>
-                            <button onclick="copyToClipboard(this, '&lt;button ax-enhance=&quot;label&quot; ax-type=&quot;icon&quot; ax-meaning=&quot;Home&quot;&gt;🏠&lt;/button&gt;')" class="copy-button">Copy</button>
+                            <button onclick="copyToClipboard(this, '&lt;button ax-enhance=&quot;button&quot; ax-label=&quot;Home&quot;&gt;🏠&lt;/button&gt;')" class="copy-button">Copy</button>
                         </div>
                     </div>
 
@@ -956,10 +1023,10 @@
                         <h5 style="margin-top: 0; color: #555;">2. Compact (Expert)</h5>
                         <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Colon syntax</p>
                         <div style="position: relative;">
-                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;button ax-enhance="label:icon:Home"&gt;
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;button ax-label="Home"&gt;
   🏠
 &lt;/button&gt;</pre>
-                            <button onclick="copyToClipboard(this, '&lt;button ax-enhance=&quot;label:icon:Home&quot;&gt;🏠&lt;/button&gt;')" class="copy-button">Copy</button>
+                            <button onclick="copyToClipboard(this, '&lt;button ax-label=&quot;Home&quot;&gt;🏠&lt;/button&gt;')" class="copy-button">Copy</button>
                         </div>
                     </div>
 
@@ -969,11 +1036,9 @@
                         <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">JSON configuration</p>
                         <div style="position: relative;">
                             <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;button ax-opts='{
-  "enhance":"label",
-  "type":"icon",
-  "meaning":"Home"
+  "label":"Home"
 }'&gt;🏠&lt;/button&gt;</pre>
-                            <button onclick="copyToClipboard(this, '&lt;button ax-opts=\'{&quot;enhance&quot;:&quot;label&quot;,&quot;type&quot;:&quot;icon&quot;,&quot;meaning&quot;:&quot;Home&quot;}\'&gt;🏠&lt;/button&gt;')" class="copy-button">Copy</button>
+                            <button onclick="copyToClipboard(this, '&lt;button ax-opts=\'{&quot;label&quot;:&quot;Home&quot;}\'&gt;🏠&lt;/button&gt;')" class="copy-button">Copy</button>
                         </div>
                     </div>
 
@@ -982,10 +1047,10 @@
                         <h5 style="margin-top: 0; color: #555;">4. CSS Class (Designer)</h5>
                         <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">Class-based config</p>
                         <div style="position: relative;">
-                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;button class="acc-label-icon-Home"&gt;
+                            <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; font-size: 11px; margin: 0; overflow-x: auto; white-space: pre-wrap;">&lt;button class="acc-button-label-Home"&gt;
   🏠
 &lt;/button&gt;</pre>
-                            <button onclick="copyToClipboard(this, '&lt;button class=&quot;acc-label-icon-Home&quot;&gt;🏠&lt;/button&gt;')" class="copy-button">Copy</button>
+                            <button onclick="copyToClipboard(this, '&lt;button class=&quot;acc-button-label-Home&quot;&gt;🏠&lt;/button&gt;')" class="copy-button">Copy</button>
                         </div>
                     </div>
                 </div>
@@ -1343,17 +1408,17 @@
                     <div class="example-demo">
                         <label>Input Type:
                             <select id="currency-input-type-selector" style="margin: 0 10px; padding: 5px;">
-                                <option value="number" selected>Number (1234.56)</option>
-                                <option value="cents">Cents (123456 → $1,234.56)</option>
-                                <option value="string">String ("1234.56")</option>
-                                <option value="int">Integer (1234)</option>
-                                <option value="smart">Smart (Auto-detect) ✨</option>
+                                <option value="number" selected>Number (2499.99)</option>
+                                <option value="cents">Cents (87543 → $875.43)</option>
+                                <option value="string">String ("1599.50")</option>
+                                <option value="int">Integer (750)</option>
+                                <option value="smart">Smart ("3200 dollars" → $3,200.00) ✨</option>
                             </select>
                         </label>
                         <br><br>
                         <div>
-                            <strong>Input:</strong> <span id="currency-input-value" class="original-value">1234.56</span><br>
-                            <strong>Output:</strong> <span id="currency-output" class="formatted-value" fx-format="currency" fx-type="number" fx-currency="USD">1234.56</span>
+                            <strong>Input:</strong> <span id="currency-input-value" class="original-value">2499.99</span><br>
+                            <strong>Output:</strong> <span id="currency-output" class="formatted-value" fx-format="currency" fx-raw="2499.99" fx-type="number" fx-currency="USD"></span>
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
@@ -1370,23 +1435,23 @@
                     <div class="example-demo">
                         <label>Input Type:
                             <select id="percent-input-type-selector" style="margin: 0 10px; padding: 5px;">
-                                <option value="decimal" selected>Decimal (0.1234 → 12.34%)</option>
-                                <option value="percentage">Percentage (12.34 → 12.34%)</option>
-                                <option value="string">String ("0.5")</option>
+                                <option value="decimal" selected>Decimal (0.2567 → 26%)</option>
+                                <option value="percentage">Percentage (78.4 → 78%)</option>
+                                <option value="string">String ("0.333" → 33%)</option>
                             </select>
                         </label>
                         <label style="margin-left: 20px;">Decimals:
                             <select id="percent-decimals-selector" style="margin: 0 10px; padding: 5px;">
-                                <option value="0" selected>0 (12%)</option>
-                                <option value="1">1 (12.3%)</option>
-                                <option value="2">2 (12.34%)</option>
-                                <option value="3">3 (12.346%)</option>
+                                <option value="0" selected>0 (26%)</option>
+                                <option value="1">1 (25.7%)</option>
+                                <option value="2">2 (25.67%)</option>
+                                <option value="3">3 (25.670%)</option>
                             </select>
                         </label>
                         <br><br>
                         <div>
-                            <strong>Input:</strong> <span id="percent-input-value" class="original-value">0.1234</span><br>
-                            <strong>Output:</strong> <span id="percent-output" class="formatted-value">12%</span>
+                            <strong>Input:</strong> <span id="percent-input-value" class="original-value">0.2567</span><br>
+                            <strong>Output:</strong> <span id="percent-output" class="formatted-value" fx-format="percent" fx-raw="0.2567" fx-type="decimal" fx-decimals="0"></span>
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
@@ -1404,8 +1469,8 @@
                         <label>Input Type:
                             <select id="date-input-type-selector" style="margin: 0 10px; padding: 5px;">
                                 <option value="iso" selected>ISO String (2025-03-15)</option>
-                                <option value="unix">Unix Timestamp (1735689600 → Jan 1, 2025)</option>
-                                <option value="milliseconds">Milliseconds (1751328000000 → July 1, 2025)</option>
+                                <option value="unix">Unix Timestamp (1735732800 → Jan 1, 2025)</option>
+                                <option value="milliseconds">Milliseconds (1751371200000 → July 1, 2025)</option>
                                 <option value="date">JS Date String (Dec 25, 2025)</option>
                             </select>
                         </label>
@@ -1422,7 +1487,7 @@
                         <br><br>
                         <div>
                             <strong>Input:</strong> <span id="date-input-value" class="original-value">2025-03-15</span><br>
-                            <strong>Output:</strong> <time id="date-output" class="formatted-value" fx-format="date" fx-type="iso" fx-date-format="long">2025-03-15</time>
+                            <strong>Output:</strong> <time id="date-output" class="formatted-value" fx-format="date" fx-raw="2025-03-15" fx-type="iso" fx-date-format="long"></time>
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
@@ -1458,7 +1523,7 @@
                         <br><br>
                         <div>
                             <strong>Input (UTC):</strong> <span id="relative-input-value" class="original-value"></span><br>
-                            <strong>Output:</strong> <time id="relative-output" class="formatted-value" fx-format="relative"></time>
+                            <strong>Output:</strong> <time id="relative-output" class="formatted-value" fx-format="relative" fx-raw="" fx-type="iso"></time>
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
@@ -1499,7 +1564,7 @@
                         <br><br>
                         <div>
                             <strong>Input (bytes):</strong> <span id="filesize-input-value" class="original-value">1536000</span><br>
-                            <strong>Output:</strong> <span id="filesize-output" class="formatted-value" fx-format="filesize">1536000</span>
+                            <strong>Output:</strong> <span id="filesize-output" class="formatted-value" fx-format="filesize" fx-raw="1536000" fx-binary="false" fx-decimals="2"></span>
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
@@ -1569,7 +1634,7 @@
                         <br><br>
                         <div>
                             <strong>Input:</strong> <span id="compact-input-value" class="original-value">1500000</span><br>
-                            <strong>Output:</strong> <span id="compact-output" class="formatted-value" fx-format="compact">1500000</span>
+                            <strong>Output:</strong> <span id="compact-output" class="formatted-value" fx-format="compact" fx-raw="1500000"></span>
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
@@ -1604,7 +1669,7 @@
                         <br><br>
                         <div>
                             <strong>Input:</strong> <span id="phone-input-value" class="original-value">5551234567</span><br>
-                            <strong>Output:</strong> <span id="phone-output" class="formatted-value" fx-format="phone" fx-phone-format="us">5551234567</span>
+                            <strong>Output:</strong> <span id="phone-output" class="formatted-value" fx-format="phone" fx-raw="5551234567" fx-phone-format="us"></span>
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
@@ -1629,15 +1694,18 @@
                         </label>
                         <label style="margin-left: 20px;">Format:
                             <select id="time-format-selector" style="margin: 0 10px; padding: 5px;">
-                                <option value="short" selected>Short (2:30 PM)</option>
-                                <option value="medium">Medium (2:30:00 PM)</option>
-                                <option value="long">Long (2:30:00 PM GMT-6)</option>
+                                <option value="short" selected>Short 12h (2:30 PM)</option>
+                                <option value="medium">Medium 12h (2:30:00 PM)</option>
+                                <option value="long">Long 12h (2:30:00 PM CST)</option>
+                                <option value="short-24">Short 24h (14:30)</option>
+                                <option value="medium-24">Medium 24h (14:30:00)</option>
+                                <option value="long-24">Long 24h (14:30:00 CST)</option>
                             </select>
                         </label>
                         <br><br>
                         <div>
                             <strong>Input:</strong> <time id="time-input-value" class="original-value">14:30:00</time><br>
-                            <strong>Output:</strong> <time id="time-output" class="formatted-value" fx-format="time" fx-time-format="short">14:30:00</time>
+                            <strong>Output:</strong> <time id="time-output" class="formatted-value" fx-format="time" fx-raw="14:30:00" fx-time-format="short"></time>
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
@@ -1672,7 +1740,7 @@
                         <br><br>
                         <div>
                             <strong>Input (seconds):</strong> <span id="duration-input-value" class="original-value">3661</span><br>
-                            <strong>Output:</strong> <span id="duration-output" class="formatted-value" fx-format="duration" fx-duration-format="short">3661</span>
+                            <strong>Output:</strong> <span id="duration-output" class="formatted-value" fx-format="duration" fx-raw="3661" fx-duration-format="short"></span>
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
@@ -1688,7 +1756,63 @@
             <h2>accX - Accessibility Enhancements</h2>
             <p class="description">Automatic WCAG 2.1 AA compliance and accessibility features</p>
 
+            <h3 class="sr-only">Examples</h3>
             <div class="examples-grid">
+                <!-- Live Accessibility Audit Score -->
+                <div id="accx-audit-panel" class="example" style="grid-column: 1 / -1;">
+                    <h4>Live Accessibility Audit</h4>
+                    <p>Real-time WCAG compliance verification powered by axe-core</p>
+                    <div class="example-demo">
+                        <div style="display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: center;">
+                            <!-- Score Circle -->
+                            <div style="position: relative; width: 100px; height: 100px;">
+                                <svg viewBox="0 0 36 36" style="transform: rotate(-90deg); width: 100%; height: 100%;">
+                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                          fill="none" stroke="#e8e8e8" stroke-width="3"/>
+                                    <path id="accx-score-ring" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                          fill="none" stroke="#4ade80" stroke-width="3" stroke-dasharray="0, 100"
+                                          style="transition: stroke-dasharray 1s ease-out;"/>
+                                </svg>
+                                <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                    <span id="accx-score-value" style="font-size: 1.75rem; font-weight: 700; line-height: 1; color: #333;">--</span>
+                                    <span style="font-size: 0.65rem; color: #666;">/100</span>
+                                </div>
+                            </div>
+                            <!-- Details -->
+                            <div>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px;">
+                                    <div style="background: #f0fdf4; padding: 10px 14px; border-radius: 6px; border-left: 3px solid #22c55e;">
+                                        <div style="font-size: 0.7rem; color: #666; margin-bottom: 2px;">Rules Passed</div>
+                                        <div id="accx-passes" style="font-size: 1.25rem; font-weight: 600; color: #166534;">--</div>
+                                    </div>
+                                    <div style="background: #fef2f2; padding: 10px 14px; border-radius: 6px; border-left: 3px solid #ef4444;">
+                                        <div style="font-size: 0.7rem; color: #666; margin-bottom: 2px;">Violations</div>
+                                        <div id="accx-violations" style="font-size: 1.25rem; font-weight: 600; color: #991b1b;">--</div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <button id="accx-run-audit" ax-enhance="button" ax-label="Run accessibility audit on this section"
+                                            style="background: #e53935; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 500;">
+                                        Run Audit
+                                    </button>
+                                    <span id="accx-audit-status" ax-enhance="live" ax-live="polite" style="font-size: 0.8rem; color: #666;"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Violations Detail -->
+                    <div id="accx-violations-detail" style="display: none; margin-top: 16px; padding: 12px; background: #fef2f2; border-radius: 6px; border: 1px solid #fecaca;">
+                        <strong style="color: #991b1b; font-size: 0.85rem;">Violations Found:</strong>
+                        <div id="accx-violations-list" style="margin-top: 8px;"></div>
+                    </div>
+                    <br>
+                    <strong style="color: #666; font-size: 0.9rem;">Methodology:</strong>
+                    <p style="font-size: 0.85rem; color: #666; margin-top: 6px; line-height: 1.6;">
+                        Audited using <a href="https://github.com/dequelabs/axe-core" target="_blank" rel="noopener" style="color: #e53935;">axe-core</a>,
+                        the industry-standard accessibility engine used by Microsoft, Google, and the US government.
+                        This page dogfoods accX—all accessibility compliance is achieved using accX attributes, not raw ARIA.
+                    </p>
+                </div>
                 <!-- Example 1: Button with ARIA -->
                 <div class="example">
                     <h4>1. Enhanced Buttons</h4>
@@ -1906,9 +2030,11 @@
                     <p>Radio button group binding</p>
                     <div class="example-demo">
                         <span class="original-value">Initial: (none selected)</span>
-                        <label><input type="radio" bx-model="size" value="S"> Small</label>
-                        <label><input type="radio" bx-model="size" value="M"> Medium</label>
-                        <label><input type="radio" bx-model="size" value="L"> Large</label>
+                        <div style="margin: 10px 0;">
+                            <div style="display: flex; align-items: center; margin-bottom: 6px;"><label for="size-s" style="min-width: 60px; cursor: pointer;">Small</label><input type="radio" bx-model="size" value="S" id="size-s"></div>
+                            <div style="display: flex; align-items: center; margin-bottom: 6px;"><label for="size-m" style="min-width: 60px; cursor: pointer;">Medium</label><input type="radio" bx-model="size" value="M" id="size-m"></div>
+                            <div style="display: flex; align-items: center;"><label for="size-l" style="min-width: 60px; cursor: pointer;">Large</label><input type="radio" bx-model="size" value="L" id="size-l"></div>
+                        </div>
                         <p>Size: <span class="formatted-value" bx-bind="size">-</span></p>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
@@ -1971,8 +2097,10 @@
                     <p>Show/hide based on value</p>
                     <div class="example-demo">
                         <span class="original-value">Initial: hidden</span>
-                        <input type="checkbox" bx-model="showDetails" id="show">
-                        <label for="show">Show details</label>
+                        <div style="display: flex; align-items: center; margin: 10px 0;">
+                            <label for="show" style="cursor: pointer; margin-right: 8px;">Show details</label>
+                            <input type="checkbox" bx-model="showDetails" id="show">
+                        </div>
                         <div bx-if="showDetails" style="margin-top:10px;">
                             <p class="formatted-value">Additional details shown</p>
                         </div>
@@ -1989,14 +2117,14 @@
                     <p>Instant feedback</p>
                     <div class="example-demo">
                         <span class="original-value">Initial: (empty)</span>
-                        <input type="email" bx-model="email" placeholder="Email">
-                        <p bx-bind="email" style="color:red;">
-                            <span class="formatted-value" bx-if="email && !email.includes('@')">Invalid email</span>
-                        </p>
+                        <input type="email" bx-model="validationEmail" placeholder="Email" bx-validate="email">
+                        <p>Value: <span class="formatted-value" bx-bind="validationEmail"></span></p>
+                        <p style="color: #22c55e;" bx-if="validationEmail && validationEmail.includes('@') && validationEmail.includes('.')">✓ Valid email format</p>
+                        <p style="color: #dc2626;" bx-if="validationEmail && (!validationEmail.includes('@') || !validationEmail.includes('.'))">✗ Invalid email format</p>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;input bx-model="email"&gt;
-&lt;span bx-if="email &amp;&amp; !email.includes('@')"&gt;</pre>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;input bx-model="email" bx-validate="email"&gt;
+&lt;span bx-if="email &amp;&amp; email.includes('@')"&gt;✓ Valid&lt;/span&gt;</pre>
                     </div>
                 </div>
 
@@ -2092,6 +2220,8 @@
                                 </div>
                             </div>
 
+                            <div id="form-submit-result" style="display: none; padding: 12px; border-radius: 4px; margin-bottom: 15px;"></div>
+
                             <div style="display: flex; gap: 10px;">
                                 <button type="submit" style="flex: 1; padding: 12px; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; font-weight: 500;">
                                     Submit
@@ -2101,6 +2231,27 @@
                                 </button>
                             </div>
                         </form>
+                        <script>
+                            document.getElementById('signup-form').addEventListener('bx-form-valid', function(e) {
+                                const result = document.getElementById('form-submit-result');
+                                result.style.display = 'block';
+                                result.style.background = '#d4edda';
+                                result.style.border = '1px solid #c3e6cb';
+                                result.style.color = '#155724';
+                                result.innerHTML = '<strong>✓ Form submitted successfully!</strong><br><small>Data: ' + JSON.stringify(e.detail.data) + '</small>';
+                            });
+                            document.getElementById('signup-form').addEventListener('bx-form-invalid', function(e) {
+                                const result = document.getElementById('form-submit-result');
+                                result.style.display = 'block';
+                                result.style.background = '#f8d7da';
+                                result.style.border = '1px solid #f5c6cb';
+                                result.style.color = '#721c24';
+                                result.innerHTML = '<strong>✗ Validation failed</strong><br><small>Errors: ' + JSON.stringify(e.detail.errors) + '</small>';
+                            });
+                            document.getElementById('signup-form').addEventListener('reset', function() {
+                                document.getElementById('form-submit-result').style.display = 'none';
+                            });
+                        </script>
 
                         <div style="background: #e3f2fd; border-left: 4px solid #2196F3; padding: 15px; border-radius: 4px; margin-top: 30px;">
                             <h5 style="margin: 0 0 10px 0; color: #1976D2;">✨ Validation Features:</h5>
@@ -2148,28 +2299,32 @@
                         <div class="draggable" dx-draggable="card" dx-data='{"id":1}'>
                             Drag me!
                         </div>
-                        <div class="drop-zone" dx-drop-zone dx-accepts="card">
+                        <div class="drop-zone" dx-drop-zone="cardzone" dx-accepts="card">
                             Drop here
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
                         <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="card" dx-data='{"id":1}'&gt;
-&lt;div dx-drop-zone dx-accepts="card"&gt;</pre>
+&lt;div dx-drop-zone="cardzone" dx-accepts="card"&gt;</pre>
                     </div>
                 </div>
 
                 <!-- Example 2: Multiple items -->
                 <div class="example">
                     <h4>2. Multiple Draggables</h4>
-                    <p>Drag multiple items</p>
+                    <p>Drag multiple items to zone</p>
                     <div class="example-demo">
                         <span class="original-value">State: 3 items in list</span>
                         <div class="draggable" dx-draggable="item">Item 1</div>
                         <div class="draggable" dx-draggable="item">Item 2</div>
                         <div class="draggable" dx-draggable="item">Item 3</div>
+                        <div class="drop-zone" dx-drop-zone="itemzone" dx-accepts="item">
+                            Drop items here
+                        </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="item"&gt;</pre>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="item"&gt;
+&lt;div dx-drop-zone="itemzone" dx-accepts="item"&gt;</pre>
                     </div>
                 </div>
 
@@ -2181,11 +2336,11 @@
                         <span class="original-value">State: Zone accepts images only</span>
                         <div class="draggable" dx-draggable="image" style="background:#e74c3c;">Image</div>
                         <div class="draggable" dx-draggable="text" style="background:#3498db;">Text</div>
-                        <div class="drop-zone" dx-drop-zone dx-accepts="image">Images Only</div>
+                        <div class="drop-zone" dx-drop-zone="imagezone" dx-accepts="image">Images Only</div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
                         <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="image"&gt;
-&lt;div dx-drop-zone dx-accepts="image"&gt;</pre>
+&lt;div dx-drop-zone="imagezone" dx-accepts="image"&gt;</pre>
                     </div>
                 </div>
 
@@ -2198,7 +2353,7 @@
                         <div class="draggable" dx-draggable="kbd" tabindex="0">
                             Press Space, use arrows
                         </div>
-                        <div class="drop-zone" dx-drop-zone dx-accepts="kbd">
+                        <div class="drop-zone" dx-drop-zone="kbdzone" dx-accepts="kbd">
                             Drop target
                         </div>
                         <br>
@@ -2246,7 +2401,7 @@
                         <div class="draggable" dx-draggable="template" dx-clone="true">
                             Drag to copy
                         </div>
-                        <div class="drop-zone" dx-drop-zone dx-accepts="template">
+                        <div class="drop-zone" dx-drop-zone="clonezone" dx-accepts="template">
                             Drop copies here
                         </div>
                         <br>
@@ -2264,7 +2419,7 @@
                         <div class="draggable" dx-draggable="revert" dx-revert="invalid">
                             Try dropping outside
                         </div>
-                        <div class="drop-zone" dx-drop-zone dx-accepts="other">
+                        <div class="drop-zone" dx-drop-zone="revertzone" dx-accepts="other">
                             Wrong type
                         </div>
                         <br>
@@ -2276,15 +2431,15 @@
                 <!-- Example 9: Snap to grid -->
                 <div class="example">
                     <h4>9. Grid Snapping</h4>
-                    <p>Snap to 20px grid</p>
+                    <p>Snap to 50px grid</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Snaps to 20px increments</span>
-                        <div class="draggable" dx-draggable="grid" dx-grid="20">
+                        <span class="original-value">State: Snaps to 50px increments</span>
+                        <div class="draggable" dx-draggable="grid" dx-snap="50">
                             Snaps to grid
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="grid" dx-grid="20"&gt;</pre>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="grid" dx-snap="50"&gt;</pre>
                     </div>
                 </div>
 
@@ -2311,74 +2466,132 @@
             <h2>loadX - Loading States</h2>
             <p class="description">Declarative loading indicators with zero layout shift</p>
 
+            <style>
+                /* Static CSS loading indicators for demo */
+                .demo-spinner {
+                    width: 24px;
+                    height: 24px;
+                    border: 3px solid #e0e0e0;
+                    border-top-color: #3b82f6;
+                    border-radius: 50%;
+                    animation: demo-spin 1s linear infinite;
+                    margin: 10px auto;
+                }
+                @keyframes demo-spin {
+                    to { transform: rotate(360deg); }
+                }
+                .demo-skeleton {
+                    background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+                    background-size: 200% 100%;
+                    animation: demo-shimmer 1.5s infinite;
+                    border-radius: 4px;
+                    height: 16px;
+                    margin: 8px 0;
+                }
+                @keyframes demo-shimmer {
+                    0% { background-position: 200% 0; }
+                    100% { background-position: -200% 0; }
+                }
+                .demo-progress {
+                    background: #e0e0e0;
+                    border-radius: 4px;
+                    height: 8px;
+                    overflow: hidden;
+                }
+                .demo-progress-bar {
+                    background: #3b82f6;
+                    height: 100%;
+                    width: 50%;
+                    animation: demo-progress-anim 2s ease-in-out infinite;
+                }
+                @keyframes demo-progress-anim {
+                    0%, 100% { width: 30%; }
+                    50% { width: 70%; }
+                }
+                .demo-fade {
+                    opacity: 0.3;
+                    animation: demo-fade-anim 1.5s ease-in-out infinite;
+                }
+                @keyframes demo-fade-anim {
+                    0%, 100% { opacity: 0.3; }
+                    50% { opacity: 0.7; }
+                }
+            </style>
+
             <div class="examples-grid">
                 <!-- Example 1: Spinner -->
                 <div class="example">
                     <h4>1. Spinner Loader</h4>
                     <p>Circle spinner animation</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Idle (click to load)</span>
-                        <button onclick="simulateLoad(this, 'spinner')">Load with Spinner</button>
-                        <div lx-strategy="spinner" style="min-height:60px;"></div>
+                        <div class="demo-spinner"></div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="spinner"&gt;</pre>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="spinner"&gt;&lt;/div&gt;</pre>
                     </div>
                 </div>
 
                 <!-- Example 2: Skeleton -->
                 <div class="example">
                     <h4>2. Skeleton Screen</h4>
-                    <p>Content placeholder</p>
+                    <p>Content placeholder with shimmer</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Idle (click to load)</span>
-                        <button onclick="simulateLoad(this, 'skeleton')">Load with Skeleton</button>
-                        <div lx-strategy="skeleton" lx-rows="3" style="min-height:100px;"></div>
+                        <div class="demo-skeleton" style="width: 60%;"></div>
+                        <div class="demo-skeleton" style="width: 80%;"></div>
+                        <div class="demo-skeleton" style="width: 40%;"></div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="skeleton" lx-rows="3"&gt;</pre>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="skeleton" lx-rows="3"&gt;&lt;/div&gt;</pre>
                     </div>
                 </div>
 
                 <!-- Example 3: Progress bar -->
                 <div class="example">
                     <h4>3. Progress Bar</h4>
-                    <p>Determinate progress</p>
+                    <p>Determinate progress indicator</p>
                     <div class="example-demo">
-                        <span class="original-value">State: 0% progress</span>
-                        <button onclick="simulateProgress(this)">Load with Progress</button>
-                        <div lx-strategy="progress" lx-value="0" style="min-height:50px;"></div>
+                        <div class="demo-progress">
+                            <div class="demo-progress-bar"></div>
+                        </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="progress" lx-value="0"&gt;</pre>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="progress" lx-value="50"&gt;&lt;/div&gt;</pre>
                     </div>
                 </div>
 
                 <!-- Example 4: Fade -->
                 <div class="example">
                     <h4>4. Fade Transition</h4>
-                    <p>Smooth opacity fade</p>
+                    <p>Smooth opacity fade effect</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Content visible</span>
-                        <button onclick="simulateLoad(this, 'fade')">Load with Fade</button>
-                        <div lx-strategy="fade" style="min-height:60px;">Content</div>
+                        <div class="demo-fade" style="padding: 20px; background: #f0f0f0; border-radius: 4px; text-align: center;">
+                            Loading content...
+                        </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="fade"&gt;</pre>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="fade"&gt;Content&lt;/div&gt;</pre>
                     </div>
                 </div>
 
-                <!-- Example 5: Auto-detect -->
+                <!-- Example 5: Dots spinner -->
                 <div class="example">
-                    <h4>5. Auto Strategy</h4>
-                    <p>Automatic strategy selection</p>
+                    <h4>5. Dots Spinner</h4>
+                    <p>Alternative spinner style</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Auto-detects best strategy</span>
-                        <button onclick="simulateLoad(this, 'auto')">Auto Load</button>
-                        <div lx-auto style="min-height:80px;"></div>
+                        <div style="display: flex; justify-content: center; gap: 4px; padding: 20px;">
+                            <div style="width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; animation: demo-dot 1s ease-in-out infinite;"></div>
+                            <div style="width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; animation: demo-dot 1s ease-in-out 0.2s infinite;"></div>
+                            <div style="width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; animation: demo-dot 1s ease-in-out 0.4s infinite;"></div>
+                        </div>
+                        <style>
+                            @keyframes demo-dot {
+                                0%, 100% { transform: scale(1); opacity: 1; }
+                                50% { transform: scale(0.5); opacity: 0.5; }
+                            }
+                        </style>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-auto&gt;</pre>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="spinner" lx-spinner-type="dots"&gt;&lt;/div&gt;</pre>
                     </div>
                 </div>
 
@@ -2387,78 +2600,37 @@
                     <h4>6. Custom Duration</h4>
                     <p>Control animation timing</p>
                     <div class="example-demo">
-                        <span class="original-value">State: 3s custom duration</span>
-                        <button onclick="simulateLoad(this, 'spinner', 3000)">3 Second Load</button>
-                        <div lx-strategy="spinner" lx-duration="300"></div>
+                        <div class="demo-spinner" style="animation-duration: 0.5s;"></div>
+                        <span style="display: block; text-align: center; font-size: 0.8rem; color: #666;">Fast (500ms)</span>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="spinner" lx-duration="300"&gt;</pre>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="spinner" lx-duration="500"&gt;&lt;/div&gt;</pre>
                     </div>
                 </div>
 
-                <!-- Example 7: HTMX integration -->
+                <!-- Example 7: All Strategies comparison -->
                 <div class="example">
-                    <h4>7. HTMX Loading</h4>
-                    <p>Automatic HTMX detection</p>
+                    <h4>7. All Strategies</h4>
+                    <p>Side-by-side comparison</p>
                     <div class="example-demo">
-                        <span class="original-value">State: HTMX-triggered loading</span>
-                        <button hx-get="/api/data" hx-target="#htmx-content" lx-strategy="skeleton">
-                            Load via HTMX
-                        </button>
-                        <div id="htmx-content" style="min-height:60px;"></div>
-                        <br>
-                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;button hx-get="/api/data" lx-strategy="skeleton"&gt;</pre>
-                    </div>
-                </div>
-
-                <!-- Example 8: Fetch detection -->
-                <div class="example">
-                    <h4>8. Fetch API Loading</h4>
-                    <p>Auto-detect fetch calls</p>
-                    <div class="example-demo">
-                        <span class="original-value">State: Fetch-triggered loading</span>
-                        <button onclick="fetchData(this)">Fetch Data</button>
-                        <div id="fetch-content" lx-strategy="spinner"></div>
-                        <br>
-                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="spinner"&gt;</pre>
-                    </div>
-                </div>
-
-                <!-- Example 9: Form submission -->
-                <div class="example">
-                    <h4>9. Form Loading</h4>
-                    <p>Loading during submission</p>
-                    <div class="example-demo">
-                        <span class="original-value">State: Form ready</span>
-                        <form onsubmit="return simulateSubmit(event)">
-                            <input type="text" placeholder="Enter data" required>
-                            <button type="submit" lx-strategy="spinner">Submit</button>
-                        </form>
-                        <br>
-                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;button type="submit" lx-strategy="spinner"&gt;</pre>
-                    </div>
-                </div>
-
-                <!-- Example 10: Multiple states -->
-                <div class="example">
-                    <h4>10. Multi-State Loading</h4>
-                    <p>Different states for different areas</p>
-                    <div class="example-demo">
-                        <span class="original-value">State: Multiple loaders</span>
-                        <button onclick="multiLoad()">Load All</button>
-                        <div style="display:grid;gap:10px;margin-top:10px;">
-                            <div lx-strategy="spinner" class="multi1" style="height:40px;"></div>
-                            <div lx-strategy="skeleton" class="multi2" style="height:40px;"></div>
-                            <div lx-strategy="progress" class="multi3" style="height:40px;"></div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div style="text-align: center;">
+                                <div class="demo-spinner" style="margin: 5px auto;"></div>
+                                <span style="font-size: 0.7rem; color: #888;">spinner</span>
+                            </div>
+                            <div style="text-align: center;">
+                                <div class="demo-skeleton" style="margin: 10px 0;"></div>
+                                <span style="font-size: 0.7rem; color: #888;">skeleton</span>
+                            </div>
+                            <div style="text-align: center;">
+                                <div class="demo-progress" style="margin: 10px 0;"><div class="demo-progress-bar"></div></div>
+                                <span style="font-size: 0.7rem; color: #888;">progress</span>
+                            </div>
+                            <div style="text-align: center;">
+                                <div class="demo-fade" style="padding: 5px; font-size: 0.8rem;">Content</div>
+                                <span style="font-size: 0.7rem; color: #888;">fade</span>
+                            </div>
                         </div>
-                        <br>
-                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div lx-strategy="spinner"&gt;
-&lt;div lx-strategy="skeleton"&gt;
-&lt;div lx-strategy="progress"&gt;</pre>
                     </div>
                 </div>
             </div>
@@ -2469,174 +2641,173 @@
             <h2>navX - Navigation Patterns</h2>
             <p class="description">Accessible navigation with keyboard support and ARIA</p>
 
+            <style>
+                /* Tab styles for demo */
+                .nx-tabs-demo [role="tablist"] { display: flex; gap: 0; border-bottom: 2px solid #ccc; }
+                .nx-tabs-demo [role="tab"] { padding: 8px 16px; border: none; background: #d0d0d0; color: #555; cursor: pointer; border-radius: 4px 4px 0 0; margin-bottom: -2px; }
+                .nx-tabs-demo [role="tab"][aria-selected="true"] { background: white; color: #333; border-bottom: 2px solid white; font-weight: bold; }
+                .nx-tabs-demo [role="tabpanel"] { padding: 16px; border: 1px solid #e0e0e0; border-top: none; min-height: 60px; }
+                .nx-tabs-demo [role="tabpanel"][hidden] { display: none; }
+                /* Dropdown styles */
+                .nx-dropdown-demo ul { position: absolute; list-style: none; margin: 0; padding: 4px 0; background: white; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0,0,0,0.15); min-width: 120px; }
+                .nx-dropdown-demo ul[hidden] { display: none; }
+                .nx-dropdown-demo li a { display: block; padding: 8px 16px; text-decoration: none; color: #333; }
+                .nx-dropdown-demo li a:hover, .nx-dropdown-demo li a:focus { background: #f0f0f0; }
+                /* Mobile menu styles */
+                .nx-mobile-demo nav[hidden] { display: none; }
+                .nx-mobile-demo nav { background: #333; padding: 16px; }
+                .nx-mobile-demo nav a { display: block; color: white; padding: 8px 0; text-decoration: none; }
+                /* Scroll spy styles */
+                .nx-scrollspy-demo { display: flex; gap: 16px; }
+                .nx-scrollspy-demo nav { flex-shrink: 0; }
+                .nx-scrollspy-demo nav a { display: block; padding: 4px 8px; text-decoration: none; color: #666; border-left: 2px solid transparent; }
+                .nx-scrollspy-demo nav a.nx-active { color: #3b82f6; border-left-color: #3b82f6; font-weight: bold; }
+                .nx-scrollspy-demo .scroll-container { height: 150px; overflow-y: auto; flex: 1; border: 1px solid #ddd; padding: 8px; }
+                .nx-scrollspy-demo .scroll-section { min-height: 120px; padding: 8px; margin-bottom: 8px; background: #f9f9f9; }
+            </style>
+
             <div class="examples-grid">
                 <!-- Example 1: Breadcrumbs -->
                 <div class="example">
                     <h4>1. Breadcrumb Navigation</h4>
-                    <p>Show current location</p>
+                    <p>Auto-generated from URL path</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Hierarchical breadcrumb</span>
-                        <nav nx-breadcrumb="hierarchical">
-                            <a href="/">Home</a> /
-                            <a href="/products">Products</a> /
-                            <span>Current Page</span>
-                        </nav>
+                        <nav nx-breadcrumb="hierarchical" aria-label="Breadcrumb"></nav>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
                         <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;nav nx-breadcrumb="hierarchical"&gt;</pre>
                     </div>
                 </div>
 
-                <!-- Example 2: Tabs -->
+                <!-- Example 2: Tabs - properly structured -->
                 <div class="example">
                     <h4>2. Tab Navigation</h4>
-                    <p>Arrow key navigation</p>
-                    <div class="example-demo">
-                        <span class="original-value">State: Tab 1 active</span>
+                    <p>Click tabs or use arrow keys</p>
+                    <div class="example-demo nx-tabs-demo">
                         <div nx-tabs>
-                            <div class="tabs">
-                                <button class="tab active" data-target="tab1">Tab 1</button>
-                                <button class="tab" data-target="tab2">Tab 2</button>
-                                <button class="tab" data-target="tab3">Tab 3</button>
+                            <div role="tablist">
+                                <button role="tab">Overview</button>
+                                <button role="tab">Features</button>
+                                <button role="tab">Pricing</button>
                             </div>
-                            <div id="tab1" class="tab-panel active">Content 1</div>
-                            <div id="tab2" class="tab-panel">Content 2</div>
-                            <div id="tab3" class="tab-panel">Content 3</div>
+                            <div role="tabpanel">Overview content goes here.</div>
+                            <div role="tabpanel">Features: Fast, accessible, declarative.</div>
+                            <div role="tabpanel">Pricing: Free and open source!</div>
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div nx-tabs&gt;</pre>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div nx-tabs&gt;
+  &lt;div role="tablist"&gt;
+    &lt;button role="tab"&gt;Tab 1&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;div role="tabpanel"&gt;Content&lt;/div&gt;
+&lt;/div&gt;</pre>
                     </div>
                 </div>
 
-                <!-- Example 3: Dropdown -->
+                <!-- Example 3: Dropdown Menu -->
                 <div class="example">
                     <h4>3. Dropdown Menu</h4>
-                    <p>Keyboard accessible dropdown</p>
-                    <div class="example-demo">
-                        <span class="original-value">State: Menu collapsed</span>
+                    <p>Click or press Enter/Space/↓</p>
+                    <div class="example-demo nx-dropdown-demo" style="position: relative;">
                         <div nx-dropdown>
-                            <button>Menu ▼</button>
-                            <ul style="display:none;list-style:none;background:white;border:1px solid #ddd;padding:5px;">
-                                <li><a href="#" style="display:block;padding:5px;">Item 1</a></li>
-                                <li><a href="#" style="display:block;padding:5px;">Item 2</a></li>
-                                <li><a href="#" style="display:block;padding:5px;">Item 3</a></li>
+                            <button>Actions ▼</button>
+                            <ul hidden>
+                                <li><a href="#">Edit</a></li>
+                                <li><a href="#">Duplicate</a></li>
+                                <li><a href="#">Delete</a></li>
                             </ul>
                         </div>
-                        <br>
+                        <br><br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div nx-dropdown&gt;</pre>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div nx-dropdown&gt;
+  &lt;button&gt;Menu ▼&lt;/button&gt;
+  &lt;ul hidden&gt;...&lt;/ul&gt;
+&lt;/div&gt;</pre>
                     </div>
                 </div>
 
-                <!-- Example 4: Scroll spy -->
+                <!-- Example 4: Mobile Menu -->
                 <div class="example">
-                    <h4>4. Scroll Spy</h4>
-                    <p>Track scroll position</p>
-                    <div class="example-demo">
-                        <span class="original-value">State: Tracks active section</span>
+                    <h4>4. Mobile Menu</h4>
+                    <p>Hamburger with focus trap + Escape</p>
+                    <div class="example-demo nx-mobile-demo">
+                        <div nx-mobile>
+                            <button data-mobile-trigger>☰ Menu</button>
+                            <nav data-mobile-menu hidden>
+                                <a href="#">Home</a>
+                                <a href="#">Products</a>
+                                <a href="#">Contact</a>
+                            </nav>
+                        </div>
+                        <br>
+                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div nx-mobile&gt;
+  &lt;button data-mobile-trigger&gt;☰&lt;/button&gt;
+  &lt;nav data-mobile-menu hidden&gt;...&lt;/nav&gt;
+&lt;/div&gt;</pre>
+                    </div>
+                </div>
+
+                <!-- Example 5: Scroll Spy with scrollable container -->
+                <div class="example" style="grid-column: span 2;">
+                    <h4>5. Scroll Spy</h4>
+                    <p>Scroll the content area - nav highlights current section</p>
+                    <div class="example-demo nx-scrollspy-demo">
                         <nav nx-scroll-spy>
-                            <a href="#section1">Section 1</a>
-                            <a href="#section2">Section 2</a>
-                            <a href="#section3">Section 3</a>
+                            <a href="#spy-intro">Intro</a>
+                            <a href="#spy-features">Features</a>
+                            <a href="#spy-usage">Usage</a>
                         </nav>
-                        <br>
-                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;nav nx-scroll-spy&gt;</pre>
-                    </div>
-                </div>
-
-                <!-- Example 5: Sticky nav -->
-                <div class="example">
-                    <h4>5. Sticky Navigation</h4>
-                    <p>Stays visible on scroll</p>
-                    <div class="example-demo">
-                        <span class="original-value">State: Becomes fixed on scroll</span>
-                        <div nx-sticky style="background:white;padding:10px;border:1px solid #ddd;">
-                            Sticky Navigation
+                        <div class="scroll-container">
+                            <div id="spy-intro" class="scroll-section">
+                                <h5>Introduction</h5>
+                                <p>Welcome to navX scroll spy. As you scroll through this content, the navigation on the left will highlight the current section.</p>
+                            </div>
+                            <div id="spy-features" class="scroll-section">
+                                <h5>Features</h5>
+                                <p>Uses IntersectionObserver for performance. Works with any scrollable container. Supports custom thresholds.</p>
+                            </div>
+                            <div id="spy-usage" class="scroll-section">
+                                <h5>Usage</h5>
+                                <p>Add nx-scroll-spy to your nav element. Link hrefs should match section IDs.</p>
+                            </div>
                         </div>
-                        <br>
-                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div nx-sticky&gt;</pre>
                     </div>
+                    <br>
+                    <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
+                    <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;nav nx-scroll-spy&gt;
+  &lt;a href="#section1"&gt;Section 1&lt;/a&gt;
+&lt;/nav&gt;</pre>
                 </div>
 
-                <!-- Example 6: Hamburger menu -->
+                <!-- Example 6: Sticky Navigation -->
                 <div class="example">
-                    <h4>6. Mobile Menu</h4>
-                    <p>Hamburger with focus trap</p>
+                    <h4>6. Sticky Navigation</h4>
+                    <p>Make navigation stick to viewport on scroll</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Menu closed</span>
-                        <button nx-hamburger data-target="mobile-menu">☰</button>
-                        <div id="mobile-menu" style="display:none;background:white;padding:20px;border:1px solid #ddd;">
-                            <a href="#" style="display:block;margin:10px 0;">Link 1</a>
-                            <a href="#" style="display:block;margin:10px 0;">Link 2</a>
-                            <button onclick="closeMobileMenu()">Close ✕</button>
-                        </div>
+                        <p style="color: #666; font-size: 0.9rem;">The module navigation at the top of this page uses <code>nx-sticky</code> - scroll up to see it stick to the viewport.</p>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;button nx-hamburger data-target="mobile-menu"&gt;</pre>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;nav nx-sticky&gt;...&lt;/nav&gt;</pre>
                     </div>
                 </div>
 
-                <!-- Example 7: Smooth scroll -->
+                <!-- Example 7: Smooth Scrolling -->
                 <div class="example">
                     <h4>7. Smooth Scrolling</h4>
-                    <p>Animated scroll to target</p>
+                    <p>Built into nx-nav automatically</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Click to scroll</span>
-                        <a href="#footer" nx-smooth-scroll>Scroll to footer</a>
-                        <br><br>
-                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;a nx-smooth-scroll&gt;</pre>
-                    </div>
-                </div>
-
-                <!-- Example 8: Pagination -->
-                <div class="example">
-                    <h4>8. Pagination</h4>
-                    <p>Navigate between pages</p>
-                    <div class="example-demo">
-                        <span class="original-value">State: Page 3 active</span>
-                        <nav nx-pagination aria-label="Pagination">
-                            <button>&lt; Prev</button>
-                            <button>1</button>
-                            <button>2</button>
-                            <button class="active">3</button>
-                            <button>4</button>
-                            <button>Next &gt;</button>
+                        <nav nx-nav>
+                            <a href="#fmtx">Jump to fmtX</a> |
+                            <a href="#bindx">Jump to bindX</a> |
+                            <a href="#dragx">Jump to dragX</a>
                         </nav>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;nav nx-pagination&gt;</pre>
-                    </div>
-                </div>
-
-                <!-- Example 9: Skip link -->
-                <div class="example">
-                    <h4>9. Skip Navigation</h4>
-                    <p>Jump to main content</p>
-                    <div class="example-demo">
-                        <span class="original-value">State: Tab to reveal</span>
-                        <a href="#main-content" nx-skip-link>Skip to content</a>
-                        <br><br>
-                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;a nx-skip-link&gt;</pre>
-                    </div>
-                </div>
-
-                <!-- Example 10: Trail breadcrumbs -->
-                <div class="example">
-                    <h4>10. History Trail</h4>
-                    <p>Show visited pages</p>
-                    <div class="example-demo">
-                        <span class="original-value">State: Trail breadcrumb</span>
-                        <nav nx-breadcrumb="trail">
-                            <span>Home → Products → Detail</span>
-                        </nav>
-                        <br>
-                        <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
-                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;nav nx-breadcrumb="trail"&gt;</pre>
+                        <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;nav nx-nav&gt;
+  &lt;a href="#section"&gt;Go&lt;/a&gt;
+&lt;/nav&gt;</pre>
                     </div>
                 </div>
             </div>
@@ -2648,10 +2819,10 @@
                 <h2>6. tableX - Table Enhancements</h2>
                 <p class="module-desc">Declarative table sorting, pagination, and responsive layouts with <code>tx-*</code> attributes</p>
 
-                <!-- Example 1: Column Sorting -->
+                <!-- Example 1: Table-Level Sorting -->
                 <div class="example">
-                    <h4>1. Column Sorting</h4>
-                    <p>Click any header to sort. Auto-detects data types (string, number, date). Three-state toggle: ascending → descending → clear.</p>
+                    <h4>1. Table-Level Sorting</h4>
+                    <p>Make all columns sortable with one declaration. Auto-detects data types. Three-state toggle: ascending → descending → clear.</p>
                     <div class="example-demo">
                         <table tx-sortable style="width: 100%; border-collapse: collapse; margin: 20px 0;">
                             <thead>
@@ -2693,10 +2864,10 @@
                     </div>
                 </div>
 
-                <!-- Example 2: Individual Sortable Headers -->
+                <!-- Example 2: Column-Level Sorting -->
                 <div class="example">
-                    <h4>2. Individual Sortable Headers</h4>
-                    <p>Make specific columns sortable with <code>tx-sortable</code> on individual headers.</p>
+                    <h4>2. Column-Level Sorting</h4>
+                    <p>Add sorting to specific columns one at a time with <code>tx-sortable</code> on individual headers.</p>
                     <div class="example-demo">
                         <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
                             <thead>
@@ -2787,129 +2958,108 @@
     </div>
 
     <script>
-        // Initialize all modules
+        // Demo UI event handlers and interactions
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize bindX with reactive data
-            if (window.bindX && window.bindX.init && window.bindX.createReactive) {
-                // Create reactive object with initial values for all demos
-                const reactiveData = window.bindX.createReactive({
-                    // Polymorphic Syntax demo
-                    search1: '',
-                    search2: '',
-                    search3: '',
-                    polyDemo1: '',
-                    polyDemo2: '',
-                    polyDemo3: '',
-                    // bindX Examples section
-                    name: '',
-                    quantity: 1,
-                    agreed: false,
-                    color: 'Red',
-                    size: '',
-                    price: 10,
-                    qty: 2,
-                    total: 20,
-                    firstName: '',
-                    lastName: '',
-                    bio: '',
-                    showDetails: false,
-                    email: '',
-                    // Form Validation demo
-                    userEmail: '',
-                    username: '',
-                    userPassword: ''
-                });
-                window.bindX.init(reactiveData, { auto: true, observe: true });
-                console.log('✅ bindX initialized with reactive data');
-            }
+            // Handle dragX drop events - move or clone element to drop zone
+            document.addEventListener('dx:drop', function(e) {
+                const { element, dropZone } = e.detail;
+                if (element && dropZone) {
+                    // Check if clone mode
+                    const isClone = element.hasAttribute('dx-clone') &&
+                                   element.getAttribute('dx-clone') !== 'false';
 
-            // Initialize other modules if they have init functions
-            if (window.initFmtX) window.initFmtX();
-            if (window.initAccX) window.initAccX();
-            if (window.initDragX) window.initDragX();
-            if (window.initLoadX) window.initLoadX();
-            if (window.initNavX) window.initNavX();
-
-            console.log('✅ All genX modules initialized');
-
-            // Update SmartX detection labels after formatting
-            setTimeout(() => {
-                if (window.SmartX) {
-                    document.querySelectorAll('[fx-format="smart"]').forEach(el => {
-                        const detected = el.getAttribute('data-smart-detected');
-                        const confidence = el.getAttribute('data-smart-confidence');
-
-                        // Find the corresponding detection label
-                        const parent = el.closest('div[style*="background: #f5f5f5"]');
-                        if (parent && detected && confidence) {
-                            const detectedSpan = parent.querySelector('[data-smart-detected]');
-                            if (detectedSpan && detectedSpan !== el) {
-                                detectedSpan.textContent = detected;
-                                detectedSpan.setAttribute('data-smart-detected', detected);
-
-                                // Update confidence text
-                                const strongTag = detectedSpan.previousElementSibling;
-                                if (strongTag && strongTag.textContent.includes('Detected:')) {
-                                    const textNode = detectedSpan.nextSibling;
-                                    if (textNode && textNode.nodeType === 3) {
-                                        textNode.textContent = ` (${confidence}% confidence)`;
-                                    }
-                                }
-                            }
+                    if (isClone) {
+                        // Clone the element
+                        const clone = element.cloneNode(true);
+                        // Remove clone attribute from copy to prevent infinite cloning
+                        clone.removeAttribute('dx-clone');
+                        clone.style.opacity = '0.8';
+                        dropZone.appendChild(clone);
+                        // Update status text
+                        const statusEl = element.closest('.example-demo')?.querySelector('.original-value');
+                        if (statusEl) {
+                            statusEl.textContent = 'State: Copy created!';
+                            statusEl.style.color = '#9b59b6';
                         }
-                    });
-                    console.log('✅ SmartX detection labels updated');
+                    } else {
+                        // Move element into drop zone
+                        dropZone.appendChild(element);
+                        // Update status text
+                        const statusEl = element.closest('.example-demo')?.querySelector('.original-value');
+                        if (statusEl) {
+                            statusEl.textContent = 'State: Item dropped!';
+                            statusEl.style.color = '#27ae60';
+                        }
+                    }
                 }
-            }, 100);
+            });
+
+            // Handle drag start for visual feedback
+            document.addEventListener('dx:dragstart', function(e) {
+                const statusEl = e.detail.element?.closest('.example-demo')?.querySelector('.original-value');
+                if (statusEl) {
+                    statusEl.textContent = 'State: Dragging...';
+                    statusEl.style.color = '#3498db';
+                }
+            });
+
+            // Handle drag end for status update
+            document.addEventListener('dx:dragend', function(e) {
+                if (!e.detail.success) {
+                    const statusEl = e.detail.element?.closest('.example-demo')?.querySelector('.original-value');
+                    if (statusEl) {
+                        statusEl.textContent = 'State: Drag cancelled';
+                        statusEl.style.color = '#e74c3c';
+                        setTimeout(() => {
+                            statusEl.textContent = 'State: Item in source position';
+                            statusEl.style.color = '';
+                        }, 1500);
+                    }
+                }
+            });
 
             // Date input/output type selectors
             const dateInputTypeSelector = document.getElementById('date-input-type-selector');
             const dateFormatSelector = document.getElementById('date-format-selector');
-            const dateOutput = document.getElementById('date-output');
             const dateInputValue = document.getElementById('date-input-value');
+            const dateOutput = document.getElementById('date-output');
 
             // Input values for different types (different dates to show distinct changes)
+            // Use midday (12:00 UTC) timestamps to avoid timezone date rollover issues
             const inputValues = {
                 iso: '2025-03-15',
-                unix: '1735689600',
-                milliseconds: '1751328000000',
-                date: '2025-12-25T00:00:00Z'
+                unix: '1735732800',        // 2025-01-01 12:00:00 UTC
+                milliseconds: '1751371200000', // 2025-07-01 12:00:00 UTC
+                date: '2025-12-25T12:00:00Z'
             };
 
-            function updateDateExample() {
-                if (!dateOutput || !dateInputTypeSelector || !dateFormatSelector) return;
+            if (dateInputTypeSelector && dateFormatSelector && dateOutput) {
+                // Update fx-raw attribute when selectors change
+                function updateDateAttributes() {
+                    const inputType = dateInputTypeSelector.value;
+                    const outputFormat = dateFormatSelector.value;
+                    const inputValue = inputValues[inputType];
 
-                const inputType = dateInputTypeSelector.value;
-                const outputFormat = dateFormatSelector.value;
-                const inputValue = inputValues[inputType];
+                    // Update displayed input value
+                    if (dateInputValue) {
+                        dateInputValue.textContent = inputValue;
+                    }
 
-                // Update displayed input value
-                if (dateInputValue) {
-                    dateInputValue.textContent = inputValue;
+                    // Update output attributes
+                    dateOutput.setAttribute('fx-raw', inputValue);
+                    dateOutput.setAttribute('fx-type', inputType);
+                    dateOutput.setAttribute('fx-date-format', outputFormat);
+
+                    // Update API display
+                    const typeDisplay = document.getElementById('date-type-display');
+                    const formatDisplay = document.getElementById('date-format-display');
+                    if (typeDisplay) typeDisplay.textContent = inputType;
+                    if (formatDisplay) formatDisplay.textContent = outputFormat;
                 }
 
-                // Update API display
-                const typeDisplay = document.getElementById('date-type-display');
-                const formatDisplay = document.getElementById('date-format-display');
-                if (typeDisplay) typeDisplay.textContent = inputType;
-                if (formatDisplay) formatDisplay.textContent = outputFormat;
-
-                // Directly format without setting attributes to avoid MutationObserver race condition
-                const format = window.fxXFactory?.format || window.FormatX?.format;
-                if (format) {
-                    const formatted = format('date', inputValue, {
-                        type: inputType,
-                        format: outputFormat
-                    });
-                    dateOutput.textContent = formatted;
-                }
-            }
-
-            if (dateInputTypeSelector && dateFormatSelector) {
-                dateInputTypeSelector.addEventListener('change', updateDateExample);
-                dateFormatSelector.addEventListener('change', updateDateExample);
-                // Initialize on load
-                updateDateExample();
+                dateInputTypeSelector.addEventListener('change', updateDateAttributes);
+                dateFormatSelector.addEventListener('change', updateDateAttributes);
+                updateDateAttributes(); // Initialize
             }
 
             // Relative time selectors
@@ -2918,79 +3068,72 @@
             const relativeOutput = document.getElementById('relative-output');
             const relativeInputValue = document.getElementById('relative-input-value');
 
-            function updateRelativeExample() {
-                if (!relativeOutput || !relativeInputTypeSelector || !relativeTimeSelector) return;
+            if (relativeInputTypeSelector && relativeTimeSelector && relativeOutput) {
+                function updateRelativeAttributes() {
+                    const inputType = relativeInputTypeSelector.value;
+                    const timeOption = relativeTimeSelector.value;
 
-                const inputType = relativeInputTypeSelector.value;
-                const timeOption = relativeTimeSelector.value;
+                    // Calculate the timestamp based on selected option
+                    const now = new Date();
+                    let targetDate;
 
-                // Calculate the timestamp based on selected option
-                const now = new Date();
-                let targetDate;
+                    switch(timeOption) {
+                        case 'past-1h':
+                            targetDate = new Date(now - 60 * 60 * 1000);
+                            break;
+                        case 'past-1d':
+                            targetDate = new Date(now - 24 * 60 * 60 * 1000);
+                            break;
+                        case 'past-1w':
+                            targetDate = new Date(now - 7 * 24 * 60 * 60 * 1000);
+                            break;
+                        case 'past-1m':
+                            targetDate = new Date(now - 30 * 24 * 60 * 60 * 1000);
+                            break;
+                        case 'now':
+                            targetDate = now;
+                            break;
+                        case 'future-1h':
+                            targetDate = new Date(now.getTime() + 60 * 60 * 1000);
+                            break;
+                        case 'future-1d':
+                            targetDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+                            break;
+                        default:
+                            targetDate = new Date(now - 24 * 60 * 60 * 1000);
+                    }
 
-                switch(timeOption) {
-                    case 'past-1h':
-                        targetDate = new Date(now - 60 * 60 * 1000);
-                        break;
-                    case 'past-1d':
-                        targetDate = new Date(now - 24 * 60 * 60 * 1000);
-                        break;
-                    case 'past-1w':
-                        targetDate = new Date(now - 7 * 24 * 60 * 60 * 1000);
-                        break;
-                    case 'past-1m':
-                        targetDate = new Date(now - 30 * 24 * 60 * 60 * 1000);
-                        break;
-                    case 'now':
-                        targetDate = now;
-                        break;
-                    case 'future-1h':
-                        targetDate = new Date(now.getTime() + 60 * 60 * 1000);
-                        break;
-                    case 'future-1d':
-                        targetDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-                        break;
-                    default:
-                        targetDate = new Date(now - 24 * 60 * 60 * 1000);
+                    // Convert to different input types
+                    let inputValue;
+                    switch(inputType) {
+                        case 'iso':
+                            inputValue = targetDate.toISOString();
+                            break;
+                        case 'unix':
+                            inputValue = Math.floor(targetDate.getTime() / 1000).toString();
+                            break;
+                        case 'milliseconds':
+                            inputValue = targetDate.getTime().toString();
+                            break;
+                    }
+
+                    // Update displayed input value
+                    if (relativeInputValue) {
+                        relativeInputValue.textContent = inputValue;
+                    }
+
+                    // Update output attributes
+                    relativeOutput.setAttribute('fx-raw', inputValue);
+                    relativeOutput.setAttribute('fx-type', inputType);
+
+                    // Update API display
+                    const typeDisplay = document.getElementById('relative-type-display');
+                    if (typeDisplay) typeDisplay.textContent = inputType;
                 }
 
-                // Convert to different input types
-                let inputValue;
-                switch(inputType) {
-                    case 'iso':
-                        inputValue = targetDate.toISOString();
-                        break;
-                    case 'unix':
-                        inputValue = Math.floor(targetDate.getTime() / 1000).toString();
-                        break;
-                    case 'milliseconds':
-                        inputValue = targetDate.getTime().toString();
-                        break;
-                }
-
-                // Update displayed input value
-                if (relativeInputValue) {
-                    relativeInputValue.textContent = inputValue;
-                }
-
-                // Update API display
-                const typeDisplay = document.getElementById('relative-type-display');
-                if (typeDisplay) typeDisplay.textContent = inputType;
-
-                // Directly format without setting attributes to avoid MutationObserver race condition
-                const format = window.fxXFactory?.format || window.FormatX?.format;
-                if (format) {
-                    const formatted = format('relative', inputValue, {
-                        type: inputType
-                    });
-                    relativeOutput.textContent = formatted;
-                }
-            }
-
-            if (relativeInputTypeSelector && relativeTimeSelector) {
-                relativeInputTypeSelector.addEventListener('change', updateRelativeExample);
-                relativeTimeSelector.addEventListener('change', updateRelativeExample);
-                updateRelativeExample();
+                relativeInputTypeSelector.addEventListener('change', updateRelativeAttributes);
+                relativeTimeSelector.addEventListener('change', updateRelativeAttributes);
+                updateRelativeAttributes(); // Initialize
             }
 
             // File size selector
@@ -3000,69 +3143,54 @@
             const filesizeOutput = document.getElementById('filesize-output');
             const filesizeInputValue = document.getElementById('filesize-input-value');
 
-            function updateFilesizeExample() {
-                if (!filesizeOutput || !filesizeSelector || !filesizeModeSelector || !filesizeDecimalsSelector) return;
+            if (filesizeSelector && filesizeModeSelector && filesizeDecimalsSelector && filesizeOutput) {
+                function updateFilesizeAttributes() {
+                    const bytes = filesizeSelector.value;
+                    const mode = filesizeModeSelector.value;
+                    const decimals = parseInt(filesizeDecimalsSelector.value, 10);
+                    const binary = mode === 'binary';
 
-                const bytes = filesizeSelector.value;
-                const mode = filesizeModeSelector.value;
-                const decimals = parseInt(filesizeDecimalsSelector.value, 10);
-                const binary = mode === 'binary';
+                    // Update displayed input value
+                    if (filesizeInputValue) {
+                        filesizeInputValue.textContent = bytes;
+                    }
 
-                // Update displayed input value
-                if (filesizeInputValue) {
-                    filesizeInputValue.textContent = bytes;
+                    // Update output attributes
+                    filesizeOutput.setAttribute('fx-raw', bytes);
+                    filesizeOutput.setAttribute('fx-binary', binary);
+                    filesizeOutput.setAttribute('fx-decimals', decimals);
+
+                    // Update API display
+                    const binaryDisplay = document.getElementById('filesize-binary-display');
+                    const decimalsDisplay = document.getElementById('filesize-decimals-display');
+                    if (binaryDisplay) binaryDisplay.textContent = binary;
+                    if (decimalsDisplay) decimalsDisplay.textContent = decimals;
                 }
 
-                // Update API display
-                const binaryDisplay = document.getElementById('filesize-binary-display');
-                const decimalsDisplay = document.getElementById('filesize-decimals-display');
-                if (binaryDisplay) binaryDisplay.textContent = binary;
-                if (decimalsDisplay) decimalsDisplay.textContent = decimals;
-
-                // Directly format without setting attributes to avoid MutationObserver race condition
-                const format = window.fxXFactory?.format || window.FormatX?.format;
-                if (format) {
-                    const formatted = format('filesize', bytes, {
-                        binary: binary,
-                        decimals: decimals
-                    });
-                    filesizeOutput.textContent = formatted;
-                }
-            }
-
-            if (filesizeSelector && filesizeModeSelector && filesizeDecimalsSelector) {
-                filesizeSelector.addEventListener('change', updateFilesizeExample);
-                filesizeModeSelector.addEventListener('change', updateFilesizeExample);
-                filesizeDecimalsSelector.addEventListener('change', updateFilesizeExample);
-                updateFilesizeExample();
+                filesizeSelector.addEventListener('change', updateFilesizeAttributes);
+                filesizeModeSelector.addEventListener('change', updateFilesizeAttributes);
+                filesizeDecimalsSelector.addEventListener('change', updateFilesizeAttributes);
+                updateFilesizeAttributes(); // Initialize
             }
 
             // Decimal control selector
             const decimalControlSelector = document.getElementById('decimal-control-selector');
             const decimalControlOutput = document.getElementById('decimal-control-output');
 
-            function updateDecimalControlExample() {
-                if (!decimalControlOutput || !decimalControlSelector) return;
+            if (decimalControlSelector && decimalControlOutput) {
+                function updateDecimalControlAttributes() {
+                    const decimals = parseInt(decimalControlSelector.value, 10);
 
-                const decimals = parseInt(decimalControlSelector.value, 10);
+                    // Update output attributes
+                    decimalControlOutput.setAttribute('fx-decimals', decimals);
 
-                // Update API display
-                const decimalsDisplay = document.getElementById('decimal-control-display');
-                if (decimalsDisplay) decimalsDisplay.textContent = decimals;
-
-                // Directly format without setting attributes to avoid MutationObserver race condition
-                const format = window.fxXFactory?.format || window.FormatX?.format;
-                if (format) {
-                    const formatted = format('number', '3.14159265', {
-                        decimals: decimals
-                    });
-                    decimalControlOutput.textContent = formatted;
+                    // Update API display
+                    const decimalsDisplay = document.getElementById('decimal-control-display');
+                    if (decimalsDisplay) decimalsDisplay.textContent = decimals;
                 }
-            }
 
-            if (decimalControlSelector) {
-                decimalControlSelector.addEventListener('change', updateDecimalControlExample);
-                updateDecimalControlExample();
+                decimalControlSelector.addEventListener('change', updateDecimalControlAttributes);
+                updateDecimalControlAttributes(); // Initialize
             }
 
             // Currency input type selector
@@ -3075,58 +3203,45 @@
                 cents: '87543',
                 string: '"1599.50"',
                 int: '750',
-                smart: '$3,200 dollars'
+                smart: '3200 dollars'
             };
 
-            function updateCurrencyExample() {
-                if (!currencyOutput || !currencyInputTypeSelector) return;
+            if (currencyInputTypeSelector && currencyOutput) {
+                function updateCurrencyAttributes() {
+                    const inputType = currencyInputTypeSelector.value;
+                    const inputValue = currencyInputValues[inputType];
 
-                const inputType = currencyInputTypeSelector.value;
-                const inputValue = currencyInputValues[inputType];
+                    // Process the raw value
+                    const rawValue = inputType === 'string' ? inputValue.replace(/"/g, '') : inputValue;
 
-                if (currencyInputValue) {
-                    currencyInputValue.textContent = inputValue;
+                    // Update displayed input value
+                    if (currencyInputValue) {
+                        currencyInputValue.textContent = inputValue;
+                    }
+
+                    // Update output attributes
+                    currencyOutput.setAttribute('fx-raw', rawValue);
+                    if (inputType === 'smart') {
+                        currencyOutput.setAttribute('fx-format', 'smart');
+                        currencyOutput.removeAttribute('fx-type');
+                        currencyOutput.removeAttribute('fx-currency');
+                    } else {
+                        currencyOutput.setAttribute('fx-format', 'currency');
+                        currencyOutput.setAttribute('fx-type', inputType);
+                        currencyOutput.setAttribute('fx-currency', 'USD');
+                    }
+
+                    // Update API display
+                    const formatDisplay = document.getElementById('currency-format-display');
+                    const typeDisplay = document.getElementById('currency-type-display');
+                    const currencyDisplay = document.getElementById('currency-currency-display');
+                    if (formatDisplay) formatDisplay.textContent = inputType === 'smart' ? 'smart' : 'currency';
+                    if (typeDisplay) typeDisplay.textContent = inputType;
+                    if (currencyDisplay) currencyDisplay.textContent = 'USD';
                 }
 
-                // Update API display
-                const formatDisplay = document.getElementById('currency-format-display');
-                const typeDisplay = document.getElementById('currency-type-display');
-                const currencyDisplay = document.getElementById('currency-currency-display');
-                if (formatDisplay) formatDisplay.textContent = inputType === 'smart' ? 'smart' : 'currency';
-                if (typeDisplay) typeDisplay.textContent = inputType;
-                if (currencyDisplay) currencyDisplay.textContent = 'USD';
-
-                // Process the raw value
-                const rawValue = inputType === 'string' ? inputValue.replace(/"/g, '') : inputValue;
-
-                // Directly format using appropriate method
-                if (inputType === 'smart' && window.SmartX) {
-                    // Use SmartX auto-detection
-                    const formatted = window.SmartX.format(currencyOutput, rawValue);
-                    currencyOutput.textContent = formatted;
-
-                    // Show detection info
-                    const detected = currencyOutput.getAttribute('data-smart-detected');
-                    const confidence = currencyOutput.getAttribute('data-smart-confidence');
-                    if (detected && confidence) {
-                        console.log(`SmartX detected: ${detected} (${confidence}% confidence)`);
-                    }
-                } else {
-                    // Use explicit currency formatting
-                    const format = window.fxXFactory?.format || window.FormatX?.format;
-                    if (format) {
-                        const formatted = format('currency', rawValue, {
-                            type: inputType,
-                            currency: 'USD'
-                        });
-                        currencyOutput.textContent = formatted;
-                    }
-                }
-            }
-
-            if (currencyInputTypeSelector) {
-                currencyInputTypeSelector.addEventListener('change', updateCurrencyExample);
-                updateCurrencyExample();
+                currencyInputTypeSelector.addEventListener('change', updateCurrencyAttributes);
+                updateCurrencyAttributes(); // Initialize
             }
 
             // Percentage input type selector
@@ -3141,41 +3256,35 @@
                 string: '"0.333"'
             };
 
-            function updatePercentExample() {
-                if (!percentOutput || !percentInputTypeSelector || !percentDecimalsSelector) return;
+            if (percentInputTypeSelector && percentDecimalsSelector && percentOutput) {
+                function updatePercentAttributes() {
+                    const inputType = percentInputTypeSelector.value;
+                    const decimals = parseInt(percentDecimalsSelector.value, 10);
+                    const inputValue = percentInputValues[inputType];
 
-                const inputType = percentInputTypeSelector.value;
-                const decimals = parseInt(percentDecimalsSelector.value, 10);
-                const inputValue = percentInputValues[inputType];
+                    // Process the raw value
+                    const rawValue = inputType === 'string' ? inputValue.replace(/"/g, '') : inputValue;
 
-                if (percentInputValue) {
-                    percentInputValue.textContent = inputValue;
+                    // Update displayed input value
+                    if (percentInputValue) {
+                        percentInputValue.textContent = inputValue;
+                    }
+
+                    // Update output attributes
+                    percentOutput.setAttribute('fx-raw', rawValue);
+                    percentOutput.setAttribute('fx-type', inputType);
+                    percentOutput.setAttribute('fx-decimals', decimals);
+
+                    // Update API display
+                    const typeDisplay = document.getElementById('percent-type-display');
+                    const decimalsDisplay = document.getElementById('percent-decimals-display');
+                    if (typeDisplay) typeDisplay.textContent = inputType;
+                    if (decimalsDisplay) decimalsDisplay.textContent = decimals;
                 }
 
-                // Update API display
-                const typeDisplay = document.getElementById('percent-type-display');
-                const decimalsDisplay = document.getElementById('percent-decimals-display');
-                if (typeDisplay) typeDisplay.textContent = inputType;
-                if (decimalsDisplay) decimalsDisplay.textContent = decimals;
-
-                // Process the raw value
-                const rawValue = inputType === 'string' ? inputValue.replace(/"/g, '') : inputValue;
-
-                // Directly format without setting fx-type attribute to avoid MutationObserver race condition
-                const format = window.fxXFactory?.format || window.FormatX?.format;
-                if (format) {
-                    const formatted = format('percent', rawValue, {
-                        type: inputType,
-                        decimals: decimals
-                    });
-                    percentOutput.textContent = formatted;
-                }
-            }
-
-            if (percentInputTypeSelector && percentDecimalsSelector) {
-                percentInputTypeSelector.addEventListener('change', updatePercentExample);
-                percentDecimalsSelector.addEventListener('change', updatePercentExample);
-                updatePercentExample();
+                percentInputTypeSelector.addEventListener('change', updatePercentAttributes);
+                percentDecimalsSelector.addEventListener('change', updatePercentAttributes);
+                updatePercentAttributes(); // Initialize
             }
 
             // Compact numbers selector
@@ -3183,26 +3292,81 @@
             const compactOutput = document.getElementById('compact-output');
             const compactInputValue = document.getElementById('compact-input-value');
 
-            function updateCompactExample() {
-                if (!compactOutput || !compactSelector) return;
+            if (compactSelector && compactOutput) {
+                function updateCompactAttributes() {
+                    const value = compactSelector.value;
 
-                const value = compactSelector.value;
+                    // Update displayed input value
+                    if (compactInputValue) {
+                        compactInputValue.textContent = value;
+                    }
 
-                if (compactInputValue) {
-                    compactInputValue.textContent = value;
+                    // Update output attributes
+                    compactOutput.setAttribute('fx-raw', value);
                 }
 
-                // Directly format without setting attributes
-                const format = window.fxXFactory?.format || window.FormatX?.format;
-                if (format) {
-                    const formatted = format('compact', value);
-                    compactOutput.textContent = formatted;
-                }
+                compactSelector.addEventListener('change', updateCompactAttributes);
+                updateCompactAttributes(); // Initialize
             }
 
-            if (compactSelector) {
-                compactSelector.addEventListener('change', updateCompactExample);
-                updateCompactExample();
+            // Time formatting selector (Example 10)
+            const timeInputSelector = document.getElementById('time-input-selector');
+            const timeFormatSelector = document.getElementById('time-format-selector');
+            const timeOutput = document.getElementById('time-output');
+            const timeInputValue = document.getElementById('time-input-value');
+
+            if (timeInputSelector && timeFormatSelector && timeOutput) {
+                function updateTimeAttributes() {
+                    const inputValue = timeInputSelector.value;
+                    const outputFormat = timeFormatSelector.value;
+
+                    // Update displayed input value
+                    if (timeInputValue) {
+                        timeInputValue.textContent = inputValue;
+                    }
+
+                    // Update output attributes
+                    timeOutput.setAttribute('fx-raw', inputValue);
+                    timeOutput.setAttribute('fx-time-format', outputFormat);
+
+                    // Update API display
+                    const formatDisplay = document.getElementById('time-format-display');
+                    if (formatDisplay) formatDisplay.textContent = outputFormat;
+                }
+
+                timeInputSelector.addEventListener('change', updateTimeAttributes);
+                timeFormatSelector.addEventListener('change', updateTimeAttributes);
+                updateTimeAttributes(); // Initialize
+            }
+
+            // Duration formatting selector (Example 11)
+            const durationSelector = document.getElementById('duration-selector');
+            const durationFormatSelector = document.getElementById('duration-format-selector');
+            const durationOutput = document.getElementById('duration-output');
+            const durationInputValue = document.getElementById('duration-input-value');
+
+            if (durationSelector && durationFormatSelector && durationOutput) {
+                function updateDurationAttributes() {
+                    const inputValue = durationSelector.value;
+                    const outputFormat = durationFormatSelector.value;
+
+                    // Update displayed input value
+                    if (durationInputValue) {
+                        durationInputValue.textContent = inputValue;
+                    }
+
+                    // Update output attributes
+                    durationOutput.setAttribute('fx-raw', inputValue);
+                    durationOutput.setAttribute('fx-duration-format', outputFormat);
+
+                    // Update API display
+                    const formatDisplay = document.getElementById('duration-format-display');
+                    if (formatDisplay) formatDisplay.textContent = outputFormat;
+                }
+
+                durationSelector.addEventListener('change', updateDurationAttributes);
+                durationFormatSelector.addEventListener('change', updateDurationAttributes);
+                updateDurationAttributes(); // Initialize
             }
 
             // Phone numbers selector
@@ -3211,125 +3375,31 @@
             const phoneOutput = document.getElementById('phone-output');
             const phoneInputValue = document.getElementById('phone-input-value');
 
-            function updatePhoneExample() {
-                if (!phoneOutput || !phoneInputSelector || !phoneFormatSelector) return;
+            if (phoneInputSelector && phoneFormatSelector && phoneOutput) {
+                function updatePhoneAttributes() {
+                    const inputValue = phoneInputSelector.value;
+                    const outputFormat = phoneFormatSelector.value;
 
-                const inputValue = phoneInputSelector.value;
-                const outputFormat = phoneFormatSelector.value;
+                    // Update displayed input value
+                    if (phoneInputValue) {
+                        phoneInputValue.textContent = inputValue;
+                    }
 
-                if (phoneInputValue) {
-                    phoneInputValue.textContent = inputValue;
+                    // Update output attributes
+                    phoneOutput.setAttribute('fx-raw', inputValue);
+                    phoneOutput.setAttribute('fx-phone-format', outputFormat);
+
+                    // Update API display
+                    const formatDisplay = document.getElementById('phone-format-display');
+                    if (formatDisplay) formatDisplay.textContent = outputFormat;
                 }
 
-                // Update API display
-                const formatDisplay = document.getElementById('phone-format-display');
-                if (formatDisplay) formatDisplay.textContent = outputFormat;
-
-                // Directly format without setting attributes
-                const format = window.fxXFactory?.format || window.FormatX?.format;
-                if (format) {
-                    const formatted = format('phone', inputValue, {
-                        phoneFormat: outputFormat
-                    });
-                    phoneOutput.textContent = formatted;
-                }
-            }
-
-            if (phoneInputSelector && phoneFormatSelector) {
-                phoneInputSelector.addEventListener('change', updatePhoneExample);
-                phoneFormatSelector.addEventListener('change', updatePhoneExample);
-                updatePhoneExample();
+                phoneInputSelector.addEventListener('change', updatePhoneAttributes);
+                phoneFormatSelector.addEventListener('change', updatePhoneAttributes);
+                updatePhoneAttributes(); // Initialize
             }
         });
 
-        // Simulate loading
-        function simulateLoad(button, strategy, duration = 2000) {
-            const target = button.nextElementSibling;
-            button.disabled = true;
-
-            // Apply loading state
-            if (window.applyLoading) {
-                window.applyLoading(target);
-            } else {
-                target.textContent = 'Loading...';
-            }
-
-            setTimeout(() => {
-                if (window.removeLoading) {
-                    window.removeLoading(target);
-                }
-                target.textContent = 'Content loaded!';
-                button.disabled = false;
-            }, duration);
-        }
-
-        // Simulate progress
-        function simulateProgress(button) {
-            const target = button.nextElementSibling;
-            button.disabled = true;
-
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 10;
-                if (window.updateProgressValue) {
-                    window.updateProgressValue(target, progress);
-                }
-                target.textContent = progress + '%';
-
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    setTimeout(() => {
-                        target.textContent = 'Complete!';
-                        button.disabled = false;
-                    }, 500);
-                }
-            }, 200);
-        }
-
-        // Simulate fetch
-        async function fetchData(button) {
-            const target = document.getElementById('fetch-content');
-            button.disabled = true;
-
-            if (window.applyLoading) window.applyLoading(target);
-
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            if (window.removeLoading) window.removeLoading(target);
-            target.textContent = 'Data loaded from API';
-            button.disabled = false;
-        }
-
-        // Simulate form submission
-        function simulateSubmit(event) {
-            event.preventDefault();
-            const button = event.target.querySelector('button');
-            button.disabled = true;
-
-            setTimeout(() => {
-                alert('Form submitted!');
-                button.disabled = false;
-                event.target.reset();
-            }, 2000);
-
-            return false;
-        }
-
-        // Multi-load
-        function multiLoad() {
-            const targets = ['.multi1', '.multi2', '.multi3'];
-            targets.forEach((selector, index) => {
-                const el = document.querySelector(selector);
-                if (window.applyLoading) {
-                    window.applyLoading(el);
-                    setTimeout(() => {
-                        if (window.removeLoading) window.removeLoading(el);
-                        el.textContent = 'Loaded ' + (index + 1);
-                    }, 1000 + (index * 500));
-                }
-            });
-        }
 
         // Drag event tracking
         if (document.getElementById('dragTracked')) {
@@ -3380,19 +3450,19 @@
                 const button = document.createElement('button');
                 button.className = 'code-copy-btn';
                 button.textContent = 'Copy';
+                button.setAttribute('aria-label', 'Copy code to clipboard');
                 button.style.cssText = `
                     position: absolute;
                     top: 8px;
                     right: 8px;
                     padding: 4px 10px;
-                    background: #2196F3;
-                    color: white;
+                    background: #1565C0;
+                    color: #ffffff;
                     border: none;
                     border-radius: 4px;
                     font-size: 11px;
                     cursor: pointer;
-                    font-weight: 500;
-                    opacity: 0.8;
+                    font-weight: 600;
                     transition: opacity 0.2s, background 0.2s;
                     z-index: 10;
                 `;
@@ -3813,6 +3883,120 @@
             // Initial display update
             setTimeout(updatePerfDisplay, 100);
         });
+
+        // ========================================
+        // accX Accessibility Audit (using axe-core CDN)
+        // ========================================
+        (function() {
+            // Load axe-core from CDN
+            const axeScript = document.createElement('script');
+            axeScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.8.4/axe.min.js';
+            axeScript.onload = initAudit;
+            document.head.appendChild(axeScript);
+
+            function initAudit() {
+                const runButton = document.getElementById('accx-run-audit');
+                const statusEl = document.getElementById('accx-audit-status');
+                const scoreValue = document.getElementById('accx-score-value');
+                const scoreRing = document.getElementById('accx-score-ring');
+                const passesEl = document.getElementById('accx-passes');
+                const violationsEl = document.getElementById('accx-violations');
+                const violationsDetail = document.getElementById('accx-violations-detail');
+                const violationsList = document.getElementById('accx-violations-list');
+
+                if (!runButton) return;
+
+                async function runAccessibilityAudit() {
+                    statusEl.textContent = 'Running audit...';
+                    runButton.disabled = true;
+                    violationsDetail.style.display = 'none';
+                    violationsList.innerHTML = '';
+
+                    try {
+                        // Run axe-core on just the accx section
+                        const results = await axe.run('#accx', {
+                            runOnly: {
+                                type: 'tag',
+                                values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice']
+                            }
+                        });
+
+                        const passes = results.passes.length;
+                        const violations = results.violations.length;
+                        const total = passes + violations;
+                        const score = total > 0 ? Math.round((passes / total) * 100) : 100;
+
+                        // Animate score
+                        scoreValue.textContent = score;
+                        scoreRing.setAttribute('stroke-dasharray', `${score}, 100`);
+
+                        // Update color based on score
+                        if (score >= 90) {
+                            scoreRing.setAttribute('stroke', '#4ade80'); // green
+                        } else if (score >= 70) {
+                            scoreRing.setAttribute('stroke', '#fbbf24'); // yellow
+                        } else {
+                            scoreRing.setAttribute('stroke', '#f87171'); // red
+                        }
+
+                        passesEl.textContent = passes;
+                        violationsEl.textContent = violations;
+
+                        if (violations === 0) {
+                            statusEl.textContent = '✓ All checks passed!';
+                            violationsDetail.style.display = 'none';
+                        } else {
+                            statusEl.textContent = `Found ${violations} issue${violations !== 1 ? 's' : ''}`;
+
+                            // Show violations in the UI
+                            violationsDetail.style.display = 'block';
+                            results.violations.forEach(v => {
+                                const impactColors = {
+                                    critical: '#dc2626',
+                                    serious: '#ea580c',
+                                    moderate: '#ca8a04',
+                                    minor: '#65a30d'
+                                };
+                                // Build affected elements HTML
+                                const affectedHtml = v.nodes.map(n => {
+                                    const selector = n.target.join(' > ');
+                                    const htmlSnippet = n.html.length > 80 ? n.html.substring(0, 80) + '...' : n.html;
+                                    const escapedHtml = htmlSnippet.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                                    return `<code style="display: block; font-size: 0.75rem; background: #f5f5f5; padding: 6px 8px; border-radius: 3px; margin-top: 4px; overflow-x: auto; white-space: nowrap; font-family: 'Inconsolata', monospace; color: #333;">${escapedHtml}</code>`;
+                                }).join('');
+
+                                const item = document.createElement('div');
+                                item.style.cssText = 'margin-bottom: 12px; padding: 12px; background: white; border-radius: 4px; border-left: 3px solid ' + (impactColors[v.impact] || '#666');
+                                item.innerHTML = `
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                        <strong style="color: #333; font-size: 0.85rem;">${v.id}</strong>
+                                        <span style="font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; background: ${impactColors[v.impact] || '#666'}; color: white; text-transform: uppercase;">${v.impact}</span>
+                                        <a href="${v.helpUrl}" target="_blank" rel="noopener" style="font-size: 0.75rem; color: #e53935; margin-left: auto;">Learn more →</a>
+                                    </div>
+                                    <p style="font-size: 0.8rem; color: #666; margin: 0 0 8px 0;">${v.description}</p>
+                                    <div style="font-size: 0.75rem; color: #555;">
+                                        <strong>Affected element${v.nodes.length !== 1 ? 's' : ''}:</strong>
+                                        ${affectedHtml}
+                                    </div>
+                                `;
+                                violationsList.appendChild(item);
+                            });
+
+                        }
+
+                    } catch (err) {
+                        statusEl.textContent = 'Audit failed: ' + err.message;
+                    }
+
+                    runButton.disabled = false;
+                }
+
+                runButton.addEventListener('click', runAccessibilityAudit);
+
+                // Auto-run audit after page loads
+                setTimeout(runAccessibilityAudit, 1000);
+            }
+        })();
     </script>
 </body>
 </html>

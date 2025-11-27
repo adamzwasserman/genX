@@ -40,10 +40,13 @@
         // Detection patterns with confidence scoring
         patterns: {
             currency: {
-                regex: /^[\$£€¥]?\s*\d{1,3}(,\d{3})*(\.\d{2,4})?$|^\d{1,3}(,\d{3})*(\.\d{2,4})?\s*[\$£€¥]$/,
+                // Matches: $1234, $1,234.56, 1234 dollars, €50, £100.00, etc.
+                regex: /^[\$£€¥]\s*\d+(\.\d{1,2})?$|^[\$£€¥]\s*\d{1,3}(,\d{3})*(\.\d{1,2})?$|^\d+(\.\d{1,2})?\s*[\$£€¥]$|^\d{1,3}(,\d{3})*(\.\d{1,2})?\s*[\$£€¥]$|^\d+(\.\d+)?\s*(dollars?|usd|euros?|eur|pounds?|gbp|yen|jpy)\s*$/i,
                 confidence: (val) => {
                     // Higher confidence if $ or common currency symbols
                     if (/[\$£€¥]/.test(val)) return 95;
+                    // Currency words like "dollars", "usd", "euro"
+                    if (/\b(dollars?|usd|euros?|eur|pounds?|gbp|yen|jpy)\b/i.test(val)) return 92;
                     // Numbers with exactly 2 decimals likely currency
                     if (/\.\d{2}$/.test(val) && /,/.test(val)) return 80;
                     return 60;
@@ -388,21 +391,46 @@
          * Simple currency formatter (delegates to fmtX if available)
          */
         formatCurrency(value) {
-            // If fmtX is available, use it
-            if (window.FormatX && window.FormatX.formatCurrency) {
-                // Extract currency symbol and amount
-                const match = value.match(/[\$£€¥]/);
-                const currency = match ? match[0] : '$';
-                const amount = value.replace(/[^\d.,]/g, '');
+            // Extract currency symbol
+            const symbolMatch = value.match(/[\$£€¥]/);
+            // Extract currency word (dollars, usd, euro, etc.)
+            const wordMatch = value.match(/\b(dollars?|usd|euros?|eur|pounds?|gbp|yen|jpy)\b/i);
 
-                return window.FormatX.formatCurrency(amount, {
-                    currency: currency === '$' ? 'USD' :
-                             currency === '£' ? 'GBP' :
-                             currency === '€' ? 'EUR' :
-                             currency === '¥' ? 'JPY' : 'USD'
+            let currencyCode = 'USD'; // default
+            if (symbolMatch) {
+                currencyCode = symbolMatch[0] === '$' ? 'USD' :
+                               symbolMatch[0] === '£' ? 'GBP' :
+                               symbolMatch[0] === '€' ? 'EUR' :
+                               symbolMatch[0] === '¥' ? 'JPY' : 'USD';
+            } else if (wordMatch) {
+                const word = wordMatch[1].toLowerCase();
+                currencyCode = /dollars?|usd/.test(word) ? 'USD' :
+                               /euros?|eur/.test(word) ? 'EUR' :
+                               /pounds?|gbp/.test(word) ? 'GBP' :
+                               /yen|jpy/.test(word) ? 'JPY' : 'USD';
+            }
+
+            // Extract numeric amount
+            const amount = value.replace(/[^\d.,]/g, '');
+            const numericAmount = parseFloat(amount.replace(/,/g, '')) || 0;
+
+            // If fmtX is available, use its format function
+            if (window.FormatX && window.FormatX.format) {
+                return window.FormatX.format('currency', numericAmount, {
+                    currency: currencyCode
                 });
             }
-            return value;
+
+            // Fallback: Simple formatting
+            const symbol = currencyCode === 'USD' ? '$' :
+                          currencyCode === 'GBP' ? '£' :
+                          currencyCode === 'EUR' ? '€' :
+                          currencyCode === 'JPY' ? '¥' : '$';
+
+            return symbol + numericAmount.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
         },
 
         /**
@@ -718,10 +746,5 @@
 
     // Export to window
     window.SmartX = SmartX;
-
-    // Log initialization
-    if (typeof console !== 'undefined') {
-        console.log('✅ SmartX initialized (auto-detection formatter)');
-    }
 
 })(window);

@@ -44,7 +44,7 @@
 
             return Object.freeze(parsed);
         } catch (e) {
-            console.warn('[dragX] Invalid JSON in attribute:', str);
+            // Invalid JSON in attribute - silently return null
             return null;
         }
     };
@@ -59,6 +59,14 @@
             return null;
         }
 
+        // Parse snap attribute - can be a number (grid size) or "true" (default 10px)
+        const snapAttr = element.getAttribute('dx-snap');
+        let snap = null;
+        if (snapAttr !== null) {
+            snap = snapAttr === '' || snapAttr === 'true' ? 10 : parseInt(snapAttr, 10);
+            if (isNaN(snap) || snap <= 0) snap = null;
+        }
+
         return {
             type,
             data: safeJSONParse(element.getAttribute('dx-data')) || {},
@@ -67,7 +75,8 @@
             handle: element.getAttribute('dx-handle'),
             mode: element.getAttribute('dx-mode') || 'move',
             effect: element.getAttribute('dx-effect') || 'move',
-            axis: element.getAttribute('dx-axis')
+            axis: element.getAttribute('dx-axis'),
+            snap
         };
     };
 
@@ -144,6 +153,32 @@
     };
 
     /**
+     * Parse snap attribute from element.
+     * @param {HTMLElement} element - Element to parse
+     * @returns {number|null} Snap grid size or null
+     */
+    const parseSnapAttribute = (element) => {
+        const snapAttr = element.getAttribute('dx-snap');
+        if (snapAttr === null) return null;
+        if (snapAttr === '' || snapAttr === 'true') return 10; // default 10px grid
+        const snap = parseInt(snapAttr, 10);
+        return (isNaN(snap) || snap <= 0) ? null : snap;
+    };
+
+    /**
+     * Parse revert attribute from element.
+     * @param {HTMLElement} element - Element to parse
+     * @returns {string} Revert mode: 'always', 'invalid', or 'never'
+     */
+    const parseRevertAttribute = (element) => {
+        const revertAttr = element.getAttribute('dx-revert');
+        if (revertAttr === null) return 'never'; // default: don't revert, stay where dropped
+        if (revertAttr === '' || revertAttr === 'true' || revertAttr === 'always') return 'always';
+        if (revertAttr === 'invalid') return 'invalid'; // only revert if no valid drop zone
+        return 'never';
+    };
+
+    /**
      * Parse draggable element configuration from multiple syntax styles.
      * Pure function with no side effects.
      *
@@ -151,6 +186,10 @@
      * @returns {Object} Parsed configuration
      */
     const parseDraggable = (element) => {
+        // Always parse snap and revert attributes directly from element
+        const snap = parseSnapAttribute(element);
+        const revert = parseRevertAttribute(element);
+
         // Try to get config from bootloader cache first (if using genX bootloader)
         if (window.genx && window.genx.getConfig) {
             const cachedConfig = window.genx.getConfig(element);
@@ -164,7 +203,9 @@
                     handle: cachedConfig.handle,
                     mode: cachedConfig.mode || 'move',
                     effect: cachedConfig.effect || 'move',
-                    axis: cachedConfig.axis
+                    axis: cachedConfig.axis,
+                    snap: snap || cachedConfig.snap || null,
+                    revert: revert
                 });
             }
         }
@@ -192,7 +233,9 @@
             handle: parsed.handle,
             mode: parsed.mode || 'move',
             effect: parsed.effect || 'move',
-            axis: parsed.axis
+            axis: parsed.axis,
+            snap: snap || parsed.snap || null,
+            revert: revert
         });
     };
 
@@ -345,7 +388,6 @@
 
         const handler = transitions[eventType];
         if (!handler) {
-            console.warn(`[dragX] Unknown event type: ${eventType}`);
             return currentState;
         }
 
@@ -387,7 +429,6 @@
                 startPosition: {x: event.x, y: event.y}
             };
         } catch (e) {
-            console.warn('[dragX]', e.message);
             return state;
         }
     };
@@ -442,9 +483,31 @@
             const dropZone = findDropZoneAt(event.x, event.y, state.type);
             const previousZone = state.dropZone;
 
-            // Update ghost position
+            // Apply snap grid if configured
+            let posX = event.x;
+            let posY = event.y;
+            const snap = state.config.snap;
+            if (snap && snap > 0) {
+                // Calculate position relative to start, snap it, then convert back
+                const deltaX = posX - state.startPosition.x;
+                const deltaY = posY - state.startPosition.y;
+                const snappedDeltaX = Math.round(deltaX / snap) * snap;
+                const snappedDeltaY = Math.round(deltaY / snap) * snap;
+                posX = state.startPosition.x + snappedDeltaX;
+                posY = state.startPosition.y + snappedDeltaY;
+            }
+
+            // Apply axis constraint if configured
+            const axis = state.config.axis;
+            if (axis === 'horizontal') {
+                posY = state.startPosition.y; // Lock Y axis
+            } else if (axis === 'vertical') {
+                posX = state.startPosition.x; // Lock X axis
+            }
+
+            // Update ghost position (with snapping and axis constraints applied)
             if (state.ghost) {
-                updateGhostPosition(state.ghost, event.x, event.y);
+                updateGhostPosition(state.ghost, posX, posY);
             }
 
             // Handle drop zone transitions
@@ -460,7 +523,7 @@
             return {
                 ...state,
                 phase: dropZone ? DragPhase.HOVERING : DragPhase.DRAGGING,
-                position: {x: event.x, y: event.y},
+                position: {x: posX, y: posY},
                 dropZone
             };
         }
@@ -508,23 +571,61 @@
             return createInitialState();
         }
 
-        // Dragging → Cancelled (no valid drop)
+        // Dragging → Ended without drop zone
         if (state.phase === DragPhase.DRAGGING) {
-            // Track metric
-            performanceMetrics.cancelCount++;
+            const revertMode = state.config.revert || 'never';
 
-            // Animate back to origin
-            animateRevert(state.element, state.ghost, state.startPosition);
+            // Determine if we should revert based on revert mode
+            // 'always' = always revert, 'invalid' = revert only when no drop zone, 'never' = stay in place
+            const shouldRevert = revertMode === 'always' || revertMode === 'invalid';
 
-            // Cleanup
-            cleanup(state);
+            if (shouldRevert) {
+                // Track metric
+                performanceMetrics.cancelCount++;
 
-            // Emit drag end event
-            emitDragEvent('dx:dragend', state.element, {
-                element: state.element,
-                dropZone: null,
-                success: false
-            });
+                // Animate back to origin
+                animateRevert(state.element, state.ghost, state.startPosition);
+
+                // Cleanup
+                cleanup(state);
+
+                // Emit drag end event
+                emitDragEvent('dx:dragend', state.element, {
+                    element: state.element,
+                    dropZone: null,
+                    success: false
+                });
+            } else {
+                // Stay in place - move element to final position
+                const deltaX = state.position.x - state.startPosition.x;
+                const deltaY = state.position.y - state.startPosition.y;
+
+                // Apply the transform to actually move the element
+                const currentTransform = state.element.style.transform || '';
+                const existingTranslate = currentTransform.match(/translate\(([^)]+)\)/);
+                let existingX = 0, existingY = 0;
+                if (existingTranslate) {
+                    const parts = existingTranslate[1].split(',').map(s => parseFloat(s));
+                    existingX = parts[0] || 0;
+                    existingY = parts[1] || 0;
+                }
+
+                state.element.style.transform = `translate(${existingX + deltaX}px, ${existingY + deltaY}px)`;
+
+                // Track as successful free-form drag
+                performanceMetrics.dropCount++;
+
+                // Cleanup ghost and classes
+                cleanup(state);
+
+                // Emit drag end event
+                emitDragEvent('dx:dragend', state.element, {
+                    element: state.element,
+                    dropZone: null,
+                    success: true,
+                    position: state.position
+                });
+            }
 
             return createInitialState();
         }
@@ -1271,21 +1372,8 @@
      * @returns {Object|null} Drop zone or null
      */
     const findDropZoneAt = (x, y, type) => {
-        // Use spatial index if available (O(log n))
-        if (spatialIndex) {
-            const candidates = queryQuadTreePoint(spatialIndex, x, y);
-            const sorted = sortByPriority(candidates);
-
-            for (const zone of sorted) {
-                // Check if zone accepts this type
-                if (zone.accepts.includes('*') || zone.accepts.includes(type)) {
-                    return zone;
-                }
-            }
-            return null;
-        }
-
-        // Fallback to linear search (O(n))
+        // Always use linear search with live bounding rects for accuracy
+        // The spatial index uses cached rects which become stale when page scrolls/resizes
         for (const zone of dropZones) {
             const rect = zone.element.getBoundingClientRect();
 
@@ -1379,17 +1467,21 @@
         dropZones = Array.from(dropZoneElements)
             .map(el => {
                 const zone = parseDropZone(el);
-                if (zone) {
-                    // Add bounding rect to zone for spatial indexing
-                    const rect = el.getBoundingClientRect();
-                    zone.rect = {
+                if (!zone) {
+                    return null;
+                }
+                // Add bounding rect to zone for spatial indexing
+                // Note: zone is frozen, so create new object with rect
+                const rect = el.getBoundingClientRect();
+                return {
+                    ...zone,
+                    rect: {
                         x: rect.left,
                         y: rect.top,
                         width: rect.width,
                         height: rect.height
-                    };
-                }
-                return zone;
+                    }
+                };
             })
             .filter(zone => zone !== null);
 
@@ -1402,7 +1494,6 @@
                 height: window.innerHeight
             };
             spatialIndex = buildQuadTree(dropZones, viewport);
-            console.log('[dragX] Built spatial index with', dropZones.length, 'zones');
         }
 
         // Rebuild spatial index on window resize
@@ -1430,7 +1521,6 @@
                         height: window.innerHeight
                     };
                     spatialIndex = buildQuadTree(dropZones, viewport);
-                    console.log('[dragX] Rebuilt spatial index on resize');
                 }
             }, 250); // Debounce resize events
         });
@@ -1519,8 +1609,6 @@
 
         // Initialize keyboard accessibility
         initKeyboardAccessibility();
-
-        console.log('[dragX] Initialized with', dropZones.length, 'drop zones');
     };
 
     // Auto-initialize on DOMContentLoaded
@@ -1578,14 +1666,6 @@
                 performanceMetrics.spatialQueryCount;
         }
 
-        // Warn if performance target missed
-        if (duration > 1 && label === 'spatialQuery') {
-            console.warn(`[dragX] Spatial query took ${duration.toFixed(2)}ms (target: <1ms)`);
-        }
-        if (duration > 0.5 && label === 'eventProcessing') {
-            console.warn(`[dragX] Event processing took ${duration.toFixed(2)}ms (target: <0.5ms)`);
-        }
-
         return result;
     };
 
@@ -1624,14 +1704,12 @@
     const detectMemoryLeaks = () => {
         const orphanedGhosts = document.querySelectorAll('.dx-ghost');
         if (orphanedGhosts.length > 0) {
-            console.warn(`[dragX] Found ${orphanedGhosts.length} orphaned ghost elements`);
             orphanedGhosts.forEach(ghost => {
                 cleanupGhostElement(ghost);
             });
         }
 
         if (canvasPool.length > 10) {
-            console.warn(`[dragX] Canvas pool size exceeds limit: ${canvasPool.length}`);
             canvasPool.length = 5; // Trim pool
         }
     };
@@ -1643,7 +1721,6 @@
      * @returns {Object} Benchmark results
      */
     const runPerformanceBenchmark = (iterations = 100) => {
-        console.log(`[dragX] Running performance benchmark (${iterations} iterations)...`);
 
         const results = {
             spatialQueries: [],
@@ -1682,7 +1759,6 @@
             memoryUsage: getPerformanceMetrics().memoryUsage
         };
 
-        console.log('[dragX] Benchmark results:', report);
         return report;
     };
 

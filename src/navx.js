@@ -1795,8 +1795,11 @@
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 debug('DOM ready, auto-initializing...');
-                // Don't auto-init - let user explicitly call init()
+                init();
             });
+        } else {
+            // DOM already ready
+            init();
         }
     }
 

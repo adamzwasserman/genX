@@ -386,9 +386,10 @@
                 el.checked = Boolean(val);
             } else if (el.type === 'radio') {
                 // For radio buttons, check if value matches - don't overwrite value attribute!
-                el.checked = el.value === String(val);
+                el.checked = el.value === String(val ?? '');
             } else {
-                el.value = String(val);
+                // Handle undefined/null - use empty string, never display "undefined"
+                el.value = (val === undefined || val === null) ? '' : String(val);
             }
         };
 
@@ -930,9 +931,15 @@
      */
     const validationRules = {
         required: (value) => {
+            // For booleans (checkboxes), must be true
+            if (typeof value === 'boolean') {
+                return value === true;
+            }
+            // For strings, must be non-empty
             if (typeof value === 'string') {
                 return value.trim().length > 0;
             }
+            // For other types, must exist and not be empty
             return value !== null && value !== undefined && value !== '';
         },
 
@@ -940,7 +947,10 @@
             if (!value) {
                 return true;
             } // Empty is valid (use required for mandatory)
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+            // Practical email validation: covers 99.9%+ of real-world addresses
+            // Local part: ASCII alphanumeric, dots, dashes, underscores, plus signs
+            // Domain: ASCII alphanumeric, dots, dashes; TLD at least 2 chars
+            return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value);
         },
 
         min: (value, min) => {
@@ -1102,9 +1112,20 @@
      * @param {HTMLFormElement} form - Form element
      * @param {Object} updates - State updates
      */
-    const updateFormState = (form, updates) => {
+    const updateFormState = (form, updates, data = null) => {
         const state = getFormState(form);
         Object.assign(state, updates);
+
+        // Sync to reactive data if available (for bx-bind to work with form state)
+        if (data && typeof data === 'object') {
+            if (!data.formState) {
+                data.formState = {};
+            }
+            data.formState.pristine = state.pristine;
+            data.formState.dirty = state.dirty;
+            data.formState.valid = state.valid;
+            data.formState.invalid = state.invalid;
+        }
 
         // Update CSS classes for styling
         if (state.pristine) {
@@ -1125,13 +1146,43 @@
     };
 
     /**
-     * Validate entire form
-     * @param {HTMLFormElement} form - Form element
-     * @param {Object} data - Reactive data object
-     * @returns {Object} { valid: boolean, errors: {} }
+     * Parse validation rules from attribute string
+     * Pure function - no side effects
+     * @param {string} validationAttr - Validation attribute value
+     * @returns {Object} Parsed rules object
      */
-    const validateForm = (form, data) => {
+    const parseValidationRules = (validationAttr) => {
+        try {
+            // Try JSON parse first
+            return JSON.parse(validationAttr);
+        } catch {
+            // Fall back to simple rules: bx-validate="required email minLength:3"
+            const ruleNames = validationAttr.split(/\s+/).filter(Boolean);
+            return ruleNames.reduce((acc, rule) => {
+                // Parse colon syntax: "minLength:3" -> { minLength: 3 }
+                if (rule.includes(':')) {
+                    const [name, ...valueParts] = rule.split(':');
+                    const value = valueParts.join(':'); // Handle values with colons
+                    // Convert numeric values
+                    acc[name] = /^\d+$/.test(value) ? parseInt(value, 10) : value;
+                } else {
+                    acc[rule] = true;
+                }
+                return acc;
+            }, {});
+        }
+    };
+
+    /**
+     * Calculate form validation state without side effects
+     * Pure function - returns validation result only
+     * @param {HTMLFormElement} form - Form element
+     * @param {Object} data - Data object to validate against
+     * @returns {Object} { valid: boolean, errors: {}, fieldResults: Map }
+     */
+    const calculateFormValidation = (form, data) => {
         const errors = {};
+        const fieldResults = new Map();
         let valid = true;
 
         // Find all fields with validation
@@ -1142,53 +1193,65 @@
             const path = field.getAttribute('bx-model') || field.getAttribute('name');
 
             if (!path) {
-                console.warn('bindX: Field has bx-validate but no bx-model or name attribute', field);
                 return;
             }
 
             const value = getNestedProperty(data, path);
-
-            // Parse validation rules
-            let rules = {};
-            try {
-                // Try JSON parse first
-                rules = JSON.parse(validationAttr);
-            } catch {
-                // Fall back to simple rules: bx-validate="required email"
-                const ruleNames = validationAttr.split(/\s+/).filter(Boolean);
-                rules = ruleNames.reduce((acc, name) => {
-                    acc[name] = true;
-                    return acc;
-                }, {});
-            }
-
+            const rules = parseValidationRules(validationAttr);
             const result = validateField(value, rules, field);
+
+            fieldResults.set(field, { path, result });
 
             if (!result.valid) {
                 errors[path] = result.errors;
                 valid = false;
-
-                // Add error class to field
-                field.classList.add('bx-error');
-                field.classList.remove('bx-valid');
-
-                // Display error message
-                const errorContainer = field.parentElement.querySelector('.bx-error-message');
-                if (errorContainer) {
-                    errorContainer.textContent = result.errors[0] || 'Invalid';
-                }
-            } else {
-                field.classList.add('bx-valid');
-                field.classList.remove('bx-error');
-
-                const errorContainer = field.parentElement.querySelector('.bx-error-message');
-                if (errorContainer) {
-                    errorContainer.textContent = '';
-                }
             }
         });
 
-        updateFormState(form, { valid, invalid: !valid, errors });
+        return { valid, errors, fieldResults };
+    };
+
+    /**
+     * Apply validation visual feedback to a field
+     * Side effect function - modifies DOM
+     * @param {HTMLElement} field - Field element
+     * @param {Object} result - Validation result { valid, errors }
+     */
+    const applyFieldValidationFeedback = (field, result) => {
+        if (!result.valid) {
+            field.classList.add('bx-error');
+            field.classList.remove('bx-valid');
+
+            const errorContainer = field.parentElement?.querySelector('.bx-error-message');
+            if (errorContainer) {
+                errorContainer.textContent = result.errors[0] || 'Invalid';
+            }
+        } else {
+            field.classList.add('bx-valid');
+            field.classList.remove('bx-error');
+
+            const errorContainer = field.parentElement?.querySelector('.bx-error-message');
+            if (errorContainer) {
+                errorContainer.textContent = '';
+            }
+        }
+    };
+
+    /**
+     * Validate entire form with visual feedback
+     * @param {HTMLFormElement} form - Form element
+     * @param {Object} data - Reactive data object
+     * @returns {Object} { valid: boolean, errors: {} }
+     */
+    const validateForm = (form, data) => {
+        const { valid, errors, fieldResults } = calculateFormValidation(form, data);
+
+        // Apply visual feedback to all fields
+        for (const [field, { result }] of fieldResults) {
+            applyFieldValidationFeedback(field, result);
+        }
+
+        updateFormState(form, { valid, invalid: !valid, errors }, data);
 
         return { valid, errors };
     };
@@ -1246,8 +1309,9 @@
     /**
      * Reset form to pristine state
      * @param {HTMLFormElement} form - Form element
+     * @param {Object} data - Optional reactive data object
      */
-    const resetForm = (form) => {
+    const resetForm = (form, data = null) => {
         form.reset();
         updateFormState(form, {
             pristine: true,
@@ -1256,7 +1320,7 @@
             invalid: false,
             errors: {},
             touched: new Set()
-        });
+        }, data);
 
         // Clear error messages
         const errorContainers = form.querySelectorAll('.bx-error-message');
@@ -1366,6 +1430,115 @@
     };
 
     /**
+     * DATAOS Pattern: Extract initial state from DOM
+     * Scans bx-model elements and extracts their current values
+     *
+     * @param {HTMLElement} root - Root element to scan (default: document.body)
+     * @param {string} prefix - Attribute prefix (default: 'bx-')
+     * @returns {Object} Plain object with extracted values
+     */
+    const extractDataFromDOM = (root = document.body, prefix = 'bx-') => {
+        const data = {};
+
+        if (!root) return data;
+
+        // Find all elements with bx-model attributes
+        const modelElements = root.querySelectorAll(`[${prefix}model]`);
+
+        modelElements.forEach(element => {
+            const modelAttr = element.getAttribute(`${prefix}model`);
+            if (!modelAttr) return;
+
+            // Parse the model attribute to get the path
+            // Handle formats: "fieldName", "fieldName:debounce", etc.
+            const path = modelAttr.split(':')[0].trim();
+            if (!path) return;
+
+            // Extract value based on element type
+            let value;
+            const tagName = element.tagName.toLowerCase();
+            const type = element.type?.toLowerCase();
+
+            if (tagName === 'input') {
+                if (type === 'checkbox') {
+                    value = element.checked;
+                } else if (type === 'radio') {
+                    // For radio buttons, only take value if checked
+                    if (element.checked) {
+                        value = element.value;
+                    } else if (!(path in data)) {
+                        // Initialize to empty string if not set
+                        value = '';
+                    } else {
+                        return; // Skip unchecked radios if path already set
+                    }
+                } else if (type === 'number' || type === 'range') {
+                    value = element.value ? parseFloat(element.value) : 0;
+                } else {
+                    value = element.value || '';
+                }
+            } else if (tagName === 'select') {
+                value = element.value || '';
+            } else if (tagName === 'textarea') {
+                value = element.value || '';
+            } else {
+                // For other elements, use textContent
+                value = element.textContent || '';
+            }
+
+            // Set nested property if path contains dots
+            if (path.includes('.')) {
+                setNestedProperty(data, path, value);
+            } else {
+                data[path] = value;
+            }
+        });
+
+        return data;
+    };
+
+    /**
+     * DATAOS Pattern: Auto-initialize bindX from DOM
+     * Creates reactive data from DOM state and sets up bindings
+     *
+     * @param {HTMLElement} root - Root element to scan (default: document.body)
+     * @param {Object} options - Options including prefix
+     * @returns {Object} API object with data and control methods
+     */
+    const autoInit = (root = document.body, options = {}) => {
+        const { prefix = 'bx-', observe = true } = options;
+
+        // Extract initial state from DOM
+        const initialData = extractDataFromDOM(root, prefix);
+
+        // Create reactive proxy
+        const data = createReactive(initialData, {
+            deep: true,
+            onChange: null
+        });
+
+        // Scan and create bindings
+        const bindings = scan(root, data, { prefix });
+
+        // Setup DOM observer if requested
+        let observerInstance = null;
+        if (observe) {
+            observerInstance = createDOMObserver(data, { prefix });
+        }
+
+        return {
+            data,
+            bindings,
+            stop: () => {
+                if (observerInstance) {
+                    observerInstance.stop();
+                }
+            },
+            rescan: () => scan(root, data, { prefix })
+        };
+    };
+
+    /**
      * Scan DOM for bindX attributes and create bindings
      *
      * @param {HTMLElement} root - Root element to scan (default: document.body)
@@ -1378,12 +1551,26 @@
             return [];
         }
         if (!data) {
-            console.warn('bindX: scan() requires reactive data object');
-            return [];
+            // DATAOS Pattern: Auto-create data from DOM if not provided
+            // DATAOS pattern: extracting initial state from DOM
+            console.log('bindX: Using DATAOS pattern - data auto-created from DOM');
+            data = createReactive(extractDataFromDOM(root, options.prefix || 'bx-'), { deep: true });
         }
 
         const { prefix = 'bx-' } = options;
         const bindings = [];
+
+        // Pre-initialize formState for bx-form forms (DATAOS pattern)
+        // This ensures formState bindings work before setupFormHandlers runs
+        const hasForms = root.querySelectorAll(`form[${prefix}form]`).length > 0;
+        if (hasForms && !data.formState) {
+            data.formState = {
+                pristine: true,
+                dirty: false,
+                valid: false,
+                invalid: true
+            };
+        }
 
         // Find all elements with bx-model attributes
         const modelElements = root.querySelectorAll(`[${prefix}model]`);
@@ -1533,68 +1720,69 @@
     };
 
     /**
+     * Validate a single field and apply visual feedback
+     * @param {HTMLElement} field - Field element
+     * @param {Object} data - Reactive data object
+     * @param {string} prefix - Attribute prefix
+     * @returns {Object} Validation result { valid, errors }
+     */
+    const validateAndShowFieldFeedback = (field, data, prefix = 'bx-') => {
+        const validationAttr = field.getAttribute(`${prefix}validate`);
+        if (!validationAttr) return { valid: true, errors: [] };
+
+        const path = field.getAttribute(`${prefix}model`) || field.getAttribute('name');
+        if (!path) return { valid: true, errors: [] };
+
+        const value = getNestedProperty(data, path);
+        const rules = parseValidationRules(validationAttr);
+        const result = validateField(value, rules, field);
+
+        applyFieldValidationFeedback(field, result);
+        return result;
+    };
+
+    /**
+     * Recalculate and update overall form validity
+     * @param {HTMLFormElement} form - Form element
+     * @param {Object} data - Reactive data object
+     */
+    const recalculateFormValidity = (form, data) => {
+        const { valid, errors } = calculateFormValidation(form, data);
+        updateFormState(form, { valid, invalid: !valid, errors }, data);
+    };
+
+    /**
      * Setup form validation and submit handlers
      * @param {HTMLFormElement} form - Form element
      * @param {Object} data - Reactive data object
      * @param {string} prefix - Attribute prefix
      */
     const setupFormHandlers = (form, data, prefix = 'bx-') => {
-        // Initialize form state
+        // Calculate initial validation state WITHOUT visual feedback (pure function)
+        const { valid } = calculateFormValidation(form, data);
+
+        // Initialize form state with actual validation result but no error display
         updateFormState(form, {
             pristine: true,
             dirty: false,
-            valid: true,
-            invalid: false
-        });
+            valid: valid,
+            invalid: !valid
+        }, data);
 
-        // Track field changes for dirty state
+        // Track field changes for dirty state and validation
         const inputs = form.querySelectorAll('input, select, textarea');
         inputs.forEach(input => {
             input.addEventListener('input', () => {
                 const state = getFormState(form);
                 if (state.pristine) {
-                    updateFormState(form, { pristine: false, dirty: true });
+                    updateFormState(form, { pristine: false, dirty: true }, data);
                 }
 
-                // Validate on change if field has bx-validate
+                // Validate field with visual feedback if it has bx-validate
                 if (input.getAttribute(`${prefix}validate`)) {
-                    const validationAttr = input.getAttribute(`${prefix}validate`);
-                    const path = input.getAttribute(`${prefix}model`) || input.getAttribute('name');
-
-                    if (path) {
-                        const value = getNestedProperty(data, path);
-                        let rules = {};
-
-                        try {
-                            rules = JSON.parse(validationAttr);
-                        } catch {
-                            const ruleNames = validationAttr.split(/\s+/).filter(Boolean);
-                            rules = ruleNames.reduce((acc, name) => {
-                                acc[name] = true;
-                                return acc;
-                            }, {});
-                        }
-
-                        const result = validateField(value, rules, input);
-
-                        if (!result.valid) {
-                            input.classList.add('bx-error');
-                            input.classList.remove('bx-valid');
-
-                            const errorContainer = input.parentElement.querySelector('.bx-error-message');
-                            if (errorContainer) {
-                                errorContainer.textContent = result.errors[0] || 'Invalid';
-                            }
-                        } else {
-                            input.classList.add('bx-valid');
-                            input.classList.remove('bx-error');
-
-                            const errorContainer = input.parentElement.querySelector('.bx-error-message');
-                            if (errorContainer) {
-                                errorContainer.textContent = '';
-                            }
-                        }
-                    }
+                    validateAndShowFieldFeedback(input, data, prefix);
+                    // Recalculate overall form validity
+                    recalculateFormValidity(form, data);
                 }
             });
         });
@@ -1633,7 +1821,7 @@
 
         // Handle form reset
         form.addEventListener('reset', () => {
-            setTimeout(() => resetForm(form), 0);
+            setTimeout(() => resetForm(form, data), 0);
         });
     };
 
@@ -1794,9 +1982,11 @@
     if (typeof window !== 'undefined') {
         window.bxXFactory = {
             init: (data, config) => init(data, config),
+            autoInit,
             bindx,
             computed,
-            scan
+            scan,
+            extractDataFromDOM
         };
 
         // Legacy global for standalone use
@@ -1806,6 +1996,8 @@
                 computed,
                 scan,
                 init,
+                autoInit,           // DATAOS pattern auto-init
+                extractDataFromDOM, // DATAOS pattern data extraction
                 createReactive,
                 reactive,       // Simpler API alias
                 watch,          // Property watcher
@@ -1820,6 +2012,24 @@
                 getFormState,
                 validationRules
             };
+        }
+
+        // DATAOS Pattern: Auto-initialize on DOMContentLoaded
+        // Automatically scan DOM and create bindings without requiring JS initialization
+        const autoInitOnLoad = () => {
+            // Check if there are any bx- attributes in the DOM
+            const hasBxElements = document.querySelector('[bx-model], [bx-bind]');
+            if (hasBxElements) {
+                // Auto-initializing from DOM (DATAOS pattern)
+                window._bindXInstance = autoInit(document.body, { observe: true });
+            }
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', autoInitOnLoad);
+        } else {
+            // DOM already loaded
+            autoInitOnLoad();
         }
     }
 
@@ -1851,7 +2061,15 @@
             scan,
             createDOMObserver,
             init,
-            // Form utilities
+            autoInit,               // DATAOS pattern
+            extractDataFromDOM,     // DATAOS pattern
+            // Form utilities - pure functions
+            parseValidationRules,
+            calculateFormValidation,
+            applyFieldValidationFeedback,
+            validateAndShowFieldFeedback,
+            recalculateFormValidity,
+            // Form utilities - stateful
             validateForm,
             serializeForm,
             deserializeForm,
