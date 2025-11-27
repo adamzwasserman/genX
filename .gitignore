@@ -1,6 +1,9 @@
 # Claude Code local configuration
 .claude/
 
+# Beads task tracking (local only)
+.beads/
+
 # OS files
 .DS_Store
 */.DS_Store
