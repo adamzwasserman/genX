@@ -4,7 +4,7 @@
 
 **Tailwind gave us utility-first CSS. genX gives us utility-first JavaScript.**
 
-Just as Tailwind lets you style elements with `class="bg-blue-500 text-center"`, genX lets you add behavior with `fx-format="currency"` or `dx-draggable="card"`. No JavaScript to write. No frameworks to learn. Just HTML attributes.
+Inspired by [htmx](https://htmx.org)'s philosophy that HTML should be powerful enough on its own, genX extends this idea to client-side behavior. Just as Tailwind lets you style elements with `class="bg-blue-500 text-center"`, genX lets you add behavior with `fx-format="currency"` or `dx-draggable="card"`. No JavaScript to write. No frameworks to learn. Just HTML attributes.
 
 ```html
 <!-- Format as currency - no JS needed -->
