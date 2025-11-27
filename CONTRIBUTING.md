@@ -1,386 +1,98 @@
 # Contributing to genX
 
-Thank you for your interest in contributing to genX! This document provides guidelines and standards for contributors.
+Thank you for your interest in contributing to genX! This document provides guidelines and information for contributors.
 
-## 📋 Table of Contents
+## Development Setup
 
-- [Code of Conduct](#code-of-conduct)
-- [Getting Started](#getting-started)
-- [Development Workflow](#development-workflow)
-- [Module Development Standards](#module-development-standards)
-- [Code Style](#code-style)
-- [Testing](#testing)
-- [Documentation](#documentation)
-- [Pull Request Process](#pull-request-process)
-
-## Code of Conduct
-
-- Be respectful and inclusive
-- Focus on constructive feedback
-- Help others learn and grow
-- Keep discussions on-topic
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 14+
-- Git
-- Text editor (VS Code recommended)
-
-### Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/genx-software/genx.git
-cd genx
-
-# Install dependencies
-npm install
-
-# Build the project
-npm run build
-
-# Start development server
-npm run dev
-# Open http://localhost:8080/examples/
-```
+1. Fork the repository
+2. Clone your fork: `git clone https://github.com/yourusername/genX.git`
+3. Install dependencies: `npm install`
+4. Run tests: `npm test`
+5. Build the project: `npm run build`
 
 ## Development Workflow
 
-### 1. Fork & Branch
-
-```bash
-# Fork the repo on GitHub, then:
-git clone https://github.com/YOUR_USERNAME/genx.git
-cd genx
-git checkout -b feature/your-feature-name
-```
-
-### 2. Make Changes
-
-- Edit files in `src/`
-- Add tests if applicable
-- Update documentation
-
-### 3. Build & Test
-
-```bash
-npm run build
-npm test
-npm run lint
-```
-
-### 4. Commit
-
-```bash
-git add .
-git commit -m "feat: add new feature"
-```
-
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `docs:` - Documentation
-- `style:` - Code style (formatting, etc.)
-- `refactor:` - Code refactoring
-- `test:` - Adding tests
-- `chore:` - Maintenance tasks
-
-### 5. Push & PR
-
-```bash
-git push origin feature/your-feature-name
-```
-
-Then create a Pull Request on GitHub.
-
-## Module Development Standards
-
-### Creating a New Module
-
-All genX modules must follow these standards:
-
-#### 1. Factory Pattern Export
-
-```javascript
-// ✅ CORRECT
-window.bxXFactory = {
-    init: (config = {}) => initBindX(config),
-    // Other exports...
-};
-
-// ❌ WRONG
-window.BindX = initBindX(); // Don't auto-initialize
-```
-
-#### 2. Pure Functional Design
-
-```javascript
-// ✅ CORRECT - Pure functions
-const formatCurrency = (value, currency) => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency
-    }).format(value);
-};
-
-// ❌ WRONG - Classes and state
-class CurrencyFormatter {
-    constructor() {
-        this.cache = {}; // Mutable state
-    }
-}
-```
-
-#### 3. XSS-Safe DOM Manipulation
-
-```javascript
-// ✅ CORRECT - Safe DOM manipulation
-while (cell.firstChild) {
-    th.appendChild(cell.firstChild);
-}
-
-// ❌ WRONG - innerHTML XSS risk
-th.innerHTML = cell.innerHTML;
-```
-
-#### 4. Attribute Naming Convention
-
-- Use prefix pattern: `[prefix]-[attribute]`
-- Prefix is 2 letters + `x`: `fx-`, `ax-`, `bx-`, etc.
-- Use kebab-case: `fx-format`, `ax-enhance`
-
-```html
-<!-- ✅ CORRECT -->
-<span fx-format="currency" fx-currency="USD">25.00</span>
-
-<!-- ❌ WRONG -->
-<span fmtx-format="currency">25.00</span>
-<span fx_format="currency">25.00</span>
-```
-
-#### 5. MutationObserver Support
-
-```javascript
-// Modules must handle dynamic content
-const observer = new MutationObserver((mutations) => {
-    mutations.forEach(mutation => {
-        if (mutation.type === 'childList') {
-            mutation.addedNodes.forEach(node => {
-                if (node.nodeType === 1) {
-                    processElement(node);
-                }
-            });
-        }
-    });
-});
-```
-
-#### 6. Size Limits
-
-- Bootloader: <1KB minified + gzipped
-- Each module: <50KB uncompressed
-- Total payload: Keep minimal
-
-Check with: `npm run size`
-
-### Module Structure Template
-
-```javascript
-/**
- * [ModuleName] - [Brief description]
- * @version 1.0.0
- */
-(function() {
-    'use strict';
-
-    // Utils
-    const kebabToCamel = s => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-
-    // Core functionality
-    const enhance = {
-        // Enhancement functions...
-    };
-
-    // Processing
-    const processElement = (el, prefix) => {
-        // Process attributes...
-    };
-
-    // Observer
-    const createObserver = (prefix) => {
-        // MutationObserver setup...
-    };
-
-    // Init
-    const initModule = (config = {}) => {
-        const { prefix = 'xx-', auto = true, observe = true } = config;
-        const observer = createObserver(prefix);
-
-        const api = {
-            enhance: (type, el, opts) => enhance[type]?.(el, opts),
-            process: el => processElement(el, prefix),
-            destroy: () => observer.stop()
-        };
-
-        if (auto) {
-            // Auto-initialize...
-        }
-
-        return api;
-    };
-
-    // Factory export for bootloader
-    window.xxXFactory = {
-        init: (config = {}) => initModule(config)
-    };
-
-    // Legacy standalone support
-    if (!window.genx) {
-        window.ModuleName = initModule();
-    }
-
-    // CommonJS/ESM export
-    if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { initModule };
-    }
-})();
-```
+1. Create a feature branch: `git checkout -b feature/your-feature-name`
+2. Make your changes
+3. Add tests for new functionality
+4. Ensure all tests pass: `npm test`
+5. Build successfully: `npm run build`
+6. Commit your changes with a descriptive message
+7. Push to your fork
+8. Create a Pull Request
 
 ## Code Style
 
-### JavaScript Standards
-
-- **ES6+** - Use modern JavaScript features
-- **Functional** - Prefer pure functions over classes
-- **Concise** - Keep functions small and focused
-- **Comments** - Document complex logic
-- **JSDoc** - Use for public APIs
-
-```javascript
-/**
- * Format a value according to type
- * @param {string} type - Format type (currency, date, etc.)
- * @param {any} value - Value to format
- * @param {Object} opts - Format options
- * @returns {string} Formatted string
- */
-const format = (type, value, opts = {}) => {
-    // Implementation...
-};
-```
-
-### Formatting
-
-Run before committing:
-
-```bash
-npm run format
-npm run lint
-```
+- Use pure functional JavaScript — no classes, no complex state
+- Follow the declarative attribute pattern (`fx-*`, `bx-*`, `dx-*`, etc.)
+- Add JSDoc comments for all public functions
+- Keep functions small and focused
+- Use meaningful variable names
+- Target <16ms for all operations (60 FPS)
 
 ## Testing
 
-### Manual Testing
+genX uses a comprehensive BDD/TDD testing framework:
+
+- **Cucumber BDD** - Human-readable feature specifications
+- **Playwright** - Browser automation for UI testing
+- **Jest** - Unit tests for pure functions
 
 ```bash
-npm run dev
-# Open http://localhost:8080/examples/test-bootloader.html
+# Run all tests
+npm test
+
+# Run unit tests only
+npm run test:unit
+
+# Run BDD tests
+npm run test:bdd
+
+# Run browser tests
+npm run test:browser
 ```
 
-### Browser Testing
+### Test Guidelines
 
-Test in:
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
+- Add unit tests for all new functionality
+- Write BDD scenarios for user-facing features
+- Ensure existing tests still pass
+- Test edge cases and error conditions
+- Use descriptive test names
 
-### Accessibility Testing
+## Pull Request Guidelines
 
-- Screen readers: NVDA, JAWS, VoiceOver
-- Keyboard navigation
-- Lighthouse accessibility audit
-- axe DevTools
+- Provide a clear description of the changes
+- Reference any related issues
+- Ensure CI checks pass
+- Follow the existing architecture patterns
+- Keep PRs focused — one feature or fix per PR
 
-## Documentation
+## Architecture Principles
 
-### Architecture Documentation
+When contributing, please follow these core principles:
 
-When adding a new module, create:
+1. **Declarative over Procedural** - Users should configure behavior via HTML attributes, not JavaScript
+2. **Privacy First** - No external calls, no tracking, 100% client-side
+3. **Performance Budget** - All operations must complete in <16ms
+4. **Accessibility Built-in** - WCAG 2.1 AA compliance by default
+5. **Framework Agnostic** - Must work with vanilla HTML, React, Vue, Angular, htmx, etc.
 
-```
-docs/architecture/[modulename]-architecture-v1_0.md
-```
+## Adding a New Module
 
-Follow the template in `docs/architecture/STANDARD_TEXT_BLOCKS.md`
+If you're adding a new module (e.g., `newX`):
 
-### Code Documentation
+1. Create architecture spec first: `docs/architecture/newx-architecture-v1.0.md`
+2. Use a unique attribute prefix (e.g., `nx-*`)
+3. Follow the existing module patterns in `src/`
+4. Add to the build in `package.json`
+5. Include comprehensive tests
+6. Update the README modules table
 
-- JSDoc for public APIs
-- Inline comments for complex logic
-- Examples in comments
+## Code of Conduct
 
-### README Updates
-
-Update these files when relevant:
-- `README.md` - Add to modules table
-- `docs/README.md` - Add module reference
-- `docs/QUICK-START.md` - Add usage examples
-
-## Pull Request Process
-
-### Before Submitting
-
-- [ ] Code follows style guidelines
-- [ ] All tests pass
-- [ ] Documentation updated
-- [ ] Commit messages follow convention
-- [ ] Size limits not exceeded (`npm run size`)
-- [ ] Browser testing completed
-- [ ] Accessibility testing completed
-
-### PR Template
-
-```markdown
-## Description
-Brief description of changes
-
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Breaking change
-- [ ] Documentation update
-
-## Testing
-- [ ] Manual testing completed
-- [ ] Browser compatibility verified
-- [ ] Accessibility tested
-
-## Checklist
-- [ ] Code follows style guidelines
-- [ ] Documentation updated
-- [ ] Size limits respected
-```
-
-### Review Process
-
-1. Automated checks must pass
-2. At least one maintainer review required
-3. Address review feedback
-4. Squash commits before merge
+Please follow our [Code of Conduct](CODE_OF_CONDUCT.md) in all interactions. We aim for simplicity to focus on code — basic respect is assumed.
 
 ## Questions?
 
-- 💬 Discord: [discord.gg/genx](https://discord.gg/genx)
-- 🐛 Issues: [GitHub Issues](https://github.com/genx-software/genx/issues)
-- 📧 Email: contribute@genx.software
-
-## License
-
-By contributing, you agree that your contributions will be licensed under the MIT License.
-
----
-
-Thank you for contributing to genX! 🎉
+Feel free to open an issue for questions or discussions.
