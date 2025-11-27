@@ -24,8 +24,8 @@ Just as Tailwind lets you style elements with `class="bg-blue-500 text-center"`,
 
 | | | | | |
 |---|---|---|---|---|
-| [Features](#features) | [Quick Start](#quick-start) | [Modules](#modules) | [fmtX Examples](#fmtx-examples) | [tableX Examples](#tablex-examples) |
-| [Architecture](#architecture) | [Documentation](#documentation) | [Testing](#testing) | [Privacy & Security](#privacy--security) | [Browser Support](#browser-support) |
+| [Features](#features) | [Architecture](#architecture) | [Quick Start](#quick-start) | [Modules](#modules) | [fmtX Examples](#fmtx-examples) |
+| [tableX Examples](#tablex-examples) | [Documentation](#documentation) | [Testing](#testing) | [Privacy & Security](#privacy--security) | [Browser Support](#browser-support) |
 | [Installation](#installation-options) | [Contributing](#contributing) | [Project Status](#project-status) | [License](#license) | [Links](#links) |
 
 ## Features
@@ -36,6 +36,24 @@ Just as Tailwind lets you style elements with `class="bg-blue-500 text-center"`,
 - **Accessible** - WCAG 2.1 AA compliant made easy
 - **Fast** - Designed for <16ms operations (60 FPS)
 - **Framework Agnostic** - Works with vanilla HTML, React, Vue, Angular, htmx, or anything else
+
+## Architecture
+
+### Universal Bootloader
+
+- Scans DOM for genX attributes
+- Dynamically loads only required modules
+- Watches for dynamic content via MutationObserver
+- Zero dependencies
+
+### Module Design
+
+- **Pure functional JavaScript** - No classes, no complex state
+- **Polymorphic processing** - Handles multiple input/output formats
+- **Client-side only** - Privacy-preserving, no external calls
+- **Performance-first** - All operations target <16ms (60 FPS)
+
+See [Architecture Documentation](docs/architecture/) for technical specifications.
 
 ## Quick Start
 
@@ -101,8 +119,9 @@ cp genX/src/*.js your-project/static/js/
 | **loadX** | Loading states, skeletons, spinners | `lx-*` | ✅ v1.0 | [Architecture](docs/architecture/loadx-architecture-v1.0.md) |
 | **navX** | Navigation & routing | `nx-*` | ✅ v1.0 | [Architecture](docs/architecture/navx-architecture-v1.0.md) |
 | **dragX** | Drag & drop | `dx-*` | ✅ v1.0 | [Architecture](docs/architecture/dragx-architecture-v1.0.md) |
-| **bindX** | Reactive data binding | `bx-*` | 🚧 In Progress | [Architecture](docs/architecture/bindx-technical-architecture-v1.0.md) |
+| **bindX** | Reactive data binding | `bx-*` | ✅ v1.0 | [Architecture](docs/architecture/bindx-technical-architecture-v1.0.md) |
 | **tableX** | Enhanced tables | `tx-*` | ✅ v1.0 | [Architecture](docs/architecture/tablex-architecture-v1.0.md) |
+| **smartX** | Auto-detection formatting | `sx-*` | ✅ v1.0 | - |
 
 ## fmtX Examples
 
@@ -602,24 +621,6 @@ tableX meets WCAG 2.1 AA standards for:
 
 **Automated Testing**: Compatible with axe-core and WAVE for accessibility auditing.
 
-## Architecture
-
-### Universal Bootloader (~1KB)
-
-- Scans DOM for genX attributes
-- Dynamically loads only required modules
-- Watches for dynamic content via MutationObserver
-- Zero dependencies
-
-### Module Design
-
-- **Pure functional JavaScript** - No classes, no complex state
-- **Polymorphic processing** - Handles multiple input/output formats
-- **Client-side only** - Privacy-preserving, no external calls
-- **Performance-first** - All operations target <16ms (60 FPS)
-
-See [Architecture Documentation](docs/architecture/) for technical specifications.
-
 ## Documentation
 
 - **[Live Demo](https://genx.software/examples/genx-demo.html)** - Interactive examples of all modules
@@ -703,8 +704,8 @@ See implementation plans in `docs/implementation/` for current development statu
 ## Project Status
 
 **Version:** 1.0.0-alpha
-**Modules Complete:** fmtX, accX, loadX, navX, dragX, tableX
-**In Development:** bindX
+**Modules Complete:** fmtX, accX, loadX, navX, dragX, tableX, bindX, smartX
+**In Development:** (None)
 **Planned:** (None - all core modules complete)
 
 **Recent Updates:**

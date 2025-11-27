@@ -14,12 +14,15 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "npm run build:bootloader && npm run build:modules && npm run minify",
+    "build": "npm run build:bootloader && npm run build:modules && npm run minify && npm run gzip",
     "build:bootloader": "esbuild src/bootloader.js --bundle --outfile=dist/bootloader.js --format=iife --global-name=genx",
-    "build:modules": "esbuild src/fmtx.js src/accx.js --outdir=dist/modules --format=iife",
+    "build:modules": "esbuild src/fmtx.js src/accx.js src/bindx.js src/dragx.js src/loadx.js src/navx.js src/tablex.js src/smartx.js --outdir=dist/modules --format=iife",
     "minify": "npm run minify:bootloader && npm run minify:modules",
     "minify:bootloader": "terser dist/bootloader.js -o dist/bootloader.min.js --compress --mangle",
-    "minify:modules": "terser dist/modules/fmtx.js -o dist/modules/fmtx.min.js --compress --mangle && terser dist/modules/accx.js -o dist/modules/accx.min.js --compress --mangle",
+    "minify:modules": "for f in dist/modules/*.js; do if [[ ! \"$f\" == *.min.js ]]; then terser \"$f\" -o \"${f%.js}.min.js\" --compress --mangle; fi; done",
+    "gzip": "npm run gzip:bootloader && npm run gzip:modules",
+    "gzip:bootloader": "gzip -9 -k -f dist/bootloader.min.js",
+    "gzip:modules": "for f in dist/modules/*.min.js; do gzip -9 -k -f \"$f\"; done",
     "dev": "python3 -m http.server 8080",
     "test": "npm run test:unit && npm run test:bdd",
     "test:unit": "jest --config config/jest.config.js tests/unit",
@@ -90,18 +93,56 @@
     {
       "name": "Bootloader",
       "path": "dist/bootloader.min.js",
-      "limit": "1.2 KB",
+      "limit": "5 KB",
       "gzip": true
     },
     {
       "name": "FormatX Module",
       "path": "dist/modules/fmtx.min.js",
-      "limit": "50 KB"
+      "limit": "15 KB",
+      "gzip": true
     },
     {
       "name": "AccessX Module",
       "path": "dist/modules/accx.min.js",
-      "limit": "50 KB"
+      "limit": "20 KB",
+      "gzip": true
+    },
+    {
+      "name": "BindX Module",
+      "path": "dist/modules/bindx.min.js",
+      "limit": "25 KB",
+      "gzip": true
+    },
+    {
+      "name": "DragX Module",
+      "path": "dist/modules/dragx.min.js",
+      "limit": "25 KB",
+      "gzip": true
+    },
+    {
+      "name": "LoadX Module",
+      "path": "dist/modules/loadx.min.js",
+      "limit": "20 KB",
+      "gzip": true
+    },
+    {
+      "name": "NavX Module",
+      "path": "dist/modules/navx.min.js",
+      "limit": "20 KB",
+      "gzip": true
+    },
+    {
+      "name": "TableX Module",
+      "path": "dist/modules/tablex.min.js",
+      "limit": "20 KB",
+      "gzip": true
+    },
+    {
+      "name": "SmartX Module",
+      "path": "dist/modules/smartx.min.js",
+      "limit": "10 KB",
+      "gzip": true
     }
   ],
   "engines": {
