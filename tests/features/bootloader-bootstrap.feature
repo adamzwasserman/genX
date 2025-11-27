@@ -72,7 +72,7 @@ Feature: Bootloader Bootstrap Sequence
     And the returned count should be 500
 
   Scenario: Phase 4 - Performance logging
-    Given window.genxConfig.performance.logging is true
+    Given performance logging is enabled
     And 1000 elements to parse
     When the bootloader executes Phase 4
     Then it should log the parse count and duration
@@ -83,7 +83,7 @@ Feature: Bootloader Bootstrap Sequence
     And modules fx, bx, ax are needed
     When the bootloader executes Phase 5 (init modules)
     Then each module should be loaded and initialized
-    And modules should use window.genx.getConfig() for element configs
+    And modules should use genx getConfig API for element configs
     And Phase 5 should use cached configs (no re-parsing)
 
   Scenario: Phase 6 - Setup MutationObserver
@@ -102,7 +102,7 @@ Feature: Bootloader Bootstrap Sequence
     And it should perform a single scan for all new elements
 
   Scenario: Phase 6 - Observer can be disabled
-    Given window.genxConfig.observe is false
+    Given mutation observation is disabled
     When the bootloader executes Phase 6
     Then no MutationObserver should be created
     And dynamic content will require manual init
@@ -161,7 +161,7 @@ Feature: Bootloader Bootstrap Sequence
     And the bundle size should be minimized (no unused parsers)
 
   Scenario: Bootstrap performance breakdown logging
-    Given window.genxConfig.performance.logging is true
+    Given performance logging is enabled
     When the complete bootstrap sequence runs
     Then each phase duration should be logged
     And the total bootstrap duration should be logged
@@ -181,24 +181,24 @@ Feature: Bootloader Bootstrap Sequence
     And already-cached elements should not be re-parsed
     And only new elements/modules should be processed
 
-  Scenario: window.genx API availability
+  Scenario: genx global API availability
     When the bootloader loads
-    Then window.genx should be defined immediately
-    And window.genx.version should be "1.0.0"
-    And window.genx.scan should be available
-    And window.genx.getConfig should be available
-    And window.genx.loadParsers should be available
-    And window.genx.parseAllElements should be available
+    Then genx API should be defined immediately
+    And genx API version should be "1.0.0"
+    And genx scan method should be available
+    And genx getConfig method should be available
+    And genx loadParsers method should be available
+    And genx parseAllElements method should be available
     And bootstrap should run asynchronously
 
   Scenario: Bootstrap with CDN configuration
-    Given window.genxConfig.cdn is "https://cdn.genx.software/v1"
+    Given CDN is configured to "https://cdn.genx.software/v1"
     When Phase 3 loads parsers
     Then parser URLs should use the CDN base
     And URLs should be like "https://cdn.genx.software/v1/parsers/genx-parser-verbose.js"
 
   Scenario: Bootstrap with local parser paths
-    Given window.genxConfig.cdn is not set
+    Given CDN is not configured
     When Phase 3 loads parsers
     Then parser URLs should use relative paths
     And URLs should be like "/parsers/genx-parser-verbose.js"
@@ -214,7 +214,7 @@ Feature: Bootloader Bootstrap Sequence
   Scenario: Bootstrap cache integration test
     Given a page with 100 elements
     And bootstrap completes all phases
-    When window.genx.getConfig(element) is called
+    When genx getConfig is called with element
     Then it should return the cached config immediately
     And no re-parsing should occur
     And the lookup should be O(1) via WeakMap

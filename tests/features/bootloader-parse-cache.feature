@@ -13,12 +13,12 @@ Feature: Bootloader Parse Cache
     When the bootloader scans the element
     Then the configuration should be parsed
     And the configuration should be stored in the cache
-    And window.genx.getConfig(element) should return the cached config
+    And genx getConfig returns cached config for element
 
   Scenario: Retrieve cached configuration without re-parsing
     Given an element with fx-format="currency" fx-currency="USD"
     And the element has been parsed and cached
-    When window.genx.getConfig(element) is called
+    When genx getConfig is called with element
     Then it should return the cached configuration
     And the element should not be re-parsed
     And the lookup should be O(1) time complexity
@@ -36,7 +36,7 @@ Feature: Bootloader Parse Cache
     When the bootloader scans all elements
     Then each element should have its own cached configuration
     And configurations should not interfere with each other
-    And window.genx.getConfig(el) should return correct config for each element
+    And genx getConfig returns correct config for each element
 
   Scenario: Cache performance with 1000 elements
     Given 1000 elements with genX attributes
@@ -47,14 +47,14 @@ Feature: Bootloader Parse Cache
 
   Scenario: getConfig returns null for non-genX elements
     Given an element with no genX attributes
-    When window.genx.getConfig(element) is called
+    When genx getConfig is called with element
     Then it should return null
     And no cache entry should be created
 
   Scenario: getConfig returns cached config immediately
     Given an element with bx-bind="username" bx-debounce="300"
     And the element has been parsed and cached
-    When window.genx.getConfig(element) is called 100 times
+    When genx getConfig is called 100 times
     Then all 100 calls should return the same cached object
     And average lookup time should be less than 0.01ms
 
@@ -68,17 +68,17 @@ Feature: Bootloader Parse Cache
     And each cache entry should contain the correct parsed config
 
   Scenario: getConfig API exposes cache functionality
-    When window.genx is initialized
-    Then window.genx.getConfig should be a function
-    And window.genx.getConfig should accept an element parameter
-    And window.genx.getConfig should return an object or null
+    When genx API is initialized
+    Then genx getConfig should be a function
+    And genx getConfig should accept an element parameter
+    And genx getConfig should return an object or null
 
   Scenario: Cache stores merged configuration from all parsers
     Given an element with fx-format="currency" and class="fmt-currency-USD"
     When the bootloader scans the element
     Then the cache should store the merged configuration
     And class notation should override verbose notation
-    And window.genx.getConfig should return the merged config
+    And genx getConfig returns merged config
 
   Scenario: Cache performance comparison with re-parsing
     Given 100 elements with genX attributes
@@ -96,20 +96,20 @@ Feature: Bootloader Parse Cache
     And the config should have currency="USD"
 
   Scenario: getConfig handles undefined element
-    When window.genx.getConfig(undefined) is called
+    When genx getConfig is called with undefined
     Then it should return null
     And no errors should occur
 
   Scenario: getConfig handles null element
-    When window.genx.getConfig(null) is called
+    When genx getConfig is called with null
     Then it should return null
     And no errors should occur
 
   Scenario: Cache persists across multiple API calls
     Given an element with fx-format="currency"
     When the bootloader scans the element
-    And window.genx.getConfig(element) is called
-    And window.genx.getConfig(element) is called again
+    And genx getConfig is called with element
+    And genx getConfig is called with element again
     Then both calls should return the exact same object reference
     And the cache should maintain object identity
 
@@ -125,7 +125,7 @@ Feature: Bootloader Parse Cache
   Scenario: Cache hit tracking for performance analysis
     Given 100 elements with genX attributes
     When the bootloader scans all elements
-    And window.genx.getConfig is called 1000 times
+    And genx getConfig is called 1000 times
     Then there should be 100 cache misses (initial parses)
     And there should be 1000 cache hits (subsequent lookups)
     And cache hit ratio should be 90.9%
@@ -141,11 +141,11 @@ Feature: Bootloader Parse Cache
     Given an element with fx-format=""
     When the bootloader scans the element
     Then an empty config object should be cached
-    And window.genx.getConfig should return the empty config
+    And genx getConfig returns empty config
 
   Scenario: getConfig performance target
     Given 1000 elements with cached configurations
-    When window.genx.getConfig is called 1000 times
+    When genx getConfig is called 1000 times
     Then the total time should be less than 1ms
     And average lookup time should be less than 0.001ms per call
 
@@ -153,19 +153,19 @@ Feature: Bootloader Parse Cache
     When the bootloader initializes
     Then a WeakMap should be created for the cache
     And the WeakMap should be stored in the bootloader state
-    And window.genx.getConfig should be exposed
+    And genx getConfig should be exposed
 
   Scenario: Cache survives dynamic content changes
     Given an element with fx-format="currency"
     And the element is parsed and cached
     When the element's textContent changes
     Then the cached config should remain unchanged
-    And window.genx.getConfig should still return the same config
+    And genx getConfig still returns same config
     And no re-parsing should occur
 
   Scenario: Multiple calls to getConfig are idempotent
     Given an element with fx-format="currency"
-    When window.genx.getConfig(element) is called 5 times
+    When genx getConfig is called 5 times
     Then all 5 calls should return identical results
     And the cache should only contain one entry
     And no side effects should occur
@@ -194,7 +194,7 @@ Feature: Bootloader Parse Cache
 
   Scenario: Bootstrap scan populates cache automatically
     Given a DOM with 500 genX elements
-    When window.genx.init() is called
+    When genx init is called
     Then all 500 elements should be automatically cached
     And subsequent getConfig calls should be instant
     And no manual caching should be required
