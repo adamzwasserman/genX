@@ -1592,11 +1592,15 @@
      * @returns {Function} Wrapped function with deprecation warning
      */
     const deprecate = (fn, oldName, newName) => {
+        let warned = false;
         return function(...args) {
-            console.warn(
-                `[loadX] ${oldName} is deprecated and will be removed in v2.0. ` +
-                `Use ${newName} instead.`
-            );
+            if (!warned) {
+                warned = true;
+                console.warn(
+                    `[loadX] ${oldName} is deprecated and will be removed in v2.0. ` +
+                    `Use ${newName} instead.`
+                );
+            }
             return fn.apply(this, args);
         };
     };
