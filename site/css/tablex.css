@@ -1,0 +1,361 @@
+/**
+ * tableX Styles
+ * Declarative table enhancement styles for genx.software
+ */
+
+/* ====================
+   SORTABLE HEADERS
+   ==================== */
+
+/* Sortable header cursor */
+th.tx-sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: 24px; /* Space for sort indicator */
+}
+
+/* Sort indicator base */
+th.tx-sortable::after {
+    content: '⇅';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.3;
+    font-size: 14px;
+    transition: opacity 0.2s;
+}
+
+/* Show indicator on hover */
+th.tx-sortable:hover::after {
+    opacity: 0.6;
+}
+
+/* Active sort column */
+th.tx-sort-active::after {
+    opacity: 1;
+    color: #2196F3;
+}
+
+/* Ascending sort indicator */
+th.tx-sort-asc::after {
+    content: '▲';
+}
+
+/* Descending sort indicator */
+th.tx-sort-desc::after {
+    content: '▼';
+}
+
+/* Multi-column sort priority indicator */
+th[data-sort-priority]::before {
+    content: attr(data-sort-priority);
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: bold;
+    background: #2196F3;
+    color: white;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+/* ====================
+   HOVER STATES
+   ==================== */
+
+/* Highlight sortable header on hover */
+th.tx-sortable:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* ====================
+   SCREEN READER ONLY
+   ==================== */
+
+/* Hide live region visually but keep for screen readers */
+.tx-sr-only {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* ====================
+   ACCESSIBILITY
+   ==================== */
+
+/* Focus styles for keyboard navigation */
+th.tx-sortable:focus {
+    outline: 2px solid #2196F3;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    th.tx-sortable::after {
+        opacity: 1;
+    }
+
+    th.tx-sort-active::after {
+        font-weight: bold;
+    }
+}
+
+/* ====================
+   DARK MODE SUPPORT
+   ==================== */
+
+@media (prefers-color-scheme: dark) {
+    th.tx-sortable:hover {
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    th.tx-sort-active::after {
+        color: #64B5F6;
+    }
+}
+
+/* ====================
+   RESPONSIVE
+   ==================== */
+
+/* Smaller indicators on mobile */
+@media (max-width: 768px) {
+    th.tx-sortable::after {
+        font-size: 12px;
+        right: 4px;
+    }
+
+    th.tx-sortable {
+        padding-right: 20px;
+    }
+}
+
+/* ====================
+   OPTIONAL ENHANCEMENTS
+   ==================== */
+
+/* Subtle transition on sort */
+tbody {
+    transition: opacity 0.15s ease-in-out;
+}
+
+/* Loading state during sort (optional) */
+table[data-tx-sorting="true"] tbody {
+    opacity: 0.6;
+}
+
+/* ====================
+   PAGINATION
+   ==================== */
+
+/* Pagination container */
+.tx-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 12px;
+    font-size: 14px;
+}
+
+/* Pagination buttons */
+.tx-pagination button {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #333;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.tx-pagination button:hover:not(:disabled) {
+    background: #f5f5f5;
+    border-color: #2196F3;
+}
+
+.tx-pagination button:focus {
+    outline: 2px solid #2196F3;
+    outline-offset: 2px;
+}
+
+.tx-pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f5f5f5;
+}
+
+/* Page info */
+.tx-pagination-info {
+    color: #666;
+    font-weight: 500;
+}
+
+/* Dark mode pagination */
+@media (prefers-color-scheme: dark) {
+    .tx-pagination button {
+        background: #2a2a2a;
+        color: #e0e0e0;
+        border-color: #444;
+    }
+
+    .tx-pagination button:hover:not(:disabled) {
+        background: #333;
+        border-color: #64B5F6;
+    }
+
+    .tx-pagination button:disabled {
+        background: #1a1a1a;
+    }
+
+    .tx-pagination-info {
+        color: #999;
+    }
+}
+
+/* Mobile pagination */
+@media (max-width: 768px) {
+    .tx-pagination {
+        font-size: 12px;
+        gap: 8px;
+    }
+
+    .tx-pagination button {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+}
+
+/* ====================
+   RESPONSIVE TABLES
+   ==================== */
+
+/* Scroll mode: horizontal scroll with sticky first column */
+table[tx-responsive="scroll"] {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+table[tx-responsive="scroll"] thead,
+table[tx-responsive="scroll"] tbody {
+    display: table;
+    width: 100%;
+}
+
+table[tx-responsive="scroll"] th:first-child,
+table[tx-responsive="scroll"] td:first-child {
+    position: sticky;
+    left: 0;
+    background: white;
+    z-index: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+    table[tx-responsive="scroll"] th:first-child,
+    table[tx-responsive="scroll"] td:first-child {
+        background: #1a1a1a;
+    }
+}
+
+/* Cards mode: stack rows as cards on mobile */
+@media (max-width: 768px) {
+    table[tx-responsive="cards"] {
+        border: 0;
+    }
+
+    table[tx-responsive="cards"] thead {
+        display: none;
+    }
+
+    table[tx-responsive="cards"] tbody,
+    table[tx-responsive="cards"] tr,
+    table[tx-responsive="cards"] td {
+        display: block;
+    }
+
+    table[tx-responsive="cards"] tr {
+        margin-bottom: 16px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 12px;
+        background: white;
+    }
+
+    table[tx-responsive="cards"] td {
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+        border-bottom: 1px solid #eee;
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    table[tx-responsive="cards"] td:last-child {
+        border-bottom: 0;
+    }
+
+    table[tx-responsive="cards"] td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 12px;
+        width: 45%;
+        text-align: left;
+        font-weight: bold;
+        color: #666;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        table[tx-responsive="cards"] tr {
+            background: #2a2a2a;
+            border-color: #444;
+        }
+
+        table[tx-responsive="cards"] td {
+            border-color: #333;
+        }
+
+        table[tx-responsive="cards"] td::before {
+            color: #999;
+        }
+    }
+}
+
+/* Priority columns: hide low-priority columns on narrow screens */
+table[tx-responsive="priority"] .tx-priority-1 {
+    /* Always visible */
+}
+
+@media (max-width: 1024px) {
+    table[tx-responsive="priority"] .tx-priority-5 {
+        display: none;
+    }
+}
+
+@media (max-width: 900px) {
+    table[tx-responsive="priority"] .tx-priority-4 {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    table[tx-responsive="priority"] .tx-priority-3 {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    table[tx-responsive="priority"] .tx-priority-2 {
+        display: none;
+    }
+}

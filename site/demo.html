@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo - genX</title>
+  <meta name="description" content="Interactive demo of genX modules. See formatting, accessibility, drag & drop, tables, and more in action.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .demo-container {
+      height: calc(100vh - 61px);
+      display: flex;
+      flex-direction: column;
+    }
+    .demo-header {
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: var(--color-bg-warm);
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .demo-header__text {
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+    }
+    .demo-frame {
+      flex: 1;
+      width: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container header__inner">
+      <a href="index.html" class="logo">gen<span class="x">X</span></a>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="demo.html" class="active">Demo</a>
+        <a href="docs.html">Docs</a>
+        <a href="https://github.com/adamzwasserman/genX">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="demo-container">
+    <div class="demo-header">
+      <span class="demo-header__text">Interactive demo showcasing all genX modules</span>
+      <a href="genx-demo.html" target="_blank" class="btn" style="padding: 0.5rem 1rem; font-size: 0.8rem;">Open in New Tab</a>
+    </div>
+    <iframe src="genx-demo.html" class="demo-frame" title="genX Interactive Demo"></iframe>
+  </main>
+</body>
+</html>

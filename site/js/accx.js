@@ -1,0 +1,985 @@
+/**
+ * AccessX - Automated accessibility enhancement library
+ * @version 1.0 - Making WCAG compliance easier with HTML attributes
+ */
+(function() {
+    'use strict';
+
+    // Utils
+    const kebabToCamel = s => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+    const safeJsonParse = v => {
+        try {
+            return JSON.parse(v); 
+        } catch {
+            return v; 
+        } 
+    };
+    const generateId = () => `ax-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // A11y enhancement functions
+    const enhance = {
+        // Screen reader annotations
+        srOnly: (el, opts) => {
+            const text = opts.text || el.getAttribute('ax-sr-text');
+            if (!text) {
+                return;
+            }
+            const span = document.createElement('span');
+            span.className = 'sr-only ax-sr-only';
+            span.textContent = text;
+            span.setAttribute('aria-hidden', 'false');
+            el.appendChild(span);
+            // Add CSS if not exists
+            if (!document.getElementById('ax-sr-styles')) {
+                const style = document.createElement('style');
+                style.id = 'ax-sr-styles';
+                style.textContent = '.ax-sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }';
+                document.head.appendChild(style);
+            }
+        },
+
+        // Automatic ARIA labels
+        label: (el, opts) => {
+            const type = opts.type || 'auto';
+            const context = opts.context || el.textContent?.trim();
+
+            switch(type) {
+            case 'currency': {
+                const amount = el.textContent?.trim();
+                el.setAttribute('aria-label', `${amount} dollars`);
+                break;
+            }
+            case 'icon': {
+                const icon = opts.icon || el.className;
+                const meaning = opts.meaning || guessIconMeaning(icon);
+                el.setAttribute('aria-label', meaning);
+                el.setAttribute('role', 'img');
+                break;
+            }
+            case 'abbreviation': {
+                const full = opts.full || expandAbbreviation(context);
+                el.setAttribute('aria-label', full);
+                el.setAttribute('title', full);
+                break;
+            }
+            case 'date': {
+                const date = new Date(context);
+                if (!isNaN(date)) {
+                    const formatted = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    el.setAttribute('aria-label', formatted);
+                }
+                break;
+            }
+            case 'time':
+                el.setAttribute('aria-label', `${context} ${opts.timezone || ''}`);
+                break;
+            case 'percentage':
+                el.setAttribute('aria-label', `${context} percent`);
+                break;
+            case 'auto':
+            default:
+                if (context) {
+                    el.setAttribute('aria-label', opts.label || context);
+                }
+            }
+        },
+
+        // Live regions for dynamic content
+        live: (el, opts) => {
+            const priority = opts.priority || opts.live || 'polite';
+            const atomic = opts.atomic !== false;
+            const relevant = opts.relevant || 'additions text';
+
+            el.setAttribute('aria-live', priority);
+            el.setAttribute('aria-atomic', atomic);
+            el.setAttribute('aria-relevant', relevant);
+
+            // Always add a role for live regions
+            if (opts.alert || priority === 'assertive') {
+                el.setAttribute('role', 'alert');
+            } else {
+                el.setAttribute('role', 'status');
+            }
+        },
+
+        // Form field enhancements
+        field: (el, opts) => {
+            const required = opts.required || el.hasAttribute('required');
+            const invalid = opts.invalid || el.getAttribute('aria-invalid');
+            const describedBy = [];
+
+            // Auto-generate IDs if needed
+            if (!el.id) {
+                el.id = generateId();
+            }
+
+            // Required field
+            if (required) {
+                el.setAttribute('aria-required', 'true');
+                if (!el.hasAttribute('required')) {
+                    el.setAttribute('required', '');
+                }
+            }
+
+            // Error handling
+            if (invalid || el.hasAttribute('ax-error')) {
+                el.setAttribute('aria-invalid', 'true');
+                const errorMsg = opts.error || el.getAttribute('ax-error');
+                if (errorMsg) {
+                    const errorId = `${el.id}-error`;
+                    let errorEl = document.getElementById(errorId);
+                    if (!errorEl) {
+                        errorEl = document.createElement('span');
+                        errorEl.id = errorId;
+                        errorEl.className = 'ax-error-message';
+                        errorEl.setAttribute('role', 'alert');
+                        errorEl.textContent = errorMsg;
+                        el.parentNode.insertBefore(errorEl, el.nextSibling);
+                    }
+                    describedBy.push(errorId);
+                }
+            }
+
+            // Help text
+            if (opts.help || el.hasAttribute('ax-help')) {
+                const helpText = opts.help || el.getAttribute('ax-help');
+                const helpId = `${el.id}-help`;
+                let helpEl = document.getElementById(helpId);
+                if (!helpEl) {
+                    helpEl = document.createElement('span');
+                    helpEl.id = helpId;
+                    helpEl.className = 'ax-help-text';
+                    helpEl.textContent = helpText;
+                    el.parentNode.insertBefore(helpEl, el.nextSibling);
+                }
+                describedBy.push(helpId);
+            }
+
+            // Character count
+            const maxLength = el.getAttribute('maxlength');
+            if (maxLength && opts.showCount !== false) {
+                const countId = `${el.id}-count`;
+                let countEl = document.getElementById(countId);
+                if (!countEl) {
+                    countEl = document.createElement('span');
+                    countEl.id = countId;
+                    countEl.className = 'ax-char-count';
+                    countEl.setAttribute('aria-live', 'polite');
+                    countEl.setAttribute('aria-atomic', 'true');
+                    el.parentNode.insertBefore(countEl, el.nextSibling);
+                }
+
+                const updateCount = () => {
+                    const remaining = maxLength - el.value.length;
+                    countEl.textContent = `${remaining} characters remaining`;
+                };
+
+                updateCount();
+                el.addEventListener('input', updateCount);
+                describedBy.push(countId);
+            }
+
+            // Set described-by
+            if (describedBy.length > 0) {
+                el.setAttribute('aria-describedby', describedBy.join(' '));
+            }
+        },
+
+        // Navigation enhancements
+        nav: (el, opts) => {
+            const label = opts.label || el.getAttribute('ax-nav-label') || 'Navigation';
+            el.setAttribute('role', 'navigation');
+            el.setAttribute('aria-label', label);
+
+            // Mark current page
+            if (opts.current || el.hasAttribute('ax-current')) {
+                const currentLink = el.querySelector('a[href="' + window.location.pathname + '"]');
+                if (currentLink) {
+                    currentLink.setAttribute('aria-current', 'page');
+                }
+            }
+        },
+
+        // Button enhancements
+        button: (el, opts) => {
+            // Always add role for discoverability (even native buttons)
+            if (!el.hasAttribute('role')) {
+                el.setAttribute('role', 'button');
+            }
+
+            // Add aria-label from opts or ax-label attribute
+            const label = opts.label || el.getAttribute('ax-label');
+            if (label && !el.hasAttribute('aria-label')) {
+                el.setAttribute('aria-label', label);
+            }
+
+            // Ensure keyboard accessibility
+            if (!el.hasAttribute('tabindex') && el.tagName !== 'BUTTON' && el.tagName !== 'A') {
+                el.setAttribute('tabindex', '0');
+            }
+
+            // Add keyboard handlers for non-button elements
+            if (el.tagName !== 'BUTTON' && el.tagName !== 'A') {
+                el.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        el.click();
+                    }
+                });
+            }
+
+            // Loading state
+            if (opts.loading || el.hasAttribute('ax-loading')) {
+                el.setAttribute('aria-busy', 'true');
+                el.setAttribute('aria-disabled', 'true');
+            }
+
+            // Pressed state for toggles
+            if (opts.pressed !== undefined) {
+                el.setAttribute('aria-pressed', opts.pressed);
+            }
+        },
+
+        // Table enhancements
+        table: (el, opts) => {
+            const caption = opts.caption || el.getAttribute('ax-caption');
+            if (caption && !el.querySelector('caption')) {
+                const cap = document.createElement('caption');
+                cap.textContent = caption;
+                el.insertBefore(cap, el.firstChild);
+            }
+
+            // Auto-detect and mark header cells
+            if (opts.autoHeaders !== false) {
+                // First row as headers
+                const firstRow = el.querySelector('tr');
+                if (firstRow) {
+                    firstRow.querySelectorAll('td').forEach(cell => {
+                        const th = document.createElement('th');
+                        // Safe: move child nodes instead of using innerHTML
+                        while (cell.firstChild) {
+                            th.appendChild(cell.firstChild);
+                        }
+                        th.scope = 'col';
+                        cell.parentNode.replaceChild(th, cell);
+                    });
+                }
+
+                // First column as row headers
+                if (opts.rowHeaders) {
+                    el.querySelectorAll('tr').forEach((row, i) => {
+                        if (i > 0) {  // Skip header row
+                            const firstCell = row.querySelector('td');
+                            if (firstCell) {
+                                const th = document.createElement('th');
+                                // Safe: move child nodes instead of using innerHTML
+                                while (firstCell.firstChild) {
+                                    th.appendChild(firstCell.firstChild);
+                                }
+                                th.scope = 'row';
+                                firstCell.parentNode.replaceChild(th, firstCell);
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Sortable columns
+            el.querySelectorAll('th[ax-sortable]').forEach(th => {
+                th.setAttribute('aria-sort', 'none');
+                th.setAttribute('role', 'button');
+                th.setAttribute('tabindex', '0');
+
+                const toggleSort = () => {
+                    const current = th.getAttribute('aria-sort');
+                    // Reset other columns
+                    el.querySelectorAll('th[aria-sort]').forEach(other => {
+                        if (other !== th) {
+                            other.setAttribute('aria-sort', 'none');
+                        }
+                    });
+                    // Toggle this column
+                    if (current === 'ascending') {
+                        th.setAttribute('aria-sort', 'descending');
+                    } else {
+                        th.setAttribute('aria-sort', 'ascending');
+                    }
+                };
+
+                th.addEventListener('click', toggleSort);
+                th.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleSort();
+                    }
+                });
+            });
+        },
+
+        // Image enhancements
+        image: (el, opts) => {
+            const altText = opts.alt || el.getAttribute('alt');
+            const isDecorative = opts.decorative || el.hasAttribute('ax-decorative');
+
+            if (isDecorative) {
+                el.setAttribute('role', 'presentation');
+                el.setAttribute('aria-hidden', 'true');
+                el.setAttribute('alt', '');
+            } else if (!altText) {
+                // Try to generate alt text from context
+                const fileName = el.src?.split('/').pop()?.split('.')[0];
+                const generated = fileName?.replace(/[-_]/g, ' ') || 'Image';
+                el.setAttribute('alt', generated);
+                console.warn(`AccessX: Generated alt text "${generated}" for image. Please provide proper alt text.`);
+            }
+
+            // Long description
+            const longDesc = opts.description || el.getAttribute('ax-description');
+            if (longDesc) {
+                const descId = generateId();
+                const desc = document.createElement('span');
+                desc.id = descId;
+                desc.className = 'ax-sr-only';
+                desc.textContent = longDesc;
+                el.parentNode.insertBefore(desc, el.nextSibling);
+                el.setAttribute('aria-describedby', descId);
+            }
+        },
+
+        // Modal/dialog enhancements
+        modal: (el, opts) => {
+            el.setAttribute('role', 'dialog');
+            el.setAttribute('aria-modal', 'true');
+
+            const label = opts.label || el.querySelector('h1, h2, h3')?.textContent;
+            if (label) {
+                const labelId = generateId();
+                const labelEl = el.querySelector('h1, h2, h3');
+                if (labelEl) {
+                    labelEl.id = labelId;
+                    el.setAttribute('aria-labelledby', labelId);
+                } else {
+                    el.setAttribute('aria-label', label);
+                }
+            }
+
+            // Trap focus
+            if (opts.trapFocus !== false) {
+                const focusableSelectors = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
+                const focusableElements = el.querySelectorAll(focusableSelectors);
+
+                el.addEventListener('keydown', (e) => {
+                    if (e.key === 'Tab') {
+                        const firstElement = focusableElements[0];
+                        const lastElement = focusableElements[focusableElements.length - 1];
+
+                        if (e.shiftKey && document.activeElement === firstElement) {
+                            e.preventDefault();
+                            lastElement.focus();
+                        } else if (!e.shiftKey && document.activeElement === lastElement) {
+                            e.preventDefault();
+                            firstElement.focus();
+                        }
+                    }
+
+                    if (e.key === 'Escape' && opts.closeOnEscape !== false) {
+                        el.style.display = 'none';
+                        el.setAttribute('aria-hidden', 'true');
+                    }
+                });
+            }
+        },
+
+        // Skip links
+        skipLink: (el, opts) => {
+            const target = opts.target || el.getAttribute('href') || '#main';
+            const text = opts.text || el.textContent?.trim() || 'Skip to main content';
+
+            // Add CSS for skip link
+            if (!document.getElementById('ax-skip-styles')) {
+                const style = document.createElement('style');
+                style.id = 'ax-skip-styles';
+                style.textContent = '.ax-skip-link { position: absolute; top: -40px; left: 0; background: #000; color: #fff; padding: 8px; text-decoration: none; z-index: 100000; } .ax-skip-link:focus { top: 0; }';
+                document.head.appendChild(style);
+            }
+
+            // If element is already a link, enhance it in place
+            if (el.tagName === 'A') {
+                el.classList.add('ax-skip-link');
+                el.setAttribute('role', 'link');
+                el.setAttribute('tabindex', '0');
+                if (!el.getAttribute('href')) {
+                    el.setAttribute('href', target);
+                }
+            } else {
+                // Create a new skip link and insert at body start
+                const link = document.createElement('a');
+                link.href = target;
+                link.className = 'ax-skip-link';
+                link.textContent = text;
+                link.setAttribute('role', 'link');
+                link.setAttribute('tabindex', '0');
+                document.body.insertBefore(link, document.body.firstChild);
+            }
+        },
+
+        // Landmark roles
+        landmark: (el, opts) => {
+            const role = opts.role || opts.landmark || el.getAttribute('ax-role') || el.getAttribute('ax-landmark') || 'region';
+            const label = opts.label || el.getAttribute('ax-label') || el.textContent?.trim().substring(0, 50);
+
+            el.setAttribute('role', role);
+            if (label) {
+                el.setAttribute('aria-label', label);
+            }
+
+            // Common landmarks
+            switch(role) {
+            case 'main':
+                if (!document.querySelector('[role="main"], main')) {
+                    el.id = el.id || 'main';
+                }
+                break;
+            case 'search': {
+                const searchInput = el.querySelector('input[type="search"], input[type="text"]');
+                if (searchInput && !searchInput.getAttribute('aria-label')) {
+                    searchInput.setAttribute('aria-label', 'Search');
+                }
+                break;
+            }
+            }
+        },
+
+        // Focus management
+        focus: (el, opts) => {
+            // Make element focusable if not naturally focusable
+            const focusableTags = ['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'];
+            if (!focusableTags.includes(el.tagName) && !el.hasAttribute('tabindex')) {
+                el.setAttribute('tabindex', '0');
+            }
+
+            // Always add aria-label if element has text content
+            if (!el.hasAttribute('aria-label')) {
+                const label = el.textContent?.trim();
+                if (label) {
+                    el.setAttribute('aria-label', label);
+                }
+            }
+
+            // Visual focus indicator
+            if (opts.enhance !== false) {
+                el.classList.add('ax-focus-enhanced');
+                if (!document.getElementById('ax-focus-styles')) {
+                    const style = document.createElement('style');
+                    style.id = 'ax-focus-styles';
+                    style.textContent = '.ax-focus-enhanced:focus { outline: 3px solid #0066cc !important; outline-offset: 2px !important; }';
+                    document.head.appendChild(style);
+                }
+            }
+
+            // Focus trap for groups
+            if (opts.trap) {
+                const group = el;
+                const items = group.querySelectorAll(opts.selector || '[tabindex="0"]');
+                let currentIndex = 0;
+
+                group.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        currentIndex = (currentIndex + 1) % items.length;
+                        items[currentIndex].focus();
+                    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        currentIndex = (currentIndex - 1 + items.length) % items.length;
+                        items[currentIndex].focus();
+                    }
+                });
+            }
+        },
+
+        // Keyboard navigation with multi-selection
+        keyboardNav: (el, opts = {}) => {
+            const selector = opts.selector || '[role="option"], [role="row"], [role="gridcell"], [role="tab"]';
+            const items = Array.from(el.querySelectorAll(selector));
+
+            if (items.length === 0) {
+                return;
+            }
+
+            // Enable multi-selection if requested
+            const multiSelect = opts.multiselect !== false;
+            if (multiSelect) {
+                el.setAttribute('aria-multiselectable', 'true');
+            }
+
+            // Track selection state
+            let lastSelectedIndex = -1;
+
+            // Helper to get item index
+            const getItemIndex = (item) => items.indexOf(item);
+
+            // Helper to select range
+            const selectRange = (start, end) => {
+                const [min, max] = start < end ? [start, end] : [end, start];
+                for (let i = min; i <= max; i++) {
+                    items[i].setAttribute('aria-selected', 'true');
+                }
+            };
+
+            // Helper to clear all selections
+            const clearSelections = () => {
+                items.forEach(item => item.setAttribute('aria-selected', 'false'));
+            };
+
+            // Helper to toggle selection
+            const toggleSelection = (item) => {
+                const isSelected = item.getAttribute('aria-selected') === 'true';
+                item.setAttribute('aria-selected', String(!isSelected));
+            };
+
+            // Helper to select all
+            const selectAll = () => {
+                items.forEach(item => item.setAttribute('aria-selected', 'true'));
+            };
+
+            // Initialize aria-selected
+            items.forEach((item, index) => {
+                if (!item.hasAttribute('aria-selected')) {
+                    item.setAttribute('aria-selected', 'false');
+                }
+                if (!item.hasAttribute('tabindex')) {
+                    item.setAttribute('tabindex', index === 0 ? '0' : '-1');
+                }
+            });
+
+            // Keyboard event handler
+            el.addEventListener('keydown', (e) => {
+                const target = e.target;
+                const currentIndex = getItemIndex(target);
+
+                if (currentIndex === -1) {
+                    return;
+                }
+
+                let handled = false;
+                let newIndex = currentIndex;
+
+                // Handle arrow keys
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    newIndex = Math.min(currentIndex + 1, items.length - 1);
+                    handled = true;
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    newIndex = Math.max(currentIndex - 1, 0);
+                    handled = true;
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    newIndex = 0;
+                    handled = true;
+                } else if (e.key === 'End') {
+                    e.preventDefault();
+                    newIndex = items.length - 1;
+                    handled = true;
+                } else if ((e.key === 'a' || e.key === 'A') && (e.ctrlKey || e.metaKey) && multiSelect) {
+                    // Ctrl+A / Cmd+A: Select all
+                    e.preventDefault();
+                    selectAll();
+                    enhance.announce(el, { message: `All ${items.length} items selected`, priority: 'polite' });
+                    return;
+                } else if (e.key === ' ' && multiSelect && !e.shiftKey) {
+                    // Space: Toggle selection
+                    e.preventDefault();
+                    toggleSelection(target);
+                    lastSelectedIndex = currentIndex;
+                    const isSelected = target.getAttribute('aria-selected') === 'true';
+                    enhance.announce(el, {
+                        message: isSelected ? 'Selected' : 'Deselected',
+                        priority: 'polite'
+                    });
+                    return;
+                }
+
+                if (handled) {
+                    // Move focus
+                    target.setAttribute('tabindex', '-1');
+                    items[newIndex].setAttribute('tabindex', '0');
+                    items[newIndex].focus();
+
+                    // Handle selection with modifiers
+                    if (multiSelect) {
+                        if (e.shiftKey) {
+                            // Shift+Arrow: Range selection
+                            if (lastSelectedIndex === -1) {
+                                lastSelectedIndex = currentIndex;
+                            }
+                            clearSelections();
+                            selectRange(lastSelectedIndex, newIndex);
+                        } else if (e.ctrlKey || e.metaKey) {
+                            // Ctrl/Cmd+Arrow: Move focus without changing selection
+                            // Do nothing to selection
+                        } else {
+                            // Arrow alone: Move selection to focused item
+                            if (!opts.separateFocusSelection) {
+                                clearSelections();
+                                items[newIndex].setAttribute('aria-selected', 'true');
+                                lastSelectedIndex = newIndex;
+                            }
+                        }
+                    } else {
+                        // Single selection mode
+                        clearSelections();
+                        items[newIndex].setAttribute('aria-selected', 'true');
+                        lastSelectedIndex = newIndex;
+                    }
+                }
+            });
+
+            // Click handler for mouse selection
+            items.forEach((item, index) => {
+                item.addEventListener('click', (e) => {
+                    if (multiSelect) {
+                        if (e.shiftKey && lastSelectedIndex !== -1) {
+                            // Shift+Click: Range selection
+                            clearSelections();
+                            selectRange(lastSelectedIndex, index);
+                        } else if (e.ctrlKey || e.metaKey) {
+                            // Ctrl/Cmd+Click: Toggle selection
+                            toggleSelection(item);
+                            lastSelectedIndex = index;
+                        } else {
+                            // Click alone: Single selection
+                            clearSelections();
+                            item.setAttribute('aria-selected', 'true');
+                            lastSelectedIndex = index;
+                        }
+                    } else {
+                        // Single selection mode
+                        clearSelections();
+                        item.setAttribute('aria-selected', 'true');
+                        lastSelectedIndex = index;
+                    }
+
+                    // Update focus
+                    items.forEach((it, i) => {
+                        it.setAttribute('tabindex', i === index ? '0' : '-1');
+                    });
+                    item.focus();
+                });
+            });
+        },
+
+        // Announce changes
+        announce: (el, opts) => {
+            const message = opts.message || el.textContent;
+            const priority = opts.priority || 'polite';
+
+            let announcer = document.getElementById('ax-announcer');
+            if (!announcer) {
+                announcer = document.createElement('div');
+                announcer.id = 'ax-announcer';
+                announcer.className = 'ax-sr-only';
+                announcer.setAttribute('aria-live', priority);
+                announcer.setAttribute('aria-atomic', 'true');
+                document.body.appendChild(announcer);
+            }
+
+            // Clear and announce (force screen reader to announce)
+            announcer.textContent = '';
+            setTimeout(() => announcer.textContent = message, 100);
+        },
+
+        // Input field enhancements (alias for field)
+        input: (el, opts) => {
+            // Ensure input has proper labeling
+            if (!el.id) {
+                el.id = generateId();
+            }
+
+            // Check for associated label
+            const labelledBy = el.getAttribute('aria-labelledby');
+            const labelFor = document.querySelector(`label[for="${el.id}"]`);
+
+            if (!labelledBy && !labelFor && !el.getAttribute('aria-label')) {
+                // Auto-generate label from placeholder or name
+                const labelText = el.getAttribute('placeholder') || el.getAttribute('name') || 'Input field';
+                el.setAttribute('aria-label', labelText);
+            }
+
+            // Add tabindex if not naturally focusable
+            if (!['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName)) {
+                el.setAttribute('tabindex', '0');
+            }
+        },
+
+        // Tooltip enhancements
+        tooltip: (el, opts) => {
+            const tooltipText = opts.tooltip || el.getAttribute('ax-tooltip') || opts.text;
+
+            if (!tooltipText) {
+                return;
+            }
+
+            const tooltipId = generateId();
+
+            // Create tooltip element
+            const tooltip = document.createElement('span');
+            tooltip.id = tooltipId;
+            tooltip.className = 'ax-tooltip';
+            tooltip.textContent = tooltipText;
+            tooltip.setAttribute('role', 'tooltip');
+            tooltip.style.cssText = 'position: absolute; visibility: hidden; background: #333; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 12px; z-index: 10000;';
+
+            el.parentNode.insertBefore(tooltip, el.nextSibling);
+            el.setAttribute('aria-describedby', tooltipId);
+
+            // Show/hide on focus/hover
+            el.addEventListener('mouseenter', () => tooltip.style.visibility = 'visible');
+            el.addEventListener('mouseleave', () => tooltip.style.visibility = 'hidden');
+            el.addEventListener('focus', () => tooltip.style.visibility = 'visible');
+            el.addEventListener('blur', () => tooltip.style.visibility = 'hidden');
+        },
+
+        // Error message enhancements
+        error: (el, opts) => {
+            el.setAttribute('role', 'alert');
+            el.setAttribute('aria-live', 'assertive');
+
+            // Ensure visibility to screen readers
+            if (!el.getAttribute('aria-label')) {
+                const errorText = el.textContent?.trim();
+                if (errorText) {
+                    el.setAttribute('aria-label', `Error: ${errorText}`);
+                }
+            }
+        },
+
+        // Status message enhancements
+        status: (el, opts) => {
+            el.setAttribute('role', 'status');
+            el.setAttribute('aria-live', 'polite');
+            el.setAttribute('aria-atomic', 'true');
+        },
+
+        // Dialog enhancements (alias for modal)
+        dialog: (el, opts) => {
+            enhance.modal(el, opts);
+        }
+    };
+
+    // Add lowercase aliases for case-insensitive matching
+    enhance.skiplink = enhance.skipLink;
+
+    // Helper functions
+    const guessIconMeaning = (className) => {
+        const iconMap = {
+            'home': 'Home',
+            'search': 'Search',
+            'menu': 'Menu',
+            'close': 'Close',
+            'arrow': 'Arrow',
+            'user': 'User profile',
+            'cart': 'Shopping cart',
+            'heart': 'Favorite',
+            'star': 'Rating',
+            'check': 'Complete',
+            'error': 'Error',
+            'warning': 'Warning',
+            'info': 'Information'
+        };
+
+        for (const [key, value] of Object.entries(iconMap)) {
+            if (className.toLowerCase().includes(key)) {
+                return value;
+            }
+        }
+        return 'Icon';
+    };
+
+    const expandAbbreviation = (abbr) => {
+        const common = {
+            'USA': 'United States of America',
+            'UK': 'United Kingdom',
+            'EU': 'European Union',
+            'AI': 'Artificial Intelligence',
+            'API': 'Application Programming Interface',
+            'CEO': 'Chief Executive Officer',
+            'FAQ': 'Frequently Asked Questions',
+            'ID': 'Identification',
+            'URL': 'Uniform Resource Locator',
+            'PDF': 'Portable Document Format'
+        };
+        return common[abbr.toUpperCase()] || abbr;
+    };
+
+    // DOM processing
+    const processElement = (el, prefix = 'ax-') => {
+        let enhanceType = null;
+        let opts = {};
+
+        // Try to get config from bootloader cache first (if using genX bootloader)
+        if (window.genx && window.genx.getConfig) {
+            const cachedConfig = window.genx.getConfig(el);
+            if (cachedConfig && cachedConfig.enhance) {
+                // Got cached config - use it
+                enhanceType = cachedConfig.enhance;
+                // Spread all config except 'enhance' into opts
+                opts = {...cachedConfig};
+                delete opts.enhance;
+            }
+        }
+
+        // Fallback to polymorphic notation parsing if no bootloader or no cached config
+        if (!enhanceType) {
+            // Use polymorphic parser from genx-common (supports Verbose, Colon, JSON, CSS Class)
+            const parsed = window.genxCommon
+                ? window.genxCommon.notation.parseNotation(el, prefix.replace('-', ''))
+                : {};  // Fallback if genx-common not loaded
+
+            enhanceType = parsed.enhance;
+            if (!enhanceType) {
+                return;
+            }
+
+            // Extract options (everything except 'enhance')
+            opts = {...parsed};
+            delete opts.enhance;
+        }
+
+        // Apply enhancement
+        const enhancer = enhance[enhanceType];
+        if (enhancer) {
+            enhancer(el, opts);
+            el.setAttribute(`${prefix}enhanced`, 'true');
+        } else {
+            console.warn(`AccessX: Unknown enhancement type '${enhanceType}'`);
+        }
+    };
+
+    const scan = (root = document, prefix = 'ax-') => {
+        root.querySelectorAll(`[${prefix}enhance]:not([${prefix}enhanced])`).forEach(el => {
+            processElement(el, prefix);
+        });
+    };
+
+    // Observer
+    const createObserver = (prefix) => {
+        let observer = null;
+
+        const callback = (mutations) => {
+            mutations.forEach(mutation => {
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1) {
+                            if (node.matches?.(`[${prefix}enhance]`)) {
+                                processElement(node, prefix);
+                            }
+                            node.querySelectorAll?.(`[${prefix}enhance]`).forEach(el => {
+                                processElement(el, prefix);
+                            });
+                        }
+                    });
+                }
+            });
+        };
+
+        return {
+            start: () => {
+                if (!observer) {
+                    observer = new MutationObserver(callback);
+                    observer.observe(document.body, {
+                        childList: true,
+                        subtree: true
+                    });
+                }
+            },
+            stop: () => {
+                observer?.disconnect();
+                observer = null;
+            }
+        };
+    };
+
+    // Validation
+    const validate = (el) => {
+        const issues = [];
+
+        // Check images
+        if (el.tagName === 'IMG' && !el.getAttribute('alt')) {
+            issues.push({ element: el, issue: 'Missing alt text', severity: 'error' });
+        }
+
+        // Check form fields
+        if (['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName)) {
+            if (!el.getAttribute('aria-label') && !el.getAttribute('aria-labelledby')) {
+                const label = document.querySelector(`label[for="${el.id}"]`);
+                if (!label) {
+                    issues.push({ element: el, issue: 'Form field without label', severity: 'error' });
+                }
+            }
+        }
+
+        // Check headings hierarchy
+        if (/^H[1-6]$/.test(el.tagName)) {
+            const level = parseInt(el.tagName[1]);
+            const prevHeading = el.previousElementSibling?.closest('h1, h2, h3, h4, h5, h6');
+            if (prevHeading) {
+                const prevLevel = parseInt(prevHeading.tagName[1]);
+                if (level > prevLevel + 1) {
+                    issues.push({ element: el, issue: 'Skipped heading level', severity: 'warning' });
+                }
+            }
+        }
+
+        return issues;
+    };
+
+    // Init
+    const initAccessX = (config = {}) => {
+        const { prefix = 'ax-', auto = true, observe = true } = config;
+        const observer = createObserver(prefix);
+
+        const api = {
+            enhance: (type, el, opts) => enhance[type]?.(el, opts),
+            process: el => processElement(el, prefix),
+            scan: root => scan(root, prefix),
+            validate: el => validate(el),
+            announce: (msg, priority) => enhance.announce(null, { message: msg, priority }),
+            destroy: () => observer.stop()
+        };
+
+        if (auto) {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    scan(document, prefix);
+                    if (observe) {
+                        observer.start();
+                    }
+                });
+            } else {
+                scan(document, prefix);
+                if (observe) {
+                    observer.start();
+                }
+            }
+        }
+
+        return api;
+    };
+
+    // Factory export for bootloader integration
+    window.axXFactory = {
+        init: (config = {}) => initAccessX(config),
+        enhance
+    };
+
+    // Legacy global for standalone use (when not using bootloader)
+    if (!window.genx) {
+        window.AccessX = initAccessX();
+    }
+
+    // Export for modules
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = { initAccessX, enhance };
+    }
+})();
