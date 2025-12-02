@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentation - genX</title>
+  <meta name="description" content="Learn how to install and use genX. Complete documentation for all modules.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container header__inner">
+      <a href="index.html" class="logo">gen<span class="x">X</span></a>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="demo.html">Demo</a>
+        <a href="docs.html" class="active">Docs</a>
+        <a href="https://github.com/adamzwasserman/genX">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="docs">
+      <aside class="docs__nav">
+        <div class="docs__nav-title">Getting Started</div>
+        <ul class="docs__nav-list">
+          <li><a href="#installation">Installation</a></li>
+          <li><a href="#quick-start">Quick Start</a></li>
+          <li><a href="#how-it-works">How It Works</a></li>
+        </ul>
+
+        <div class="docs__nav-title mt-md">Modules</div>
+        <ul class="docs__nav-list">
+          <li><a href="#fmtx">fmtX &mdash; Formatting</a></li>
+          <li><a href="#accx">accX &mdash; Accessibility</a></li>
+          <li><a href="#loadx">loadX &mdash; Loading States</a></li>
+          <li><a href="#navx">navX &mdash; Navigation</a></li>
+          <li><a href="#dragx">dragX &mdash; Drag & Drop</a></li>
+          <li><a href="#bindx">bindX &mdash; Data Binding</a></li>
+          <li><a href="#tablex">tableX &mdash; Tables</a></li>
+          <li><a href="#smartx">smartX &mdash; Auto-Format</a></li>
+        </ul>
+
+        <div class="docs__nav-title mt-md">Reference</div>
+        <ul class="docs__nav-list">
+          <li><a href="#browser-support">Browser Support</a></li>
+          <li><a href="#performance">Performance</a></li>
+        </ul>
+      </aside>
+
+      <article class="docs__content">
+        <h1>Documentation</h1>
+        <p class="text-muted">Everything you need to get started with genX.</p>
+
+        <h2 id="installation">Installation</h2>
+        <p>Choose the installation method that works best for your project.</p>
+
+        <h3>Option 1: CDN (Recommended)</h3>
+        <p>The fastest way to get started. Add this script tag to your HTML:</p>
+        <pre><code>&lt;script src="https://cdn.genx.software/v1/bootloader.js" defer&gt;&lt;/script&gt;</code></pre>
+        <p>The <code>defer</code> attribute ensures the script runs after the DOM is ready.</p>
+
+        <h3>Option 2: Self-Hosted</h3>
+        <p>Download and host the files yourself for full control:</p>
+        <pre><code># Clone the repository
+git clone https://github.com/adamzwasserman/genX.git
+
+# Copy source files to your project
+cp genX/src/*.js your-project/static/js/</code></pre>
+        <p>Then reference the bootloader in your HTML:</p>
+        <pre><code>&lt;script src="/static/js/bootloader.js" defer&gt;&lt;/script&gt;</code></pre>
+
+        <h3>Option 3: npm (Coming Soon)</h3>
+        <pre><code>npm install @genx/core</code></pre>
+
+        <h2 id="quick-start">Quick Start</h2>
+        <p>Once installed, you can immediately use genX attributes in your HTML:</p>
+        <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;title&gt;My Page&lt;/title&gt;
+  &lt;script src="https://cdn.genx.software/v1/bootloader.js" defer&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;!-- Currency formatting --&gt;
+  &lt;p&gt;Price: &lt;span fx-format="currency"&gt;99.99&lt;/span&gt;&lt;/p&gt;
+
+  &lt;!-- Phone number formatting --&gt;
+  &lt;p&gt;Call us: &lt;span fx-format="phone"&gt;5551234567&lt;/span&gt;&lt;/p&gt;
+
+  &lt;!-- Date formatting --&gt;
+  &lt;p&gt;Published: &lt;span fx-format="date" fx-date-format="long"&gt;2024-03-15&lt;/span&gt;&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+        <h2 id="how-it-works">How It Works</h2>
+        <p>genX uses a lightweight bootloader that:</p>
+        <ol>
+          <li><strong>Scans</strong> your page for genX attributes when the DOM is ready</li>
+          <li><strong>Detects</strong> which modules are needed based on attribute prefixes</li>
+          <li><strong>Loads</strong> only the required modules on-demand</li>
+          <li><strong>Processes</strong> elements with the appropriate module</li>
+          <li><strong>Watches</strong> for dynamic content via MutationObserver</li>
+        </ol>
+        <p>This means you only pay for what you use. If your page only uses <code>fx-*</code> attributes, only the fmtX module is loaded.</p>
+
+        <h2 id="fmtx">fmtX &mdash; Formatting</h2>
+        <p class="text-muted">Prefix: <code>fx-*</code></p>
+        <p>Format text, numbers, dates, and phone numbers with simple attributes.</p>
+
+        <h3>Currency</h3>
+        <pre><code>&lt;span fx-format="currency"&gt;1299.99&lt;/span&gt;
+&lt;!-- Output: $1,299.99 --&gt;
+
+&lt;span fx-format="currency" fx-currency="EUR"&gt;1299.99&lt;/span&gt;
+&lt;!-- Output: &euro;1,299.99 --&gt;
+
+&lt;span fx-format="currency" fx-currency="JPY"&gt;1299&lt;/span&gt;
+&lt;!-- Output: &yen;1,299 --&gt;</code></pre>
+
+        <h3>Phone Numbers</h3>
+        <pre><code>&lt;span fx-format="phone"&gt;5551234567&lt;/span&gt;
+&lt;!-- Output: (555) 123-4567 --&gt;
+
+&lt;span fx-format="phone" fx-phone-format="intl"&gt;15551234567&lt;/span&gt;
+&lt;!-- Output: +1 555 123 4567 --&gt;</code></pre>
+
+        <h3>Dates</h3>
+        <pre><code>&lt;span fx-format="date"&gt;2024-03-15&lt;/span&gt;
+&lt;!-- Output: 3/15/2024 --&gt;
+
+&lt;span fx-format="date" fx-date-format="long"&gt;2024-03-15&lt;/span&gt;
+&lt;!-- Output: March 15, 2024 --&gt;
+
+&lt;span fx-format="date" fx-date-format="relative"&gt;2024-03-15&lt;/span&gt;
+&lt;!-- Output: 2 days ago --&gt;</code></pre>
+
+        <h3>Numbers</h3>
+        <pre><code>&lt;span fx-format="number"&gt;1234567&lt;/span&gt;
+&lt;!-- Output: 1,234,567 --&gt;
+
+&lt;span fx-format="number" fx-decimals="2"&gt;1234.5&lt;/span&gt;
+&lt;!-- Output: 1,234.50 --&gt;
+
+&lt;span fx-format="percent"&gt;0.156&lt;/span&gt;
+&lt;!-- Output: 15.6% --&gt;</code></pre>
+
+        <h2 id="accx">accX &mdash; Accessibility</h2>
+        <p class="text-muted">Prefix: <code>ax-*</code></p>
+        <p>Enhance accessibility with ARIA attributes and keyboard navigation.</p>
+
+        <pre><code>&lt;!-- Accessible button with label --&gt;
+&lt;button ax-label="Close dialog"&gt;&times;&lt;/button&gt;
+
+&lt;!-- Accessible image --&gt;
+&lt;img src="chart.png" ax-desc="Sales chart showing 20% growth"&gt;
+
+&lt;!-- Skip to main content link --&gt;
+&lt;a href="#main" ax-skip-link&gt;Skip to content&lt;/a&gt;
+
+&lt;!-- Live region for dynamic updates --&gt;
+&lt;div ax-live="polite"&gt;3 items in cart&lt;/div&gt;</code></pre>
+
+        <h2 id="loadx">loadX &mdash; Loading States</h2>
+        <p class="text-muted">Prefix: <code>lx-*</code></p>
+        <p>Add loading indicators, skeletons, and progress states.</p>
+
+        <pre><code>&lt;!-- Loading spinner --&gt;
+&lt;button lx-loading="true"&gt;Submit&lt;/button&gt;
+
+&lt;!-- Skeleton loading --&gt;
+&lt;div lx-skeleton="text"&gt;Loading content...&lt;/div&gt;
+&lt;div lx-skeleton="card"&gt;&lt;/div&gt;
+
+&lt;!-- Progress bar --&gt;
+&lt;div lx-progress="75"&gt;&lt;/div&gt;</code></pre>
+
+        <h2 id="navx">navX &mdash; Navigation</h2>
+        <p class="text-muted">Prefix: <code>nx-*</code></p>
+        <p>Client-side routing and navigation enhancement.</p>
+
+        <pre><code>&lt;!-- SPA-style navigation --&gt;
+&lt;a href="/about" nx-link&gt;About Us&lt;/a&gt;
+
+&lt;!-- Active state on current page --&gt;
+&lt;nav&gt;
+  &lt;a href="/" nx-link nx-active-class="current"&gt;Home&lt;/a&gt;
+  &lt;a href="/products" nx-link nx-active-class="current"&gt;Products&lt;/a&gt;
+&lt;/nav&gt;
+
+&lt;!-- Page content container --&gt;
+&lt;main nx-outlet&gt;&lt;/main&gt;</code></pre>
+
+        <h2 id="dragx">dragX &mdash; Drag & Drop</h2>
+        <p class="text-muted">Prefix: <code>dx-*</code></p>
+        <p>Make elements draggable with drop zone support.</p>
+
+        <pre><code>&lt;!-- Draggable item --&gt;
+&lt;div dx-draggable="card"&gt;Drag me&lt;/div&gt;
+
+&lt;!-- Drop zone --&gt;
+&lt;div dx-drop-zone="cards"&gt;Drop cards here&lt;/div&gt;
+
+&lt;!-- Sortable list --&gt;
+&lt;ul dx-sortable&gt;
+  &lt;li dx-draggable&gt;Item 1&lt;/li&gt;
+  &lt;li dx-draggable&gt;Item 2&lt;/li&gt;
+  &lt;li dx-draggable&gt;Item 3&lt;/li&gt;
+&lt;/ul&gt;</code></pre>
+
+        <h2 id="bindx">bindX &mdash; Data Binding</h2>
+        <p class="text-muted">Prefix: <code>bx-*</code></p>
+        <p>Reactive data binding for dynamic content.</p>
+
+        <pre><code>&lt;!-- Two-way binding --&gt;
+&lt;input type="text" bx-model="name"&gt;
+&lt;p&gt;Hello, &lt;span bx-text="name"&gt;&lt;/span&gt;!&lt;/p&gt;
+
+&lt;!-- Conditional display --&gt;
+&lt;div bx-show="isLoggedIn"&gt;Welcome back!&lt;/div&gt;
+
+&lt;!-- List rendering --&gt;
+&lt;ul bx-for="item in items"&gt;
+  &lt;li bx-text="item.name"&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;!-- Event handling --&gt;
+&lt;button bx-on:click="handleClick"&gt;Click me&lt;/button&gt;</code></pre>
+
+        <h2 id="tablex">tableX &mdash; Tables</h2>
+        <p class="text-muted">Prefix: <code>tx-*</code></p>
+        <p>Enhanced tables with sorting, filtering, and pagination.</p>
+
+        <pre><code>&lt;table tx-sortable&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th tx-sort="name"&gt;Name&lt;/th&gt;
+      &lt;th tx-sort="date" tx-sort-type="date"&gt;Date&lt;/th&gt;
+      &lt;th tx-sort="price" tx-sort-type="number"&gt;Price&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Widget&lt;/td&gt;
+      &lt;td&gt;2024-03-15&lt;/td&gt;
+      &lt;td&gt;29.99&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;!-- More rows --&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;!-- With pagination --&gt;
+&lt;table tx-sortable tx-paginate="10"&gt;
+  &lt;!-- ... --&gt;
+&lt;/table&gt;</code></pre>
+
+        <h2 id="smartx">smartX &mdash; Auto-Format</h2>
+        <p class="text-muted">Prefix: <code>sx-*</code></p>
+        <p>Automatically detect and format content based on patterns.</p>
+
+        <pre><code>&lt;!-- Auto-detect formatting --&gt;
+&lt;span sx-auto&gt;$1,234.56&lt;/span&gt;
+&lt;span sx-auto&gt;(555) 123-4567&lt;/span&gt;
+&lt;span sx-auto&gt;2024-03-15&lt;/span&gt;
+&lt;span sx-auto&gt;user@example.com&lt;/span&gt;
+
+&lt;!-- Smart links --&gt;
+&lt;span sx-linkify&gt;Visit https://example.com&lt;/span&gt;</code></pre>
+
+        <h2 id="browser-support">Browser Support</h2>
+        <p>genX supports all modern browsers:</p>
+        <ul>
+          <li>Chrome 90+</li>
+          <li>Firefox 88+</li>
+          <li>Safari 14+</li>
+          <li>Edge 90+</li>
+        </ul>
+        <p>Requirements: ES6+, Proxy, MutationObserver, async/await</p>
+
+        <h2 id="performance">Performance</h2>
+        <p>genX is designed for speed:</p>
+        <ul>
+          <li><strong>Bootloader:</strong> &lt;5ms to scan 1000 elements</li>
+          <li><strong>Parsing:</strong> &lt;100ms for 1000 elements</li>
+          <li><strong>Operations:</strong> &lt;16ms (60 FPS target)</li>
+          <li><strong>Module init:</strong> &lt;105ms total bootstrap</li>
+        </ul>
+        <p>The bootloader uses <code>MutationObserver</code> to watch for dynamic content, so elements added after page load are automatically processed.</p>
+      </article>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p class="footer__text">genX is open source. MIT License.</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: genx-site
+    runtime: static
+    buildCommand: echo "No build needed"
+    staticPublishPath: ./site
+    pullRequestPreviewsEnabled: true
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=3600

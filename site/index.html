@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>genX - The Tailwind of Frontend Behavior</title>
+  <meta name="description" content="Add behavior to HTML with simple attributes. No JavaScript to write, no frameworks to learn.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container header__inner">
+      <a href="index.html" class="logo">gen<span class="x">X</span></a>
+      <nav class="nav">
+        <a href="index.html" class="active">Home</a>
+        <a href="demo.html">Demo</a>
+        <a href="docs.html">Docs</a>
+        <a href="https://github.com/adamzwasserman/genX">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <p class="hero__tagline">Declarative Frontend Behavior</p>
+        <h1 class="hero__title">gen<span class="x">X</span></h1>
+        <p class="hero__subtitle">
+          Add behavior to HTML with simple attributes.<br>
+          No JavaScript to write. No frameworks to learn.
+        </p>
+        <div class="btn-group">
+          <a href="demo.html" class="btn btn--primary">View Demo</a>
+          <a href="docs.html" class="btn">Get Started</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--warm">
+      <div class="container">
+        <div class="stats">
+          <div class="stat">
+            <div class="stat__value">~1KB</div>
+            <div class="stat__label">Bootloader</div>
+          </div>
+          <div class="stat">
+            <div class="stat__value">8</div>
+            <div class="stat__label">Modules</div>
+          </div>
+          <div class="stat">
+            <div class="stat__value">&lt;16ms</div>
+            <div class="stat__label">Operations</div>
+          </div>
+          <div class="stat">
+            <div class="stat__value">0</div>
+            <div class="stat__label">Dependencies</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2 class="text-center mb-lg">The Tailwind of Frontend Behavior</h2>
+        <p class="text-center text-muted mb-lg" style="max-width: 700px; margin-left: auto; margin-right: auto;">
+          Just as Tailwind CSS lets you style elements with utility classes,
+          genX lets you add behavior with HTML attributes. Format currencies,
+          make elements draggable, add accessibility features &mdash; all without
+          writing JavaScript.
+        </p>
+
+        <div class="showcase mb-lg">
+          <div class="showcase__content">
+            <h3>Before: Traditional JavaScript</h3>
+            <p class="text-muted">Create a formatter, query elements, attach listeners, handle updates...</p>
+            <div class="code-example">
+              <pre><code>const formatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD'
+});
+
+document.querySelectorAll('.price').forEach(el => {
+  el.textContent = formatter.format(
+    parseFloat(el.dataset.value)
+  );
+});</code></pre>
+            </div>
+          </div>
+          <div class="showcase__visual">
+            <h3>After: genX</h3>
+            <p class="text-muted">One attribute. Done.</p>
+            <div class="code-example">
+              <pre><code>&lt;span fx-format="currency"&gt;1299.99&lt;/span&gt;
+
+&lt;!-- Displays: $1,299.99 --&gt;</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--white">
+      <div class="container">
+        <h2 class="text-center mb-lg">Eight Modular Components</h2>
+        <div class="modules">
+          <a href="docs.html#fmtx" class="module">
+            <div class="module__name">fmt<span class="x">X</span></div>
+            <p class="module__desc">Currency, dates, numbers, phones</p>
+          </a>
+          <a href="docs.html#accx" class="module">
+            <div class="module__name">acc<span class="x">X</span></div>
+            <p class="module__desc">WCAG accessibility</p>
+          </a>
+          <a href="docs.html#loadx" class="module">
+            <div class="module__name">load<span class="x">X</span></div>
+            <p class="module__desc">Loading states & skeletons</p>
+          </a>
+          <a href="docs.html#navx" class="module">
+            <div class="module__name">nav<span class="x">X</span></div>
+            <p class="module__desc">Client-side routing</p>
+          </a>
+          <a href="docs.html#dragx" class="module">
+            <div class="module__name">drag<span class="x">X</span></div>
+            <p class="module__desc">Drag & drop</p>
+          </a>
+          <a href="docs.html#bindx" class="module">
+            <div class="module__name">bind<span class="x">X</span></div>
+            <p class="module__desc">Reactive data binding</p>
+          </a>
+          <a href="docs.html#tablex" class="module">
+            <div class="module__name">table<span class="x">X</span></div>
+            <p class="module__desc">Sorting, filtering, pagination</p>
+          </a>
+          <a href="docs.html#smartx" class="module">
+            <div class="module__name">smart<span class="x">X</span></div>
+            <p class="module__desc">Auto-detection formatting</p>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2 class="text-center mb-lg">Why genX?</h2>
+        <div class="features">
+          <div class="feature">
+            <div class="feature__prefix">Declarative</div>
+            <h3 class="feature__title">HTML-First</h3>
+            <p class="feature__desc">Control everything with attributes. Your HTML becomes self-documenting.</p>
+          </div>
+          <div class="feature">
+            <div class="feature__prefix">Lightweight</div>
+            <h3 class="feature__title">On-Demand Loading</h3>
+            <p class="feature__desc">~1KB bootloader scans your page. Only used modules are loaded.</p>
+          </div>
+          <div class="feature">
+            <div class="feature__prefix">Private</div>
+            <h3 class="feature__title">100% Client-Side</h3>
+            <p class="feature__desc">No tracking. No external calls. GDPR compliant by design.</p>
+          </div>
+          <div class="feature">
+            <div class="feature__prefix">Accessible</div>
+            <h3 class="feature__title">WCAG 2.1 AA</h3>
+            <p class="feature__desc">Accessibility built in. Screen reader friendly, keyboard navigable.</p>
+          </div>
+          <div class="feature">
+            <div class="feature__prefix">Fast</div>
+            <h3 class="feature__title">60 FPS Target</h3>
+            <p class="feature__desc">All operations complete in under 16ms. No jank, no lag.</p>
+          </div>
+          <div class="feature">
+            <div class="feature__prefix">Compatible</div>
+            <h3 class="feature__title">Framework Agnostic</h3>
+            <p class="feature__desc">Works with vanilla HTML, React, Vue, Angular, htmx, or anything else.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--warm">
+      <div class="container text-center">
+        <h2 class="mb-md">Get Started in Seconds</h2>
+        <div class="code-example" style="max-width: 600px; margin: 0 auto;">
+          <div class="code-example__label">Add to your HTML</div>
+          <pre><code>&lt;script src="https://cdn.genx.software/v1/bootloader.js" defer&gt;&lt;/script&gt;</code></pre>
+        </div>
+        <p class="mt-md text-muted">That's it. Start using genX attributes immediately.</p>
+        <div class="btn-group mt-md">
+          <a href="docs.html" class="btn btn--primary">Read the Docs</a>
+          <a href="demo.html" class="btn">Try the Demo</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p class="footer__text">genX is open source. MIT License.</p>
+    </div>
+  </footer>
+</body>
+</html>

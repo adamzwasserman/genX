@@ -1,0 +1,2086 @@
+/**
+ * bindX - Reactive Data Binding
+ * Pure functional reactive system using Proxy API
+ *
+ * @module bindx
+ * @version 1.0.0
+ */
+(function() {
+    'use strict';
+
+    // WeakMap registry for reactive metadata (memory-safe)
+    const reactiveMetadata = new WeakMap();
+
+    // Current dependency tracking context
+    let currentTrackingContext = null;
+
+    // Path subscribers for computed property invalidation
+    const pathSubscribers = new Map();
+
+    /**
+     * Check if object is already reactive
+     * @param {*} obj - Object to check
+     * @returns {boolean} True if object is reactive
+     */
+    const isReactive = (obj) => {
+        return obj && typeof obj === 'object' && reactiveMetadata.has(obj);
+    };
+
+    /**
+     * Track property dependency during access
+     * @param {string} path - Property path being accessed
+     */
+    const trackDependency = (path) => {
+        if (currentTrackingContext && currentTrackingContext.isTracking) {
+            currentTrackingContext.dependencies.add(path);
+        }
+    };
+
+    /**
+     * Notify path subscribers (for computed invalidation)
+     * Also notifies subscribers of child paths when parent changes
+     * e.g., when 'bio' changes, also notify 'bio.length', 'bio.wordCount', etc.
+     * @param {string} path - Path that changed
+     * @param {*} value - New value
+     */
+    const notifyPathSubscribers = (path) => {
+        // Notify exact path subscribers
+        const subscribers = pathSubscribers.get(path);
+        if (subscribers) {
+            for (const callback of subscribers) {
+                callback(path);
+            }
+        }
+
+        // Also notify child path subscribers (e.g., 'bio' changing should notify 'bio.length')
+        const pathPrefix = path + '.';
+        for (const [subscribedPath, childSubscribers] of pathSubscribers.entries()) {
+            if (typeof subscribedPath === 'string' && subscribedPath.startsWith(pathPrefix)) {
+                for (const callback of childSubscribers) {
+                    callback(subscribedPath);
+                }
+            }
+        }
+    };
+
+    /**
+     * Create batched update queue using requestAnimationFrame
+     *
+     * @param {Function} updateHandler - Function to execute for each update
+     * @returns {Object} Batch queue interface
+     */
+    const createBatchQueue = (updateHandler) => {
+        const pending = new Map(); // path -> value
+        let scheduled = false;
+        let rafId = null;
+
+        const flush = () => {
+            const updates = new Map(pending);
+            pending.clear();
+            scheduled = false;
+            rafId = null;
+
+            // Execute all batched updates
+            for (const [path, value] of updates) {
+                try {
+                    updateHandler(path, value);
+                } catch (error) {
+                    console.error(`bindX: Batch update failed for ${path}:`, error);
+                }
+            }
+        };
+
+        const schedule = (path, value) => {
+            // Store latest value for this path (deduplication)
+            pending.set(path, value);
+
+            if (!scheduled) {
+                scheduled = true;
+                rafId = requestAnimationFrame(flush);
+            }
+        };
+
+        const flushSync = () => {
+            if (scheduled && rafId !== null) {
+                cancelAnimationFrame(rafId);
+                flush();
+            }
+        };
+
+        return Object.freeze({
+            schedule,
+            flush: flushSync,
+            getPending: () => new Map(pending),
+            isScheduled: () => scheduled
+        });
+    };
+
+    /**
+     * Global batch queue instance (created lazily)
+     */
+    let globalBatchQueue = null;
+
+    /**
+     * Get or create global batch queue
+     * @returns {Object} Batch queue instance
+     */
+    const getBatchQueue = () => {
+        if (!globalBatchQueue) {
+            globalBatchQueue = createBatchQueue(executeDOMUpdate);
+        }
+        return globalBatchQueue;
+    };
+
+    /**
+     * Binding Registry (singleton)
+     * Uses WeakMap for automatic garbage collection
+     *
+     * @returns {Object} Binding registry interface
+     */
+    const createBindingRegistry = () => {
+        // WeakMap: element -> Array<BindingConfig>
+        const elementBindings = new WeakMap();
+
+        // Map: path -> Set<BindingConfig> (for efficient path lookups)
+        const pathBindings = new Map();
+
+        // All bindings (for iteration)
+        const allBindings = new Set();
+
+        /**
+         * Register a binding
+         * @param {HTMLElement} element - DOM element
+         * @param {Object} binding - Binding configuration
+         * @returns {Object} The registered binding
+         */
+        const register = (element, binding) => {
+            // Store by element (WeakMap for auto GC)
+            const bindings = elementBindings.get(element) || [];
+            bindings.push(binding);
+            elementBindings.set(element, bindings);
+
+            // Store by path
+            const pathSet = pathBindings.get(binding.path) || new Set();
+            pathSet.add(binding);
+            pathBindings.set(binding.path, pathSet);
+
+            // Add to all bindings
+            allBindings.add(binding);
+
+            return binding;
+        };
+
+        /**
+         * Unregister a binding
+         * @param {Object} binding - Binding to remove
+         */
+        const unregister = (binding) => {
+            // Remove from path index
+            const pathSet = pathBindings.get(binding.path);
+            if (pathSet) {
+                pathSet.delete(binding);
+                if (pathSet.size === 0) {
+                    pathBindings.delete(binding.path);
+                }
+            }
+
+            // Remove from all bindings
+            allBindings.delete(binding);
+
+            // Element bindings cleaned up automatically by WeakMap
+        };
+
+        /**
+         * Get bindings for an element
+         * @param {HTMLElement} element - DOM element
+         * @returns {Array<Object>} Array of bindings
+         */
+        const getByElement = (element) => {
+            return elementBindings.get(element) || [];
+        };
+
+        /**
+         * Get bindings by exact path
+         * @param {string} path - Property path
+         * @returns {Array<Object>} Array of bindings
+         */
+        const getByPath = (path) => {
+            return Array.from(pathBindings.get(path) || []);
+        };
+
+        /**
+         * Get bindings by path pattern (supports wildcards)
+         * @param {string} pattern - Path pattern (e.g., "user.*")
+         * @returns {Array<Object>} Array of bindings
+         */
+        const getByPathPattern = (pattern) => {
+            const regex = new RegExp('^' + pattern.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$');
+            const matches = [];
+
+            for (const [path, bindings] of pathBindings) {
+                if (regex.test(path)) {
+                    matches.push(...bindings);
+                }
+            }
+
+            return matches;
+        };
+
+        /**
+         * Clear all bindings
+         */
+        const clear = () => {
+            pathBindings.clear();
+            allBindings.clear();
+            // elementBindings WeakMap clears automatically
+        };
+
+        return Object.freeze({
+            register,
+            unregister,
+            getByElement,
+            getByPath,
+            getByPathPattern,
+            clear,
+            get size() {
+                return allBindings.size; 
+            }
+        });
+    };
+
+    /**
+     * Global binding registry instance
+     */
+    let globalBindingRegistry = null;
+
+    /**
+     * Get or create global binding registry
+     * @returns {Object} Binding registry instance
+     */
+    const getBindingRegistry = () => {
+        if (!globalBindingRegistry) {
+            globalBindingRegistry = createBindingRegistry();
+        }
+        return globalBindingRegistry;
+    };
+
+    /**
+     * Execute DOM update (placeholder for Phase 4)
+     * @param {string} path - Property path
+     * @param {*} value - New value
+     */
+    const executeDOMUpdate = (path, value) => {
+        // Will be implemented in Phase 4: DOM Integration
+        // For now, update bindings registered for this path
+        const registry = getBindingRegistry();
+        const bindings = registry.getByPath(path);
+
+        bindings.forEach(binding => {
+            if (binding.updateDOM) {
+                try {
+                    binding.updateDOM();
+                } catch (error) {
+                    console.error(`bindX: Failed to update DOM for ${path}:`, error);
+                }
+            }
+        });
+
+        if (typeof console !== 'undefined' && console.debug) {
+            console.debug(`bindX: Update ${path} = ${value}`);
+        }
+    };
+
+    /**
+     * Notify bindings of changes
+     * @param {string} path - Path that changed
+     * @param {*} value - New value
+     */
+    const notifyBindings = (path, value) => {
+        // Schedule in batch queue for DOM updates
+        const queue = getBatchQueue();
+        queue.schedule(path, value);
+    };
+
+    /**
+     * Helper: Get nested property value
+     * @param {Object} obj - Object to read from
+     * @param {string} path - Property path (e.g., "user.name")
+     * @returns {*} Property value
+     */
+    const getNestedProperty = (obj, path) => {
+        const value = path.split('.').reduce((acc, key) => acc?.[key], obj);
+
+        // If value is a computed property (function with cached state), invoke it
+        if (typeof value === 'function' && computedCache.has(value)) {
+            return value();
+        }
+
+        return value;
+    };
+
+    /**
+     * Helper: Set nested property value
+     * @param {Object} obj - Object to write to
+     * @param {string} path - Property path (e.g., "user.name")
+     * @param {*} value - Value to set
+     */
+    const setNestedProperty = (obj, path, value) => {
+        const keys = path.split('.');
+        const lastKey = keys.pop();
+        const target = keys.reduce((acc, key) => {
+            // Create intermediate objects if they don't exist
+            if (!acc[key] || typeof acc[key] !== 'object') {
+                acc[key] = {};
+            }
+            return acc[key];
+        }, obj);
+        target[lastKey] = value;
+    };
+
+    /**
+     * Generate unique binding ID
+     * @returns {string} Unique ID
+     */
+    const generateBindingId = () => {
+        return `bx-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    };
+
+    /**
+     * Create two-way binding (bx-model)
+     *
+     * @param {HTMLElement} element - Form control element
+     * @param {Object} data - Reactive data object
+     * @param {string} path - Property path to bind
+     * @param {Object} options - Binding options
+     * @param {number} options.debounce - Debounce delay in ms (default: 0)
+     * @returns {Object} Binding instance
+     */
+    const createModelBinding = (element, data, path, options = {}) => {
+        const { debounce = 0 } = options;
+
+        // Validation: bx-model only for form controls
+        if (!['INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName)) {
+            throw new Error(
+                `bx-model requires form control element. Got ${element.tagName}. ` +
+                'Use bx-bind for display-only elements.'
+            );
+        }
+
+        // Get/set value helpers based on input type
+        const getValue = (el) => {
+            if (el.type === 'checkbox') {
+                return el.checked;
+            }
+            if (el.type === 'radio') {
+                // For radio buttons, return the value attribute if checked
+                return el.checked ? el.value : null;
+            }
+            if (el.type === 'number') {
+                return parseFloat(el.value) || 0;
+            }
+            return el.value;
+        };
+
+        const setValue = (el, val) => {
+            if (el.type === 'checkbox') {
+                el.checked = Boolean(val);
+            } else if (el.type === 'radio') {
+                // For radio buttons, check if value matches - don't overwrite value attribute!
+                el.checked = el.value === String(val ?? '');
+            } else {
+                // Handle undefined/null - use empty string, never display "undefined"
+                el.value = (val === undefined || val === null) ? '' : String(val);
+            }
+        };
+
+        // DOM -> Data (with debouncing)
+        let timeoutId = null;
+        const handleInput = (_event) => {
+            const newValue = getValue(element);
+
+            // For radio buttons, only update data if this radio is checked
+            if (element.type === 'radio' && !element.checked) {
+                return;
+            }
+
+            if (debounce > 0) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    setNestedProperty(data, path, newValue);
+                }, debounce);
+            } else {
+                setNestedProperty(data, path, newValue);
+            }
+        };
+
+        // Use 'change' for radio buttons and checkboxes, 'input' for others
+        const eventType = (element.type === 'radio' || element.type === 'checkbox') ? 'change' : 'input';
+        element.addEventListener(eventType, handleInput);
+
+        // Also listen to 'input' for checkboxes to support programmatic input handling
+        if (element.type === 'checkbox') {
+            element.addEventListener('input', handleInput);
+        }
+
+        // Data -> DOM (on changes)
+        const updateDOM = () => {
+            const currentValue = getNestedProperty(data, path);
+            const elementValue = getValue(element);
+
+            // Only update if values differ (prevent infinite loops)
+            if (elementValue !== currentValue) {
+                setValue(element, currentValue);
+            }
+        };
+
+        // Initial sync
+        updateDOM();
+
+        // Subscribe to reactive data changes (Data -> DOM)
+        const unsubscribe = subscribeToPath(path, () => {
+            updateDOM();
+        });
+
+        // Register binding
+        const binding = {
+            id: generateBindingId(),
+            element,
+            path,
+            type: 'model',
+            options,
+            updateDOM,
+            destroy: () => {
+                element.removeEventListener(eventType, handleInput);
+                clearTimeout(timeoutId);
+                unsubscribe();  // Cleanup reactive subscription
+                const registry = getBindingRegistry();
+                registry.unregister(binding);
+            }
+        };
+
+        const registry = getBindingRegistry();
+        registry.register(element, binding);
+
+        return binding;
+    };
+
+    /**
+     * Create one-way binding (bx-bind)
+     *
+     * @param {HTMLElement} element - Any DOM element
+     * @param {Object} data - Reactive data object
+     * @param {string} path - Property path to bind
+     * @param {Object} options - Binding options
+     * @param {string} options.formatter - Optional formatter name (fmtX integration)
+     * @returns {Object} Binding instance
+     */
+    const createOneWayBinding = (element, data, path, options = {}) => {
+        const { formatter = null } = options;
+
+        // Data -> DOM only (no DOM -> Data)
+        const updateDOM = () => {
+            let value = getNestedProperty(data, path);
+
+            // Handle undefined/null gracefully
+            if (value === undefined) {
+                value = '';
+            }
+
+            // Convert to string for display
+            value = String(value);
+
+            // Apply formatter if specified (fmtX integration)
+            if (formatter && typeof window !== 'undefined' && window.fxXFactory) {
+                try {
+                    value = window.fxXFactory.format(formatter, value);
+                } catch (error) {
+                    console.warn(`bindX: Formatter ${formatter} failed:`, error);
+                }
+            }
+
+            // XSS-safe: Use textContent for non-input elements, value for inputs
+            if (['INPUT', 'TEXTAREA'].includes(element.tagName)) {
+                if (element.value !== value) {
+                    element.value = value;
+                }
+            } else {
+                // textContent is XSS-safe (never executes scripts)
+                if (element.textContent !== value) {
+                    element.textContent = value;
+                }
+            }
+        };
+
+        // Initial sync
+        updateDOM();
+
+        // Subscribe to reactive data changes (Data -> DOM)
+        // For nested paths like 'bio.length', also subscribe to root path 'bio'
+        const rootPath = path.includes('.') ? path.split('.')[0] : path;
+        const unsubscribePath = subscribeToPath(path, () => updateDOM());
+        const unsubscribeRoot = rootPath !== path ? subscribeToPath(rootPath, () => updateDOM()) : null;
+
+        // Register binding
+        const binding = {
+            id: generateBindingId(),
+            element,
+            path,
+            type: 'bind',
+            options,
+            updateDOM,
+            destroy: () => {
+                unsubscribePath();
+                if (unsubscribeRoot) unsubscribeRoot();
+                const registry = getBindingRegistry();
+                registry.unregister(binding);
+            }
+        };
+
+        const registry = getBindingRegistry();
+        registry.register(element, binding);
+
+        return binding;
+    };
+
+    /**
+     * Create reactive proxy wrapper
+     *
+     * @param {Object} data - Plain object to make reactive
+     * @param {Object} options - Configuration options
+     * @param {boolean} options.deep - Deep reactivity (default: true)
+     * @param {Function} options.onChange - Change notification callback
+     * @param {string} options.path - Internal: current property path
+     * @returns {Proxy} Reactive proxy wrapper
+     */
+    const createReactive = (data, options = {}) => {
+        // Primitives pass through unchanged
+        if (typeof data !== 'object' || data === null) {
+            return data;
+        }
+
+        // Return existing proxy if already reactive
+        if (isReactive(data)) {
+            return data;
+        }
+
+        const { deep = true, onChange = null, path = '', _seen = new WeakSet() } = options;
+
+        // Circular reference detection
+        if (_seen.has(data)) {
+            console.warn('bindX: Circular reference detected, skipping reactive wrap');
+            return data;
+        }
+        _seen.add(data);
+
+        const metadata = {
+            original: data,
+            subscribers: new Set(),
+            deep,
+            path,
+            nestedProxies: new Map() // Cache nested proxies
+        };
+
+        const handler = {
+            get(target, property, receiver) {
+                // Skip internal properties
+                if (property === '__bindx_proxy__' || property === '__bindx_metadata__') {
+                    return true;
+                }
+
+                const value = Reflect.get(target, property, receiver);
+
+                // Track property access for dependency tracking
+                const accessPath = path ? `${path}.${String(property)}` : String(property);
+                trackDependency(accessPath);
+
+                // Deep reactivity: wrap nested objects
+                if (deep && value && typeof value === 'object' && !isReactive(value)) {
+                    // Check cache first
+                    if (!metadata.nestedProxies.has(property)) {
+                        const nestedProxy = createReactive(value, {
+                            deep,
+                            onChange,
+                            path: accessPath,
+                            _seen
+                        });
+                        metadata.nestedProxies.set(property, nestedProxy);
+                    }
+                    return metadata.nestedProxies.get(property);
+                }
+
+                return value;
+            },
+
+            set(target, property, value, receiver) {
+                const oldValue = target[property];
+
+                // Only trigger if value actually changed
+                if (oldValue === value) {
+                    return true;
+                }
+
+                const result = Reflect.set(target, property, value, receiver);
+
+                if (result) {
+                    const changePath = path ? `${path}.${String(property)}` : String(property);
+
+                    // Clear cached nested proxy if object property changed
+                    if (value && typeof value === 'object') {
+                        metadata.nestedProxies.delete(property);
+                    }
+
+                    // Notify onChange callback
+                    if (onChange) {
+                        onChange(changePath, value);
+                    }
+
+                    // Notify path subscribers (for computed invalidation)
+                    notifyPathSubscribers(changePath);
+
+                    // Notify bindings (Phase 2)
+                    notifyBindings(changePath, value);
+                }
+
+                return result;
+            },
+
+            has(target, property) {
+                return Reflect.has(target, property);
+            },
+
+            ownKeys(target) {
+                return Reflect.ownKeys(target);
+            },
+
+            getOwnPropertyDescriptor(target, property) {
+                return Reflect.getOwnPropertyDescriptor(target, property);
+            },
+
+            // Handle array methods
+            deleteProperty(target, property) {
+                const hadProperty = property in target;
+                const result = Reflect.deleteProperty(target, property);
+
+                if (result && hadProperty) {
+                    const changePath = path ? `${path}.${String(property)}` : String(property);
+                    if (onChange) {
+                        onChange(changePath, undefined);
+                    }
+                    notifyPathSubscribers(changePath);
+                    notifyBindings(changePath, undefined);
+                }
+
+                return result;
+            }
+        };
+
+        const proxy = new Proxy(data, handler);
+        reactiveMetadata.set(proxy, metadata);
+
+        return proxy;
+    };
+
+    /**
+     * Execute function with dependency tracking
+     * @param {Function} fn - Function to execute
+     * @returns {Object} Result and dependencies
+     */
+    const withTracking = (fn) => {
+        const context = {
+            dependencies: new Set(),
+            isTracking: true
+        };
+
+        const previousContext = currentTrackingContext;
+        currentTrackingContext = context;
+
+        try {
+            const result = fn();
+            return {
+                result,
+                dependencies: new Set(context.dependencies)
+            };
+        } finally {
+            currentTrackingContext = previousContext;
+        }
+    };
+
+    /**
+     * Alias for createReactive for simpler API
+     * @param {Object} data - Object to make reactive
+     * @param {Object} options - Configuration options
+     * @returns {Proxy} Reactive proxy
+     */
+    const reactive = (data, options = {}) => createReactive(data, options);
+
+    /**
+     * Watch a property path for changes
+     * @param {Object} target - Reactive object to watch
+     * @param {string} property - Property path to watch (supports nested paths)
+     * @param {Function} callback - Callback to invoke on changes
+     * @returns {Function} Unwatch function
+     */
+    const watch = (target, property, callback) => {
+        if (typeof callback !== 'function') {
+            throw new TypeError('Callback must be a function');
+        }
+
+        const fullPath = property;
+
+        // Subscribe to path changes
+        let subscribers = pathSubscribers.get(fullPath);
+        if (!subscribers) {
+            subscribers = new Set();
+            pathSubscribers.set(fullPath, subscribers);
+        }
+
+        // Wrapper that calls the callback with new value
+        const wrapper = (path) => {
+            if (path === fullPath || path.startsWith(fullPath + '.')) {
+                // Get current value at path
+                const value = getNestedProperty(target, fullPath);
+                callback(value);
+            }
+        };
+
+        subscribers.add(wrapper);
+
+        // Return unwatch function
+        return () => {
+            subscribers.delete(wrapper);
+            if (subscribers.size === 0) {
+                pathSubscribers.delete(fullPath);
+            }
+        };
+    };
+
+    /**
+     * Disconnect a reactive object and stop all watchers
+     * @param {Object} target - Reactive object to disconnect
+     */
+    const disconnect = (target) => {
+        if (!isReactive(target)) {
+            return;
+        }
+
+        const metadata = reactiveMetadata.get(target);
+        if (metadata) {
+            // Clear all subscribers
+            metadata.subscribers.clear();
+
+            // Clear nested proxies
+            metadata.nestedProxies.clear();
+
+            // Remove from metadata map
+            reactiveMetadata.delete(target);
+        }
+
+        // Clear any path subscribers for this object
+        // Note: This is a simplified cleanup. Full implementation would need
+        // to track which paths belong to which objects
+        for (const [path, subscribers] of pathSubscribers.entries()) {
+            if (path.startsWith(metadata?.path || '')) {
+                subscribers.clear();
+                pathSubscribers.delete(path);
+            }
+        }
+    };
+
+    /**
+     * Subscribe to path changes
+     * @param {string} path - Property path to watch
+     * @param {Function} callback - Callback to invoke on change
+     * @returns {Function} Unsubscribe function
+     */
+    const subscribeToPath = (path, callback) => {
+        const subscribers = pathSubscribers.get(path) || new Set();
+        subscribers.add(callback);
+        pathSubscribers.set(path, subscribers);
+
+        return () => {
+            subscribers.delete(callback);
+            if (subscribers.size === 0) {
+                pathSubscribers.delete(path);
+            }
+        };
+    };
+
+    /**
+     * Computed property cache - WeakMap for memory safety
+     */
+    const computedCache = new WeakMap();
+
+    /**
+     * Circular dependency error
+     */
+    class CircularDependencyError extends Error {
+        constructor(cycle) {
+            super(`Circular dependency detected: ${cycle.join(' → ')}`);
+            this.name = 'CircularDependencyError';
+            this.cycle = cycle;
+        }
+    }
+
+    /**
+     * Create computed property with automatic dependency tracking
+     *
+     * @param {Function} computeFn - Function that computes the value
+     * @returns {Function} Getter function that returns cached/computed value
+     */
+    const computed = (computeFn) => {
+        if (typeof computeFn !== 'function') {
+            throw new TypeError('Computed requires a function');
+        }
+
+        // State for this computed property
+        const state = {
+            value: undefined,
+            cached: false,
+            dependencies: new Set(),
+            dependents: new Set(),
+            evaluating: false,
+            unsubscribers: []
+        };
+
+        // Getter function that handles caching and recomputation
+        const getter = () => {
+            // Detect circular dependencies
+            if (state.evaluating) {
+                throw new CircularDependencyError([computeFn.name || 'anonymous']);
+            }
+
+            // Return cached value if valid
+            if (state.cached) {
+                // Track this computed as dependency of outer computed
+                trackDependency(getter);
+                return state.value;
+            }
+
+            // Evaluate with dependency tracking
+            state.evaluating = true;
+
+            // Clear old subscriptions
+            state.unsubscribers.forEach(unsub => unsub());
+            state.unsubscribers = [];
+            state.dependencies.clear();
+
+            let result;
+            let dependencies;
+
+            try {
+                const tracked = withTracking(() => computeFn());
+                result = tracked.result;
+                dependencies = tracked.dependencies;
+            } catch (error) {
+                state.evaluating = false;
+                throw error;
+            }
+
+            state.value = result;
+            state.dependencies = dependencies;
+            state.cached = true;
+            state.evaluating = false;
+
+            // Subscribe to dependencies for cache invalidation
+            for (const dep of dependencies) {
+                const unsubscribe = subscribeToPath(dep, () => {
+                    invalidateComputed(state);
+                });
+                state.unsubscribers.push(unsubscribe);
+            }
+
+            // Track this computed as dependency of outer computed
+            trackDependency(getter);
+
+            return state.value;
+        };
+
+        // Store state in WeakMap for memory safety
+        computedCache.set(getter, state);
+
+        return getter;
+    };
+
+    /**
+     * Invalidate computed property cache
+     * @param {Object} state - Computed property state
+     */
+    const invalidateComputed = (state) => {
+        if (!state.cached) {
+            return;
+        }
+
+        state.cached = false;
+        state.value = undefined;
+
+        // Invalidate dependent computeds
+        for (const dependent of state.dependents) {
+            const depState = computedCache.get(dependent);
+            if (depState) {
+                invalidateComputed(depState);
+            }
+        }
+    };
+
+    // ====================================================================
+    // FORM VALIDATION & SERIALIZATION
+    // ====================================================================
+
+    /**
+     * Built-in validation rules
+     */
+    const validationRules = {
+        required: (value) => {
+            // For booleans (checkboxes), must be true
+            if (typeof value === 'boolean') {
+                return value === true;
+            }
+            // For strings, must be non-empty
+            if (typeof value === 'string') {
+                return value.trim().length > 0;
+            }
+            // For other types, must exist and not be empty
+            return value !== null && value !== undefined && value !== '';
+        },
+
+        email: (value) => {
+            if (!value) {
+                return true;
+            } // Empty is valid (use required for mandatory)
+            // Practical email validation: covers 99.9%+ of real-world addresses
+            // Local part: ASCII alphanumeric, dots, dashes, underscores, plus signs
+            // Domain: ASCII alphanumeric, dots, dashes; TLD at least 2 chars
+            return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value);
+        },
+
+        min: (value, min) => {
+            if (!value && value !== 0) {
+                return true;
+            }
+            return Number(value) >= Number(min);
+        },
+
+        max: (value, max) => {
+            if (!value && value !== 0) {
+                return true;
+            }
+            return Number(value) <= Number(max);
+        },
+
+        minLength: (value, length) => {
+            if (!value) {
+                return true;
+            }
+            return String(value).length >= Number(length);
+        },
+
+        maxLength: (value, length) => {
+            if (!value) {
+                return true;
+            }
+            return String(value).length <= Number(length);
+        },
+
+        pattern: (value, pattern) => {
+            if (!value) {
+                return true;
+            }
+            const regex = new RegExp(pattern);
+            return regex.test(value);
+        },
+
+        url: (value) => {
+            if (!value) {
+                return true;
+            }
+            try {
+                new URL(value);
+                return true;
+            } catch {
+                return false;
+            }
+        },
+
+        number: (value) => {
+            if (!value && value !== 0) {
+                return true;
+            }
+            return !isNaN(Number(value));
+        },
+
+        integer: (value) => {
+            if (!value && value !== 0) {
+                return true;
+            }
+            return Number.isInteger(Number(value));
+        },
+
+        alpha: (value) => {
+            if (!value) {
+                return true;
+            }
+            return /^[a-zA-Z]+$/.test(value);
+        },
+
+        alphanumeric: (value) => {
+            if (!value) {
+                return true;
+            }
+            return /^[a-zA-Z0-9]+$/.test(value);
+        },
+
+        phone: (value) => {
+            if (!value) {
+                return true;
+            }
+            // Flexible phone validation (digits, spaces, dashes, parens, plus)
+            return /^[\d\s\-()+ ]+$/.test(value) && value.replace(/\D/g, '').length >= 10;
+        },
+
+        custom: (value, validator) => {
+            if (typeof validator === 'function') {
+                return validator(value);
+            }
+            return true;
+        }
+    };
+
+    /**
+     * Form state storage (WeakMap for memory safety)
+     */
+    const formStates = new WeakMap();
+    const fieldValidations = new WeakMap();
+
+    /**
+     * Validate a single field value
+     * @param {*} value - Field value
+     * @param {Object} rules - Validation rules object
+     * @param {HTMLElement} element - Form element (for custom validation)
+     * @returns {Object} { valid: boolean, errors: string[] }
+     */
+    const validateField = (value, rules, element = null) => {
+        const errors = [];
+
+        for (const [ruleName, ruleParam] of Object.entries(rules)) {
+            const validator = validationRules[ruleName];
+            if (!validator) {
+                console.warn(`bindX: Unknown validation rule "${ruleName}"`);
+                continue;
+            }
+
+            const isValid = ruleParam === true
+                ? validator(value)
+                : validator(value, ruleParam);
+
+            if (!isValid) {
+                // Generate default error message
+                let errorMsg = `Field is invalid (${ruleName})`;
+                if (element && element.getAttribute('bx-error-' + ruleName)) {
+                    errorMsg = element.getAttribute('bx-error-' + ruleName);
+                }
+                errors.push(errorMsg);
+            }
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors
+        };
+    };
+
+    /**
+     * Get or create form state
+     * @param {HTMLFormElement} form - Form element
+     * @returns {Object} Form state object
+     */
+    const getFormState = (form) => {
+        if (!formStates.has(form)) {
+            formStates.set(form, {
+                pristine: true,
+                dirty: false,
+                valid: true,
+                invalid: false,
+                errors: {},
+                touched: new Set()
+            });
+        }
+        return formStates.get(form);
+    };
+
+    /**
+     * Update form state
+     * @param {HTMLFormElement} form - Form element
+     * @param {Object} updates - State updates
+     */
+    const updateFormState = (form, updates, data = null) => {
+        const state = getFormState(form);
+        Object.assign(state, updates);
+
+        // Sync to reactive data if available (for bx-bind to work with form state)
+        if (data && typeof data === 'object') {
+            if (!data.formState) {
+                data.formState = {};
+            }
+            data.formState.pristine = state.pristine;
+            data.formState.dirty = state.dirty;
+            data.formState.valid = state.valid;
+            data.formState.invalid = state.invalid;
+        }
+
+        // Update CSS classes for styling
+        if (state.pristine) {
+            form.classList.add('bx-pristine');
+            form.classList.remove('bx-dirty');
+        } else {
+            form.classList.add('bx-dirty');
+            form.classList.remove('bx-pristine');
+        }
+
+        if (state.valid) {
+            form.classList.add('bx-valid');
+            form.classList.remove('bx-invalid');
+        } else {
+            form.classList.add('bx-invalid');
+            form.classList.remove('bx-valid');
+        }
+    };
+
+    /**
+     * Parse validation rules from attribute string
+     * Pure function - no side effects
+     * @param {string} validationAttr - Validation attribute value
+     * @returns {Object} Parsed rules object
+     */
+    const parseValidationRules = (validationAttr) => {
+        try {
+            // Try JSON parse first
+            return JSON.parse(validationAttr);
+        } catch {
+            // Fall back to simple rules: bx-validate="required email minLength:3"
+            const ruleNames = validationAttr.split(/\s+/).filter(Boolean);
+            return ruleNames.reduce((acc, rule) => {
+                // Parse colon syntax: "minLength:3" -> { minLength: 3 }
+                if (rule.includes(':')) {
+                    const [name, ...valueParts] = rule.split(':');
+                    const value = valueParts.join(':'); // Handle values with colons
+                    // Convert numeric values
+                    acc[name] = /^\d+$/.test(value) ? parseInt(value, 10) : value;
+                } else {
+                    acc[rule] = true;
+                }
+                return acc;
+            }, {});
+        }
+    };
+
+    /**
+     * Calculate form validation state without side effects
+     * Pure function - returns validation result only
+     * @param {HTMLFormElement} form - Form element
+     * @param {Object} data - Data object to validate against
+     * @returns {Object} { valid: boolean, errors: {}, fieldResults: Map }
+     */
+    const calculateFormValidation = (form, data) => {
+        const errors = {};
+        const fieldResults = new Map();
+        let valid = true;
+
+        // Find all fields with validation
+        const fields = form.querySelectorAll('[bx-validate]');
+
+        fields.forEach(field => {
+            const validationAttr = field.getAttribute('bx-validate');
+            const path = field.getAttribute('bx-model') || field.getAttribute('name');
+
+            if (!path) {
+                return;
+            }
+
+            const value = getNestedProperty(data, path);
+            const rules = parseValidationRules(validationAttr);
+            const result = validateField(value, rules, field);
+
+            fieldResults.set(field, { path, result });
+
+            if (!result.valid) {
+                errors[path] = result.errors;
+                valid = false;
+            }
+        });
+
+        return { valid, errors, fieldResults };
+    };
+
+    /**
+     * Apply validation visual feedback to a field
+     * Side effect function - modifies DOM
+     * @param {HTMLElement} field - Field element
+     * @param {Object} result - Validation result { valid, errors }
+     */
+    const applyFieldValidationFeedback = (field, result) => {
+        if (!result.valid) {
+            field.classList.add('bx-error');
+            field.classList.remove('bx-valid');
+
+            const errorContainer = field.parentElement?.querySelector('.bx-error-message');
+            if (errorContainer) {
+                errorContainer.textContent = result.errors[0] || 'Invalid';
+            }
+        } else {
+            field.classList.add('bx-valid');
+            field.classList.remove('bx-error');
+
+            const errorContainer = field.parentElement?.querySelector('.bx-error-message');
+            if (errorContainer) {
+                errorContainer.textContent = '';
+            }
+        }
+    };
+
+    /**
+     * Validate entire form with visual feedback
+     * @param {HTMLFormElement} form - Form element
+     * @param {Object} data - Reactive data object
+     * @returns {Object} { valid: boolean, errors: {} }
+     */
+    const validateForm = (form, data) => {
+        const { valid, errors, fieldResults } = calculateFormValidation(form, data);
+
+        // Apply visual feedback to all fields
+        for (const [field, { result }] of fieldResults) {
+            applyFieldValidationFeedback(field, result);
+        }
+
+        updateFormState(form, { valid, invalid: !valid, errors }, data);
+
+        return { valid, errors };
+    };
+
+    /**
+     * Serialize form to object
+     * @param {HTMLFormElement} form - Form element
+     * @returns {Object} Serialized form data
+     */
+    const serializeForm = (form) => {
+        const data = {};
+        const formData = new FormData(form);
+
+        for (const [key, value] of formData.entries()) {
+            // Handle nested paths (user.name -> {user: {name: value}})
+            if (key.includes('.')) {
+                setNestedProperty(data, key, value);
+            } else {
+                data[key] = value;
+            }
+        }
+
+        return data;
+    };
+
+    /**
+     * Deserialize object to form
+     * @param {HTMLFormElement} form - Form element
+     * @param {Object} data - Data object
+     */
+    const deserializeForm = (form, data) => {
+        const inputs = form.querySelectorAll('input, select, textarea');
+
+        inputs.forEach(input => {
+            const name = input.getAttribute('name') || input.getAttribute('bx-model');
+            if (!name) {
+                return;
+            }
+
+            const value = getNestedProperty(data, name);
+            if (value === undefined) {
+                return;
+            }
+
+            if (input.type === 'checkbox') {
+                input.checked = Boolean(value);
+            } else if (input.type === 'radio') {
+                input.checked = input.value === String(value);
+            } else {
+                input.value = value;
+            }
+        });
+    };
+
+    /**
+     * Reset form to pristine state
+     * @param {HTMLFormElement} form - Form element
+     * @param {Object} data - Optional reactive data object
+     */
+    const resetForm = (form, data = null) => {
+        form.reset();
+        updateFormState(form, {
+            pristine: true,
+            dirty: false,
+            valid: true,
+            invalid: false,
+            errors: {},
+            touched: new Set()
+        }, data);
+
+        // Clear error messages
+        const errorContainers = form.querySelectorAll('.bx-error-message');
+        errorContainers.forEach(container => {
+            container.textContent = '';
+        });
+
+        // Clear field error classes
+        const fields = form.querySelectorAll('.bx-error, .bx-valid');
+        fields.forEach(field => {
+            field.classList.remove('bx-error', 'bx-valid');
+        });
+    };
+
+    /**
+     * Parse binding attribute configuration
+     * Supports:
+     * - Simple path: bx-model="user.name"
+     * - With debounce: bx-model="search:300"
+     * - JSON options: bx-opts='{"debounce":300,"formatter":"currency"}'
+     *
+     * @param {HTMLElement} element - DOM element
+     * @param {string} attrName - Attribute name (e.g., "bx-model")
+     * @returns {Object|null} Parsed configuration
+     */
+    const parseBindingAttribute = (element, attrName) => {
+        // Try to get config from bootloader cache first (if using genX bootloader)
+        if (window.genx && window.genx.getConfig) {
+            const cachedConfig = window.genx.getConfig(element);
+            if (cachedConfig) {
+                // Config from cache - check if it has the required binding path
+                // For bx-model/bx-bind, the 'model' or 'bind' key contains the path
+                const bindingKey = attrName.replace('bx-', '');
+                if (cachedConfig[bindingKey]) {
+                    // Parse path:options format if needed (e.g., "user.name:300")
+                    const bindingValue = cachedConfig[bindingKey];
+                    const [path, ...optionParts] = String(bindingValue).split(':');
+                    const config = { ...cachedConfig, path: path.trim() };
+
+                    // Parse inline debounce option (numeric after colon)
+                    if (optionParts.length > 0) {
+                        const optionValue = optionParts.join(':').trim();
+                        if (/^\d+$/.test(optionValue)) {
+                            config.debounce = parseInt(optionValue, 10);
+                        }
+                    }
+
+                    // Normalize: 'format' key becomes 'formatter' for compatibility
+                    if (config.format && !config.formatter) {
+                        config.formatter = config.format;
+                    }
+
+                    return config;
+                }
+            }
+        }
+
+        // Extract prefix from attrName (e.g., 'bx-model' -> 'bx', 'data-model' -> 'data')
+        const prefixMatch = attrName.match(/^([a-z]+)-/);
+        const prefix = prefixMatch ? prefixMatch[1] : 'bx';
+
+        // Fallback to polymorphic notation parsing (legacy standalone mode)
+        // Use polymorphic parser from genx-common (supports Verbose, Colon, JSON, CSS Class)
+        const parsed = window.genxCommon
+            ? window.genxCommon.notation.parseNotation(element, prefix)
+            : {};  // Fallback if genx-common not loaded
+
+        // Get binding path from the specific attribute name (model or bind)
+        const bindingKey = attrName.replace(`${prefix}-`, '');
+        const bindingValue = parsed[bindingKey];
+
+        if (!bindingValue) {
+            return null;
+        }
+
+        // Parse path (and possibly inline options like "user.name:300")
+        const [path, ...optionParts] = String(bindingValue).split(':');
+        const config = { path: path.trim() };
+
+        // Add other relevant options from parsed (debounce, formatter, etc.)
+        // but exclude the binding key itself (model, bind, etc.)
+        Object.entries(parsed).forEach(([key, value]) => {
+            if (key !== bindingKey && key !== 'path') {
+                // Convert numeric strings to numbers for debounce
+                if (key === 'debounce' && /^\d+$/.test(String(value))) {
+                    config[key] = parseInt(value, 10);
+                } else {
+                    config[key] = value;
+                }
+            }
+        });
+
+        // Parse inline debounce option (numeric after colon)
+        if (optionParts.length > 0) {
+            const optionValue = optionParts.join(':').trim();
+            if (/^\d+$/.test(optionValue)) {
+                config.debounce = parseInt(optionValue, 10);
+            }
+        }
+
+        // Normalize: 'format' key becomes 'formatter' for compatibility
+        if (config.format && !config.formatter) {
+            config.formatter = config.format;
+        }
+
+        return config;
+    };
+
+    /**
+     * DATAOS Pattern: Extract initial state from DOM
+     * Scans bx-model elements and extracts their current values
+     *
+     * @param {HTMLElement} root - Root element to scan (default: document.body)
+     * @param {string} prefix - Attribute prefix (default: 'bx-')
+     * @returns {Object} Plain object with extracted values
+     */
+    const extractDataFromDOM = (root = document.body, prefix = 'bx-') => {
+        const data = {};
+
+        if (!root) return data;
+
+        // Find all elements with bx-model attributes
+        const modelElements = root.querySelectorAll(`[${prefix}model]`);
+
+        modelElements.forEach(element => {
+            const modelAttr = element.getAttribute(`${prefix}model`);
+            if (!modelAttr) return;
+
+            // Parse the model attribute to get the path
+            // Handle formats: "fieldName", "fieldName:debounce", etc.
+            const path = modelAttr.split(':')[0].trim();
+            if (!path) return;
+
+            // Extract value based on element type
+            let value;
+            const tagName = element.tagName.toLowerCase();
+            const type = element.type?.toLowerCase();
+
+            if (tagName === 'input') {
+                if (type === 'checkbox') {
+                    value = element.checked;
+                } else if (type === 'radio') {
+                    // For radio buttons, only take value if checked
+                    if (element.checked) {
+                        value = element.value;
+                    } else if (!(path in data)) {
+                        // Initialize to empty string if not set
+                        value = '';
+                    } else {
+                        return; // Skip unchecked radios if path already set
+                    }
+                } else if (type === 'number' || type === 'range') {
+                    value = element.value ? parseFloat(element.value) : 0;
+                } else {
+                    value = element.value || '';
+                }
+            } else if (tagName === 'select') {
+                value = element.value || '';
+            } else if (tagName === 'textarea') {
+                value = element.value || '';
+            } else {
+                // For other elements, use textContent
+                value = element.textContent || '';
+            }
+
+            // Set nested property if path contains dots
+            if (path.includes('.')) {
+                setNestedProperty(data, path, value);
+            } else {
+                data[path] = value;
+            }
+        });
+
+        return data;
+    };
+
+    /**
+     * DATAOS Pattern: Auto-initialize bindX from DOM
+     * Creates reactive data from DOM state and sets up bindings
+     *
+     * @param {HTMLElement} root - Root element to scan (default: document.body)
+     * @param {Object} options - Options including prefix
+     * @returns {Object} API object with data and control methods
+     */
+    const autoInit = (root = document.body, options = {}) => {
+        const { prefix = 'bx-', observe = true } = options;
+
+        // Extract initial state from DOM
+        const initialData = extractDataFromDOM(root, prefix);
+
+        // Create reactive proxy
+        const data = createReactive(initialData, {
+            deep: true,
+            onChange: null
+        });
+
+        // Scan and create bindings
+        const bindings = scan(root, data, { prefix });
+
+        // Setup DOM observer if requested
+        let observerInstance = null;
+        if (observe) {
+            observerInstance = createDOMObserver(data, { prefix });
+        }
+
+        return {
+            data,
+            bindings,
+            stop: () => {
+                if (observerInstance) {
+                    observerInstance.stop();
+                }
+            },
+            rescan: () => scan(root, data, { prefix })
+        };
+    };
+
+    /**
+     * Scan DOM for bindX attributes and create bindings
+     *
+     * @param {HTMLElement} root - Root element to scan (default: document.body)
+     * @param {Object} data - Reactive data object
+     * @param {Object} options - Scan options
+     * @returns {Array} Array of created bindings
+     */
+    const scan = (root = document.body, data = null, options = {}) => {
+        if (!root) {
+            return [];
+        }
+        if (!data) {
+            // DATAOS Pattern: Auto-create data from DOM if not provided
+            // DATAOS pattern: extracting initial state from DOM
+            console.log('bindX: Using DATAOS pattern - data auto-created from DOM');
+            data = createReactive(extractDataFromDOM(root, options.prefix || 'bx-'), { deep: true });
+        }
+
+        const { prefix = 'bx-' } = options;
+        const bindings = [];
+
+        // Pre-initialize formState for bx-form forms (DATAOS pattern)
+        // This ensures formState bindings work before setupFormHandlers runs
+        const hasForms = root.querySelectorAll(`form[${prefix}form]`).length > 0;
+        if (hasForms && !data.formState) {
+            data.formState = {
+                pristine: true,
+                dirty: false,
+                valid: false,
+                invalid: true
+            };
+        }
+
+        // Find all elements with bx-model attributes
+        const modelElements = root.querySelectorAll(`[${prefix}model]`);
+        modelElements.forEach(element => {
+            const config = parseBindingAttribute(element, `${prefix}model`);
+            if (config && config.path) {
+                try {
+                    const binding = createModelBinding(element, data, config.path, config);
+                    bindings.push(binding);
+                } catch (error) {
+                    console.error('bindX: Failed to create model binding:', error, element);
+                }
+            }
+        });
+
+        // Find all elements with bx-bind attributes
+        const bindElements = root.querySelectorAll(`[${prefix}bind]`);
+        bindElements.forEach(element => {
+            const config = parseBindingAttribute(element, `${prefix}bind`);
+            if (config && config.path) {
+                try {
+                    const binding = createOneWayBinding(element, data, config.path, config);
+                    bindings.push(binding);
+                } catch (error) {
+                    console.error('bindX: Failed to create one-way binding:', error, element);
+                }
+            }
+        });
+
+        // Find all elements with bx-computed attributes
+        const computedElements = root.querySelectorAll(`[${prefix}computed]`);
+        computedElements.forEach(element => {
+            const expression = element.getAttribute(`${prefix}computed`);
+            const targetPath = element.getAttribute(`${prefix}bind`);
+
+            if (expression && targetPath) {
+                try {
+                    // Extract variable names from expression (simple: word characters)
+                    const varNames = expression.match(/[a-zA-Z_$][a-zA-Z0-9_$]*/g) || [];
+                    const uniqueVars = [...new Set(varNames)].filter(v => {
+                        // Filter out JavaScript keywords and functions
+                        const reserved = ['true', 'false', 'null', 'undefined', 'Math', 'Number', 'String', 'parseFloat', 'parseInt'];
+                        return !reserved.includes(v);
+                    });
+
+                    // Function to evaluate expression and update target
+                    const evaluate = () => {
+                        try {
+                            // Create a safe evaluation context with data properties
+                            const context = {};
+                            uniqueVars.forEach(v => {
+                                context[v] = getNestedProperty(data, v);
+                            });
+
+                            // Evaluate the expression using Function constructor
+                            const fn = new Function(...uniqueVars, `return ${expression}`);
+                            const result = fn(...uniqueVars.map(v => context[v]));
+
+                            // Update the target property
+                            setNestedProperty(data, targetPath, result);
+                        } catch (e) {
+                            console.warn(`bindX: bx-computed expression failed: ${expression}`, e);
+                        }
+                    };
+
+                    // Subscribe to changes on all referenced variables
+                    uniqueVars.forEach(varName => {
+                        subscribeToPath(varName, evaluate);
+                    });
+
+                    // Initial evaluation
+                    evaluate();
+                } catch (error) {
+                    console.error('bindX: Failed to setup computed binding:', error, element);
+                }
+            }
+        });
+
+        // Find all elements with bx-if attributes (conditional rendering)
+        const ifElements = root.querySelectorAll(`[${prefix}if]`);
+        ifElements.forEach(element => {
+            const expression = element.getAttribute(`${prefix}if`);
+            if (!expression) return;
+
+            // Store original display style
+            const originalDisplay = element.style.display || '';
+
+            // Function to evaluate the condition
+            const evaluateCondition = () => {
+                try {
+                    // Extract variable names from expression
+                    const varNames = expression.match(/[a-zA-Z_$][a-zA-Z0-9_$]*/g) || [];
+                    const uniqueVars = [...new Set(varNames)].filter(v => {
+                        const reserved = ['true', 'false', 'null', 'undefined', 'Math', 'Number', 'String', 'includes', 'length'];
+                        return !reserved.includes(v);
+                    });
+
+                    // Create evaluation context
+                    const context = {};
+                    uniqueVars.forEach(v => {
+                        context[v] = getNestedProperty(data, v);
+                    });
+
+                    // Evaluate the expression
+                    const fn = new Function(...uniqueVars, `return Boolean(${expression})`);
+                    const result = fn(...uniqueVars.map(v => context[v]));
+
+                    // Show/hide element based on result
+                    if (result) {
+                        element.style.display = originalDisplay;
+                        element.removeAttribute('hidden');
+                    } else {
+                        element.style.display = 'none';
+                        element.setAttribute('hidden', '');
+                    }
+                } catch (e) {
+                    console.warn(`bindX: bx-if expression failed: ${expression}`, e);
+                }
+            };
+
+            // Extract variables and subscribe to changes
+            const varNames = expression.match(/[a-zA-Z_$][a-zA-Z0-9_$]*/g) || [];
+            const uniqueVars = [...new Set(varNames)].filter(v => {
+                const reserved = ['true', 'false', 'null', 'undefined', 'Math', 'Number', 'String', 'includes', 'length'];
+                return !reserved.includes(v);
+            });
+
+            uniqueVars.forEach(varName => {
+                subscribeToPath(varName, evaluateCondition);
+            });
+
+            // Initial evaluation
+            evaluateCondition();
+        });
+
+        // Find all forms with bx-form attribute
+        const formElements = root.querySelectorAll(`form[${prefix}form]`);
+        formElements.forEach(form => {
+            try {
+                setupFormHandlers(form, data, prefix);
+            } catch (error) {
+                console.error('bindX: Failed to setup form handlers:', error, form);
+            }
+        });
+
+        return bindings;
+    };
+
+    /**
+     * Validate a single field and apply visual feedback
+     * @param {HTMLElement} field - Field element
+     * @param {Object} data - Reactive data object
+     * @param {string} prefix - Attribute prefix
+     * @returns {Object} Validation result { valid, errors }
+     */
+    const validateAndShowFieldFeedback = (field, data, prefix = 'bx-') => {
+        const validationAttr = field.getAttribute(`${prefix}validate`);
+        if (!validationAttr) return { valid: true, errors: [] };
+
+        const path = field.getAttribute(`${prefix}model`) || field.getAttribute('name');
+        if (!path) return { valid: true, errors: [] };
+
+        const value = getNestedProperty(data, path);
+        const rules = parseValidationRules(validationAttr);
+        const result = validateField(value, rules, field);
+
+        applyFieldValidationFeedback(field, result);
+        return result;
+    };
+
+    /**
+     * Recalculate and update overall form validity
+     * @param {HTMLFormElement} form - Form element
+     * @param {Object} data - Reactive data object
+     */
+    const recalculateFormValidity = (form, data) => {
+        const { valid, errors } = calculateFormValidation(form, data);
+        updateFormState(form, { valid, invalid: !valid, errors }, data);
+    };
+
+    /**
+     * Setup form validation and submit handlers
+     * @param {HTMLFormElement} form - Form element
+     * @param {Object} data - Reactive data object
+     * @param {string} prefix - Attribute prefix
+     */
+    const setupFormHandlers = (form, data, prefix = 'bx-') => {
+        // Calculate initial validation state WITHOUT visual feedback (pure function)
+        const { valid } = calculateFormValidation(form, data);
+
+        // Initialize form state with actual validation result but no error display
+        updateFormState(form, {
+            pristine: true,
+            dirty: false,
+            valid: valid,
+            invalid: !valid
+        }, data);
+
+        // Track field changes for dirty state and validation
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('input', () => {
+                const state = getFormState(form);
+                if (state.pristine) {
+                    updateFormState(form, { pristine: false, dirty: true }, data);
+                }
+
+                // Validate field with visual feedback if it has bx-validate
+                if (input.getAttribute(`${prefix}validate`)) {
+                    validateAndShowFieldFeedback(input, data, prefix);
+                    // Recalculate overall form validity
+                    recalculateFormValidity(form, data);
+                }
+            });
+        });
+
+        // Handle form submit
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            // Validate form
+            const validation = validateForm(form, data);
+
+            if (validation.valid) {
+                // Serialize form data
+                const formData = serializeForm(form);
+
+                // Merge into reactive data
+                Object.assign(data, formData);
+
+                // Call custom submit handler if provided
+                const submitHandler = form.getAttribute(`${prefix}form-submit`);
+                if (submitHandler && typeof window[submitHandler] === 'function') {
+                    window[submitHandler](formData, data);
+                }
+
+                // Dispatch custom event
+                form.dispatchEvent(new CustomEvent('bx-form-valid', {
+                    detail: { data: formData }
+                }));
+            } else {
+                // Dispatch invalid event
+                form.dispatchEvent(new CustomEvent('bx-form-invalid', {
+                    detail: { errors: validation.errors }
+                }));
+            }
+        });
+
+        // Handle form reset
+        form.addEventListener('reset', () => {
+            setTimeout(() => resetForm(form, data), 0);
+        });
+    };
+
+    /**
+     * Create MutationObserver to watch for dynamically added elements
+     *
+     * @param {Object} data - Reactive data object
+     * @param {Object} options - Observer options
+     * @returns {MutationObserver} Observer instance
+     */
+    const createDOMObserver = (data, options = {}) => {
+        const { prefix = 'bx-', throttle = 100 } = options;
+
+        let pending = false;
+        let timeoutId = null;
+
+        const processQueue = () => {
+            pending = false;
+            timeoutId = null;
+            // Rescan entire document for new bindings
+            scan(document.body, data, { prefix });
+        };
+
+        const scheduleProcess = () => {
+            if (pending) {
+                return;
+            }
+            pending = true;
+            timeoutId = setTimeout(processQueue, throttle);
+        };
+
+        const observer = new MutationObserver((mutations) => {
+            let hasRelevantChanges = false;
+
+            for (const mutation of mutations) {
+                // Check for added nodes with bx- attributes
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === Node.ELEMENT_NODE) {
+                            const hasBindingAttr =
+                                node.hasAttribute && (
+                                    node.hasAttribute(`${prefix}model`) ||
+                                    node.hasAttribute(`${prefix}bind`)
+                                );
+                            if (hasBindingAttr) {
+                                hasRelevantChanges = true;
+                            }
+                        }
+                    });
+                }
+
+                // Check for attribute changes on bx- attributes
+                if (mutation.type === 'attributes') {
+                    const attrName = mutation.attributeName;
+                    if (attrName && attrName.startsWith(prefix)) {
+                        hasRelevantChanges = true;
+                    }
+                }
+            }
+
+            if (hasRelevantChanges) {
+                scheduleProcess();
+            }
+        });
+
+        // Start observing
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: [`${prefix}model`, `${prefix}bind`]
+        });
+
+        return {
+            observer,
+            stop: () => {
+                observer.disconnect();
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+            }
+        };
+    };
+
+    /**
+     * Initialize bindX with automatic DOM scanning
+     *
+     * @param {Object} data - Reactive data object
+     * @param {Object} config - Initialization config
+     * @returns {Object} API object
+     */
+    const init = (data, config = {}) => {
+        const {
+            auto = true,        // Auto-scan on DOMContentLoaded
+            observe = true,     // Watch for dynamic changes
+            prefix = 'bx-'      // Attribute prefix
+        } = config;
+
+        let observerInstance = null;
+
+        const initializeBindings = () => {
+            // Initial scan
+            const bindings = scan(document.body, data, { prefix });
+
+            // Start observer if requested
+            if (observe) {
+                observerInstance = createDOMObserver(data, { prefix });
+            }
+
+            return bindings;
+        };
+
+        // Auto-initialize on DOMContentLoaded
+        if (auto) {
+            if (typeof document !== 'undefined') {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initializeBindings);
+                } else {
+                    // Already loaded
+                    initializeBindings();
+                }
+            }
+        }
+
+        return {
+            scan: (root) => scan(root, data, { prefix }),
+            stop: () => {
+                if (observerInstance) {
+                    observerInstance.stop();
+                }
+            },
+            data
+        };
+    };
+
+    /**
+     * Main bindx factory function
+     *
+     * @param {Object} data - Plain object to make reactive
+     * @param {Object} options - Configuration options
+     * @param {boolean} options.deep - Deep reactivity (default: true)
+     * @param {Function} options.onChange - Change notification callback
+     * @returns {Proxy} Reactive proxy wrapper
+     * @throws {TypeError} If data is not an object
+     */
+    const bindx = (data, options = {}) => {
+        if (typeof data !== 'object' || data === null) {
+            throw new TypeError('bindx requires an object');
+        }
+
+        return createReactive(data, {
+            deep: options.deep !== false,
+            onChange: options.onChange || null
+        });
+    };
+
+    // Export factory for bootloader integration
+    if (typeof window !== 'undefined') {
+        window.bxXFactory = {
+            init: (data, config) => init(data, config),
+            autoInit,
+            bindx,
+            computed,
+            scan,
+            extractDataFromDOM
+        };
+
+        // Legacy global for standalone use
+        if (!window.genx) {
+            window.bindX = {
+                bindx,
+                computed,
+                scan,
+                init,
+                autoInit,           // DATAOS pattern auto-init
+                extractDataFromDOM, // DATAOS pattern data extraction
+                createReactive,
+                reactive,       // Simpler API alias
+                watch,          // Property watcher
+                disconnect,     // Cleanup function
+                isReactive,
+                // Form utilities
+                validateForm,
+                serializeForm,
+                deserializeForm,
+                resetForm,
+                validateField,
+                getFormState,
+                validationRules
+            };
+        }
+
+        // DATAOS Pattern: Auto-initialize on DOMContentLoaded
+        // Automatically scan DOM and create bindings without requiring JS initialization
+        const autoInitOnLoad = () => {
+            // Check if there are any bx- attributes in the DOM
+            const hasBxElements = document.querySelector('[bx-model], [bx-bind]');
+            if (hasBxElements) {
+                // Auto-initializing from DOM (DATAOS pattern)
+                window._bindXInstance = autoInit(document.body, { observe: true });
+            }
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', autoInitOnLoad);
+        } else {
+            // DOM already loaded
+            autoInitOnLoad();
+        }
+    }
+
+    // CommonJS export for testing
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = {
+            bindx,
+            createReactive,
+            reactive,           // Simpler API alias
+            watch,              // Property watcher
+            disconnect,         // Cleanup function
+            isReactive,
+            withTracking,
+            subscribeToPath,
+            createBatchQueue,
+            getBatchQueue,
+            createBindingRegistry,
+            getBindingRegistry,
+            createModelBinding,
+            createOneWayBinding,
+            getNestedProperty,
+            setNestedProperty,
+            generateBindingId,
+            computed,
+            CircularDependencyError,
+            computedCache,
+            invalidateComputed,
+            parseBindingAttribute,
+            scan,
+            createDOMObserver,
+            init,
+            autoInit,               // DATAOS pattern
+            extractDataFromDOM,     // DATAOS pattern
+            // Form utilities - pure functions
+            parseValidationRules,
+            calculateFormValidation,
+            applyFieldValidationFeedback,
+            validateAndShowFieldFeedback,
+            recalculateFormValidity,
+            // Form utilities - stateful
+            validateForm,
+            serializeForm,
+            deserializeForm,
+            resetForm,
+            validateField,
+            getFormState,
+            updateFormState,
+            setupFormHandlers,
+            validationRules,
+            formStates,
+            fieldValidations
+        };
+    }
+})();
