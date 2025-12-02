@@ -456,17 +456,6 @@ Then('custom content should be shown', async function() {
 // EVENT LISTENERS
 // ============================================================================
 
-Given('in loadx, an event listener for {string}', async function(eventName) {
-    await this.page.evaluate((evt) => {
-        window._eventFired = false;
-        window._eventData = null;
-
-        document.addEventListener(evt, (e) => {
-            window._eventFired = true;
-            window._eventData = e.detail;
-        });
-    }, eventName);
-});
 
 Then('loading animation should respect prefers-reduced-motion', async function() {
     await this.page.evaluate(() => {
@@ -659,26 +648,6 @@ Then('the custom icon should be used as the spinner', async function() {
     expect(hasSVG).toBe(true);
 });
 
-Given('an element with lx-loading={string} lx-color={string}', async function(loading, color) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="colored-spinner" lx-loading="${loading}" lx-color="${color}" style="color: ${color};">
-                Spinner
-            </div>
-        </body></html>
-    `);
-});
-
-Then('the spinner should be red', async function() {
-    const hasColor = await this.page.evaluate(() => {
-        const el = document.getElementById('colored-spinner');
-        const color = el.getAttribute('lx-color');
-        return color === '#ff0000' || color === 'red';
-    });
-
-    expect(hasColor).toBe(true);
-});
-
 Given('an element with lx-loading={string} lx-size={string}', async function(loading, size) {
     await this.page.setContent(`
         <html><body>
@@ -814,15 +783,6 @@ Then('all should be disabled', async function() {
 // EVENTS
 // ============================================================================
 
-Given('in loadx, an event listener for {string}', async function(eventName) {
-    await this.page.evaluate((evt) => {
-        window._eventFired = false;
-        document.addEventListener(evt, () => {
-            window._eventFired = true;
-        });
-    }, eventName);
-});
-
 When('loading becomes true', async function() {
     await this.page.evaluate(() => {
         const el = document.getElementById('event-test') || document.querySelector('[lx-loading]');
@@ -834,13 +794,7 @@ When('loading becomes true', async function() {
     });
 });
 
-Then('an {string} event should be emitted', async function(eventName) {
-    const eventFired = await this.page.evaluate((evt) => {
-        return window._eventFired === true;
-    }, eventName);
 
-    expect(eventFired).toBe(true);
-});
 
 When('loading becomes false', async function() {
     await this.page.evaluate(() => {
@@ -921,17 +875,6 @@ Then('a timeout error should be shown', async function() {
     expect(hasError).toBe(true);
 });
 
-Then('an {string} event should be emitted', async function(eventName) {
-    const eventFired = await this.page.evaluate((evt) => {
-        // Check for lx:timeout event
-        let fired = false;
-        document.addEventListener(evt, () => {
-            fired = true;
-        });
-        return fired;
-    }, eventName);
 
-    expect(eventFired).toBe(true);
-});
 
 module.exports = {};
