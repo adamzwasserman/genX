@@ -45,6 +45,12 @@
           <li><a href="#smartx">smartX &mdash; Auto-Format</a></li>
         </ul>
 
+        <div class="docs__nav-title mt-md">Integration</div>
+        <ul class="docs__nav-list">
+          <li><a href="#frameworks">Framework Compatibility</a></li>
+          <li><a href="#troubleshooting">Troubleshooting</a></li>
+        </ul>
+
         <div class="docs__nav-title mt-md">Reference</div>
         <ul class="docs__nav-list">
           <li><a href="#browser-support">Browser Support</a></li>
@@ -271,6 +277,98 @@ cp genX/src/*.js your-project/static/js/</code></pre>
 
 &lt;!-- Smart links --&gt;
 &lt;span sx-linkify&gt;Visit https://example.com&lt;/span&gt;</code></pre>
+
+        <h2 id="frameworks">Framework Compatibility</h2>
+        <p>genX works with any framework because it operates on the DOM after rendering. Use it alongside your existing stack.</p>
+
+        <h3>React</h3>
+        <pre><code>function ProductCard({ price }) {
+  return (
+    &lt;div className="product"&gt;
+      &lt;span fx-format="currency"&gt;{price}&lt;/span&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+
+        <h3>Vue</h3>
+        <pre><code>&lt;template&gt;
+  &lt;div class="product"&gt;
+    &lt;span fx-format="currency"&gt;{{ price }}&lt;/span&gt;
+  &lt;/div&gt;
+&lt;/template&gt;</code></pre>
+
+        <h3>htmx</h3>
+        <p>genX and htmx complement each other perfectly:</p>
+        <pre><code>&lt;!-- htmx loads content, genX formats it --&gt;
+&lt;div hx-get="/api/products" hx-trigger="load"&gt;
+  &lt;!-- Server returns: &lt;span fx-format="currency"&gt;29.99&lt;/span&gt; --&gt;
+  &lt;!-- genX automatically formats to: $29.99 --&gt;
+&lt;/div&gt;</code></pre>
+
+        <h3>Server-Side (Django, Rails, Laravel, PHP)</h3>
+        <p>genX is ideal for server-rendered HTML. Your backend outputs raw values, genX formats them:</p>
+        <pre><code>&lt;!-- Django --&gt;
+&lt;span fx-format="currency"&gt;{{ product.price }}&lt;/span&gt;
+
+&lt;!-- Rails --&gt;
+&lt;span fx-format="currency"&gt;&lt;%= product.price %&gt;&lt;/span&gt;
+
+&lt;!-- Laravel --&gt;
+&lt;span fx-format="currency"&gt;{{ $product-&gt;price }}&lt;/span&gt;
+
+&lt;!-- PHP --&gt;
+&lt;span fx-format="currency"&gt;&lt;?= $product['price'] ?&gt;&lt;/span&gt;</code></pre>
+
+        <h2 id="troubleshooting">Troubleshooting</h2>
+
+        <h3>Elements Not Formatting</h3>
+        <p><strong>Check:</strong></p>
+        <ol>
+          <li>Script is loading (check browser console for errors)</li>
+          <li>Script has <code>defer</code> attribute</li>
+          <li>Attribute names are correct (<code>fx-format</code>, not <code>fx_format</code> or <code>data-fx-format</code>)</li>
+          <li>Values are valid (numbers for currency, ISO dates for dates)</li>
+        </ol>
+
+        <h3>Dynamic Content Not Processing</h3>
+        <p>Elements added via JavaScript should process automatically. If not:</p>
+        <ol>
+          <li>Verify elements are added to the DOM, not just created</li>
+          <li>Check for JavaScript errors blocking execution</li>
+          <li>Ensure MutationObserver is supported (all modern browsers)</li>
+        </ol>
+
+        <h3>Table Sorting Not Working</h3>
+        <p><strong>Check:</strong></p>
+        <ol>
+          <li><code>tx-sortable</code> class is on <code>&lt;th&gt;</code> elements</li>
+          <li>Table has proper <code>&lt;thead&gt;</code> and <code>&lt;tbody&gt;</code> structure</li>
+          <li>No conflicting JavaScript handling click events</li>
+        </ol>
+
+        <h3>Common Console Errors</h3>
+        <table style="width: 100%; margin-bottom: 1.5rem;">
+          <thead>
+            <tr>
+              <th style="text-align: left; padding: 0.5rem;">Error</th>
+              <th style="text-align: left; padding: 0.5rem;">Fix</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 0.5rem;"><code>genX is not defined</code></td>
+              <td style="padding: 0.5rem;">Check script URL and network tab</td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem;"><code>Invalid date</code></td>
+              <td style="padding: 0.5rem;">Use ISO format: <code>2024-03-15</code></td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem;"><code>NaN</code></td>
+              <td style="padding: 0.5rem;">Ensure numeric values are clean</td>
+            </tr>
+          </tbody>
+        </table>
 
         <h2 id="browser-support">Browser Support</h2>
         <p>genX supports all modern browsers:</p>

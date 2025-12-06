@@ -28,6 +28,8 @@ Inspired by [htmx](https://htmx.org)'s philosophy that HTML should be powerful e
 | [tableX Examples](#tablex-examples) | [Documentation](#documentation) | [Testing](#testing) | [Privacy & Security](#privacy--security) | [Browser Support](#browser-support) |
 | [Installation](#installation-options) | [Contributing](#contributing) | [Project Status](#project-status) | [License](#license) | [Links](#links) |
 
+**New to genX?** Start with the **[User Guide](docs/user-guide.md)** for a beginner-friendly introduction with step-by-step examples.
+
 ## Features
 
 - **Declarative** - Control everything with HTML attributes (`fx-*`, `ax-*`, `dx-*`, etc.)
@@ -623,6 +625,7 @@ tableX meets WCAG 2.1 AA standards for:
 
 ## Documentation
 
+- **[User Guide](docs/user-guide.md)** - Beginner-friendly introduction with practical examples
 - **[Live Demo](https://genx.software/examples/genx-demo.html)** - Interactive examples of all modules
 - **[Architecture Specs](docs/architecture/)** - Technical documentation for each module
 - **[Implementation Plans](docs/implementation/)** - Development roadmaps and completion reports

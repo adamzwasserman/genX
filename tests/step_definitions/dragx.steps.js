@@ -14,14 +14,8 @@ Given('the dragX module is loaded', async function() {
     await this.page.waitForFunction(() => window.DragX !== undefined);
 });
 
-Given('the DOM is ready', async function() {
-    // DOM is ready after setContent, ensure DragX is initialized
-    await this.page.evaluate(() => {
-        if (window.DragX && window.DragX.init) {
-            window.DragX.init();
-        }
-    });
-});
+// Note: "the DOM is ready" step is defined in common.steps.js
+
 
 // ============================================================================
 // DRAGGABLE ELEMENTS
@@ -806,10 +800,7 @@ Then('in dragX, a {string} event should be emitted', async function(eventName) {
     }
 });
 
-Then('a {string} event should be emitted', async function(eventName) {
-    const state = await this.page.evaluate(() => window.DragX.getState());
-    assert.ok(state, 'State should be available');
-});
+// Generic event assertion delegated to common.steps.js
 
 Then('event.detail should contain element info', async function() {
     // Placeholder - would need event listener setup
@@ -1787,15 +1778,7 @@ Given('an element with multiple data attributes', async function() {
     await this.page.evaluate(() => window.DragX.init());
 });
 
-Given('an event listener for {string}', async function(eventName) {
-    await this.page.evaluate((event) => {
-        window.eventFired = false;
-        document.addEventListener(event, (e) => {
-            window.eventFired = true;
-            window.lastEvent = e;
-        }, true);
-    }, eventName);
-});
+
 
 Given('an event listener that calls preventDefault', async function() {
     await this.page.evaluate(() => {
