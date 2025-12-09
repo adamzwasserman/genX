@@ -7,7 +7,7 @@ Feature: genX Common Utilities Module
     Given the genx-common module is loaded
     And the module is under 2KB gzipped
 
-  Scenario: GenXError class with proper context
+  Scenario: GenXError with proper context
     Given I need to report a transformation error
     When I create a GenXError with code "TRANSFORM_001" and message "Invalid format"
     And I include context with element id and attempted value
@@ -15,26 +15,26 @@ Feature: genX Common Utilities Module
     And the error should have code "TRANSFORM_001"
     And the error should include the context object
     And the error should have a timestamp
-    And the error should be instanceof Error
+    And the error should have type "GenXError"
 
   Scenario: ParseError for invalid input
     Given I need to parse an invalid attribute value
     When I create a ParseError with the invalid value "bad:syntax:here"
-    Then the error should be instanceof GenXError
+    Then the error should have type "GenXError"
     And the error message should include "bad:syntax:here"
     And the error code should start with "PARSE_"
 
   Scenario: EnhancementError for transformation failures
     Given I encounter a transformation failure
     When I create an EnhancementError with element reference
-    Then the error should be instanceof GenXError
+    Then the error should have type "GenXError"
     And the error should include the element in context
     And the error code should start with "ENHANCE_"
 
   Scenario: ValidationError for invalid configurations
     Given I receive invalid configuration options
     When I create a ValidationError with the invalid options
-    Then the error should be instanceof GenXError
+    Then the error should have type "GenXError"
     And the error should include the options in context
     And the error code should start with "VALIDATE_"
 
@@ -186,16 +186,16 @@ Feature: genX Common Utilities Module
   Scenario: Module export structure
     Given the genx-common module is loaded
     Then window.genxCommon should be defined
-    And window.genxCommon.errors should contain all error classes
+    And window.genxCommon.errors should contain all error creators
     And window.genxCommon.Result should contain Ok and Err
-    And window.genxCommon.CircuitBreaker should be a class
+    And window.genxCommon.createCircuitBreaker should be a factory function
     And window.genxCommon.cache should contain createCache, hashOptions, getSignature
     And window.genxCommon.utils should contain all utility functions
 
   Scenario: Integration with fmtX
     Given fmtX module is loaded
     When fmtX uses genx-common error handling
-    Then fmtX errors should be instances of GenXError
+    Then fmtX errors should have type "GenXError"
     And fmtX should use the shared cache utilities
     And there should be no code duplication
 
