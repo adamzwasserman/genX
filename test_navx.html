@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test navX</title>
+</head>
+<body>
+    <nav nx-nav="main">
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+    </nav>
+
+    <script src="src/genx-common.js"></script>
+    <script src="src/navx.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded');
+            if (window.navX && window.navX.init) {
+                window.navX.init();
+                console.log('navX initialized');
+                setTimeout(() => {
+                    const nav = document.querySelector('nav');
+                    console.log('nav enhanced:', nav.getAttribute('nx-enhanced'));
+                    console.log('nav HTML:', nav.innerHTML);
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>
