@@ -21,15 +21,18 @@
     };
 
     // Class prefix to module prefix mapping (for CSS class notation)
-    const CLASS_PREFIX_MAP = {
-        'fmt': 'fx',
-        'acc': 'ax',
-        'bind': 'bx',
-        'drag': 'dx',
-        'load': 'lx',
-        'table': 'tx',
-        'nav': 'nx'
-    };
+    // Prefer the canonical map from genxCommon if available to avoid duplication.
+    const CLASS_PREFIX_MAP = (typeof window !== 'undefined' && window.genxCommon && window.genxCommon.notation && window.genxCommon.notation.CLASS_PREFIX_MAP)
+        ? window.genxCommon.notation.CLASS_PREFIX_MAP
+        : {
+            'fmt': 'fx',
+            'acc': 'ax',
+            'bind': 'bx',
+            'drag': 'dx',
+            'load': 'lx',
+            'table': 'tx',
+            'nav': 'nx'
+        };
 
     // Module prefix map (inverse of CLASS_PREFIX_MAP for lookups)
     const MODULE_PREFIX_MAP = Object.fromEntries(
@@ -398,6 +401,47 @@
     };
 
     /**
+     * Rescan a root node or a list of elements and (re)parse only affected elements.
+     * Accepts either a Document/Element root or an Array of Elements.
+     * Returns number of parsed elements.
+     */
+    const rescan = async (rootOrElements = document) => {
+        let elements = [];
+
+        // If caller provided an explicit array of elements
+        if (Array.isArray(rootOrElements)) {
+            elements = rootOrElements.filter(el => el && el.nodeType === Node.ELEMENT_NODE);
+        } else if (rootOrElements && (rootOrElements.nodeType === Node.ELEMENT_NODE || rootOrElements === document)) {
+            // Query limited subtree using unified selector
+            const selector = _buildUnifiedSelector();
+            if (!selector) return 0;
+            if (rootOrElements === document) {
+                elements = Array.from(document.querySelectorAll(selector));
+            } else {
+                const root = rootOrElements;
+                // Include the root itself if it matches
+                try {
+                    if (root.matches && root.matches(selector)) elements.push(root);
+                } catch (e) {
+                    // ignore invalid selector errors
+                }
+                elements = elements.concat(Array.from(root.querySelectorAll(selector)));
+            }
+        } else {
+            return 0;
+        }
+
+        if (elements.length === 0) return 0;
+
+        // Detect notation styles used within this subset and load necessary parsers
+        const styles = detectNotationStyles(elements);
+        const loadedParsers = await loadParsers(styles);
+
+        // Parse and cache configurations for these elements
+        return parseAllElements(elements, loadedParsers);
+    };
+
+    /**
      * Get cached configuration for an element
      * Public API for accessing parse cache
      * @param {Element} element - Element to get config for
@@ -573,26 +617,58 @@
                 const phase6Start = performance.now();
                 if (window.genxConfig?.observe !== false) {
                     const observer = new MutationObserver((mutations) => {
-                        let needsRescan = false;
+                        // Collect affected roots to process after debounce
+                        if (!observer._nodes) observer._nodes = new Set();
 
-                        mutations.forEach(mutation => {
+                        for (const mutation of mutations) {
                             if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                                needsRescan = true;
+                                mutation.addedNodes.forEach(node => {
+                                    if (node && node.nodeType === Node.ELEMENT_NODE) observer._nodes.add(node);
+                                });
                             }
-                        });
 
-                        if (needsRescan) {
-                            // Debounce rescan
-                            clearTimeout(observer._timeout);
-                            observer._timeout = setTimeout(() => {
+                            if (mutation.type === 'attributes' && mutation.target && mutation.target.nodeType === Node.ELEMENT_NODE) {
+                                observer._nodes.add(mutation.target);
+                            }
+                        }
+
+                        // Debounce rescan for aggregated nodes
+                        clearTimeout(observer._timeout);
+                        observer._timeout = setTimeout(async () => {
+                            try {
+                                const nodes = Array.from(observer._nodes || []);
+                                observer._nodes = new Set();
+
+                                // Build element list scoped to changed subtrees
+                                const selector = _buildUnifiedSelector();
+                                const elements = new Set();
+
+                                for (const node of nodes) {
+                                    try {
+                                        if (selector && node.matches && node.matches(selector)) elements.add(node);
+                                    } catch (e) {
+                                        // ignore invalid selector errors
+                                    }
+                                    if (selector) {
+                                        const found = Array.from(node.querySelectorAll(selector));
+                                        for (const f of found) elements.add(f);
+                                    }
+                                }
+
+                                // If nothing specific found, fall back to a full rescan
+                                const parsed = await rescan(elements.size ? Array.from(elements) : document);
+
+                                // Ensure any newly-needed modules are initialized
                                 const { needed: newModules } = scan();
                                 for (const prefix of newModules) {
                                     if (!loaded.has(prefix)) {
                                         init(prefix);
                                     }
                                 }
-                            }, 100);
-                        }
+                            } catch (err) {
+                                console.error('genX: incremental rescan failed', err);
+                            }
+                        }, 100);
                     });
 
                     observer.observe(document.body, {
@@ -847,6 +923,7 @@
         loadParsers,
         getConfig,
         parseAllElements,
+        rescan,
         // Performance monitoring
         getPerformanceMetrics,
         validatePerformance,
