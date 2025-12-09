@@ -33,6 +33,7 @@
     "test:bdd:performance": "cucumber-js --config config/cucumber.js --profile performance",
     "test:bdd:security": "cucumber-js --config config/cucumber.js --profile security",
     "test:bdd:features": "cucumber-js --config config/cucumber.js --profile module-features",
+    "test:bdd:navx": "cucumber-js --config config/cucumber.js tests/features/navx.feature",
     "test:integration": "jest --config config/jest.config.js tests/integration",
     "test:watch": "jest --config config/jest.config.js --watch",
     "test:coverage": "jest --config config/jest.config.js --coverage",
