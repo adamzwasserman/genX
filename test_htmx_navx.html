@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test navX with HTMX</title>
+</head>
+<body>
+    <nav nx-nav="main">
+        <!-- Traditional links -->
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+
+        <!-- HTMX-style navigation -->
+        <div hx-get="/contact" hx-target="#content">Contact (HTMX)</div>
+        <div hx-post="/api/search" hx-target="#results">Search (HTMX)</div>
+
+        <!-- Custom route attributes -->
+        <div nx-route="/products">Products</div>
+        <div nx-route="/services">Services</div>
+    </nav>
+
+    <div id="content">Content will load here</div>
+    <div id="results">Search results here</div>
+
+    <script src="src/genx-common.js"></script>
+    <script src="src/navx.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing navX');
+            if (window.navX && window.navX.init) {
+                window.navX.init();
+                console.log('navX initialized');
+                setTimeout(() => {
+                    const nav = document.querySelector('nav');
+                    console.log('nav enhanced:', nav.getAttribute('nx-enhanced'));
+                    console.log('nav HTML:', nav.innerHTML);
+
+                    // Check which elements got the active class
+                    const elements = nav.querySelectorAll('*');
+                    elements.forEach(el => {
+                        if (el.classList.contains('nx-active')) {
+                            console.log('Active element:', el.tagName, el.textContent.trim());
+                        }
+                    });
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>
