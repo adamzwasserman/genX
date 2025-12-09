@@ -144,51 +144,54 @@ export const edgeCases = {
 };
 
 /**
- * Performance test utilities
+ * Create a verbose parser timer
+ * @returns {Object} Verbose parser timer instance
  */
-export class VerboseParserTimer {
-    constructor() {
-        this.measurements = [];
-    }
+export const createVerboseParserTimer = () => {
+    const measurements = [];
 
-    measure(parser, element, prefix) {
-        const start = performance.now();
-        const result = parser.parse(element, prefix);
-        const duration = performance.now() - start;
+    return {
+        measure: (parser, element, prefix) => {
+            const start = performance.now();
+            const result = parser.parse(element, prefix);
+            const duration = performance.now() - start;
 
-        this.measurements.push({
-            duration,
-            prefix,
-            attributeCount: Object.keys(result).length
-        });
+            measurements.push({
+                duration,
+                prefix,
+                attributeCount: Object.keys(result).length
+            });
 
-        return { result, duration };
-    }
+            return { result, duration };
+        },
 
-    getAverageDuration() {
-        if (this.measurements.length === 0) return 0;
-        const total = this.measurements.reduce((sum, m) => sum + m.duration, 0);
-        return total / this.measurements.length;
-    }
+        getAverageDuration: () => {
+            if (measurements.length === 0) return 0;
+            const total = measurements.reduce((sum, m) => sum + m.duration, 0);
+            return total / measurements.length;
+        },
 
-    getTotalDuration() {
-        return this.measurements.reduce((sum, m) => sum + m.duration, 0);
-    }
+        getTotalDuration: () => {
+            return measurements.reduce((sum, m) => sum + m.duration, 0);
+        },
 
-    getMaxDuration() {
-        if (this.measurements.length === 0) return 0;
-        return Math.max(...this.measurements.map(m => m.duration));
-    }
+        getMaxDuration: () => {
+            if (measurements.length === 0) return 0;
+            return Math.max(...measurements.map(m => m.duration));
+        },
 
-    getMinDuration() {
-        if (this.measurements.length === 0) return 0;
-        return Math.min(...this.measurements.map(m => m.duration));
-    }
+        getMinDuration: () => {
+            if (measurements.length === 0) return 0;
+            return Math.min(...measurements.map(m => m.duration));
+        },
 
-    reset() {
-        this.measurements = [];
-    }
-}
+        reset: () => {
+            measurements.length = 0;
+        },
+
+        getMeasurements: () => measurements
+    };
+};
 
 /**
  * Generate test elements for performance testing
@@ -329,7 +332,7 @@ export default {
     expectedConfigs,
     CARDINALITY_ORDERS,
     edgeCases,
-    VerboseParserTimer,
+    createVerboseParserTimer,
     generateVerboseElements,
     createElementFromHTML,
     assertionHelpers,

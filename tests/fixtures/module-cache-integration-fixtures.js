@@ -6,140 +6,132 @@
  */
 
 /**
- * Mock window.genx.getConfig for module testing
+ * Create a mock getConfig function for module testing
+ * @returns {Object} Mock getConfig instance
  */
-export class MockGetConfig {
-    constructor() {
-        this.cache = new Map(); // Use Map for testing (WeakMap not inspectable)
-        this.calls = [];
-    }
+export const createMockGetConfig = () => {
+    const cache = new Map(); // Use Map for testing (WeakMap not inspectable)
+    const calls = [];
 
-    /**
-     * Mock implementation of window.genx.getConfig
-     */
-    getConfig(element) {
-        this.calls.push({ element, timestamp: Date.now() });
+    return {
+        /**
+         * Mock implementation of window.genx.getConfig
+         */
+        getConfig: (element) => {
+            calls.push({ element, timestamp: Date.now() });
 
-        if (!element || !element.attributes) {
-            return null;
-        }
+            if (!element || !element.attributes) {
+                return null;
+            }
 
-        // Return cached config or null
-        return this.cache.get(element) || null;
-    }
+            // Return cached config or null
+            return cache.get(element) || null;
+        },
 
-    /**
-     * Add mock config for testing
-     */
-    setConfig(element, config) {
-        this.cache.set(element, config);
-    }
+        /**
+         * Add mock config for testing
+         */
+        setConfig: (element, config) => {
+            cache.set(element, config);
+        },
 
-    /**
-     * Verify getConfig was called
-     */
-    wasCalledWith(element) {
-        return this.calls.some(call => call.element === element);
-    }
+        /**
+         * Verify getConfig was called
+         */
+        wasCalledWith: (element) => {
+            return calls.some(call => call.element === element);
+        },
 
-    /**
-     * Get call count
-     */
-    getCallCount() {
-        return this.calls.length;
-    }
+        /**
+         * Get call count
+         */
+        getCallCount: () => calls.length,
 
-    /**
-     * Reset mock
-     */
-    reset() {
-        this.cache.clear();
-        this.calls = [];
-    }
+        /**
+         * Reset mock
+         */
+        reset: () => {
+            cache.clear();
+            calls.length = 0;
+        },
 
-    /**
-     * Get all calls
-     */
-    getCalls() {
-        return this.calls;
-    }
-}
+        /**
+         * Get all calls
+         */
+        getCalls: () => calls
+    };
+};
 
 /**
- * Performance comparison utility
+ * Create a performance comparison utility
+ * @returns {Object} Performance comparison instance
  */
-export class CachePerformanceComparison {
-    constructor() {
-        this.results = {
-            getConfig: { duration: 0, calls: 0 },
-            getAttribute: { duration: 0, calls: 0 }
-        };
-    }
+export const createCachePerformanceComparison = () => {
+    const results = {
+        getConfig: { duration: 0, calls: 0 },
+        getAttribute: { duration: 0, calls: 0 }
+    };
 
-    /**
-     * Measure getConfig performance
-     */
-    measureGetConfig(getConfigFn, elements) {
-        const start = performance.now();
+    const getSpeedup = () => {
+        if (results.getConfig.duration === 0) return 0;
+        return results.getAttribute.duration / results.getConfig.duration;
+    };
 
-        for (const el of elements) {
-            getConfigFn(el);
-            this.results.getConfig.calls++;
-        }
+    const getSummary = () => ({
+        getConfig: {
+            duration: results.getConfig.duration,
+            calls: results.getConfig.calls,
+            avgPerCall: results.getConfig.duration / results.getConfig.calls
+        },
+        getAttribute: {
+            duration: results.getAttribute.duration,
+            calls: results.getAttribute.calls,
+            avgPerCall: results.getAttribute.duration / results.getAttribute.calls
+        },
+        speedup: getSpeedup(),
+        meetsTarget: getSpeedup() >= 50
+    });
 
-        this.results.getConfig.duration = performance.now() - start;
-        return this.results.getConfig.duration;
-    }
+    return {
+        /**
+         * Measure getConfig performance
+         */
+        measureGetConfig: (getConfigFn, elements) => {
+            const start = performance.now();
 
-    /**
-     * Measure getAttribute + parse performance
-     */
-    measureGetAttribute(parseAttributesFn, elements) {
-        const start = performance.now();
+            for (const el of elements) {
+                getConfigFn(el);
+                results.getConfig.calls++;
+            }
 
-        for (const el of elements) {
-            parseAttributesFn(el);
-            this.results.getAttribute.calls++;
-        }
+            results.getConfig.duration = performance.now() - start;
+            return results.getConfig.duration;
+        },
 
-        this.results.getAttribute.duration = performance.now() - start;
-        return this.results.getAttribute.duration;
-    }
+        /**
+         * Measure getAttribute + parse performance
+         */
+        measureGetAttribute: (parseAttributesFn, elements) => {
+            const start = performance.now();
 
-    /**
-     * Calculate speedup factor
-     */
-    getSpeedup() {
-        if (this.results.getConfig.duration === 0) return 0;
-        return this.results.getAttribute.duration / this.results.getConfig.duration;
-    }
+            for (const el of elements) {
+                parseAttributesFn(el);
+                results.getAttribute.calls++;
+            }
 
-    /**
-     * Get comparison summary
-     */
-    getSummary() {
-        return {
-            getConfig: {
-                duration: this.results.getConfig.duration,
-                calls: this.results.getConfig.calls,
-                avgPerCall: this.results.getConfig.duration / this.results.getConfig.calls
-            },
-            getAttribute: {
-                duration: this.results.getAttribute.duration,
-                calls: this.results.getAttribute.calls,
-                avgPerCall: this.results.getAttribute.duration / this.results.getAttribute.calls
-            },
-            speedup: this.getSpeedup(),
-            meetsTarget: this.getSpeedup() >= 50
-        };
-    }
+            results.getAttribute.duration = performance.now() - start;
+            return results.getAttribute.duration;
+        },
 
-    /**
-     * Get formatted report
-     */
-    getReport() {
-        const summary = this.getSummary();
-        return `
+        getSpeedup,
+        getSummary,
+
+        /**
+         * Get formatted report
+         */
+        getReport: () => {
+            const summary = getSummary();
+            return `
 Cache Performance Comparison
 ============================
 getConfig():
@@ -156,8 +148,9 @@ Speedup: ${summary.speedup.toFixed(2)}x
 Target:  50x minimum
 Status:  ${summary.meetsTarget ? '✓ PASS' : '✗ FAIL'}
 `;
-    }
-}
+        }
+    };
+};
 
 /**
  * Module cache integration patterns
@@ -298,78 +291,89 @@ export const expectedCacheConfigs = {
 };
 
 /**
- * Module test helper
+ * Create a module test helper
+ * @param {string} moduleName - Name of the module being tested
+ * @returns {Object} Module test helper instance
  */
-export class ModuleCacheTestHelper {
-    constructor(moduleName) {
-        this.moduleName = moduleName;
-        this.mockGetConfig = new MockGetConfig();
-        this.performanceComparison = new CachePerformanceComparison();
-    }
+export const createModuleCacheTestHelper = (moduleName) => {
+    let mockGetConfig = createMockGetConfig();
+    let performanceComparison = createCachePerformanceComparison();
 
-    /**
-     * Setup module with cache
-     */
-    setup(elements, configs) {
-        // Populate mock cache
-        elements.forEach((el, i) => {
-            const config = configs[i] || configs[0];
-            this.mockGetConfig.setConfig(el, config);
-        });
+    return {
+        moduleName,
 
-        return this.mockGetConfig.getConfig.bind(this.mockGetConfig);
-    }
+        /**
+         * Setup module with cache
+         */
+        setup: (elements, configs) => {
+            // Populate mock cache
+            elements.forEach((el, i) => {
+                const config = configs[i] || configs[0];
+                mockGetConfig.setConfig(el, config);
+            });
 
-    /**
-     * Verify module uses getConfig
-     */
-    verifyGetConfigUsage(moduleFn, elements) {
-        const initialCalls = this.mockGetConfig.getCallCount();
+            return mockGetConfig.getConfig;
+        },
 
-        // Run module function
-        elements.forEach(el => moduleFn(el));
+        /**
+         * Verify module uses getConfig
+         */
+        verifyGetConfigUsage: (moduleFn, elements) => {
+            const initialCalls = mockGetConfig.getCallCount();
 
-        const finalCalls = this.mockGetConfig.getCallCount();
-        const callsMade = finalCalls - initialCalls;
+            // Run module function
+            elements.forEach(el => moduleFn(el));
 
-        return {
-            usedGetConfig: callsMade === elements.length,
-            expectedCalls: elements.length,
-            actualCalls: callsMade
-        };
-    }
+            const finalCalls = mockGetConfig.getCallCount();
+            const callsMade = finalCalls - initialCalls;
 
-    /**
-     * Measure performance improvement
-     */
-    measureImprovement(getConfigFn, attributeParseFn, elements) {
-        this.performanceComparison.measureGetConfig(getConfigFn, elements);
-        this.performanceComparison.measureGetAttribute(attributeParseFn, elements);
+            return {
+                usedGetConfig: callsMade === elements.length,
+                expectedCalls: elements.length,
+                actualCalls: callsMade
+            };
+        },
 
-        return this.performanceComparison.getSummary();
-    }
+        /**
+         * Measure performance improvement
+         */
+        measureImprovement: (getConfigFn, attributeParseFn, elements) => {
+            performanceComparison.measureGetConfig(getConfigFn, elements);
+            performanceComparison.measureGetAttribute(attributeParseFn, elements);
 
-    /**
-     * Get test report
-     */
-    getReport() {
-        return `
-Module Cache Integration Test: ${this.moduleName}
+            return performanceComparison.getSummary();
+        },
+
+        /**
+         * Get test report
+         */
+        getReport: () => `
+Module Cache Integration Test: ${moduleName}
 =============================================
-Mock getConfig calls: ${this.mockGetConfig.getCallCount()}
+Mock getConfig calls: ${mockGetConfig.getCallCount()}
 
-${this.performanceComparison.getReport()}
-`;
-    }
+${performanceComparison.getReport()}
+`,
 
-    /**
-     * Reset helper
-     */
-    reset() {
-        this.mockGetConfig.reset();
-        this.performanceComparison = new CachePerformanceComparison();
-    }
-}
+        /**
+         * Reset helper
+         */
+        reset: () => {
+            mockGetConfig.reset();
+            performanceComparison = createCachePerformanceComparison();
+        },
+
+        /**
+         * Get mock getConfig instance
+         */
+        getMockGetConfig: () => mockGetConfig,
+
+        /**
+         * Get performance comparison instance
+         */
+        getPerformanceComparison: () => performanceComparison
+    };
+};
 
 /**
  * Module integration rollout checklist
@@ -449,12 +453,12 @@ export const moduleTestScenarios = {
 };
 
 export default {
-    MockGetConfig,
-    CachePerformanceComparison,
+    createMockGetConfig,
+    createCachePerformanceComparison,
     moduleIntegrationPatterns,
     cacheIntegrationElements,
     expectedCacheConfigs,
-    ModuleCacheTestHelper,
+    createModuleCacheTestHelper,
     integrationChecklist,
     cacheIntegrationTargets,
     moduleTestScenarios
