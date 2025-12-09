@@ -68,7 +68,7 @@
         // Simple Result monad fallback
         Ok = (value) => ({ isOk: () => true, isErr: () => false, unwrap: () => value });
         Err = (error) => ({ isOk: () => false, isErr: () => true, unwrap: () => {
-            throw error; 
+            throw error;
         } });
     }
 
@@ -130,6 +130,156 @@
     };
 
     // ============================================================================
+    // EVENT EMISSION UTILITIES
+    // ============================================================================
+
+    /**
+     * Emit a custom event from an element
+     * @param {HTMLElement} element - Element to emit from
+     * @param {string} eventName - Event name (without 'nx:' prefix)
+     * @param {Object} detail - Event detail data
+     */
+    const emitEvent = (element, eventName, detail = {}) => {
+        if (typeof window === 'undefined' || typeof document === 'undefined') {
+            return;
+        }
+
+        const fullEventName = `nx:${eventName}`;
+        const event = new CustomEvent(fullEventName, {
+            bubbles: true,
+            cancelable: true,
+            detail: detail
+        });
+
+        element.dispatchEvent(event);
+        debug(`Emitted event: ${fullEventName}`, detail);
+    };
+
+    /**
+     * Emit navigation event
+     * @param {HTMLElement} element - Navigation element
+     * @param {string} href - Target URL
+     * @param {Object} extraData - Additional event data
+     */
+    const emitNavigationEvent = (element, href, extraData = {}) => {
+        emitEvent(element, 'navigate', {
+            href,
+            element,
+            ...extraData
+        });
+    };
+
+    /**
+     * Emit dropdown event
+     * @param {HTMLElement} element - Dropdown element
+     * @param {string} action - 'open' or 'close'
+     * @param {Object} extraData - Additional event data
+     */
+    const emitDropdownEvent = (element, action, extraData = {}) => {
+        emitEvent(element, 'dropdown-' + action, {
+            element,
+            action,
+            ...extraData
+        });
+    };
+
+    /**
+     * Emit tab change event
+     * @param {HTMLElement} element - Tab element
+     * @param {number} index - Tab index
+     * @param {string} tabId - Tab identifier
+     * @param {Object} extraData - Additional event data
+     */
+    const emitTabChangeEvent = (element, index, tabId, extraData = {}) => {
+        emitEvent(element, 'tab-change', {
+            index,
+            tabId,
+            element,
+            ...extraData
+        });
+    };
+
+    /**
+     * Check navigation guards before allowing navigation
+     * @param {HTMLElement} element - Navigation element
+     * @param {string} href - Target URL
+     * @param {Event} event - Click event
+     * @returns {boolean} True if navigation should proceed
+     */
+    const checkNavigationGuards = async (element, href, event) => {
+        // Check nx-confirm
+        const confirmMessage = element.getAttribute('nx-confirm');
+        if (confirmMessage) {
+            const confirmed = window.confirm(confirmMessage);
+            if (!confirmed) {
+                emitEvent(element, 'navigation-cancelled', {
+                    reason: 'user-cancelled-confirm',
+                    href,
+                    element
+                });
+                return false;
+            }
+        }
+
+        // Check nx-before-navigate function
+        const beforeNavigate = element.getAttribute('nx-before-navigate');
+        if (beforeNavigate) {
+            try {
+                const fn = window[beforeNavigate] || eval(beforeNavigate);
+                if (typeof fn === 'function') {
+                    const result = await fn(href, element, event);
+                    if (result === false) {
+                        emitEvent(element, 'navigation-cancelled', {
+                            reason: 'before-navigate-returned-false',
+                            href,
+                            element
+                        });
+                        return false;
+                    }
+                }
+            } catch (err) {
+                warn('Error in nx-before-navigate function:', err);
+                emitEvent(element, 'navigation-error', {
+                    error: err,
+                    href,
+                    element
+                });
+                return false;
+            }
+        }
+
+        // Check nx-loading (show loading state)
+        if (element.hasAttribute('nx-loading')) {
+            element.classList.add('nx-loading');
+            element.setAttribute('aria-disabled', 'true');
+            element.style.pointerEvents = 'none';
+
+            // Re-enable after navigation (this is a simple implementation)
+            setTimeout(() => {
+                element.classList.remove('nx-loading');
+                element.removeAttribute('aria-disabled');
+                element.style.pointerEvents = '';
+            }, 1000);
+        }
+
+        return true;
+    };
+
+    /**
+     * Emit pagination event
+     * @param {HTMLElement} element - Pagination element
+     * @param {number} page - Page number
+     * @param {Object} extraData - Additional event data
+     */
+    const emitPaginationEvent = (element, page, extraData = {}) => {
+        emitEvent(element, 'page-change', {
+            page,
+            element,
+            ...extraData
+        });
+    };
+
+    // ============================================================================
     // MODULE STATE (Encapsulated)
     // ============================================================================
 
@@ -140,11 +290,51 @@
     // Default configuration
     const DEFAULT_CONFIG = {
         observe: true,
-        selector: '[nx-nav], [nx-breadcrumb], [nx-trail], [nx-tabs], [nx-scroll-spy], [nx-sticky], [nx-mobile], [nx-dropdown]',
+        selector: '[nx-nav], [nx-breadcrumb], [nx-trail], [nx-tabs], [nx-scroll-spy], [nx-sticky], [nx-mobile], [nx-dropdown], [nx-pagination]',
         activeClass: 'nx-active',
         enhancedAttr: 'nx-enhanced',
         debug: false
     };
+
+// Security helpers
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+function isPlainObject(obj) {
+    return obj && typeof obj === 'object' && obj.constructor === Object;
+}
+function sanitizeConfig(input) {
+    if (!isPlainObject(input)) return {};
+    const out = {};
+    for (const k in input) {
+        if (!Object.prototype.hasOwnProperty.call(input, k)) continue;
+        if (DANGEROUS_KEYS.has(k)) continue;
+        const v = input[k];
+        if (v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+            out[k] = v;
+        }
+    }
+    return out;
+}
+
+// Track global listeners so we can remove them on destroy()
+const globalListeners = [];
+function addGlobalListener(target, type, handler, options) {
+    try {
+        target.addEventListener(type, handler, options);
+        globalListeners.push({ target, type, handler, options });
+    } catch (e) {
+        // ignore in constrained environments
+    }
+}
+function removeAllGlobalListeners() {
+    for (const l of globalListeners) {
+        try {
+            l.target.removeEventListener(l.type, l.handler, l.options);
+        } catch (e) {
+            // ignore
+        }
+    }
+    globalListeners.length = 0;
+}
 
     // ============================================================================
     // UTILITY FUNCTIONS
@@ -223,6 +413,45 @@
         return currentPath.startsWith(href);
     };
 
+    /**
+     * Check if element matches current path considering patterns and excludes
+     * @param {HTMLElement} element - Navigation element
+     * @param {string} href - Target href
+     * @param {boolean} exact - Whether to match exactly
+     * @returns {boolean} True if element should be active
+     */
+    const matchesCurrentPathWithPatterns = (element, href, exact) => {
+        const currentPath = getCurrentPath();
+
+        // Check nx-exclude first (takes precedence)
+        const excludePattern = element.getAttribute('nx-exclude');
+        if (excludePattern) {
+            try {
+                const regex = new RegExp(excludePattern);
+                if (regex.test(currentPath)) {
+                    return false;
+                }
+            } catch (err) {
+                warn('Invalid nx-exclude pattern:', excludePattern, err);
+            }
+        }
+
+        // Check nx-pattern
+        const pattern = element.getAttribute('nx-pattern');
+        if (pattern) {
+            try {
+                const regex = new RegExp(pattern);
+                return regex.test(currentPath);
+            } catch (err) {
+                warn('Invalid nx-pattern:', pattern, err);
+                return false;
+            }
+        }
+
+        // Fall back to standard matching
+        return matchesCurrentPath(href, exact);
+    };
+
     // ============================================================================
     // ATTRIBUTE PARSING
     // ============================================================================
@@ -293,26 +522,19 @@
    */
     const getElementConfig = (element, baseAttr) => {
         // Try to get config from bootloader cache first (if using genX bootloader)
-        if (window.genx && window.genx.getConfig) {
-            const cachedConfig = window.genx.getConfig(element);
-            if (cachedConfig) {
-                // Extract configuration relevant to this base attribute
-                // For nx-nav, cache might have: { nav: "basic", navActiveClass: "active", navExact: true }
+        if (typeof window !== 'undefined' && window.genx && typeof window.genx.getConfig === 'function') {
+            const raw = window.genx.getConfig(element);
+            const cachedConfig = sanitizeConfig(raw);
+            if (Object.keys(cachedConfig).length > 0) {
                 const result = {};
-
-                // Map cache keys to nav config
-                // For baseAttr "nx-nav", look for keys starting with "nav"
                 const prefix = baseAttr.replace('nx-', '');
 
-                // Check if we have the base value
                 if (cachedConfig[prefix] !== undefined) {
                     result.value = cachedConfig[prefix];
                 }
 
-                // Get related attributes (camelCase from cache)
                 Object.keys(cachedConfig).forEach(key => {
                     if (key.startsWith(prefix) && key !== prefix) {
-                        // Remove prefix and lowercase first char
                         const configKey = key.charAt(prefix.length).toLowerCase() + key.slice(prefix.length + 1);
                         result[configKey] = cachedConfig[key];
                     }
@@ -326,9 +548,10 @@
 
         // Fallback to polymorphic notation parsing (legacy standalone mode)
         // Use polymorphic parser from genx-common (supports Verbose, Colon, JSON, CSS Class)
-        const parsed = window.genxCommon
+        const parsedRaw = (typeof window !== 'undefined' && window.genxCommon && window.genxCommon.notation && typeof window.genxCommon.notation.parseNotation === 'function')
             ? window.genxCommon.notation.parseNotation(element, 'nx')
-            : {};  // Fallback if genx-common not loaded
+            : {};
+        const parsed = sanitizeConfig(parsedRaw);
 
         const elementConfig = {};
 
@@ -366,25 +589,65 @@
         const activeClass = navConfig.activeClass || config.activeClass;
         const exact = navConfig.exact === true;
 
-        // Find all links in nav
-        const links = element.querySelectorAll('a[href]');
-        links.forEach(link => {
-            const href = link.getAttribute('href');
+        // Find all navigable elements in nav:
+        // 1. Traditional links: a[href]
+        // 2. HTMX elements: [hx-get], [hx-post], [hx-put], [hx-delete]
+        // 3. Route elements: [nx-route]
+        const navigableElements = element.querySelectorAll(
+            'a[href], [hx-get], [hx-post], [hx-put], [hx-delete], [nx-route]'
+        );
+
+        navigableElements.forEach(navElement => {
+            // Determine the target URL for this element
+            let href = null;
+
+            // Priority: nx-route > href attribute > HTMX attributes
+            if (navElement.hasAttribute('nx-route')) {
+                href = navElement.getAttribute('nx-route');
+            } else if (navElement.hasAttribute('href')) {
+                href = navElement.getAttribute('href');
+            } else if (navElement.hasAttribute('hx-get')) {
+                href = navElement.getAttribute('hx-get');
+            } else if (navElement.hasAttribute('hx-post')) {
+                href = navElement.getAttribute('hx-post');
+            } else if (navElement.hasAttribute('hx-put')) {
+                href = navElement.getAttribute('hx-put');
+            } else if (navElement.hasAttribute('hx-delete')) {
+                href = navElement.getAttribute('hx-delete');
+            }
+
             if (!href) {
                 return;
             }
 
             // Skip anchor links for active state (but handle them for smooth scroll)
             if (!href.startsWith('#')) {
-                // Check if link matches current path
-                if (matchesCurrentPath(href, exact)) {
-                    link.classList.add(activeClass);
-                    link.setAttribute('aria-current', 'page');
+                // Check if element matches current path with patterns/excludes
+                if (matchesCurrentPathWithPatterns(navElement, href, exact)) {
+                    navElement.classList.add(activeClass);
+                    navElement.setAttribute('aria-current', 'page');
                 } else {
-                    link.classList.remove(activeClass);
-                    link.removeAttribute('aria-current');
+                    navElement.classList.remove(activeClass);
+                    navElement.removeAttribute('aria-current');
                 }
             }
+
+            // Add click event listener for navigation events
+            navElement.addEventListener('click', async (e) => {
+                // Check navigation guards
+                if (!await checkNavigationGuards(navElement, href, e)) {
+                    e.preventDefault();
+                    return;
+                }
+
+                // Don't emit for anchor links or if default is prevented
+                if (!href.startsWith('#') && !e.defaultPrevented) {
+                    emitNavigationEvent(navElement, href, {
+                        originalEvent: e,
+                        navElement: navElement
+                    });
+                }
+            });
         });
 
         // Setup smooth scrolling if enabled
@@ -468,7 +731,7 @@
    * @returns {Array} Array of breadcrumb items from trail
    */
     const buildTrailBreadcrumbs = (config) => {
-        if (typeof sessionStorage === 'undefined') {
+        if (typeof window === 'undefined' || typeof window.sessionStorage === 'undefined') {
             return [];
         }
 
@@ -481,7 +744,7 @@
 
             // Add current page to trail
             const currentPath = getCurrentPath();
-            const currentTitle = document.title || currentPath;
+            const currentTitle = (typeof document !== 'undefined' && document.title) ? document.title : currentPath;
 
             // Remove current page if already in trail
             const filtered = trail.filter(item => item.url !== currentPath);
@@ -1180,7 +1443,7 @@
             }
         };
 
-        document.addEventListener('keydown', handleKeydown);
+        addGlobalListener(document, 'keydown', handleKeydown);
 
         // Return cleanup function
         return () => {
@@ -1302,7 +1565,7 @@
 
         // Close on outside click (if configured)
         if (config.closeOnOutsideClick !== false) {
-            document.addEventListener('click', (e) => {
+            addGlobalListener(document, 'click', (e) => {
                 if (!element.contains(e.target) && !menu.hidden) {
                     closeMenu();
                 }
@@ -1383,12 +1646,48 @@
         let currentIndex = -1;
 
         // Open dropdown
-        const openDropdown = () => {
+        const openDropdown = async () => {
+            // Check for lazy loading
+            if (element.hasAttribute('nx-lazy') && !element.hasAttribute('nx-loaded')) {
+                // Load content
+                const loadUrl = element.getAttribute('nx-lazy');
+                if (loadUrl) {
+                    try {
+                        trigger.classList.add('nx-loading');
+                        const response = await fetch(loadUrl);
+                        const html = await response.text();
+
+                        // Replace menu content
+                        menu.innerHTML = html;
+
+                        // Re-find items after content load
+                        const newItems = Array.from(menu.querySelectorAll('a, button, [role="menuitem"]'));
+                        items.length = 0;
+                        items.push(...newItems);
+
+                        // Setup ARIA for new items
+                        items.forEach((item) => {
+                            item.setAttribute('role', 'menuitem');
+                            item.setAttribute('tabindex', '-1');
+                        });
+
+                        element.setAttribute('nx-loaded', 'true');
+                        emitEvent(element, 'content-loaded', { url: loadUrl, items: items.length });
+                    } catch (err) {
+                        warn('Failed to load lazy content:', err);
+                        emitEvent(element, 'content-load-error', { error: err, url: loadUrl });
+                    } finally {
+                        trigger.classList.remove('nx-loading');
+                    }
+                }
+            }
+
             trigger.setAttribute('aria-expanded', 'true');
             menu.hidden = false;
             menu.classList.add('nx-dropdown-open');
             currentIndex = 0;
             items[currentIndex]?.focus();
+            emitDropdownEvent(element, 'open', { trigger, menu });
         };
 
         // Close dropdown
@@ -1398,6 +1697,7 @@
             menu.classList.remove('nx-dropdown-open');
             currentIndex = -1;
             trigger.focus();
+            emitDropdownEvent(element, 'close', { trigger, menu });
         };
 
         // Toggle dropdown
@@ -1486,13 +1786,60 @@
         });
 
         // Close on outside click
-        document.addEventListener('click', (e) => {
+        addGlobalListener(document, 'click', (e) => {
             if (!element.contains(e.target) && !menu.hidden) {
                 closeDropdown();
             }
         });
 
         debug('Setup dropdown:', items.length, 'items');
+    };
+
+    /**
+   * Setup pagination controls
+   * @param {HTMLElement} element - Pagination container element
+   * @param {Object} config - Pagination configuration
+   */
+    const setupPagination = (element, config) => {
+        // Find existing pagination buttons
+        const pageButtons = element.querySelectorAll('.page-btn, [data-page]');
+        const prevButton = element.querySelector('.prev, [data-prev]');
+        const nextButton = element.querySelector('.next, [data-next]');
+
+        // Add click handlers to page buttons
+        pageButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = parseInt(button.getAttribute('data-page') || button.textContent);
+                if (!isNaN(page)) {
+                    emitPaginationEvent(element, page, { button, originalEvent: e });
+                }
+            });
+        });
+
+        // Add click handlers to prev/next buttons
+        if (prevButton) {
+            prevButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                const currentPage = parseInt(element.getAttribute('data-current-page') || '1');
+                if (currentPage > 1) {
+                    emitPaginationEvent(element, currentPage - 1, { button: prevButton, originalEvent: e });
+                }
+            });
+        }
+
+        if (nextButton) {
+            nextButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                const currentPage = parseInt(element.getAttribute('data-current-page') || '1');
+                const totalPages = parseInt(element.getAttribute('data-total-pages') || '1');
+                if (currentPage < totalPages) {
+                    emitPaginationEvent(element, currentPage + 1, { button: nextButton, originalEvent: e });
+                }
+            });
+        }
+
+        debug('Setup pagination:', pageButtons.length, 'page buttons');
     };
 
     /**
@@ -1505,6 +1852,18 @@
         setupDropdown(element, dropdownConfig);
 
         debug('Enhanced dropdown:', element, dropdownConfig);
+    };
+
+    /**
+   * Enhance pagination element (nx-pagination)
+   * @param {HTMLElement} element - Pagination element to enhance
+   */
+    const enhancePagination = (element) => {
+        const paginationConfig = getElementConfig(element, 'nx-pagination');
+
+        setupPagination(element, paginationConfig);
+
+        debug('Enhanced pagination:', element, paginationConfig);
     };
 
     /**
@@ -1541,6 +1900,9 @@
             }
             if (element.hasAttribute('nx-dropdown')) {
                 enhanceDropdown(element);
+            }
+            if (element.hasAttribute('nx-pagination')) {
+                enhancePagination(element);
             }
 
             // Mark as enhanced
@@ -1583,6 +1945,80 @@
     // ============================================================================
 
     /**
+     * Set up keyboard shortcuts for navigation
+     */
+    const setupKeyboardShortcuts = () => {
+        if (typeof document === 'undefined') {
+            return;
+        }
+
+        document.addEventListener('keydown', (e) => {
+            // Find all elements with nx-shortcut
+            const shortcutElements = document.querySelectorAll('[nx-shortcut]');
+
+            for (const element of shortcutElements) {
+                const shortcut = element.getAttribute('nx-shortcut');
+                if (matchesShortcut(e, shortcut)) {
+                    e.preventDefault();
+
+                    // Trigger click or navigation
+                    if (element.tagName === 'A' || element.hasAttribute('href') || element.hasAttribute('nx-route')) {
+                        element.click();
+                    } else {
+                        // For non-link elements, emit a custom event
+                        emitEvent(element, 'shortcut-triggered', {
+                            shortcut,
+                            originalEvent: e
+                        });
+                    }
+
+                    break; // Only trigger first matching shortcut
+                }
+            }
+        });
+
+        debug('Keyboard shortcuts initialized');
+    };
+
+    /**
+     * Check if keyboard event matches shortcut string
+     * @param {KeyboardEvent} e - Keyboard event
+     * @param {string} shortcut - Shortcut string (e.g., "ctrl+h", "alt+shift+k")
+     * @returns {boolean} True if matches
+     */
+    const matchesShortcut = (e, shortcut) => {
+        const keys = shortcut.toLowerCase().split('+');
+        const modifiers = keys.slice(0, -1);
+        const key = keys[keys.length - 1];
+
+        // Check modifiers
+        for (const mod of modifiers) {
+            switch (mod) {
+                case 'ctrl':
+                case 'control':
+                    if (!e.ctrlKey) return false;
+                    break;
+                case 'alt':
+                    if (!e.altKey) return false;
+                    break;
+                case 'shift':
+                    if (!e.shiftKey) return false;
+                    break;
+                case 'meta':
+                case 'cmd':
+                case 'command':
+                    if (!e.metaKey) return false;
+                    break;
+                default:
+                    return false;
+            }
+        }
+
+        // Check key
+        return e.key.toLowerCase() === key;
+    };
+
+    /**
    * Set up MutationObserver for dynamic content
    * @param {string} selector - CSS selector to watch
    */
@@ -1611,12 +2047,26 @@
             });
         });
 
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-
-        debug('MutationObserver initialized');
+        // If document.body isn't available yet (very early load), wait for DOMContentLoaded
+        if (typeof document === 'undefined' || !document.body) {
+            debug('document.body not available; delaying MutationObserver until DOMContentLoaded');
+            if (typeof document !== 'undefined') {
+                addGlobalListener(document, 'DOMContentLoaded', () => {
+                    try {
+                        observer.observe(document.body, { childList: true, subtree: true });
+                        debug('MutationObserver initialized after DOMContentLoaded');
+                    } catch (e) {
+                        error('Failed to initialize MutationObserver:', e);
+                    }
+                }, { once: true });
+            }
+        } else {
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+            debug('MutationObserver initialized');
+        }
     };
 
     // ============================================================================
@@ -1649,6 +2099,9 @@
         if (config.observe) {
             setupObserver(config.selector);
         }
+
+        // Set up keyboard shortcuts
+        setupKeyboardShortcuts();
 
         initialized = true;
         debug('Initialized successfully');
@@ -1683,6 +2136,9 @@
             debug('Disconnected sticky observer and removed sentinel for:', element);
         });
         stickyObservers.clear();
+
+        // Remove any global listeners added via addGlobalListener
+        removeAllGlobalListeners();
 
         // Reset state
         initialized = false;
