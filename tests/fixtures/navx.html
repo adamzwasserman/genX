@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>navX Test Page</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        nav { background: #f0f0f0; padding: 10px; margin-bottom: 20px; }
+        .nav-item { display: inline-block; margin-right: 10px; padding: 5px 10px; background: #ddd; cursor: pointer; }
+        .nav-item.active { background: #bbb; }
+        .content { padding: 20px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>navX Test Page</h1>
+
+    <!-- Navigation structure for testing -->
+    <nav nx-nav="main" nx-config='{"activeClass": "active", "transition": "fade"}'>
+        <div class="nav-item" nx-route="/">Home</div>
+        <div class="nav-item" nx-route="/about">About</div>
+        <div class="nav-item" nx-route="/contact">Contact</div>
+    </nav>
+
+    <div class="content" nx-view="main">
+        <h2>Home</h2>
+        <p>Welcome to the home page.</p>
+    </div>
+
+    <!-- Load genX modules -->
+    <script src="/src/genx-common.js"></script>
+    <script src="/src/navx.js"></script>
+    <script>
+        // Initialize navX after DOM ready
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.navX && window.navX.init) {
+                window.navX.init();
+            }
+        });
+    </script>
+</body>
+</html>

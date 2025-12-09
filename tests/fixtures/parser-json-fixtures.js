@@ -199,46 +199,49 @@ export const jsonEdgeCases = {
 };
 
 /**
- * JSON parsing utilities
+ * Create a JSON parser timer
+ * @returns {Object} JSON parser timer instance
  */
-export class JsonParserTimer {
-    constructor() {
-        this.measurements = [];
-    }
+export const createJsonParserTimer = () => {
+    const measurements = [];
 
-    measure(parser, element, prefix, baseConfig = {}) {
-        const start = performance.now();
-        const result = parser.parse(element, prefix, baseConfig);
-        const duration = performance.now() - start;
-
-        this.measurements.push({
-            duration,
-            prefix,
-            hasOpts: this.hasOptsAttribute(element, prefix),
-            configSize: Object.keys(result).length
-        });
-
-        return { result, duration };
-    }
-
-    hasOptsAttribute(element, prefix) {
+    const hasOptsAttribute = (element, prefix) => {
         return element.hasAttribute(`${prefix}-opts`);
-    }
+    };
 
-    getAverageDuration() {
-        if (this.measurements.length === 0) return 0;
-        const total = this.measurements.reduce((sum, m) => sum + m.duration, 0);
-        return total / this.measurements.length;
-    }
+    return {
+        measure: (parser, element, prefix, baseConfig = {}) => {
+            const start = performance.now();
+            const result = parser.parse(element, prefix, baseConfig);
+            const duration = performance.now() - start;
 
-    getTotalDuration() {
-        return this.measurements.reduce((sum, m) => sum + m.duration, 0);
-    }
+            measurements.push({
+                duration,
+                prefix,
+                hasOpts: hasOptsAttribute(element, prefix),
+                configSize: Object.keys(result).length
+            });
 
-    reset() {
-        this.measurements = [];
-    }
-}
+            return { result, duration };
+        },
+
+        getAverageDuration: () => {
+            if (measurements.length === 0) return 0;
+            const total = measurements.reduce((sum, m) => sum + m.duration, 0);
+            return total / measurements.length;
+        },
+
+        getTotalDuration: () => {
+            return measurements.reduce((sum, m) => sum + m.duration, 0);
+        },
+
+        reset: () => {
+            measurements.length = 0;
+        },
+
+        getMeasurements: () => measurements
+    };
+};
 
 /**
  * Generate test elements for performance testing
@@ -315,39 +318,38 @@ export const jsonTestHelpers = {
 };
 
 /**
- * Warning logging utilities
+ * Create a warning logger
+ * @returns {Object} Warning logger instance
  */
-export class WarningLogger {
-    constructor() {
-        this.warnings = [];
-    }
+export const createWarningLogger = () => {
+    const warnings = [];
 
-    log(message, element, jsonString, error) {
-        this.warnings.push({
-            message,
-            element: jsonTestHelpers.getElementSelector(element),
-            jsonString,
-            error: error?.message,
-            timestamp: Date.now()
-        });
-    }
+    return {
+        log: (message, element, jsonString, error) => {
+            warnings.push({
+                message,
+                element: jsonTestHelpers.getElementSelector(element),
+                jsonString,
+                error: error?.message,
+                timestamp: Date.now()
+            });
+        },
 
-    getWarnings() {
-        return this.warnings;
-    }
+        getWarnings: () => warnings,
 
-    hasWarning(partialMessage) {
-        return this.warnings.some(w => w.message.includes(partialMessage));
-    }
+        hasWarning: (partialMessage) => {
+            return warnings.some(w => w.message.includes(partialMessage));
+        },
 
-    hasWarningForElement(elementSelector) {
-        return this.warnings.some(w => w.element === elementSelector);
-    }
+        hasWarningForElement: (elementSelector) => {
+            return warnings.some(w => w.element === elementSelector);
+        },
 
-    clear() {
-        this.warnings = [];
-    }
-}
+        clear: () => {
+            warnings.length = 0;
+        }
+    };
+};
 
 /**
  * Complex test scenarios
@@ -414,10 +416,10 @@ export default {
     expectedJsonConfigs,
     malformedJsonSamples,
     jsonEdgeCases,
-    JsonParserTimer,
+    createJsonParserTimer,
     generateJsonElements,
     jsonTestHelpers,
-    WarningLogger,
+    createWarningLogger,
     complexJsonScenarios,
     jsonPerformanceBenchmarks,
     warningPatterns

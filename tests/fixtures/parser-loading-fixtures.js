@@ -148,111 +148,95 @@ export const cdnParserURLs = {
 };
 
 /**
- * Network Delay Simulator
- * Simulates network latency for parser loading
+ * Create a network delay simulator
+ * @param {number} delayMs - Delay in milliseconds
+ * @returns {Object} Network delay simulator instance
  */
-export class NetworkDelaySimulator {
-    constructor(delayMs = 0) {
-        this.delayMs = delayMs;
-        this.loadTimes = new Map();
-    }
+export const createNetworkDelaySimulator = (delayMs = 0) => {
+    const loadTimes = new Map();
 
-    async simulateLoad(parserName, loader) {
-        const startTime = performance.now();
+    return {
+        delayMs,
 
-        // Simulate network delay
-        if (this.delayMs > 0) {
-            await new Promise(resolve => setTimeout(resolve, this.delayMs));
-        }
+        simulateLoad: async (parserName, loader) => {
+            const startTime = performance.now();
 
-        // Load the parser
-        const result = await loader();
+            // Simulate network delay
+            if (delayMs > 0) {
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
 
-        const endTime = performance.now();
-        this.loadTimes.set(parserName, endTime - startTime);
+            // Load the parser
+            const result = await loader();
 
-        return result;
-    }
+            const endTime = performance.now();
+            loadTimes.set(parserName, endTime - startTime);
 
-    getLoadTime(parserName) {
-        return this.loadTimes.get(parserName) || 0;
-    }
+            return result;
+        },
 
-    getTotalLoadTime() {
-        let total = 0;
-        for (const time of this.loadTimes.values()) {
-            total += time;
-        }
-        return total;
-    }
+        getLoadTime: (parserName) => loadTimes.get(parserName) || 0,
 
-    reset() {
-        this.loadTimes.clear();
-    }
-}
+        getTotalLoadTime: () => {
+            let total = 0;
+            for (const time of loadTimes.values()) {
+                total += time;
+            }
+            return total;
+        },
+
+        reset: () => loadTimes.clear()
+    };
+};
 
 /**
- * Parser Load Error Simulator
- * Simulates parser load failures for error handling tests
+ * Create a parser load error simulator
+ * @returns {Object} Parser load error simulator instance
  */
-export class ParserLoadErrorSimulator {
-    constructor() {
-        this.failedParsers = new Set();
-    }
+export const createParserLoadErrorSimulator = () => {
+    const failedParsers = new Set();
 
-    setParserToFail(parserName) {
-        this.failedParsers.add(parserName);
-    }
+    return {
+        setParserToFail: (parserName) => failedParsers.add(parserName),
 
-    clearFailedParsers() {
-        this.failedParsers.clear();
-    }
+        clearFailedParsers: () => failedParsers.clear(),
 
-    shouldFail(parserName) {
-        return this.failedParsers.has(parserName);
-    }
+        shouldFail: (parserName) => failedParsers.has(parserName),
 
-    async simulateLoad(parserName, loader) {
-        if (this.shouldFail(parserName)) {
-            throw new Error(`Failed to load parser: ${parserName}`);
+        simulateLoad: async (parserName, loader) => {
+            if (failedParsers.has(parserName)) {
+                throw new Error(`Failed to load parser: ${parserName}`);
+            }
+            return await loader();
         }
-        return await loader();
-    }
-}
+    };
+};
 
 /**
- * Bundle Size Tracker
- * Tracks cumulative bundle size as parsers are loaded
+ * Create a bundle size tracker
+ * @returns {Object} Bundle size tracker instance
  */
-export class BundleSizeTracker {
-    constructor() {
-        this.loadedParsers = new Map();
-    }
+export const createBundleSizeTracker = () => {
+    const loadedParsers = new Map();
 
-    addParser(parserName, size) {
-        this.loadedParsers.set(parserName, size);
-    }
+    return {
+        addParser: (parserName, size) => loadedParsers.set(parserName, size),
 
-    getTotalSize() {
-        let total = 0;
-        for (const size of this.loadedParsers.values()) {
-            total += size;
-        }
-        return total;
-    }
+        getTotalSize: () => {
+            let total = 0;
+            for (const size of loadedParsers.values()) {
+                total += size;
+            }
+            return total;
+        },
 
-    getParserSize(parserName) {
-        return this.loadedParsers.get(parserName) || 0;
-    }
+        getParserSize: (parserName) => loadedParsers.get(parserName) || 0,
 
-    isLoaded(parserName) {
-        return this.loadedParsers.has(parserName);
-    }
+        isLoaded: (parserName) => loadedParsers.has(parserName),
 
-    reset() {
-        this.loadedParsers.clear();
-    }
-}
+        reset: () => loadedParsers.clear()
+    };
+};
 
 /**
  * Mock Dynamic Import
@@ -335,83 +319,81 @@ export const parserLoadingPages = {
 };
 
 /**
- * Parser Loading State Tracker
- * Tracks which parsers have been loaded and their status
+ * Create a parser loading state tracker
+ * @returns {Object} Parser loading tracker instance
  */
-export class ParserLoadingTracker {
-    constructor() {
-        this.parsers = new Map();
-        this.loadOrder = [];
-    }
+export const createParserLoadingTracker = () => {
+    const parsers = new Map();
+    const loadOrder = [];
 
-    markAsLoading(parserName) {
-        this.parsers.set(parserName, { status: 'loading', startTime: performance.now() });
-        this.loadOrder.push(parserName);
-    }
+    return {
+        markAsLoading: (parserName) => {
+            parsers.set(parserName, { status: 'loading', startTime: performance.now() });
+            loadOrder.push(parserName);
+        },
 
-    markAsLoaded(parserName, parser) {
-        const existing = this.parsers.get(parserName);
-        if (existing) {
-            existing.status = 'loaded';
-            existing.endTime = performance.now();
-            existing.duration = existing.endTime - existing.startTime;
-            existing.parser = parser;
+        markAsLoaded: (parserName, parser) => {
+            const existing = parsers.get(parserName);
+            if (existing) {
+                existing.status = 'loaded';
+                existing.endTime = performance.now();
+                existing.duration = existing.endTime - existing.startTime;
+                existing.parser = parser;
+            }
+        },
+
+        markAsFailed: (parserName, error) => {
+            const existing = parsers.get(parserName);
+            if (existing) {
+                existing.status = 'failed';
+                existing.error = error;
+                existing.endTime = performance.now();
+            }
+        },
+
+        isLoaded: (parserName) => {
+            const parser = parsers.get(parserName);
+            return parser && parser.status === 'loaded';
+        },
+
+        isFailed: (parserName) => {
+            const parser = parsers.get(parserName);
+            return parser && parser.status === 'failed';
+        },
+
+        getLoadDuration: (parserName) => {
+            const parser = parsers.get(parserName);
+            return parser && parser.duration ? parser.duration : null;
+        },
+
+        getLoadOrder: () => [...loadOrder],
+
+        wereLoadedInParallel: (parser1, parser2) => {
+            const p1 = parsers.get(parser1);
+            const p2 = parsers.get(parser2);
+
+            if (!p1 || !p2) return false;
+
+            // Check if load times overlap (parallel loading)
+            return (p1.startTime < p2.endTime && p2.startTime < p1.endTime);
+        },
+
+        reset: () => {
+            parsers.clear();
+            loadOrder.length = 0;
         }
-    }
-
-    markAsFailed(parserName, error) {
-        const existing = this.parsers.get(parserName);
-        if (existing) {
-            existing.status = 'failed';
-            existing.error = error;
-            existing.endTime = performance.now();
-        }
-    }
-
-    isLoaded(parserName) {
-        const parser = this.parsers.get(parserName);
-        return parser && parser.status === 'loaded';
-    }
-
-    isFailed(parserName) {
-        const parser = this.parsers.get(parserName);
-        return parser && parser.status === 'failed';
-    }
-
-    getLoadDuration(parserName) {
-        const parser = this.parsers.get(parserName);
-        return parser && parser.duration ? parser.duration : null;
-    }
-
-    getLoadOrder() {
-        return [...this.loadOrder];
-    }
-
-    wereLoadedInParallel(parser1, parser2) {
-        const p1 = this.parsers.get(parser1);
-        const p2 = this.parsers.get(parser2);
-
-        if (!p1 || !p2) return false;
-
-        // Check if load times overlap (parallel loading)
-        return (p1.startTime < p2.endTime && p2.startTime < p1.endTime);
-    }
-
-    reset() {
-        this.parsers.clear();
-        this.loadOrder = [];
-    }
-}
+    };
+};
 
 export default {
     mockParsers,
     parserURLs,
     cdnParserURLs,
-    NetworkDelaySimulator,
-    ParserLoadErrorSimulator,
-    BundleSizeTracker,
+    createNetworkDelaySimulator,
+    createParserLoadErrorSimulator,
+    createBundleSizeTracker,
     createMockDynamicImport,
     performanceBenchmarks,
     parserLoadingPages,
-    ParserLoadingTracker
+    createParserLoadingTracker
 };

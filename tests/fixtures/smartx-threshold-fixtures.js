@@ -6,107 +6,109 @@
  */
 
 /**
- * Mock SmartX configuration object
+ * Create a mock SmartX configuration
+ * @returns {Object} Mock SmartX config instance
  */
-export class MockSmartXConfig {
-    constructor() {
-        this.config = {
-            threshold: 75, // Default threshold
-            enabled: true,
-            types: ['currency', 'date', 'phone', 'email', 'url', 'time'],
-            persistConfig: false
-        };
-        this.configHistory = [];
-    }
+export const createMockSmartXConfig = () => {
+    let config = {
+        threshold: 75, // Default threshold
+        enabled: true,
+        types: ['currency', 'date', 'phone', 'email', 'url', 'time'],
+        persistConfig: false
+    };
+    const configHistory = [];
 
-    /**
-     * Set configuration
-     */
-    configure(options) {
-        this.configHistory.push({ ...this.config });
-        Object.assign(this.config, options);
+    return {
+        /**
+         * Set configuration
+         */
+        configure: (options) => {
+            configHistory.push({ ...config });
+            Object.assign(config, options);
 
-        // Validate threshold
-        if (this.config.threshold < 0) {
-            console.warn('SmartX: Threshold cannot be negative, clamping to 0');
-            this.config.threshold = 0;
-        }
-        if (this.config.threshold > 100) {
-            console.warn('SmartX: Threshold cannot exceed 100, clamping to 100');
-            this.config.threshold = 100;
-        }
+            // Validate threshold
+            if (config.threshold < 0) {
+                console.warn('SmartX: Threshold cannot be negative, clamping to 0');
+                config.threshold = 0;
+            }
+            if (config.threshold > 100) {
+                console.warn('SmartX: Threshold cannot exceed 100, clamping to 100');
+                config.threshold = 100;
+            }
 
-        return this.config;
-    }
+            return config;
+        },
 
-    /**
-     * Get current configuration
-     */
-    getConfig() {
-        return { ...this.config };
-    }
+        /**
+         * Get current configuration
+         */
+        getConfig: () => ({ ...config }),
 
-    /**
-     * Reset to defaults
-     */
-    reset() {
-        this.config = {
-            threshold: 75,
-            enabled: true,
-            types: ['currency', 'date', 'phone', 'email', 'url', 'time'],
-            persistConfig: false
-        };
-        this.configHistory = [];
-    }
+        /**
+         * Reset to defaults
+         */
+        reset: () => {
+            config = {
+                threshold: 75,
+                enabled: true,
+                types: ['currency', 'date', 'phone', 'email', 'url', 'time'],
+                persistConfig: false
+            };
+            configHistory.length = 0;
+        },
 
-    /**
-     * Get configuration history
-     */
-    getHistory() {
-        return this.configHistory;
-    }
-}
+        /**
+         * Get configuration history
+         */
+        getHistory: () => configHistory
+    };
+};
 
 /**
- * Threshold enforcement helper
+ * Create a threshold enforcer
+ * @param {number} threshold - Initial threshold
+ * @returns {Object} Threshold enforcer instance
  */
-export class ThresholdEnforcer {
-    constructor(threshold = 75) {
-        this.threshold = threshold;
-        this.decisions = [];
-    }
+export const createThresholdEnforcer = (threshold = 75) => {
+    let currentThreshold = threshold;
+    const decisions = [];
 
-    /**
-     * Check if confidence passes threshold
-     */
-    passes(confidence) {
-        const result = confidence >= this.threshold;
-        this.decisions.push({ confidence, threshold: this.threshold, passed: result });
-        return result;
-    }
+    return {
+        /**
+         * Check if confidence passes threshold
+         */
+        passes: (confidence) => {
+            const result = confidence >= currentThreshold;
+            decisions.push({ confidence, threshold: currentThreshold, passed: result });
+            return result;
+        },
 
-    /**
-     * Set threshold
-     */
-    setThreshold(threshold) {
-        this.threshold = Math.max(0, Math.min(100, threshold));
-    }
+        /**
+         * Set threshold
+         */
+        setThreshold: (newThreshold) => {
+            currentThreshold = Math.max(0, Math.min(100, newThreshold));
+        },
 
-    /**
-     * Get decision history
-     */
-    getDecisions() {
-        return this.decisions;
-    }
+        /**
+         * Get decision history
+         */
+        getDecisions: () => decisions,
 
-    /**
-     * Get pass rate
-     */
-    getPassRate() {
-        const passed = this.decisions.filter(d => d.passed).length;
-        return passed / this.decisions.length;
-    }
-}
+        /**
+         * Get pass rate
+         */
+        getPassRate: () => {
+            const passed = decisions.filter(d => d.passed).length;
+            return passed / decisions.length;
+        },
+
+        /**
+         * Get current threshold
+         */
+        getThreshold: () => currentThreshold
+    };
+};
 
 /**
  * Generate test elements with varying confidence scores
@@ -128,47 +130,50 @@ export const generateConfidenceElements = (count = 10, minConfidence = 0, maxCon
 };
 
 /**
- * Mock detection result with confidence score
+ * Create a mock detection result
+ * @param {string} format - Format type
+ * @param {*} value - Value to format
+ * @param {number} confidence - Confidence score
+ * @returns {Object} Mock detection result instance
  */
-export class MockDetectionResult {
-    constructor(format, value, confidence) {
-        this.format = format;
-        this.value = value;
-        this.confidence = confidence;
-        this.formatted = null;
-    }
+export const createMockDetectionResult = (format, value, confidence) => {
+    let formatted = null;
 
-    /**
-     * Apply format if confidence passes threshold
-     */
-    applyFormat(threshold) {
-        if (this.confidence >= threshold) {
-            this.formatted = this.formatValue();
-            return { applied: true, value: this.formatted };
-        }
-        return { applied: false, value: this.value };
-    }
-
-    /**
-     * Format the value based on type
-     */
-    formatValue() {
-        switch (this.format) {
+    const formatValue = () => {
+        switch (format) {
         case 'currency':
-            return `$${parseFloat(this.value).toFixed(2)}`;
+            return `$${parseFloat(value).toFixed(2)}`;
         case 'date':
-            return new Date(this.value).toLocaleDateString();
+            return new Date(value).toLocaleDateString();
         case 'phone':
-            return this.value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+            return value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
         case 'email':
-            return this.value.toLowerCase();
+            return value.toLowerCase();
         case 'time':
-            return new Date(this.value).toLocaleTimeString();
+            return new Date(value).toLocaleTimeString();
         default:
-            return this.value;
+            return value;
         }
-    }
-}
+    };
+
+    return {
+        format,
+        value,
+        confidence,
+        getFormatted: () => formatted,
+
+        /**
+         * Apply format if confidence passes threshold
+         */
+        applyFormat: (threshold) => {
+            if (confidence >= threshold) {
+                formatted = formatValue();
+                return { applied: true, value: formatted };
+            }
+            return { applied: false, value };
+        }
+    };
+};
 
 /**
  * Test scenarios with varying confidence
@@ -215,54 +220,59 @@ export const thresholdConfigs = {
 };
 
 /**
- * Performance tracker for threshold processing
+ * Create a performance tracker for threshold processing
+ * @returns {Object} Threshold performance tracker instance
  */
-export class ThresholdPerformanceTracker {
-    constructor() {
-        this.stats = {
-            totalElements: 0,
-            formatted: 0,
-            fallback: 0,
-            totalDuration: 0,
-            threshold: null
-        };
-    }
+export const createThresholdPerformanceTracker = () => {
+    const stats = {
+        totalElements: 0,
+        formatted: 0,
+        fallback: 0,
+        totalDuration: 0,
+        threshold: null
+    };
 
-    /**
-     * Record processing result
-     */
-    record(confidence, threshold, formatted, duration) {
-        this.stats.totalElements++;
-        this.stats.totalDuration += duration;
-        this.stats.threshold = threshold;
+    return {
+        /**
+         * Record processing result
+         */
+        record: (confidence, threshold, formatted, duration) => {
+            stats.totalElements++;
+            stats.totalDuration += duration;
+            stats.threshold = threshold;
 
-        if (formatted) {
-            this.stats.formatted++;
-        } else {
-            this.stats.fallback++;
-        }
-    }
+            if (formatted) {
+                stats.formatted++;
+            } else {
+                stats.fallback++;
+            }
+        },
 
-    /**
-     * Get summary statistics
-     */
-    getSummary() {
-        return {
-            totalElements: this.stats.totalElements,
-            formatted: this.stats.formatted,
-            fallback: this.stats.fallback,
-            formattedPercentage: (this.stats.formatted / this.stats.totalElements) * 100,
-            avgDuration: this.stats.totalDuration / this.stats.totalElements,
-            threshold: this.stats.threshold
-        };
-    }
+        /**
+         * Get summary statistics
+         */
+        getSummary: () => ({
+            totalElements: stats.totalElements,
+            formatted: stats.formatted,
+            fallback: stats.fallback,
+            formattedPercentage: (stats.formatted / stats.totalElements) * 100,
+            avgDuration: stats.totalDuration / stats.totalElements,
+            threshold: stats.threshold
+        }),
 
-    /**
-     * Get formatted report
-     */
-    getReport() {
-        const summary = this.getSummary();
-        return `
+        /**
+         * Get formatted report
+         */
+        getReport: () => {
+            const summary = {
+                totalElements: stats.totalElements,
+                formatted: stats.formatted,
+                fallback: stats.fallback,
+                formattedPercentage: (stats.formatted / stats.totalElements) * 100,
+                avgDuration: stats.totalDuration / stats.totalElements,
+                threshold: stats.threshold
+            };
+            return `
 Threshold Performance Report
 ===========================
 Threshold: ${summary.threshold}%
@@ -271,30 +281,29 @@ Formatted: ${summary.formatted} (${summary.formattedPercentage.toFixed(1)}%)
 Fallback: ${summary.fallback} (${(100 - summary.formattedPercentage).toFixed(1)}%)
 Avg Duration: ${summary.avgDuration.toFixed(4)}ms per element
 `;
-    }
+        },
 
-    /**
-     * Reset tracker
-     */
-    reset() {
-        this.stats = {
-            totalElements: 0,
-            formatted: 0,
-            fallback: 0,
-            totalDuration: 0,
-            threshold: null
-        };
-    }
-}
+        /**
+         * Reset tracker
+         */
+        reset: () => {
+            stats.totalElements = 0;
+            stats.formatted = 0;
+            stats.fallback = 0;
+            stats.totalDuration = 0;
+            stats.threshold = null;
+        }
+    };
+};
 
 /**
- * Element attribute helper
+ * Element attribute helpers
  */
-export class SmartXElementHelper {
+export const smartXElementHelper = {
     /**
      * Create element with smart attributes
      */
-    static createElement(options = {}) {
+    createElement: (options = {}) => {
         const {
             text = '123.45',
             smart = true,
@@ -317,78 +326,80 @@ export class SmartXElementHelper {
         el.setAttribute('data-test-confidence', confidence.toString());
 
         return el;
-    }
+    },
 
     /**
      * Check if element has fallback marker
      */
-    static hasFallback(element) {
+    hasFallback: (element) => {
         return element.getAttribute('data-smart-fallback') === 'true';
-    }
+    },
 
     /**
      * Check if element has applied marker
      */
-    static hasApplied(element) {
+    hasApplied: (element) => {
         return element.getAttribute('data-smart-applied') === 'true';
-    }
+    },
 
     /**
      * Get confidence from element
      */
-    static getConfidence(element) {
+    getConfidence: (element) => {
         const conf = element.getAttribute('data-smart-confidence');
         return conf ? parseFloat(conf) : null;
     }
-}
+};
 
 /**
- * Console warning tracker
+ * Create a console warning tracker
+ * @returns {Object} Console warning tracker instance
  */
-export class ConsoleWarningTracker {
-    constructor() {
-        this.warnings = [];
-        this.originalWarn = console.warn;
-    }
+export const createConsoleWarningTracker = () => {
+    const warnings = [];
+    let originalWarn = null;
 
-    /**
-     * Start tracking warnings
-     */
-    start() {
-        console.warn = (...args) => {
-            this.warnings.push({ message: args.join(' '), timestamp: Date.now() });
-            this.originalWarn.apply(console, args);
-        };
-    }
+    return {
+        /**
+         * Start tracking warnings
+         */
+        start: () => {
+            originalWarn = console.warn;
+            console.warn = (...args) => {
+                warnings.push({ message: args.join(' '), timestamp: Date.now() });
+                originalWarn.apply(console, args);
+            };
+        },
 
-    /**
-     * Stop tracking warnings
-     */
-    stop() {
-        console.warn = this.originalWarn;
-    }
+        /**
+         * Stop tracking warnings
+         */
+        stop: () => {
+            if (originalWarn) {
+                console.warn = originalWarn;
+            }
+        },
 
-    /**
-     * Get warnings
-     */
-    getWarnings() {
-        return this.warnings;
-    }
+        /**
+         * Get warnings
+         */
+        getWarnings: () => warnings,
 
-    /**
-     * Check if warning was logged
-     */
-    hasWarning(pattern) {
-        return this.warnings.some(w => w.message.includes(pattern));
-    }
+        /**
+         * Check if warning was logged
+         */
+        hasWarning: (pattern) => {
+            return warnings.some(w => w.message.includes(pattern));
+        },
 
-    /**
-     * Reset tracker
-     */
-    reset() {
-        this.warnings = [];
-    }
-}
+        /**
+         * Reset tracker
+         */
+        reset: () => {
+            warnings.length = 0;
+        }
+    };
+};
 
 /**
  * Threshold validation helper
@@ -433,15 +444,15 @@ export const expectedResults = {
 };
 
 export default {
-    MockSmartXConfig,
-    ThresholdEnforcer,
+    createMockSmartXConfig,
+    createThresholdEnforcer,
     generateConfidenceElements,
-    MockDetectionResult,
+    createMockDetectionResult,
     confidenceScenarios,
     thresholdConfigs,
-    ThresholdPerformanceTracker,
-    SmartXElementHelper,
-    ConsoleWarningTracker,
+    createThresholdPerformanceTracker,
+    smartXElementHelper,
+    createConsoleWarningTracker,
     validateThreshold,
     expectedResults
 };
