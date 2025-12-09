@@ -1,0 +1,11 @@
+# genX - https://genx.software
+# The Tailwind of Frontend Behavior
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://genx.software/sitemap.xml
+
+# Crawl-delay for politeness (optional, not all bots respect this)
+Crawl-delay: 1
