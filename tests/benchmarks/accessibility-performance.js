@@ -16,23 +16,25 @@
 
 const fs = require('fs');
 const path = require('path');
-const { performance, PerformanceObserver } = require('perf_hooks');
+const { performance } = require('perf_hooks');
 
 // Mock DOM environment for Node.js
 const { JSDOM } = require('jsdom');
 
-class AccessibilityBenchmark {
-    constructor() {
-        this.results = {
-            timestamp: new Date().toISOString(),
-            targetMs: 10,
-            scales: {},
-            summary: {}
-        };
-        this.scales = [100, 1000, 5000];
-    }
+/**
+ * Create an accessibility benchmark runner
+ * @returns {Object} Accessibility benchmark instance
+ */
+const createAccessibilityBenchmark = () => {
+    const results = {
+        timestamp: new Date().toISOString(),
+        targetMs: 10,
+        scales: {},
+        summary: {}
+    };
+    const scales = [100, 1000, 5000];
 
-    setupDOM(elementCount) {
+    const setupDOM = (elementCount) => {
         const dom = new JSDOM(`
             <!DOCTYPE html>
             <html>
@@ -60,9 +62,15 @@ class AccessibilityBenchmark {
         }
 
         return { dom, container };
-    }
+    };
 
-    benchmark(name, fn, iterations = 100) {
+    const percentile = (arr, p) => {
+        const sorted = arr.slice().sort((a, b) => a - b);
+        const index = Math.ceil(sorted.length * p) - 1;
+        return sorted[index];
+    };
+
+    const benchmark = (name, fn, iterations = 100) => {
         const times = [];
 
         // Warmup
@@ -82,23 +90,17 @@ class AccessibilityBenchmark {
             avg: times.reduce((a, b) => a + b, 0) / times.length,
             min: Math.min(...times),
             max: Math.max(...times),
-            p50: this.percentile(times, 0.5),
-            p95: this.percentile(times, 0.95),
-            p99: this.percentile(times, 0.99)
+            p50: percentile(times, 0.5),
+            p95: percentile(times, 0.95),
+            p99: percentile(times, 0.99)
         };
-    }
+    };
 
-    percentile(arr, p) {
-        const sorted = arr.slice().sort((a, b) => a - b);
-        const index = Math.ceil(sorted.length * p) - 1;
-        return sorted[index];
-    }
-
-    measureARIAApplication(elementCount) {
-        const { container } = this.setupDOM(elementCount);
+    const measureARIAApplication = (elementCount) => {
+        const { container } = setupDOM(elementCount);
         const elements = Array.from(container.querySelectorAll('button'));
 
-        return this.benchmark('aria-application', () => {
+        return benchmark('aria-application', () => {
             elements.forEach((el, index) => {
                 el.setAttribute('aria-label', `Button ${index}`);
                 el.setAttribute('aria-pressed', 'false');
@@ -106,10 +108,10 @@ class AccessibilityBenchmark {
                 el.setAttribute('tabindex', '0');
             });
         }, 50);
-    }
+    };
 
-    measureKeyboardEventHandler(elementCount) {
-        const { container } = this.setupDOM(elementCount);
+    const measureKeyboardEventHandler = (elementCount) => {
+        const { container } = setupDOM(elementCount);
         const elements = Array.from(container.querySelectorAll('button'));
 
         // Setup keyboard handler
@@ -126,20 +128,20 @@ class AccessibilityBenchmark {
 
         container.addEventListener('keydown', handler);
 
-        const result = this.benchmark('keyboard-event', () => {
+        const result = benchmark('keyboard-event', () => {
             const event = new window.KeyboardEvent('keydown', { key: 'ArrowDown' });
             container.dispatchEvent(event);
         }, 100);
 
         container.removeEventListener('keydown', handler);
         return result;
-    }
+    };
 
-    measureFocusManagement(elementCount) {
-        const { container } = this.setupDOM(elementCount);
+    const measureFocusManagement = (elementCount) => {
+        const { container } = setupDOM(elementCount);
         const elements = Array.from(container.querySelectorAll('button'));
 
-        return this.benchmark('focus-management', () => {
+        return benchmark('focus-management', () => {
             elements.forEach((el, index) => {
                 el.setAttribute('tabindex', index === 0 ? '0' : '-1');
             });
@@ -150,19 +152,19 @@ class AccessibilityBenchmark {
                 el.setAttribute('tabindex', index === randomIndex ? '0' : '-1');
             });
         }, 50);
-    }
+    };
 
-    measureLiveRegionUpdate(elementCount) {
-        const { dom } = this.setupDOM(elementCount);
+    const measureLiveRegionUpdate = (elementCount) => {
+        setupDOM(elementCount);
         const liveRegion = document.getElementById('live-region');
 
-        return this.benchmark('live-region-update', () => {
+        return benchmark('live-region-update', () => {
             liveRegion.textContent = `Updated at ${Date.now()}`;
         }, 100);
-    }
+    };
 
-    measureMemoryUsage(elementCount) {
-        const { dom, container } = this.setupDOM(elementCount);
+    const measureMemoryUsage = (elementCount) => {
+        const { container } = setupDOM(elementCount);
 
         if (global.gc) {
             global.gc();
@@ -208,10 +210,10 @@ class AccessibilityBenchmark {
             external: (after.external - before.external) / 1024 / 1024,
             perElement: ((after.heapUsed - before.heapUsed) / elementCount) / 1024 // KB per element
         };
-    }
+    };
 
-    measureMultiSelection(elementCount) {
-        const { container } = this.setupDOM(elementCount);
+    const measureMultiSelection = (elementCount) => {
+        const { container } = setupDOM(elementCount);
         const elements = Array.from(container.querySelectorAll('button'));
 
         // Setup multi-selection state
@@ -221,7 +223,7 @@ class AccessibilityBenchmark {
             el.setAttribute('aria-selected', 'false');
         });
 
-        return this.benchmark('multi-selection', () => {
+        return benchmark('multi-selection', () => {
             // Simulate range selection (Shift+Arrow)
             const start = Math.floor(Math.random() * elements.length);
             const end = Math.min(start + 10, elements.length - 1);
@@ -235,12 +237,12 @@ class AccessibilityBenchmark {
                 elements[i].setAttribute('aria-selected', 'false');
             }
         }, 50);
-    }
+    };
 
-    measureAnnouncement(elementCount) {
-        const { dom } = this.setupDOM(elementCount);
+    const measureAnnouncement = (elementCount) => {
+        setupDOM(elementCount);
 
-        return this.benchmark('announcement', () => {
+        return benchmark('announcement', () => {
             let announcer = document.getElementById('ax-announcer');
             if (!announcer) {
                 announcer = document.createElement('div');
@@ -254,73 +256,22 @@ class AccessibilityBenchmark {
             announcer.textContent = '';
             announcer.textContent = `Announcement ${Date.now()}`;
         }, 100);
-    }
+    };
 
-    async runBenchmarks() {
-        console.log('🏃 Running Accessibility Performance Benchmarks...\n');
-        console.log(`Target: <${this.results.targetMs}ms for all operations\n`);
-
-        for (const scale of this.scales) {
-            console.log(`\n📊 Testing with ${scale} elements...`);
-
-            const scaleResults = {
-                elementCount: scale,
-                metrics: {}
-            };
-
-            // Initial ARIA application
-            console.log('  ⏱️  Measuring ARIA application...');
-            scaleResults.metrics.ariaApplication = this.measureARIAApplication(scale);
-
-            // Keyboard event handling
-            console.log('  ⏱️  Measuring keyboard event handling...');
-            scaleResults.metrics.keyboardEvent = this.measureKeyboardEventHandler(scale);
-
-            // Focus management
-            console.log('  ⏱️  Measuring focus management...');
-            scaleResults.metrics.focusManagement = this.measureFocusManagement(scale);
-
-            // Live region updates
-            console.log('  ⏱️  Measuring live region updates...');
-            scaleResults.metrics.liveRegion = this.measureLiveRegionUpdate(scale);
-
-            // Multi-selection
-            console.log('  ⏱️  Measuring multi-selection...');
-            scaleResults.metrics.multiSelection = this.measureMultiSelection(scale);
-
-            // Announcements
-            console.log('  ⏱️  Measuring announcements...');
-            scaleResults.metrics.announcement = this.measureAnnouncement(scale);
-
-            // Memory usage
-            console.log('  ⏱️  Measuring memory usage...');
-            scaleResults.metrics.memory = this.measureMemoryUsage(scale);
-
-            this.results.scales[scale] = scaleResults;
-
-            // Print summary for this scale
-            this.printScaleSummary(scale, scaleResults);
-        }
-
-        this.generateSummary();
-        this.saveResults();
-        this.printFinalReport();
-    }
-
-    printScaleSummary(scale, results) {
+    const printScaleSummary = (scale, scaleResults) => {
         console.log(`\n  Results for ${scale} elements:`);
 
-        Object.entries(results.metrics).forEach(([metric, data]) => {
+        Object.entries(scaleResults.metrics).forEach(([metric, data]) => {
             if (metric === 'memory') {
                 console.log(`    ${metric}: ${data.heapUsed.toFixed(2)}MB (${data.perElement.toFixed(2)}KB/element)`);
             } else {
-                const status = data.avg < this.results.targetMs ? '✅' : '❌';
+                const status = data.avg < results.targetMs ? '✅' : '❌';
                 console.log(`    ${metric}: avg=${data.avg.toFixed(2)}ms, p95=${data.p95.toFixed(2)}ms ${status}`);
             }
         });
-    }
+    };
 
-    generateSummary() {
+    const generateSummary = () => {
         const summary = {
             passedTarget: {},
             failedTarget: {},
@@ -328,7 +279,7 @@ class AccessibilityBenchmark {
             scalability: {}
         };
 
-        Object.entries(this.results.scales).forEach(([scale, data]) => {
+        Object.entries(results.scales).forEach(([scale, data]) => {
             summary.passedTarget[scale] = {};
             summary.failedTarget[scale] = {};
 
@@ -336,7 +287,7 @@ class AccessibilityBenchmark {
                 if (metric === 'memory') {
                     summary.memoryEfficiency[scale] = values;
                 } else {
-                    if (values.avg < this.results.targetMs) {
+                    if (values.avg < results.targetMs) {
                         summary.passedTarget[scale][metric] = values.avg;
                     } else {
                         summary.failedTarget[scale][metric] = values.avg;
@@ -346,15 +297,15 @@ class AccessibilityBenchmark {
         });
 
         // Calculate scalability (how performance degrades with scale)
-        const scales = Object.keys(this.results.scales).map(Number).sort((a, b) => a - b);
-        if (scales.length >= 2) {
-            const smallScale = scales[0];
-            const largeScale = scales[scales.length - 1];
+        const scaleKeys = Object.keys(results.scales).map(Number).sort((a, b) => a - b);
+        if (scaleKeys.length >= 2) {
+            const smallScale = scaleKeys[0];
+            const largeScale = scaleKeys[scaleKeys.length - 1];
 
-            const metrics = Object.keys(this.results.scales[smallScale].metrics).filter(m => m !== 'memory');
+            const metrics = Object.keys(results.scales[smallScale].metrics).filter(m => m !== 'memory');
             metrics.forEach(metric => {
-                const smallTime = this.results.scales[smallScale].metrics[metric].avg;
-                const largeTime = this.results.scales[largeScale].metrics[metric].avg;
+                const smallTime = results.scales[smallScale].metrics[metric].avg;
+                const largeTime = results.scales[largeScale].metrics[metric].avg;
                 const scaleFactor = largeScale / smallScale;
                 const timeFactor = largeTime / smallTime;
 
@@ -366,22 +317,22 @@ class AccessibilityBenchmark {
             });
         }
 
-        this.results.summary = summary;
-    }
+        results.summary = summary;
+    };
 
-    saveResults() {
-        const outputPath = path.join(__dirname, '..', '..', 'baseline-performance.json');
-        fs.writeFileSync(outputPath, JSON.stringify(this.results, null, 2));
+    const saveResults = () => {
+        const outputPath = path.join(__dirname, '..', 'results', 'baseline-performance.json');
+        fs.writeFileSync(outputPath, JSON.stringify(results, null, 2));
         console.log(`\n\n💾 Results saved to: ${outputPath}`);
-    }
+    };
 
-    printFinalReport() {
+    const printFinalReport = () => {
         console.log('\n\n' + '='.repeat(60));
         console.log('FINAL REPORT');
         console.log('='.repeat(60));
 
         console.log('\n📈 Scalability Analysis:');
-        Object.entries(this.results.summary.scalability).forEach(([metric, data]) => {
+        Object.entries(results.summary.scalability).forEach(([metric, data]) => {
             console.log(`  ${metric}:`);
             console.log(`    Scale factor: ${data.scaleFactor}x elements`);
             console.log(`    Time factor: ${data.timeFactor.toFixed(2)}x slower`);
@@ -389,14 +340,14 @@ class AccessibilityBenchmark {
         });
 
         console.log('\n💚 Metrics Meeting Target (<10ms):');
-        Object.entries(this.results.summary.passedTarget).forEach(([scale, metrics]) => {
+        Object.entries(results.summary.passedTarget).forEach(([scale, metrics]) => {
             if (Object.keys(metrics).length > 0) {
                 console.log(`  ${scale} elements: ${Object.keys(metrics).join(', ')}`);
             }
         });
 
         console.log('\n⚠️  Metrics Exceeding Target:');
-        Object.entries(this.results.summary.failedTarget).forEach(([scale, metrics]) => {
+        Object.entries(results.summary.failedTarget).forEach(([scale, metrics]) => {
             if (Object.keys(metrics).length > 0) {
                 console.log(`  ${scale} elements:`);
                 Object.entries(metrics).forEach(([metric, time]) => {
@@ -406,18 +357,83 @@ class AccessibilityBenchmark {
         });
 
         console.log('\n💾 Memory Usage:');
-        Object.entries(this.results.summary.memoryEfficiency).forEach(([scale, data]) => {
+        Object.entries(results.summary.memoryEfficiency).forEach(([scale, data]) => {
             console.log(`  ${scale} elements: ${data.heapUsed.toFixed(2)}MB (${data.perElement.toFixed(2)}KB/element)`);
         });
 
         console.log('\n' + '='.repeat(60));
-    }
-}
+    };
+
+    return {
+        results,
+        scales,
+
+        runBenchmarks: async () => {
+            console.log('🏃 Running Accessibility Performance Benchmarks...\n');
+            console.log(`Target: <${results.targetMs}ms for all operations\n`);
+
+            for (const scale of scales) {
+                console.log(`\n📊 Testing with ${scale} elements...`);
+
+                const scaleResults = {
+                    elementCount: scale,
+                    metrics: {}
+                };
+
+                // Initial ARIA application
+                console.log('  ⏱️  Measuring ARIA application...');
+                scaleResults.metrics.ariaApplication = measureARIAApplication(scale);
+
+                // Keyboard event handling
+                console.log('  ⏱️  Measuring keyboard event handling...');
+                scaleResults.metrics.keyboardEvent = measureKeyboardEventHandler(scale);
+
+                // Focus management
+                console.log('  ⏱️  Measuring focus management...');
+                scaleResults.metrics.focusManagement = measureFocusManagement(scale);
+
+                // Live region updates
+                console.log('  ⏱️  Measuring live region updates...');
+                scaleResults.metrics.liveRegion = measureLiveRegionUpdate(scale);
+
+                // Multi-selection
+                console.log('  ⏱️  Measuring multi-selection...');
+                scaleResults.metrics.multiSelection = measureMultiSelection(scale);
+
+                // Announcements
+                console.log('  ⏱️  Measuring announcements...');
+                scaleResults.metrics.announcement = measureAnnouncement(scale);
+
+                // Memory usage
+                console.log('  ⏱️  Measuring memory usage...');
+                scaleResults.metrics.memory = measureMemoryUsage(scale);
+
+                results.scales[scale] = scaleResults;
+
+                // Print summary for this scale
+                printScaleSummary(scale, scaleResults);
+            }
+
+            generateSummary();
+            saveResults();
+            printFinalReport();
+        },
+
+        // Expose individual measurement functions for testing
+        measureARIAApplication,
+        measureKeyboardEventHandler,
+        measureFocusManagement,
+        measureLiveRegionUpdate,
+        measureMemoryUsage,
+        measureMultiSelection,
+        measureAnnouncement
+    };
+};
 
 // Run benchmarks
 if (require.main === module) {
-    const benchmark = new AccessibilityBenchmark();
+    const benchmark = createAccessibilityBenchmark();
     benchmark.runBenchmarks().catch(console.error);
 }
 
-module.exports = AccessibilityBenchmark;
+module.exports = { createAccessibilityBenchmark };

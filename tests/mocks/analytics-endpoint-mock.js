@@ -6,74 +6,31 @@
  */
 
 /**
- * Mock Analytics Endpoint Server
+ * Create a mock analytics endpoint
+ * @param {Object} options - Configuration options
+ * @returns {Object} Mock endpoint instance
  */
-export class MockAnalyticsEndpoint {
-    constructor(options = {}) {
-        this.options = {
-            baseURL: options.baseURL || 'https://analytics.example.com',
-            logPath: options.logPath || '/log',
-            requireAuth: options.requireAuth || false,
-            authToken: options.authToken || 'test-token',
-            ...options
-        };
+export const createMockAnalyticsEndpoint = (options = {}) => {
+    const config = {
+        baseURL: options.baseURL || 'https://analytics.example.com',
+        logPath: options.logPath || '/log',
+        requireAuth: options.requireAuth || false,
+        authToken: options.authToken || 'test-token',
+        ...options
+    };
 
-        this.requests = [];
-        this.responseMode = 'success'; // 'success', 'error', 'timeout', 'custom'
-        this.customResponse = null;
-        this.responseDelay = 0;
-        this.requestCount = 0;
-    }
+    let requests = [];
+    let responseMode = 'success'; // 'success', 'error', 'timeout', 'custom'
+    let customResponse = null;
+    let responseDelay = 0;
+    let requestCount = 0;
 
-    /**
-     * Get full endpoint URL
-     */
-    getURL() {
-        return `${this.options.baseURL}${this.options.logPath}`;
-    }
-
-    /**
-     * Handle incoming request
-     */
-    async handleRequest(request) {
-        this.requestCount++;
-
-        const logEntry = {
-            requestId: this.requestCount,
-            timestamp: Date.now(),
-            method: request.method,
-            url: request.url,
-            headers: request.headers,
-            body: request.body,
-            validated: this.validateRequest(request)
-        };
-
-        this.requests.push(logEntry);
-
-        // Simulate delay if configured
-        if (this.responseDelay > 0) {
-            await this.sleep(this.responseDelay);
-        }
-
-        // Return response based on mode
-        switch (this.responseMode) {
-            case 'success':
-                return this.successResponse(logEntry);
-            case 'error':
-                return this.errorResponse(logEntry);
-            case 'timeout':
-                return this.timeoutResponse();
-            case 'custom':
-                return this.customResponse || this.successResponse(logEntry);
-            default:
-                return this.successResponse(logEntry);
-        }
-    }
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     /**
      * Validate request structure
      */
-    validateRequest(request) {
+    const validateRequest = (request) => {
         const errors = [];
 
         // Check method
@@ -87,9 +44,9 @@ export class MockAnalyticsEndpoint {
         }
 
         // Check auth if required
-        if (this.options.requireAuth) {
+        if (config.requireAuth) {
             const auth = request.headers['Authorization'];
-            if (!auth || !auth.includes(this.options.authToken)) {
+            if (!auth || !auth.includes(config.authToken)) {
                 errors.push('Invalid or missing authorization');
             }
         }
@@ -127,28 +84,26 @@ export class MockAnalyticsEndpoint {
             valid: errors.length === 0,
             errors
         };
-    }
+    };
 
     /**
      * Success response (200)
      */
-    successResponse(logEntry) {
-        return {
-            status: 200,
-            ok: true,
-            body: {
-                success: true,
-                requestId: logEntry.requestId,
-                received: Array.isArray(logEntry.body) ? logEntry.body.length : 0,
-                timestamp: new Date().toISOString()
-            }
-        };
-    }
+    const successResponse = (logEntry) => ({
+        status: 200,
+        ok: true,
+        body: {
+            success: true,
+            requestId: logEntry.requestId,
+            received: Array.isArray(logEntry.body) ? logEntry.body.length : 0,
+            timestamp: new Date().toISOString()
+        }
+    });
 
     /**
      * Error response (400/500)
      */
-    errorResponse(logEntry) {
+    const errorResponse = (logEntry) => {
         const errors = logEntry.validated?.errors || ['Unknown error'];
         const status = errors.length > 0 ? 400 : 500;
 
@@ -161,76 +116,38 @@ export class MockAnalyticsEndpoint {
                 requestId: logEntry.requestId
             }
         };
-    }
+    };
 
     /**
      * Timeout simulation
      */
-    async timeoutResponse() {
+    const timeoutResponse = async () => {
         // Simulate long delay that causes timeout
-        await this.sleep(10000);
+        await sleep(10000);
         throw new Error('Request timeout');
-    }
+    };
 
     /**
-     * Set response mode
+     * Get batch sizes from requests
      */
-    setResponseMode(mode) {
-        this.responseMode = mode;
-    }
-
-    /**
-     * Set custom response
-     */
-    setCustomResponse(response) {
-        this.responseMode = 'custom';
-        this.customResponse = response;
-    }
-
-    /**
-     * Set response delay
-     */
-    setResponseDelay(ms) {
-        this.responseDelay = ms;
-    }
-
-    /**
-     * Get all requests
-     */
-    getRequests() {
-        return this.requests;
-    }
-
-    /**
-     * Get request count
-     */
-    getRequestCount() {
-        return this.requestCount;
-    }
-
-    /**
-     * Get last request
-     */
-    getLastRequest() {
-        return this.requests[this.requests.length - 1];
-    }
-
-    /**
-     * Get requests by time window
-     */
-    getRequestsByTimeWindow(startTime, endTime) {
-        return this.requests.filter(r =>
-            r.timestamp >= startTime && r.timestamp <= endTime
-        );
-    }
+    const getBatchSizes = () => {
+        return requests.map(r => {
+            try {
+                const body = typeof r.body === 'string' ? JSON.parse(r.body) : r.body;
+                return Array.isArray(body) ? body.length : 0;
+            } catch {
+                return 0;
+            }
+        });
+    };
 
     /**
      * Validate rate limiting
      */
-    validateRateLimit(maxPerSecond) {
+    const validateRateLimit = (maxPerSecond) => {
         const requestsBySecond = {};
 
-        for (const request of this.requests) {
+        for (const request of requests) {
             const second = Math.floor(request.timestamp / 1000);
             if (!requestsBySecond[second]) {
                 requestsBySecond[second] = 0;
@@ -247,29 +164,15 @@ export class MockAnalyticsEndpoint {
             maxPerSecond,
             requestsBySecond
         };
-    }
-
-    /**
-     * Get batch sizes from requests
-     */
-    getBatchSizes() {
-        return this.requests.map(r => {
-            try {
-                const body = typeof r.body === 'string' ? JSON.parse(r.body) : r.body;
-                return Array.isArray(body) ? body.length : 0;
-            } catch {
-                return 0;
-            }
-        });
-    }
+    };
 
     /**
      * Check sequential batch ordering
      */
-    validateBatchSequence() {
+    const validateBatchSequence = () => {
         const batches = [];
 
-        for (const request of this.requests) {
+        for (const request of requests) {
             try {
                 const body = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
                 if (Array.isArray(body)) {
@@ -295,15 +198,15 @@ export class MockAnalyticsEndpoint {
             minInterval: intervals.length > 0 ? Math.min(...intervals) : 0,
             maxInterval: intervals.length > 0 ? Math.max(...intervals) : 0
         };
-    }
+    };
 
     /**
      * Extract all log values
      */
-    extractLogValues() {
+    const extractLogValues = () => {
         const values = [];
 
-        for (const request of this.requests) {
+        for (const request of requests) {
             try {
                 const body = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
                 if (Array.isArray(body)) {
@@ -319,13 +222,13 @@ export class MockAnalyticsEndpoint {
         }
 
         return values;
-    }
+    };
 
     /**
      * Check for PII in logs
      */
-    detectPII() {
-        const values = this.extractLogValues();
+    const detectPII = () => {
+        const values = extractLogValues();
         const piiDetected = {
             emails: [],
             phones: [],
@@ -351,86 +254,170 @@ export class MockAnalyticsEndpoint {
             detected: Object.values(piiDetected).some(arr => arr.length > 0),
             details: piiDetected
         };
-    }
+    };
 
-    /**
-     * Reset endpoint
-     */
-    reset() {
-        this.requests = [];
-        this.requestCount = 0;
-        this.responseMode = 'success';
-        this.customResponse = null;
-        this.responseDelay = 0;
-    }
+    return {
+        /**
+         * Get full endpoint URL
+         */
+        getURL: () => `${config.baseURL}${config.logPath}`,
 
-    /**
-     * Get statistics
-     */
-    getStatistics() {
-        const batchSizes = this.getBatchSizes();
-        const totalLogs = batchSizes.reduce((sum, size) => sum + size, 0);
-        const rateLimit = this.validateRateLimit(10);
-        const sequence = this.validateBatchSequence();
-        const pii = this.detectPII();
+        /**
+         * Handle incoming request
+         */
+        handleRequest: async (request) => {
+            requestCount++;
 
-        return {
-            requestCount: this.requestCount,
-            totalLogs,
-            averageBatchSize: totalLogs / this.requestCount || 0,
-            batchSizes,
-            rateLimitPassed: rateLimit.passed,
-            averageInterval: sequence.intervals.length > 0
-                ? sequence.intervals.reduce((s, v) => s + v, 0) / sequence.intervals.length
-                : 0,
-            piiDetected: pii.detected
-        };
-    }
+            const logEntry = {
+                requestId: requestCount,
+                timestamp: Date.now(),
+                method: request.method,
+                url: request.url,
+                headers: request.headers,
+                body: request.body,
+                validated: validateRequest(request)
+            };
 
-    /**
-     * Sleep utility
-     */
-    sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-}
+            requests.push(logEntry);
 
-/**
- * Create mock endpoint instance
- */
-export const createMockEndpoint = (options = {}) => {
-    return new MockAnalyticsEndpoint(options);
+            // Simulate delay if configured
+            if (responseDelay > 0) {
+                await sleep(responseDelay);
+            }
+
+            // Return response based on mode
+            switch (responseMode) {
+                case 'success':
+                    return successResponse(logEntry);
+                case 'error':
+                    return errorResponse(logEntry);
+                case 'timeout':
+                    return timeoutResponse();
+                case 'custom':
+                    return customResponse || successResponse(logEntry);
+                default:
+                    return successResponse(logEntry);
+            }
+        },
+
+        /**
+         * Set response mode
+         */
+        setResponseMode: (mode) => {
+            responseMode = mode;
+        },
+
+        /**
+         * Set custom response
+         */
+        setCustomResponse: (response) => {
+            responseMode = 'custom';
+            customResponse = response;
+        },
+
+        /**
+         * Set response delay
+         */
+        setResponseDelay: (ms) => {
+            responseDelay = ms;
+        },
+
+        /**
+         * Get all requests
+         */
+        getRequests: () => requests,
+
+        /**
+         * Get request count
+         */
+        getRequestCount: () => requestCount,
+
+        /**
+         * Get last request
+         */
+        getLastRequest: () => requests[requests.length - 1],
+
+        /**
+         * Get requests by time window
+         */
+        getRequestsByTimeWindow: (startTime, endTime) => {
+            return requests.filter(r =>
+                r.timestamp >= startTime && r.timestamp <= endTime
+            );
+        },
+
+        validateRateLimit,
+        getBatchSizes,
+        validateBatchSequence,
+        extractLogValues,
+        detectPII,
+
+        /**
+         * Reset endpoint
+         */
+        reset: () => {
+            requests = [];
+            requestCount = 0;
+            responseMode = 'success';
+            customResponse = null;
+            responseDelay = 0;
+        },
+
+        /**
+         * Get statistics
+         */
+        getStatistics: () => {
+            const batchSizes = getBatchSizes();
+            const totalLogs = batchSizes.reduce((sum, size) => sum + size, 0);
+            const rateLimit = validateRateLimit(10);
+            const sequence = validateBatchSequence();
+            const pii = detectPII();
+
+            return {
+                requestCount,
+                totalLogs,
+                averageBatchSize: totalLogs / requestCount || 0,
+                batchSizes,
+                rateLimitPassed: rateLimit.passed,
+                averageInterval: sequence.intervals.length > 0
+                    ? sequence.intervals.reduce((s, v) => s + v, 0) / sequence.intervals.length
+                    : 0,
+                piiDetected: pii.detected
+            };
+        }
+    };
 };
 
 /**
- * Simulate CORS preflight
+ * CORS handling utilities
  */
-export class CORSHandler {
+export const corsHandler = {
     /**
      * Handle OPTIONS preflight request
      */
-    static handlePreflight(origin) {
-        return {
-            status: 200,
-            headers: {
-                'Access-Control-Allow-Origin': origin || '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                'Access-Control-Max-Age': '86400'
-            }
-        };
-    }
+    handlePreflight: (origin) => ({
+        status: 200,
+        headers: {
+            'Access-Control-Allow-Origin': origin || '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Max-Age': '86400'
+        }
+    }),
 
     /**
      * Check if CORS is allowed
      */
-    static isAllowed(origin, allowedOrigins = ['*']) {
+    isAllowed: (origin, allowedOrigins = ['*']) => {
         return allowedOrigins.includes('*') || allowedOrigins.includes(origin);
     }
-}
+};
+
+// Backward compatibility aliases
+export const createMockEndpoint = createMockAnalyticsEndpoint;
 
 export default {
-    MockAnalyticsEndpoint,
+    createMockAnalyticsEndpoint,
     createMockEndpoint,
-    CORSHandler
+    corsHandler
 };
