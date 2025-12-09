@@ -46,6 +46,12 @@ Then('a {string} event should be emitted', async function(eventName) {
     expect(fired).toBe(true);
 });
 
+// Allow 'an' phrasing as well (many features use "an 'nx:...' event")
+Then('an {string} event should be emitted', async function(eventName) {
+    const fired = await this.page.evaluate(() => window._testEventFired);
+    expect(fired).toBe(true);
+});
+
 Then('the event should be emitted', async function() {
     const fired = await this.page.evaluate(() => window._testEventFired);
     expect(fired).toBe(true);
