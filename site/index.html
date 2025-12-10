@@ -35,8 +35,15 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 
+  <!-- Preload vendored fonts -->
+  <link rel="preload" href="/fonts/inter-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/inter-light.woff2" as="font" type="font/woff2" crossorigin>
+
   <!-- Critical CSS inlined for FCP -->
   <style>
+    @font-face{font-family:'Inter';src:url('/fonts/inter-regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+    @font-face{font-family:'Inter';src:url('/fonts/inter-light.woff2') format('woff2');font-weight:300;font-style:normal;font-display:swap}
+    @font-face{font-family:'JetBrains Mono';src:url('/fonts/jetbrainsmono-regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
     @font-face{font-family:'Inter-fallback';src:local('BlinkMacSystemFont'),local('Segoe UI'),local('Helvetica Neue'),local('Arial');size-adjust:107%;ascent-override:90%;descent-override:22%;line-gap-override:0%}
     :root{--color-bg:#fafafa;--color-bg-warm:#f5f3f0;--color-white:#fff;--color-text:#333;--color-text-light:#666;--color-text-muted:#999;--color-border:#e8e4df;--color-accent:#c4463a;--font-sans:'Inter','Inter-fallback',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--spacing-xs:.5rem;--spacing-sm:1rem;--spacing-md:2rem;--spacing-lg:4rem;--spacing-xl:6rem;--max-width:1200px;--transition:.2s ease}
     *{margin:0;padding:0;box-sizing:border-box}
@@ -63,11 +70,6 @@
   <!-- Full CSS - non-blocking load (media swap avoids reflow) -->
   <link rel="stylesheet" href="style.css" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="style.css"></noscript>
-  <!-- Fonts - non-blocking load -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap" media="print" onload="this.media='all'">
-  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet"></noscript>
 
   <!-- Structured Data -->
   <script type="application/ld+json">
