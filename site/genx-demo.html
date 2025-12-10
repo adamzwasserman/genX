@@ -1839,6 +1839,13 @@
                                     </button>
                                     <span id="accx-audit-status" ax-enhance="live" ax-live="polite" style="font-size: 0.8rem; color: #666;"></span>
                                 </div>
+                                <!-- Audit Timestamp Note for Auditors -->
+                                <div id="accx-audit-timestamp" style="display: none; margin-top: 12px; padding: 10px 14px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; font-size: 0.8rem;">
+                                    <strong style="color: #0369a1;">Audit Verification:</strong>
+                                    <span id="accx-audit-time" style="color: #0c4a6e;"></span>
+                                    <br>
+                                    <span style="color: #64748b; font-size: 0.75rem;">Engine: axe-core v4.8.4 | Standard: WCAG 2.1 AA</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -3945,6 +3952,8 @@
                 const violationsEl = document.getElementById('accx-violations');
                 const violationsDetail = document.getElementById('accx-violations-detail');
                 const violationsList = document.getElementById('accx-violations-list');
+                const timestampEl = document.getElementById('accx-audit-timestamp');
+                const timeEl = document.getElementById('accx-audit-time');
 
                 if (!runButton) return;
 
@@ -3983,6 +3992,21 @@
 
                         passesEl.textContent = passes;
                         violationsEl.textContent = violations;
+
+                        // Show audit verification timestamp for auditors
+                        const now = new Date();
+                        const timestamp = now.toLocaleString('en-US', {
+                            weekday: 'short',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            timeZoneName: 'short'
+                        });
+                        timeEl.textContent = `Executed at ${timestamp} | ${passes} rules passed, ${violations} violations`;
+                        timestampEl.style.display = 'block';
 
                         if (violations === 0) {
                             statusEl.textContent = '✓ All checks passed!';
