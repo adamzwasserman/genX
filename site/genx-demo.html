@@ -13,10 +13,11 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
-    <!-- Google Fonts - Dongle, Mulish, Inconsolata -->
+    <!-- Google Fonts - non-blocking load -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Dongle:wght@400&family=Mulish:wght@400;500;600&family=Inconsolata:wght@400&display=swap" rel="stylesheet">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Dongle:wght@400&family=Mulish:wght@400;500;600&family=Inconsolata:wght@400&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Dongle:wght@400&family=Mulish:wght@400;500;600&family=Inconsolata:wght@400&display=swap" rel="stylesheet"></noscript>
 
     <!-- Load genX from CDN -->
     <script src="https://cdn.genx.software/v1/bootloader.min.js" defer></script>
