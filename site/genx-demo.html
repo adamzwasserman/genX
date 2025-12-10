@@ -13,11 +13,11 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
-    <!-- Google Fonts - non-blocking load -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Dongle:wght@400&family=Mulish:wght@400;500;600&family=Inconsolata:wght@400&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Dongle:wght@400&family=Mulish:wght@400;500;600&family=Inconsolata:wght@400&display=swap" rel="stylesheet"></noscript>
+    <!-- Critical: Preload logo font for FCP (972 bytes, subsetted to "genX") -->
+    <link rel="preload" href="https://cdn.genx.software/fonts/dongle-logo.woff2" as="font" type="font/woff2" crossorigin>
+
+    <!-- Preconnect to CDN for other fonts -->
+    <link rel="preconnect" href="https://cdn.genx.software" crossorigin>
 
     <!-- Load genX from CDN -->
     <script src="https://cdn.genx.software/v1/bootloader.min.js" defer></script>
@@ -25,6 +25,29 @@
     <link rel="stylesheet" href="css/tablex.css">
 
     <style>
+        /* CDN-hosted fonts */
+        @font-face {
+            font-family: 'Dongle';
+            src: url('https://cdn.genx.software/fonts/dongle-logo.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: block; /* Block render until logo font loads */
+        }
+        @font-face {
+            font-family: 'Mulish';
+            src: url('https://cdn.genx.software/fonts/mulish-regular.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Inconsolata';
+            src: url('https://cdn.genx.software/fonts/inconsolata-regular.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
         /* Font metric overrides to eliminate CLS during font swap */
         @font-face {
             font-family: 'Mulish-fallback';
@@ -32,14 +55,6 @@
             size-adjust: 104%;
             ascent-override: 95%;
             descent-override: 26%;
-            line-gap-override: 0%;
-        }
-        @font-face {
-            font-family: 'Dongle-fallback';
-            src: local('Arial'), local('Helvetica');
-            size-adjust: 140%;
-            ascent-override: 100%;
-            descent-override: 30%;
             line-gap-override: 0%;
         }
         @font-face {
@@ -98,7 +113,7 @@
         header h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
-            font-family: 'Dongle', 'Dongle-fallback', sans-serif;
+            font-family: 'Dongle', sans-serif;
             font-weight: 400;
         }
 
