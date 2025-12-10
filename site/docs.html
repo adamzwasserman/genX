@@ -57,13 +57,13 @@
     pre{background:var(--color-text);color:var(--color-bg);padding:var(--spacing-md);overflow-x:auto;line-height:1.5}
     pre code{background:none;padding:0;color:inherit}
   </style>
-  <!-- Full CSS - non-blocking load -->
-  <link rel="preload" href="style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <!-- Full CSS - non-blocking load (media swap avoids reflow) -->
+  <link rel="stylesheet" href="style.css" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="style.css"></noscript>
   <!-- Fonts - non-blocking load -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet"></noscript>
 
   <!-- Structured Data - TechArticle -->
