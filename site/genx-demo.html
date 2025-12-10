@@ -3934,134 +3934,142 @@
         });
 
         // ========================================
-        // accX Accessibility Audit (using axe-core CDN)
+        // accX Accessibility Audit (using axe-core CDN - lazy loaded)
         // ========================================
         (function() {
-            // Load axe-core from CDN
-            const axeScript = document.createElement('script');
-            axeScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.8.4/axe.min.js';
-            axeScript.onload = initAudit;
-            document.head.appendChild(axeScript);
+            const runButton = document.getElementById('accx-run-audit');
+            const statusEl = document.getElementById('accx-audit-status');
+            const scoreValue = document.getElementById('accx-score-value');
+            const scoreRing = document.getElementById('accx-score-ring');
+            const passesEl = document.getElementById('accx-passes');
+            const violationsEl = document.getElementById('accx-violations');
+            const violationsDetail = document.getElementById('accx-violations-detail');
+            const violationsList = document.getElementById('accx-violations-list');
+            const timestampEl = document.getElementById('accx-audit-timestamp');
+            const timeEl = document.getElementById('accx-audit-time');
 
-            function initAudit() {
-                const runButton = document.getElementById('accx-run-audit');
-                const statusEl = document.getElementById('accx-audit-status');
-                const scoreValue = document.getElementById('accx-score-value');
-                const scoreRing = document.getElementById('accx-score-ring');
-                const passesEl = document.getElementById('accx-passes');
-                const violationsEl = document.getElementById('accx-violations');
-                const violationsDetail = document.getElementById('accx-violations-detail');
-                const violationsList = document.getElementById('accx-violations-list');
-                const timestampEl = document.getElementById('accx-audit-timestamp');
-                const timeEl = document.getElementById('accx-audit-time');
+            if (!runButton) return;
 
-                if (!runButton) return;
+            let axeLoaded = false;
 
-                async function runAccessibilityAudit() {
+            // Load axe-core on demand (lazy load)
+            function loadAxeCore() {
+                return new Promise((resolve, reject) => {
+                    if (axeLoaded || typeof axe !== 'undefined') {
+                        resolve();
+                        return;
+                    }
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.8.4/axe.min.js';
+                    script.onload = () => { axeLoaded = true; resolve(); };
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+
+            async function runAccessibilityAudit() {
+                statusEl.textContent = 'Loading axe-core...';
+                runButton.disabled = true;
+                violationsDetail.style.display = 'none';
+                violationsList.innerHTML = '';
+
+                try {
+                    // Load axe-core on first use
+                    await loadAxeCore();
                     statusEl.textContent = 'Running audit...';
-                    runButton.disabled = true;
-                    violationsDetail.style.display = 'none';
-                    violationsList.innerHTML = '';
 
-                    try {
-                        // Run axe-core on just the accx section
-                        const results = await axe.run('#accx', {
-                            runOnly: {
-                                type: 'tag',
-                                values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice']
-                            }
-                        });
-
-                        const passes = results.passes.length;
-                        const violations = results.violations.length;
-                        const total = passes + violations;
-                        const score = total > 0 ? Math.round((passes / total) * 100) : 100;
-
-                        // Animate score
-                        scoreValue.textContent = score;
-                        scoreRing.setAttribute('stroke-dasharray', `${score}, 100`);
-
-                        // Update color based on score
-                        if (score >= 90) {
-                            scoreRing.setAttribute('stroke', '#4ade80'); // green
-                        } else if (score >= 70) {
-                            scoreRing.setAttribute('stroke', '#fbbf24'); // yellow
-                        } else {
-                            scoreRing.setAttribute('stroke', '#f87171'); // red
+                    // Run axe-core on just the accx section
+                    const results = await axe.run('#accx', {
+                        runOnly: {
+                            type: 'tag',
+                            values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice']
                         }
+                    });
 
-                        passesEl.textContent = passes;
-                        violationsEl.textContent = violations;
+                    const passes = results.passes.length;
+                    const violations = results.violations.length;
+                    const total = passes + violations;
+                    const score = total > 0 ? Math.round((passes / total) * 100) : 100;
 
-                        // Show audit verification timestamp for auditors
-                        const now = new Date();
-                        const timestamp = now.toLocaleString('en-US', {
-                            weekday: 'short',
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                            timeZoneName: 'short'
-                        });
-                        timeEl.textContent = `Executed at ${timestamp} | ${passes} rules passed, ${violations} violations`;
-                        timestampEl.style.display = 'block';
+                    // Animate score
+                    scoreValue.textContent = score;
+                    scoreRing.setAttribute('stroke-dasharray', `${score}, 100`);
 
-                        if (violations === 0) {
-                            statusEl.textContent = '✓ All checks passed!';
-                            violationsDetail.style.display = 'none';
-                        } else {
-                            statusEl.textContent = `Found ${violations} issue${violations !== 1 ? 's' : ''}`;
-
-                            // Show violations in the UI
-                            violationsDetail.style.display = 'block';
-                            results.violations.forEach(v => {
-                                const impactColors = {
-                                    critical: '#dc2626',
-                                    serious: '#ea580c',
-                                    moderate: '#ca8a04',
-                                    minor: '#65a30d'
-                                };
-                                // Build affected elements HTML
-                                const affectedHtml = v.nodes.map(n => {
-                                    const selector = n.target.join(' > ');
-                                    const htmlSnippet = n.html.length > 80 ? n.html.substring(0, 80) + '...' : n.html;
-                                    const escapedHtml = htmlSnippet.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                                    return `<code style="display: block; font-size: 0.75rem; background: #f5f5f5; padding: 6px 8px; border-radius: 3px; margin-top: 4px; overflow-x: auto; white-space: nowrap; font-family: 'Inconsolata', monospace; color: #333;">${escapedHtml}</code>`;
-                                }).join('');
-
-                                const item = document.createElement('div');
-                                item.style.cssText = 'margin-bottom: 12px; padding: 12px; background: white; border-radius: 4px; border-left: 3px solid ' + (impactColors[v.impact] || '#666');
-                                item.innerHTML = `
-                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                                        <strong style="color: #333; font-size: 0.85rem;">${v.id}</strong>
-                                        <span style="font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; background: ${impactColors[v.impact] || '#666'}; color: white; text-transform: uppercase;">${v.impact}</span>
-                                        <a href="${v.helpUrl}" target="_blank" rel="noopener" style="font-size: 0.75rem; color: #e53935; margin-left: auto;">Learn more →</a>
-                                    </div>
-                                    <p style="font-size: 0.8rem; color: #666; margin: 0 0 8px 0;">${v.description}</p>
-                                    <div style="font-size: 0.75rem; color: #555;">
-                                        <strong>Affected element${v.nodes.length !== 1 ? 's' : ''}:</strong>
-                                        ${affectedHtml}
-                                    </div>
-                                `;
-                                violationsList.appendChild(item);
-                            });
-
-                        }
-
-                    } catch (err) {
-                        statusEl.textContent = 'Audit failed: ' + err.message;
+                    // Update color based on score
+                    if (score >= 90) {
+                        scoreRing.setAttribute('stroke', '#4ade80'); // green
+                    } else if (score >= 70) {
+                        scoreRing.setAttribute('stroke', '#fbbf24'); // yellow
+                    } else {
+                        scoreRing.setAttribute('stroke', '#f87171'); // red
                     }
 
-                    runButton.disabled = false;
+                    passesEl.textContent = passes;
+                    violationsEl.textContent = violations;
+
+                    // Show audit verification timestamp for auditors
+                    const now = new Date();
+                    const timestamp = now.toLocaleString('en-US', {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        timeZoneName: 'short'
+                    });
+                    timeEl.textContent = `Executed at ${timestamp} | ${passes} rules passed, ${violations} violations`;
+                    timestampEl.style.display = 'block';
+
+                    if (violations === 0) {
+                        statusEl.textContent = '✓ All checks passed!';
+                        violationsDetail.style.display = 'none';
+                    } else {
+                        statusEl.textContent = `Found ${violations} issue${violations !== 1 ? 's' : ''}`;
+
+                        // Show violations in the UI
+                        violationsDetail.style.display = 'block';
+                        results.violations.forEach(v => {
+                            const impactColors = {
+                                critical: '#dc2626',
+                                serious: '#ea580c',
+                                moderate: '#ca8a04',
+                                minor: '#65a30d'
+                            };
+                            // Build affected elements HTML
+                            const affectedHtml = v.nodes.map(n => {
+                                const selector = n.target.join(' > ');
+                                const htmlSnippet = n.html.length > 80 ? n.html.substring(0, 80) + '...' : n.html;
+                                const escapedHtml = htmlSnippet.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                                return `<code style="display: block; font-size: 0.75rem; background: #f5f5f5; padding: 6px 8px; border-radius: 3px; margin-top: 4px; overflow-x: auto; white-space: nowrap; font-family: 'Inconsolata', monospace; color: #333;">${escapedHtml}</code>`;
+                            }).join('');
+
+                            const item = document.createElement('div');
+                            item.style.cssText = 'margin-bottom: 12px; padding: 12px; background: white; border-radius: 4px; border-left: 3px solid ' + (impactColors[v.impact] || '#666');
+                            item.innerHTML = `
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                    <strong style="color: #333; font-size: 0.85rem;">${v.id}</strong>
+                                    <span style="font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; background: ${impactColors[v.impact] || '#666'}; color: white; text-transform: uppercase;">${v.impact}</span>
+                                    <a href="${v.helpUrl}" target="_blank" rel="noopener" style="font-size: 0.75rem; color: #e53935; margin-left: auto;">Learn more →</a>
+                                </div>
+                                <p style="font-size: 0.8rem; color: #666; margin: 0 0 8px 0;">${v.description}</p>
+                                <div style="font-size: 0.75rem; color: #555;">
+                                    <strong>Affected element${v.nodes.length !== 1 ? 's' : ''}:</strong>
+                                    ${affectedHtml}
+                                </div>
+                            `;
+                            violationsList.appendChild(item);
+                        });
+                    }
+                } catch (err) {
+                    statusEl.textContent = 'Audit failed: ' + err.message;
                 }
 
-                runButton.addEventListener('click', runAccessibilityAudit);
-
-                // Auto-run audit after page loads
-                setTimeout(runAccessibilityAudit, 1000);
+                runButton.disabled = false;
             }
+
+            runButton.addEventListener('click', runAccessibilityAudit);
         })();
     </script>
 </body>
