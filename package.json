@@ -1,5 +1,5 @@
 {
-  "name": "@genx/core",
+  "name": "genx-dataos",
   "version": "1.0.0-alpha.2",
   "description": "Declarative web development platform - enhance HTML with powerful functionality through simple attributes",
   "main": "dist/bootloader.js",
