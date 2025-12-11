@@ -5,16 +5,11 @@
 (function() {
     'use strict';
 
-    // Utils
-    const kebabToCamel = s => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-    const safeJsonParse = v => {
-        try {
-            return JSON.parse(v); 
-        } catch {
-            return v; 
-        } 
-    };
-    const generateId = () => `ax-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Utils - use shared utilities from genx-common when available
+    // Note: kebabToCamel and safeJsonParse are handled by genx-common's polymorphic parser
+    // generateId is the only utility directly used by accX
+    const genxGenerateId = window.genxCommon?.utils?.generateId;
+    const generateId = () => genxGenerateId ? genxGenerateId('ax') : `ax-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // A11y enhancement functions
     const enhance = {
@@ -862,9 +857,9 @@
         });
     };
 
-    // Observer
+    // Observer - uses domx-bridge for centralized observation
     const createObserver = (prefix) => {
-        let observer = null;
+        let unsub = null;
 
         const callback = (mutations) => {
             mutations.forEach(mutation => {
@@ -885,17 +880,22 @@
 
         return {
             start: () => {
-                if (!observer) {
-                    observer = new MutationObserver(callback);
-                    observer.observe(document.body, {
-                        childList: true,
-                        subtree: true
-                    });
+                if (!unsub) {
+                    // Use domx-bridge if available, fallback to native MutationObserver
+                    if (window.domxBridge) {
+                        unsub = window.domxBridge.subscribe('accx', callback, { attributeFilter: [prefix] });
+                    } else {
+                        const observer = new MutationObserver(callback);
+                        observer.observe(document.body, {
+                            childList: true,
+                            subtree: true
+                        });
+                        unsub = () => observer.disconnect();
+                    }
                 }
             },
             stop: () => {
-                observer?.disconnect();
-                observer = null;
+                if (unsub) { unsub(); unsub = null; }
             }
         };
     };

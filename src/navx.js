@@ -2019,16 +2019,16 @@ function removeAllGlobalListeners() {
     };
 
     /**
-   * Set up MutationObserver for dynamic content
+   * Set up MutationObserver for dynamic content - uses domx-bridge if available
    * @param {string} selector - CSS selector to watch
    */
     const setupObserver = (selector) => {
-        if (typeof window === 'undefined' || typeof MutationObserver === 'undefined') {
-            debug('MutationObserver not available');
+        if (typeof window === 'undefined') {
+            debug('window not available');
             return;
         }
 
-        observer = new MutationObserver((mutations) => {
+        const callback = (mutations) => {
             mutations.forEach((mutation) => {
                 mutation.addedNodes.forEach((node) => {
                     if (node.nodeType === Node.ELEMENT_NODE) {
@@ -2045,27 +2045,38 @@ function removeAllGlobalListeners() {
                     }
                 });
             });
-        });
+        };
 
-        // If document.body isn't available yet (very early load), wait for DOMContentLoaded
-        if (typeof document === 'undefined' || !document.body) {
-            debug('document.body not available; delaying MutationObserver until DOMContentLoaded');
-            if (typeof document !== 'undefined') {
-                addGlobalListener(document, 'DOMContentLoaded', () => {
-                    try {
-                        observer.observe(document.body, { childList: true, subtree: true });
-                        debug('MutationObserver initialized after DOMContentLoaded');
-                    } catch (e) {
-                        error('Failed to initialize MutationObserver:', e);
-                    }
-                }, { once: true });
+        // Use domx-bridge if available, fallback to native MutationObserver
+        if (window.domxBridge) {
+            observer = window.domxBridge.subscribe('navx', callback, { attributeFilter: ['nx-'] });
+            debug('domx-bridge observer initialized');
+        } else if (typeof MutationObserver !== 'undefined') {
+            const nativeObserver = new MutationObserver(callback);
+
+            // If document.body isn't available yet (very early load), wait for DOMContentLoaded
+            if (typeof document === 'undefined' || !document.body) {
+                debug('document.body not available; delaying MutationObserver until DOMContentLoaded');
+                if (typeof document !== 'undefined') {
+                    addGlobalListener(document, 'DOMContentLoaded', () => {
+                        try {
+                            nativeObserver.observe(document.body, { childList: true, subtree: true });
+                            debug('MutationObserver initialized after DOMContentLoaded');
+                        } catch (e) {
+                            error('Failed to initialize MutationObserver:', e);
+                        }
+                    }, { once: true });
+                }
+            } else {
+                nativeObserver.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+                debug('MutationObserver initialized');
             }
+            observer = nativeObserver;
         } else {
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
-            debug('MutationObserver initialized');
+            debug('MutationObserver not available');
         }
     };
 
@@ -2115,9 +2126,13 @@ function removeAllGlobalListeners() {
     const destroy = () => {
         debug('Destroying...');
 
-        // Disconnect MutationObserver
+        // Disconnect MutationObserver (handles both domx-bridge and native)
         if (observer) {
-            observer.disconnect();
+            if (typeof observer === 'function') {
+                observer(); // domx-bridge unsubscribe
+            } else {
+                observer.disconnect();
+            }
             observer = null;
             debug('MutationObserver disconnected');
         }
@@ -2236,6 +2251,11 @@ function removeAllGlobalListeners() {
     // Expose to global object
     if (typeof window !== 'undefined') {
         window.navX = publicAPI;
+
+        // Factory export for bootloader integration
+        window.nxXFactory = {
+            init: (config = {}) => init(config)
+        };
     }
     if (typeof global !== 'undefined') {
         global.navX = publicAPI;

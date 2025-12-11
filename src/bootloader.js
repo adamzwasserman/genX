@@ -10,15 +10,19 @@
     'use strict';
 
     // Module registry - maps prefixes to module URLs
-    const modules = {
-        'fx': '../src/fmtx.js',
-        'ax': '../src/accx.js',
-        'bx': '/modules/bindx.js',
-        'dx': '/modules/dragx.js',
-        'lx': '/modules/loadx.js',
-        'tx': '/modules/tablex.js',
-        'nx': '/modules/navx.js'
+    // Can be overridden via window.genxConfig.modulePaths
+    const defaultModules = {
+        'fx': '/fmtx.min.js',
+        'ax': '/accx.min.js',
+        'bx': '/bindx.min.js',
+        'dx': '/dragx.min.js',
+        'lx': '/loadx.min.js',
+        'tx': '/tablex.min.js',
+        'nx': '/navx.min.js'
     };
+    const modules = (typeof window !== 'undefined' && window.genxConfig?.modulePaths)
+        ? { ...defaultModules, ...window.genxConfig.modulePaths }
+        : defaultModules;
 
     // Class prefix to module prefix mapping (for CSS class notation)
     // Prefer the canonical map from genxCommon if available to avoid duplication.
@@ -47,13 +51,16 @@
     const pending = new Set();
     const factories = {};
 
-    // Parser URLs mapping
-    const PARSER_URLS = {
+    // Parser URLs mapping - can be overridden via window.genxConfig.parserPaths
+    const defaultParserUrls = {
         verbose: '/parsers/genx-parser-verbose.js',
         colon: '/parsers/genx-parser-colon.js',
         json: '/parsers/genx-parser-json.js',
         class: '/parsers/genx-parser-class.js'
     };
+    const PARSER_URLS = (typeof window !== 'undefined' && window.genxConfig?.parserPaths)
+        ? { ...defaultParserUrls, ...window.genxConfig.parserPaths }
+        : defaultParserUrls;
 
     // Parser cache
     const parsers = {};
@@ -486,9 +493,11 @@
         pending.add(prefix);
 
         try {
-            const url = modules[prefix].startsWith('http')
-                ? modules[prefix]
-                : CDN_BASE + modules[prefix];
+            const modulePath = modules[prefix];
+            // Use path as-is if it's absolute (http/https or starts with /)
+            const url = (modulePath.startsWith('http') || modulePath.startsWith('/'))
+                ? modulePath
+                : CDN_BASE + modulePath;
 
             const script = document.createElement('script');
             script.src = url;
@@ -613,31 +622,33 @@
                 stats.phases.initModules = performance.now() - phase5Start;
                 stats.modules = Array.from(loaded);
 
-                // Phase 6: Setup MutationObserver for dynamic content
+                // Phase 6: Setup MutationObserver for dynamic content - uses domx-bridge if available
                 const phase6Start = performance.now();
                 if (window.genxConfig?.observe !== false) {
-                    const observer = new MutationObserver((mutations) => {
-                        // Collect affected roots to process after debounce
-                        if (!observer._nodes) observer._nodes = new Set();
+                    // State for debouncing
+                    let _nodes = new Set();
+                    let _timeout = null;
 
+                    const callback = (mutations) => {
+                        // Collect affected roots to process after debounce
                         for (const mutation of mutations) {
                             if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
                                 mutation.addedNodes.forEach(node => {
-                                    if (node && node.nodeType === Node.ELEMENT_NODE) observer._nodes.add(node);
+                                    if (node && node.nodeType === Node.ELEMENT_NODE) _nodes.add(node);
                                 });
                             }
 
                             if (mutation.type === 'attributes' && mutation.target && mutation.target.nodeType === Node.ELEMENT_NODE) {
-                                observer._nodes.add(mutation.target);
+                                _nodes.add(mutation.target);
                             }
                         }
 
                         // Debounce rescan for aggregated nodes
-                        clearTimeout(observer._timeout);
-                        observer._timeout = setTimeout(async () => {
+                        clearTimeout(_timeout);
+                        _timeout = setTimeout(async () => {
                             try {
-                                const nodes = Array.from(observer._nodes || []);
-                                observer._nodes = new Set();
+                                const nodes = Array.from(_nodes || []);
+                                _nodes = new Set();
 
                                 // Build element list scoped to changed subtrees
                                 const selector = _buildUnifiedSelector();
@@ -669,12 +680,18 @@
                                 console.error('genX: incremental rescan failed', err);
                             }
                         }, 100);
-                    });
+                    };
 
-                    observer.observe(document.body, {
-                        childList: true,
-                        subtree: true
-                    });
+                    // Use domx-bridge if available, fallback to native MutationObserver
+                    if (window.domxBridge) {
+                        window.domxBridge.subscribe('bootloader', callback, { childList: true });
+                    } else {
+                        const observer = new MutationObserver(callback);
+                        observer.observe(document.body, {
+                            childList: true,
+                            subtree: true
+                        });
+                    }
                 }
                 stats.phases.setupObserver = performance.now() - phase6Start;
 

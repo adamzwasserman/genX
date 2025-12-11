@@ -191,9 +191,10 @@ cp genX/src/*.js your-project/static/js/</code></pre>
           <li><strong>Detects</strong> which modules are needed based on attribute prefixes</li>
           <li><strong>Loads</strong> only the required modules on-demand</li>
           <li><strong>Processes</strong> elements with the appropriate module</li>
-          <li><strong>Watches</strong> for dynamic content via MutationObserver</li>
+          <li><strong>Watches</strong> for dynamic content via a centralized MutationObserver (powered by <a href="https://github.com/adamzwasserman/domx">domx</a>)</li>
         </ol>
         <p>This means you only pay for what you use. If your page only uses <code>fx-*</code> attributes, only the fmtX module is loaded.</p>
+        <p class="text-muted"><strong>Architecture note:</strong> genX uses a single shared MutationObserver for all modules through domx-bridge, eliminating duplication and improving performance compared to per-module observers.</p>
 
         <h2 id="fmtx">fmtX &mdash; Formatting</h2>
         <p class="text-muted">Prefix: <code>fx-*</code></p>
@@ -476,6 +477,7 @@ cp genX/src/*.js your-project/static/js/</code></pre>
   <footer class="footer">
     <div class="container">
       <p class="footer__text">genX is open source. MIT License.</p>
+      <p class="footer__text" style="margin-top: 0.5rem;">Inspired by <a href="https://htmx.org" target="_blank" rel="noopener">HTMX</a> / Powered by <a href="https://github.com/adamzwasserman/domx" target="_blank" rel="noopener">domx</a> &amp; <a href="https://dataos.software" target="_blank" rel="noopener">DATAOS</a></p>
     </div>
   </footer>
 </body>

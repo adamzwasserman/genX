@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>genX Local Test</title>
+    <script src="/src/genx-common.js"></script>
+    <script src="/src/domx-bridge.js"></script>
+    <script src="/src/bootloader.js" defer></script>
+</head>
+<body>
+    <h1>genX Local Test</h1>
+    
+    <h2>fmtX Test</h2>
+    <p>Currency: <span fx-format="currency">1234.56</span></p>
+    <p>Date: <span fx-format="date">2024-03-15</span></p>
+    
+    <h2>Dynamic Content Test</h2>
+    <div id="dynamic"></div>
+    
+    <script>
+        setTimeout(() => {
+            document.getElementById('dynamic').innerHTML = '<span fx-format="currency">999.99</span>';
+        }, 1000);
+    </script>
+</body>
+</html>

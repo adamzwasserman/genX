@@ -24,15 +24,33 @@
 
     /**
      * Safe JSON parsing with prototype pollution prevention.
+     * Uses genx-common when available, fallback for standalone usage.
      *
      * @param {string} str - JSON string to parse
      * @returns {Object|null} Parsed object or null
      */
+    const genxSafeJsonParse = window.genxCommon?.utils?.safeJsonParse;
     const safeJSONParse = (str) => {
         if (!str) {
             return null;
         }
 
+        // Use genx-common's safeJsonParse if available (returns Result monad)
+        if (genxSafeJsonParse) {
+            const result = genxSafeJsonParse(str);
+            // Handle Result monad
+            if (result && typeof result.isOk === 'function') {
+                if (result.isOk()) {
+                    const parsed = result.unwrap();
+                    return parsed && typeof parsed === 'object' ? Object.freeze(parsed) : parsed;
+                }
+                return null;
+            }
+            // Direct return if not Result monad
+            return result && typeof result === 'object' ? Object.freeze(result) : result;
+        }
+
+        // Fallback implementation
         try {
             const parsed = JSON.parse(str);
 
@@ -1800,5 +1818,10 @@
             createCanvasGhost
         }
     });
+
+    // Factory export for bootloader integration
+    window.dxXFactory = {
+        init: (config = {}) => init(config)
+    };
 
 })();

@@ -154,32 +154,41 @@
     };
 
     /**
-     * Setup MutationObserver for dynamic content
+     * Setup MutationObserver for dynamic content - uses domx-bridge if available
      * @param {Object} config - Configuration object
      */
     const setupMutationObserver = (config) => {
         // Disconnect existing observer if any
         if (mutationObserver) {
-            mutationObserver.disconnect();
+            if (typeof mutationObserver === 'function') {
+                mutationObserver(); // domx-bridge unsubscribe
+            } else {
+                mutationObserver.disconnect();
+            }
         }
 
-        // Create new observer
-        mutationObserver = new MutationObserver((mutations) => {
+        const callback = (mutations) => {
             // Debounce scanning for performance
             clearTimeout(scanDebounceTimer);
 
             scanDebounceTimer = setTimeout(() => {
                 scanForNewElements(mutations, config);
             }, SCAN_DEBOUNCE_MS);
-        });
+        };
 
-        // Observe entire document for attribute and child changes
-        mutationObserver.observe(document.body, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['lx-strategy', 'lx-loading', 'data-lx-strategy', 'class']
-        });
+        // Use domx-bridge if available, fallback to native MutationObserver
+        if (window.domxBridge) {
+            mutationObserver = window.domxBridge.subscribe('loadx', callback, { attributeFilter: ['lx-'] });
+        } else {
+            const observer = new MutationObserver(callback);
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['lx-strategy', 'lx-loading', 'data-lx-strategy', 'class']
+            });
+            mutationObserver = observer;
+        }
 
         // Store observer reference for cleanup
         if (typeof window !== 'undefined') {
@@ -193,7 +202,11 @@
      */
     const disconnectMutationObserver = () => {
         if (mutationObserver) {
-            mutationObserver.disconnect();
+            if (typeof mutationObserver === 'function') {
+                mutationObserver(); // domx-bridge unsubscribe
+            } else {
+                mutationObserver.disconnect();
+            }
             mutationObserver = null;
         }
 
@@ -1740,6 +1753,11 @@
             'internal API'
         );
     }
+
+    // Factory export for bootloader integration
+    window.lxXFactory = {
+        init: (config = {}) => initLoadX(config)
+    };
 
     // Export for ES6 modules (if needed)
     if (typeof module !== 'undefined' && module.exports) {
