@@ -5,21 +5,17 @@
 (function() {
     'use strict';
 
+    // Utils - use shared utilities from genx-common when available
+    const genxKebabToCamel = window.genxCommon?.utils?.kebabToCamel;
+    const kebabToCamel = genxKebabToCamel || (s => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase()));
+
     // Core utils (pure, concise)
     const parseNumber = v => {
-        const n = parseFloat(v); return isNaN(n) ? null : n; 
+        const n = parseFloat(v); return isNaN(n) ? null : n;
     };
     const parseDate = v => {
-        const d = new Date(v); return isNaN(d.getTime()) ? null : d; 
+        const d = new Date(v); return isNaN(d.getTime()) ? null : d;
     };
-    const safeJsonParse = v => typeof v === 'string' ? (_t => {
-        try {
-            const p = JSON.parse(v); return p?.__proto__ && Object.keys(p.__proto__).length ? ({}) : p; 
-        } catch {
-            return v; 
-        } 
-    })() : v;
-    const kebabToCamel = s => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 
     // Input type converter - handles fx-type attribute
     const convertInput = (value, inputType) => {
@@ -540,9 +536,9 @@
     };
     const scanElements = (root = document, pref = 'fx-') => root.querySelectorAll(`[${pref}format]`).forEach(el => formatElement(el, pref));
 
-    // Observer (streamlined)
+    // Observer - uses domx-bridge for centralized observation
     const createObserver = (pref, obsMut) => {
-        let obs = null; let to = null;
+        let unsub = null; let to = null;
         const cb = muts => {
             let scan = false;
             muts.forEach(m => {
@@ -563,17 +559,25 @@
                 }
             });
             if (scan) {
-                clearTimeout(to); to = setTimeout(() => scanElements(document,pref), 0); 
+                clearTimeout(to); to = setTimeout(() => scanElements(document,pref), 0);
             }
         };
         return {
             start: () => {
-                if (obsMut && !obs) {
-                    obs = new MutationObserver(cb); obs.observe(document.body, {childList:true,subtree:true,attributes:true}); 
-                } 
+                if (obsMut && !unsub) {
+                    // Use domx-bridge if available, fallback to native MutationObserver
+                    if (window.domxBridge) {
+                        unsub = window.domxBridge.subscribe('fmtx', cb, { attributeFilter: [pref] });
+                    } else {
+                        const obs = new MutationObserver(cb);
+                        obs.observe(document.body, {childList:true,subtree:true,attributes:true});
+                        unsub = () => obs.disconnect();
+                    }
+                }
             },
             stop: () => {
-                obs?.disconnect(); obs = null; clearTimeout(to); 
+                if (unsub) { unsub(); unsub = null; }
+                clearTimeout(to);
             }
         };
     };

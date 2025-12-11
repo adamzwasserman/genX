@@ -1,0 +1,677 @@
+var genx = (() => {
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __commonJS = (cb, mod) => function __require() {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  };
+
+  // src/bootloader.js
+  var require_bootloader = __commonJS({
+    "src/bootloader.js"(exports, module) {
+      (function() {
+        "use strict";
+        const modules = {
+          "fx": "../src/fmtx.js",
+          "ax": "../src/accx.js",
+          "bx": "/modules/bindx.js",
+          "dx": "/modules/dragx.js",
+          "lx": "/modules/loadx.js",
+          "tx": "/modules/tablex.js",
+          "nx": "/modules/navx.js"
+        };
+        const CLASS_PREFIX_MAP = typeof window !== "undefined" && window.genxCommon && window.genxCommon.notation && window.genxCommon.notation.CLASS_PREFIX_MAP ? window.genxCommon.notation.CLASS_PREFIX_MAP : {
+          "fmt": "fx",
+          "acc": "ax",
+          "bind": "bx",
+          "drag": "dx",
+          "load": "lx",
+          "table": "tx",
+          "nav": "nx"
+        };
+        const MODULE_PREFIX_MAP = Object.fromEntries(
+          Object.entries(CLASS_PREFIX_MAP).map(([k, v]) => [v, k])
+        );
+        const CDN_BASE = window.genxConfig?.cdn || "https://cdn.genx.software/v1";
+        const loaded = /* @__PURE__ */ new Set();
+        const pending = /* @__PURE__ */ new Set();
+        const factories = {};
+        const PARSER_URLS = {
+          verbose: "/parsers/genx-parser-verbose.js",
+          colon: "/parsers/genx-parser-colon.js",
+          json: "/parsers/genx-parser-json.js",
+          class: "/parsers/genx-parser-class.js"
+        };
+        const parsers = {};
+        const loadingParsers = /* @__PURE__ */ new Set();
+        const parseMap = /* @__PURE__ */ new WeakMap();
+        const performanceMetrics = {
+          bootstrap: {
+            total: 0,
+            phases: {
+              scan: 0,
+              detectStyles: 0,
+              loadParsers: 0,
+              parseElements: 0,
+              initModules: 0,
+              setupObserver: 0
+            }
+          },
+          scans: [],
+          parses: [],
+          cacheHits: 0,
+          cacheMisses: 0,
+          elementCount: 0,
+          parsedCount: 0
+        };
+        const performanceTargets = {
+          scan1000: 5,
+          // <5ms for 1000 elements
+          parse1000: 100,
+          // <100ms for 1000 elements
+          moduleInit: 105,
+          // <105ms total bootstrap
+          cacheLookup: 1e-3
+          // <0.001ms per cache lookup
+        };
+        const loadParsers = async (styles) => {
+          if (!styles || styles.length === 0) {
+            return {};
+          }
+          const loadPromises = [];
+          const results = {};
+          for (const style of styles) {
+            if (parsers[style]) {
+              results[style] = parsers[style];
+              continue;
+            }
+            if (loadingParsers.has(style)) {
+              loadPromises.push(
+                new Promise((resolve) => {
+                  const checkInterval = setInterval(() => {
+                    if (parsers[style]) {
+                      clearInterval(checkInterval);
+                      results[style] = parsers[style];
+                      resolve();
+                    }
+                  }, 10);
+                })
+              );
+              continue;
+            }
+            loadingParsers.add(style);
+            const baseUrl = window.genxConfig?.cdn || "";
+            const parserPath = PARSER_URLS[style];
+            const parserUrl = baseUrl ? `${baseUrl}${parserPath}` : parserPath;
+            const loadPromise = import(parserUrl).then((module2) => {
+              parsers[style] = module2;
+              loadingParsers.delete(style);
+              results[style] = module2;
+            }).catch((error) => {
+              loadingParsers.delete(style);
+              console.error(`Failed to load ${style} parser from ${parserUrl}:`, error);
+              results[style] = null;
+            });
+            loadPromises.push(loadPromise);
+          }
+          await Promise.all(loadPromises);
+          return results;
+        };
+        const _buildUnifiedSelector = () => {
+          const attrSelectors = Object.keys(modules).map((p) => `[${p}-]`);
+          const classSelectors = Object.keys(CLASS_PREFIX_MAP).map((p) => `[class*="${p}-"]`);
+          return [...attrSelectors, ...classSelectors].join(",");
+        };
+        const _detectPrefix = (element) => {
+          for (const prefix of Object.keys(modules)) {
+            const attrs = element.attributes;
+            for (let i = 0; i < attrs.length; i++) {
+              if (attrs[i].name.startsWith(prefix + "-")) {
+                return prefix;
+              }
+            }
+          }
+          const classList = element.classList;
+          if (classList && classList.length > 0) {
+            for (let i = 0; i < classList.length; i++) {
+              const className = classList[i];
+              for (const [classPrefix, modulePrefix] of Object.entries(CLASS_PREFIX_MAP)) {
+                if (className.startsWith(classPrefix + "-")) {
+                  return modulePrefix;
+                }
+              }
+            }
+          }
+          return null;
+        };
+        const scan = (root = document) => {
+          const scanStart = performance.now();
+          const selector = _buildUnifiedSelector();
+          const elements = Array.from(root.querySelectorAll(selector));
+          const needed = /* @__PURE__ */ new Set();
+          for (const el of elements) {
+            const prefix = _detectPrefix(el);
+            if (prefix) {
+              needed.add(prefix);
+            }
+          }
+          const scanDuration = performance.now() - scanStart;
+          performanceMetrics.scans.push({
+            elementCount: elements.length,
+            duration: scanDuration,
+            timestamp: Date.now()
+          });
+          const normalizedTime = scanDuration / elements.length * 1e3;
+          if (normalizedTime > performanceTargets.scan1000 && elements.length > 100) {
+            if (window.genxConfig?.performance?.warnings) {
+              console.warn(
+                `\u26A0\uFE0F genX Performance: Scan time ${scanDuration.toFixed(2)}ms for ${elements.length} elements (normalized: ${normalizedTime.toFixed(2)}ms/1000 elements, target: <${performanceTargets.scan1000}ms/1000)`
+              );
+            }
+          }
+          return { needed, elements };
+        };
+        const detectNotationStyles = (elements) => {
+          const styles = /* @__PURE__ */ new Set();
+          if (!elements || elements.length === 0) {
+            return [];
+          }
+          for (const el of elements) {
+            for (const prefix of Object.keys(modules)) {
+              const attrs = el.attributes;
+              for (let i = 0; i < attrs.length; i++) {
+                const attrName = attrs[i].name;
+                const attrValue = attrs[i].value;
+                if (attrName.startsWith(prefix + "-")) {
+                  styles.add("verbose");
+                  if (attrValue && attrValue.includes(":")) {
+                    styles.add("colon");
+                  }
+                  if (attrName.endsWith("-opts")) {
+                    styles.add("json");
+                  }
+                }
+              }
+            }
+            const classList = el.classList;
+            if (classList && classList.length > 0) {
+              for (let i = 0; i < classList.length; i++) {
+                const className = classList[i];
+                for (const classPrefix of Object.keys(CLASS_PREFIX_MAP)) {
+                  if (className.startsWith(classPrefix + "-")) {
+                    styles.add("class");
+                    break;
+                  }
+                }
+                if (styles.has("class"))
+                  break;
+              }
+            }
+            if (styles.size === 4)
+              break;
+          }
+          return Array.from(styles).sort();
+        };
+        const parseAllElements = (elements, loadedParsers) => {
+          const parseStart = performance.now();
+          let parsedCount = 0;
+          let cacheHits = 0;
+          for (const el of elements) {
+            if (parseMap.has(el)) {
+              cacheHits++;
+              performanceMetrics.cacheHits++;
+              continue;
+            }
+            performanceMetrics.cacheMisses++;
+            const prefix = _detectPrefix(el);
+            if (!prefix) {
+              continue;
+            }
+            let config = {};
+            if (loadedParsers.json && loadedParsers.json.parse) {
+              config = loadedParsers.json.parse(el, prefix, config);
+            }
+            if (loadedParsers.colon && loadedParsers.colon.parse) {
+              config = loadedParsers.colon.parse(el, prefix, config);
+            }
+            if (loadedParsers.verbose && loadedParsers.verbose.parse) {
+              config = loadedParsers.verbose.parse(el, prefix, config);
+            }
+            if (loadedParsers.class && loadedParsers.class.parse) {
+              config = loadedParsers.class.parse(el, prefix, config);
+            }
+            if (config && Object.keys(config).length > 0) {
+              parseMap.set(el, config);
+              parsedCount++;
+            }
+          }
+          const parseDuration = performance.now() - parseStart;
+          performanceMetrics.parses.push({
+            elementCount: elements.length,
+            parsedCount,
+            cacheHits,
+            duration: parseDuration,
+            timestamp: Date.now()
+          });
+          performanceMetrics.elementCount += elements.length;
+          performanceMetrics.parsedCount += parsedCount;
+          const normalizedTime = parseDuration / elements.length * 1e3;
+          if (normalizedTime > performanceTargets.parse1000 && elements.length > 100) {
+            if (window.genxConfig?.performance?.warnings) {
+              console.warn(
+                `\u26A0\uFE0F genX Performance: Parse time ${parseDuration.toFixed(2)}ms for ${elements.length} elements (normalized: ${normalizedTime.toFixed(2)}ms/1000 elements, target: <${performanceTargets.parse1000}ms/1000)`
+              );
+            }
+          }
+          if (window.genxConfig?.performance?.logging) {
+            console.log(
+              `genX: Parsed ${parsedCount} elements (${cacheHits} cache hits) in ${parseDuration.toFixed(2)}ms`
+            );
+          }
+          return parsedCount;
+        };
+        const rescan = async (rootOrElements = document) => {
+          let elements = [];
+          if (Array.isArray(rootOrElements)) {
+            elements = rootOrElements.filter((el) => el && el.nodeType === Node.ELEMENT_NODE);
+          } else if (rootOrElements && (rootOrElements.nodeType === Node.ELEMENT_NODE || rootOrElements === document)) {
+            const selector = _buildUnifiedSelector();
+            if (!selector)
+              return 0;
+            if (rootOrElements === document) {
+              elements = Array.from(document.querySelectorAll(selector));
+            } else {
+              const root = rootOrElements;
+              try {
+                if (root.matches && root.matches(selector))
+                  elements.push(root);
+              } catch (e) {
+              }
+              elements = elements.concat(Array.from(root.querySelectorAll(selector)));
+            }
+          } else {
+            return 0;
+          }
+          if (elements.length === 0)
+            return 0;
+          const styles = detectNotationStyles(elements);
+          const loadedParsers = await loadParsers(styles);
+          return parseAllElements(elements, loadedParsers);
+        };
+        const getConfig = (element) => {
+          if (!element || !element.attributes) {
+            return null;
+          }
+          if (parseMap.has(element)) {
+            return parseMap.get(element);
+          }
+          return null;
+        };
+        const load = async (prefix) => {
+          if (loaded.has(prefix)) {
+            return factories[prefix];
+          }
+          if (pending.has(prefix)) {
+            return new Promise((resolve) => {
+              const check = setInterval(() => {
+                if (loaded.has(prefix)) {
+                  clearInterval(check);
+                  resolve(factories[prefix]);
+                }
+              }, 10);
+            });
+          }
+          pending.add(prefix);
+          try {
+            const url = modules[prefix].startsWith("http") ? modules[prefix] : CDN_BASE + modules[prefix];
+            const script = document.createElement("script");
+            script.src = url;
+            script.async = true;
+            if (window.genxConfig?.sri?.[prefix]) {
+              script.integrity = window.genxConfig.sri[prefix];
+              script.crossOrigin = "anonymous";
+            }
+            await new Promise((resolve, reject) => {
+              script.onload = () => {
+                const factoryName = prefix + "XFactory";
+                if (window[factoryName]) {
+                  factories[prefix] = window[factoryName];
+                  loaded.add(prefix);
+                  pending.delete(prefix);
+                  resolve();
+                } else {
+                  reject(new Error(`Module ${prefix} did not expose factory ${factoryName}`));
+                }
+              };
+              script.onerror = () => {
+                pending.delete(prefix);
+                reject(new Error(`Failed to load module ${prefix} from ${url}`));
+              };
+              document.head.appendChild(script);
+            });
+            return factories[prefix];
+          } catch (err) {
+            pending.delete(prefix);
+            console.error(`genX Bootloader: Failed to load ${prefix}`, err);
+            throw err;
+          }
+        };
+        const init = async (prefix, config = {}) => {
+          const factory = await load(prefix);
+          if (factory && factory.init) {
+            return factory.init(config);
+          }
+          return null;
+        };
+        const initAll = async () => {
+          const { needed } = scan();
+          const results = {};
+          for (const prefix of needed) {
+            try {
+              const config = window.genxConfig?.modules?.[prefix] || {};
+              results[prefix] = await init(prefix, config);
+            } catch (err) {
+              console.error(`genX: Failed to initialize ${prefix}`, err);
+              results[prefix] = null;
+            }
+          }
+          return results;
+        };
+        const bootstrap = () => {
+          requestAnimationFrame(async () => {
+            const bootstrapStart = performance.now();
+            const stats = {
+              phases: {},
+              elements: { total: 0, parsed: 0 },
+              styles: [],
+              parsers: [],
+              modules: []
+            };
+            try {
+              const phase1Start = performance.now();
+              const { needed, elements } = scan();
+              stats.phases.scan = performance.now() - phase1Start;
+              stats.elements.total = elements.length;
+              const phase2Start = performance.now();
+              const styles = detectNotationStyles(elements);
+              stats.phases.detectStyles = performance.now() - phase2Start;
+              stats.styles = styles;
+              const phase3Start = performance.now();
+              const loadedParsers = await loadParsers(styles);
+              stats.phases.loadParsers = performance.now() - phase3Start;
+              stats.parsers = Object.keys(loadedParsers);
+              const phase4Start = performance.now();
+              const parsedCount = parseAllElements(elements, loadedParsers);
+              stats.phases.parseElements = performance.now() - phase4Start;
+              stats.elements.parsed = parsedCount;
+              const phase5Start = performance.now();
+              await initAll();
+              stats.phases.initModules = performance.now() - phase5Start;
+              stats.modules = Array.from(loaded);
+              const phase6Start = performance.now();
+              if (window.genxConfig?.observe !== false) {
+                const observer = new MutationObserver((mutations) => {
+                  if (!observer._nodes)
+                    observer._nodes = /* @__PURE__ */ new Set();
+                  for (const mutation of mutations) {
+                    if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+                      mutation.addedNodes.forEach((node) => {
+                        if (node && node.nodeType === Node.ELEMENT_NODE)
+                          observer._nodes.add(node);
+                      });
+                    }
+                    if (mutation.type === "attributes" && mutation.target && mutation.target.nodeType === Node.ELEMENT_NODE) {
+                      observer._nodes.add(mutation.target);
+                    }
+                  }
+                  clearTimeout(observer._timeout);
+                  observer._timeout = setTimeout(async () => {
+                    try {
+                      const nodes = Array.from(observer._nodes || []);
+                      observer._nodes = /* @__PURE__ */ new Set();
+                      const selector = _buildUnifiedSelector();
+                      const elements2 = /* @__PURE__ */ new Set();
+                      for (const node of nodes) {
+                        try {
+                          if (selector && node.matches && node.matches(selector))
+                            elements2.add(node);
+                        } catch (e) {
+                        }
+                        if (selector) {
+                          const found = Array.from(node.querySelectorAll(selector));
+                          for (const f of found)
+                            elements2.add(f);
+                        }
+                      }
+                      const parsed = await rescan(elements2.size ? Array.from(elements2) : document);
+                      const { needed: newModules } = scan();
+                      for (const prefix of newModules) {
+                        if (!loaded.has(prefix)) {
+                          init(prefix);
+                        }
+                      }
+                    } catch (err) {
+                      console.error("genX: incremental rescan failed", err);
+                    }
+                  }, 100);
+                });
+                observer.observe(document.body, {
+                  childList: true,
+                  subtree: true
+                });
+              }
+              stats.phases.setupObserver = performance.now() - phase6Start;
+              const bootstrapDuration = performance.now() - bootstrapStart;
+              stats.total = bootstrapDuration;
+              performanceMetrics.bootstrap.total = bootstrapDuration;
+              performanceMetrics.bootstrap.phases = stats.phases;
+              const totalCacheLookups = performanceMetrics.cacheHits + performanceMetrics.cacheMisses;
+              const cacheHitRate = totalCacheLookups > 0 ? performanceMetrics.cacheHits / totalCacheLookups * 100 : 0;
+              if (bootstrapDuration > performanceTargets.moduleInit) {
+                if (window.genxConfig?.performance?.warnings) {
+                  console.warn(
+                    `\u26A0\uFE0F genX Performance: Bootstrap time ${bootstrapDuration.toFixed(2)}ms exceeds target of ${performanceTargets.moduleInit}ms`
+                  );
+                }
+              }
+              if (window.genxConfig?.performance?.logging) {
+                console.log("genX Bootstrap Complete:", {
+                  total: `${bootstrapDuration.toFixed(2)}ms`,
+                  phases: {
+                    scan: `${stats.phases.scan.toFixed(2)}ms`,
+                    detectStyles: `${stats.phases.detectStyles.toFixed(2)}ms`,
+                    loadParsers: `${stats.phases.loadParsers.toFixed(2)}ms`,
+                    parseElements: `${stats.phases.parseElements.toFixed(2)}ms`,
+                    initModules: `${stats.phases.initModules.toFixed(2)}ms`,
+                    setupObserver: `${stats.phases.setupObserver.toFixed(2)}ms`
+                  },
+                  elements: stats.elements,
+                  styles: stats.styles,
+                  modules: stats.modules,
+                  cache: {
+                    hits: performanceMetrics.cacheHits,
+                    misses: performanceMetrics.cacheMisses,
+                    hitRate: `${cacheHitRate.toFixed(1)}%`
+                  }
+                });
+              }
+              window.dispatchEvent(new CustomEvent("genx:ready", {
+                detail: {
+                  loaded: stats.modules,
+                  elements: stats.elements,
+                  styles: stats.styles,
+                  parsers: stats.parsers,
+                  timing: {
+                    total: bootstrapDuration,
+                    phases: stats.phases
+                  },
+                  performance: {
+                    bootstrap: performanceMetrics.bootstrap,
+                    scans: performanceMetrics.scans,
+                    parses: performanceMetrics.parses,
+                    cache: {
+                      hits: performanceMetrics.cacheHits,
+                      misses: performanceMetrics.cacheMisses,
+                      hitRate: cacheHitRate
+                    },
+                    targets: performanceTargets,
+                    meetsTargets: {
+                      bootstrap: bootstrapDuration <= performanceTargets.moduleInit,
+                      scan: stats.phases.scan <= performanceTargets.scan1000,
+                      parse: stats.phases.parseElements <= performanceTargets.parse1000
+                    }
+                  }
+                }
+              }));
+            } catch (err) {
+              console.error("genX Bootloader: Initialization failed", err);
+            }
+          });
+        };
+        const _fetchEdgeBundle = async () => {
+          if (!window.genxConfig?.edge?.enabled) {
+            return false;
+          }
+          try {
+            const { needed } = scan();
+            const patterns = Array.from(needed).join(",");
+            const response = await fetch(window.genxConfig.edge.url, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ patterns })
+            });
+            if (response.ok) {
+              const { bundle } = await response.json();
+              const script = document.createElement("script");
+              script.textContent = bundle;
+              document.head.appendChild(script);
+              return true;
+            }
+          } catch (err) {
+            console.warn("genX: Edge compilation unavailable, using standard modules", err);
+          }
+          return false;
+        };
+        const getPerformanceMetrics = () => {
+          const totalCacheLookups = performanceMetrics.cacheHits + performanceMetrics.cacheMisses;
+          const cacheHitRate = totalCacheLookups > 0 ? performanceMetrics.cacheHits / totalCacheLookups * 100 : 0;
+          return {
+            bootstrap: performanceMetrics.bootstrap,
+            scans: performanceMetrics.scans,
+            parses: performanceMetrics.parses,
+            cache: {
+              hits: performanceMetrics.cacheHits,
+              misses: performanceMetrics.cacheMisses,
+              total: totalCacheLookups,
+              hitRate: cacheHitRate
+            },
+            elements: {
+              total: performanceMetrics.elementCount,
+              parsed: performanceMetrics.parsedCount
+            },
+            targets: performanceTargets
+          };
+        };
+        const validatePerformance = () => {
+          const metrics = getPerformanceMetrics();
+          const validation = {
+            passed: true,
+            failures: []
+          };
+          if (metrics.bootstrap.total > performanceTargets.moduleInit) {
+            validation.passed = false;
+            validation.failures.push({
+              metric: "bootstrap.total",
+              actual: metrics.bootstrap.total,
+              target: performanceTargets.moduleInit,
+              message: `Bootstrap time ${metrics.bootstrap.total.toFixed(2)}ms exceeds target ${performanceTargets.moduleInit}ms`
+            });
+          }
+          for (const scan2 of metrics.scans) {
+            const normalizedTime = scan2.duration / scan2.elementCount * 1e3;
+            if (normalizedTime > performanceTargets.scan1000 && scan2.elementCount > 100) {
+              validation.passed = false;
+              validation.failures.push({
+                metric: "scan.normalized",
+                actual: normalizedTime,
+                target: performanceTargets.scan1000,
+                message: `Scan time ${normalizedTime.toFixed(2)}ms/1000 exceeds target ${performanceTargets.scan1000}ms/1000`
+              });
+            }
+          }
+          for (const parse of metrics.parses) {
+            const normalizedTime = parse.duration / parse.elementCount * 1e3;
+            if (normalizedTime > performanceTargets.parse1000 && parse.elementCount > 100) {
+              validation.passed = false;
+              validation.failures.push({
+                metric: "parse.normalized",
+                actual: normalizedTime,
+                target: performanceTargets.parse1000,
+                message: `Parse time ${normalizedTime.toFixed(2)}ms/1000 exceeds target ${performanceTargets.parse1000}ms/1000`
+              });
+            }
+          }
+          if (metrics.cache.total > 0 && metrics.cache.hitRate < 95) {
+            validation.passed = false;
+            validation.failures.push({
+              metric: "cache.hitRate",
+              actual: metrics.cache.hitRate,
+              target: 95,
+              message: `Cache hit rate ${metrics.cache.hitRate.toFixed(1)}% below target 95%`
+            });
+          }
+          return validation;
+        };
+        const resetPerformanceMetrics = () => {
+          performanceMetrics.bootstrap = {
+            total: 0,
+            phases: {
+              scan: 0,
+              detectStyles: 0,
+              loadParsers: 0,
+              parseElements: 0,
+              initModules: 0,
+              setupObserver: 0
+            }
+          };
+          performanceMetrics.scans = [];
+          performanceMetrics.parses = [];
+          performanceMetrics.cacheHits = 0;
+          performanceMetrics.cacheMisses = 0;
+          performanceMetrics.elementCount = 0;
+          performanceMetrics.parsedCount = 0;
+        };
+        const api = {
+          version: "1.0.0",
+          scan,
+          load,
+          init,
+          initAll,
+          loaded: () => Array.from(loaded),
+          isLoaded: (prefix) => loaded.has(prefix),
+          getFactory: (prefix) => factories[prefix],
+          detectNotationStyles,
+          loadParsers,
+          getConfig,
+          parseAllElements,
+          rescan,
+          // Performance monitoring
+          getPerformanceMetrics,
+          validatePerformance,
+          resetPerformanceMetrics,
+          // Helper functions for testing
+          _buildUnifiedSelector,
+          _detectPrefix
+        };
+        window.genx = api;
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", bootstrap);
+        } else {
+          bootstrap();
+        }
+        if (typeof module !== "undefined" && module.exports) {
+          module.exports = api;
+        }
+      })();
+    }
+  });
+  return require_bootloader();
+})();

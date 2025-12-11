@@ -1,6 +1,6 @@
 {
   "name": "@genx/core",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "Declarative web development platform - enhance HTML with powerful functionality through simple attributes",
   "main": "dist/bootloader.js",
   "module": "dist/bootloader.esm.js",
@@ -69,6 +69,9 @@
     "url": "https://github.com/genx-software/genx/issues"
   },
   "homepage": "https://genx.software",
+  "dependencies": {
+    "domx-dataos": "^1.0.0"
+  },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
     "@babel/core": "^7.28.5",

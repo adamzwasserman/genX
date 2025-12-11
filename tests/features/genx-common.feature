@@ -224,3 +224,37 @@ Feature: genX Common Utilities Module
     When I use utility functions (kebabToCamel, generateId)
     Then total processing time should be under 50ms
     And there should be no memory leaks
+
+  # ============================================================================
+  # SHARED UTILITY INTEGRATION - No code duplication
+  # ============================================================================
+
+  Scenario: accX uses shared utilities from genx-common
+    Given genx-common is loaded before accX
+    When accX module initializes
+    Then accX should use window.genxCommon.utils.kebabToCamel
+    And accX should use window.genxCommon.utils.safeJsonParse
+    And accX should use window.genxCommon.utils.generateId
+    And accX source should not contain duplicate implementations
+
+  Scenario: fmtX uses shared utilities from genx-common
+    Given genx-common is loaded before fmtX
+    When fmtX module initializes
+    Then fmtX should use window.genxCommon.utils.kebabToCamel
+    And fmtX should use window.genxCommon.utils.safeJsonParse
+    And fmtX source should not contain duplicate implementations
+
+  Scenario: dragX uses shared utilities from genx-common
+    Given genx-common is loaded before dragX
+    When dragX module initializes
+    Then dragX should use window.genxCommon.utils.safeJsonParse
+    And dragX source should not contain duplicate implementations
+
+  Scenario: Shared utilities work identically across modules
+    # Background already loads genx-common
+    When I call kebabToCamel with "data-format-currency"
+    Then the result should be "dataFormatCurrency"
+    When I call safeJsonParse with '{"key": "value"}'
+    Then the result should be an object with key "key"
+    When I call generateId with prefix "test"
+    Then the result should start with "test-"

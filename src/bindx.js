@@ -1827,16 +1827,18 @@
 
     /**
      * Create MutationObserver to watch for dynamically added elements
+     * Uses domx-bridge if available for centralized observation
      *
      * @param {Object} data - Reactive data object
      * @param {Object} options - Observer options
-     * @returns {MutationObserver} Observer instance
+     * @returns {Object} Observer control object with stop method
      */
     const createDOMObserver = (data, options = {}) => {
         const { prefix = 'bx-', throttle = 100 } = options;
 
         let pending = false;
         let timeoutId = null;
+        let unsub = null;
 
         const processQueue = () => {
             pending = false;
@@ -1853,7 +1855,7 @@
             timeoutId = setTimeout(processQueue, throttle);
         };
 
-        const observer = new MutationObserver((mutations) => {
+        const callback = (mutations) => {
             let hasRelevantChanges = false;
 
             for (const mutation of mutations) {
@@ -1885,20 +1887,25 @@
             if (hasRelevantChanges) {
                 scheduleProcess();
             }
-        });
+        };
 
-        // Start observing
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: [`${prefix}model`, `${prefix}bind`]
-        });
+        // Use domx-bridge if available, fallback to native MutationObserver
+        if (window.domxBridge) {
+            unsub = window.domxBridge.subscribe('bindx', callback, { attributeFilter: [prefix] });
+        } else {
+            const observer = new MutationObserver(callback);
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: [`${prefix}model`, `${prefix}bind`]
+            });
+            unsub = () => observer.disconnect();
+        }
 
         return {
-            observer,
             stop: () => {
-                observer.disconnect();
+                if (unsub) { unsub(); unsub = null; }
                 if (timeoutId) {
                     clearTimeout(timeoutId);
                 }

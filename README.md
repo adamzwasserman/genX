@@ -45,8 +45,17 @@ Inspired by [htmx](https://htmx.org)'s philosophy that HTML should be powerful e
 
 - Scans DOM for genX attributes
 - Dynamically loads only required modules
-- Watches for dynamic content via MutationObserver
-- Zero dependencies
+- Watches for dynamic content via centralized MutationObserver
+- Powered by [domx](https://github.com/adamzwasserman/domx) for efficient DOM observation
+
+### Centralized DOM Observation
+
+genX uses **domx-bridge** to provide a single, shared MutationObserver for all modules. Instead of each module (fmtX, accX, bindX, etc.) creating its own observer, they all subscribe through domx-bridge which delegates to domx. This architecture:
+
+- **Eliminates duplication** - One observer instead of 6+
+- **Improves performance** - Single observer with filtered callbacks
+- **Reduces memory** - No redundant DOM watchers
+- **Fallback support** - Works without domx via native MutationObserver
 
 ### Module Design
 

@@ -1760,6 +1760,14 @@
         // Export to window
         window.tableX = tableX;
 
+        // Factory export for bootloader integration
+        window.txXFactory = {
+            init: (config = {}) => {
+                initAll();
+                return tableX;
+            }
+        };
+
         // Auto-initialize on DOM ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initAll);
