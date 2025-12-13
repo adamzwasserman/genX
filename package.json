@@ -19,10 +19,10 @@
     "build:modules": "esbuild src/fmtx.js src/accx.js src/bindx.js src/dragx.js src/loadx.js src/navx.js src/tablex.js src/smartx.js --outdir=dist/modules --format=iife",
     "minify": "npm run minify:bootloader && npm run minify:modules",
     "minify:bootloader": "terser dist/bootloader.js -o dist/bootloader.min.js --compress --mangle",
-    "minify:modules": "for f in dist/modules/*.js; do if [[ ! \"$f\" == *.min.js ]]; then terser \"$f\" -o \"${f%.js}.min.js\" --compress --mangle; fi; done",
+    "minify:modules": "terser dist/modules/fmtx.js -o dist/modules/fmtx.min.js --compress --mangle && terser dist/modules/accx.js -o dist/modules/accx.min.js --compress --mangle && terser dist/modules/bindx.js -o dist/modules/bindx.min.js --compress --mangle && terser dist/modules/dragx.js -o dist/modules/dragx.min.js --compress --mangle && terser dist/modules/loadx.js -o dist/modules/loadx.min.js --compress --mangle && terser dist/modules/navx.js -o dist/modules/navx.min.js --compress --mangle && terser dist/modules/tablex.js -o dist/modules/tablex.min.js --compress --mangle && terser dist/modules/smartx.js -o dist/modules/smartx.min.js --compress --mangle",
     "gzip": "npm run gzip:bootloader && npm run gzip:modules",
     "gzip:bootloader": "gzip -9 -k -f dist/bootloader.min.js",
-    "gzip:modules": "for f in dist/modules/*.min.js; do gzip -9 -k -f \"$f\"; done",
+    "gzip:modules": "gzip -9 -k -f dist/modules/fmtx.min.js && gzip -9 -k -f dist/modules/accx.min.js && gzip -9 -k -f dist/modules/bindx.min.js && gzip -9 -k -f dist/modules/dragx.min.js && gzip -9 -k -f dist/modules/loadx.min.js && gzip -9 -k -f dist/modules/navx.min.js && gzip -9 -k -f dist/modules/tablex.min.js && gzip -9 -k -f dist/modules/smartx.min.js",
     "dev": "python3 -m http.server 8080",
     "test": "npm run test:unit && npm run test:bdd",
     "test:unit": "jest --config config/jest.config.js tests/unit",
@@ -69,9 +69,7 @@
     "url": "https://github.com/genx-software/genx/issues"
   },
   "homepage": "https://genx.software",
-  "dependencies": {
-    "domx-dataos": "^1.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
     "@babel/core": "^7.28.5",
