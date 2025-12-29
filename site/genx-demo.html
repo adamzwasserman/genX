@@ -19,8 +19,23 @@
     <!-- Preconnect to CDN for other fonts -->
     <link rel="preconnect" href="https://cdn.genx.software" crossorigin>
 
-    <!-- Load genX from CDN -->
-    <script src="https://cdn.genx.software/v1/bootloader.min.js" defer></script>
+    <!-- Load genX - use local modules on localhost, CDN in production -->
+    <script>
+        const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        const localBase = location.origin;
+        window.genxConfig = {
+            cdn: isLocal ? '/dist/modules' : 'https://cdn.genx.software/v1',
+            parserPaths: isLocal ? {
+                verbose: localBase + '/src/parsers/genx-parser-verbose.js',
+                colon: localBase + '/src/parsers/genx-parser-colon.js',
+                json: localBase + '/src/parsers/genx-parser-json.js',
+                class: localBase + '/src/parsers/genx-parser-class.js'
+            } : undefined
+        };
+        // Dynamically load bootloader from local (source) or CDN (minified)
+        const bootloaderSrc = isLocal ? '/src/bootloader.js' : 'https://cdn.genx.software/v1/bootloader.min.js';
+        document.write('<script src="' + bootloaderSrc + '" defer><\/script>');
+    </script>
     <link rel="stylesheet" href="css/loadx.css">
     <link rel="stylesheet" href="css/tablex.css">
 
