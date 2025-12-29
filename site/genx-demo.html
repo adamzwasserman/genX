@@ -3118,12 +3118,7 @@
                         dateInputValue.textContent = inputValue;
                     }
 
-                    // Update output attributes
-                    dateOutput.setAttribute('fx-raw', inputValue);
-                    dateOutput.setAttribute('fx-type', inputType);
-                    dateOutput.setAttribute('fx-date-format', outputFormat);
-
-                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    // Format directly - don't set fx-* attributes to avoid triggering observer with stale cache
                     if (window.fxXFactory) {
                         dateOutput.textContent = fxXFactory.format('date', inputValue, { type: inputType, dateFormat: outputFormat });
                     }
@@ -3200,11 +3195,7 @@
                         relativeInputValue.textContent = inputValue;
                     }
 
-                    // Update output attributes
-                    relativeOutput.setAttribute('fx-raw', inputValue);
-                    relativeOutput.setAttribute('fx-type', inputType);
-
-                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    // Format directly - don't set fx-* attributes to avoid triggering observer with stale cache
                     if (window.fxXFactory) {
                         relativeOutput.textContent = fxXFactory.format('relative', inputValue, { type: inputType });
                     }
@@ -3238,12 +3229,7 @@
                         filesizeInputValue.textContent = bytes;
                     }
 
-                    // Update output attributes
-                    filesizeOutput.setAttribute('fx-raw', bytes);
-                    filesizeOutput.setAttribute('fx-binary', binary);
-                    filesizeOutput.setAttribute('fx-decimals', decimals);
-
-                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    // Format directly - don't set fx-* attributes to avoid triggering observer with stale cache
                     if (window.fxXFactory) {
                         filesizeOutput.textContent = fxXFactory.format('filesize', bytes, { binary: binary, decimals: decimals });
                     }
@@ -3270,10 +3256,7 @@
                     const decimals = parseInt(decimalControlSelector.value, 10);
                     const rawValue = '3.14159265';
 
-                    // Update output attributes
-                    decimalControlOutput.setAttribute('fx-decimals', decimals);
-
-                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    // Format directly - don't set fx-* attributes to avoid triggering observer with stale cache
                     if (window.fxXFactory) {
                         decimalControlOutput.textContent = fxXFactory.format('number', rawValue, { decimals: decimals });
                     }
@@ -3313,19 +3296,7 @@
                         currencyInputValue.textContent = inputValue;
                     }
 
-                    // Update output attributes
-                    currencyOutput.setAttribute('fx-raw', rawValue);
-                    if (inputType === 'smart') {
-                        currencyOutput.setAttribute('fx-format', 'smart');
-                        currencyOutput.removeAttribute('fx-type');
-                        currencyOutput.removeAttribute('fx-currency');
-                    } else {
-                        currencyOutput.setAttribute('fx-format', 'currency');
-                        currencyOutput.setAttribute('fx-type', inputType);
-                        currencyOutput.setAttribute('fx-currency', 'USD');
-                    }
-
-                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    // Format directly - don't set fx-* attributes to avoid triggering observer with stale cache
                     if (window.fxXFactory) {
                         const format = inputType === 'smart' ? 'smart' : 'currency';
                         const opts = inputType === 'smart' ? {} : { type: inputType, currency: 'USD' };
@@ -3371,12 +3342,7 @@
                         percentInputValue.textContent = inputValue;
                     }
 
-                    // Update output attributes
-                    percentOutput.setAttribute('fx-raw', rawValue);
-                    percentOutput.setAttribute('fx-type', inputType);
-                    percentOutput.setAttribute('fx-decimals', decimals);
-
-                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    // Format directly - don't set fx-* attributes to avoid triggering observer with stale cache
                     if (window.fxXFactory) {
                         percentOutput.textContent = fxXFactory.format('percent', rawValue, { type: inputType, decimals: decimals });
                     }
@@ -3407,10 +3373,7 @@
                         compactInputValue.textContent = value;
                     }
 
-                    // Update output attributes
-                    compactOutput.setAttribute('fx-raw', value);
-
-                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    // Format directly - don't set fx-* attributes to avoid triggering observer with stale cache
                     if (window.fxXFactory) {
                         compactOutput.textContent = fxXFactory.format('compact', value, {});
                     }
@@ -3436,11 +3399,7 @@
                         timeInputValue.textContent = inputValue;
                     }
 
-                    // Update output attributes
-                    timeOutput.setAttribute('fx-raw', inputValue);
-                    timeOutput.setAttribute('fx-time-format', outputFormat);
-
-                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    // Format directly - don't set fx-* attributes to avoid triggering observer with stale cache
                     if (window.fxXFactory) {
                         timeOutput.textContent = fxXFactory.format('time', inputValue, { timeFormat: outputFormat });
                     }
@@ -3471,11 +3430,7 @@
                         durationInputValue.textContent = inputValue;
                     }
 
-                    // Update output attributes
-                    durationOutput.setAttribute('fx-raw', inputValue);
-                    durationOutput.setAttribute('fx-duration-format', outputFormat);
-
-                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    // Format directly - don't set fx-* attributes to avoid triggering observer with stale cache
                     if (window.fxXFactory) {
                         durationOutput.textContent = fxXFactory.format('duration', inputValue, { durationFormat: outputFormat });
                     }
@@ -3506,11 +3461,7 @@
                         phoneInputValue.textContent = inputValue;
                     }
 
-                    // Update output attributes
-                    phoneOutput.setAttribute('fx-raw', inputValue);
-                    phoneOutput.setAttribute('fx-phone-format', outputFormat);
-
-                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    // Format directly - don't set fx-* attributes to avoid triggering observer with stale cache
                     if (window.fxXFactory) {
                         phoneOutput.textContent = fxXFactory.format('phone', inputValue, { phoneFormat: outputFormat });
                     }
