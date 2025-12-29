@@ -470,12 +470,24 @@
                 // Spread config into opts, excluding 'format' key
                 opts = {...config};
                 delete opts.format;
-                // Re-read dynamic attributes that may have changed since cache was built
-                // (fx-type and fx-decimals are commonly changed by interactive demos)
-                const currentType = el.getAttribute(`${pref}type`);
-                const currentDecimals = el.getAttribute(`${pref}decimals`);
-                if (currentType) opts.type = currentType;
-                if (currentDecimals !== null) opts.decimals = parseInt(currentDecimals, 10);
+                // Re-read ALL dynamic attributes that may have changed since cache was built
+                // (Many fx-* attributes are changed by interactive demos via dropdowns)
+                const dynamicAttrs = [
+                    { attr: 'type', parse: v => v },
+                    { attr: 'decimals', parse: v => parseInt(v, 10) },
+                    { attr: 'binary', parse: v => v === 'true' },
+                    { attr: 'phone-format', key: 'phoneFormat', parse: v => v },
+                    { attr: 'time-format', key: 'timeFormat', parse: v => v },
+                    { attr: 'duration-format', key: 'durationFormat', parse: v => v },
+                    { attr: 'date-format', key: 'dateFormat', parse: v => v },
+                    { attr: 'currency', parse: v => v },
+                ];
+                for (const {attr, key, parse} of dynamicAttrs) {
+                    const val = el.getAttribute(`${pref}${attr}`);
+                    if (val !== null) {
+                        opts[key || attr] = parse(val);
+                    }
+                }
             }
         }
 
