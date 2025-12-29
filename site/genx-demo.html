@@ -128,12 +128,21 @@
         header h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
-            font-family: 'Dongle', sans-serif;
             font-weight: 400;
         }
 
-        header h1 .red-x {
+        header h1 .wordmark {
+            font-family: 'Dongle', sans-serif;
+        }
+
+        header h1 .wordmark .red-x {
             color: #dc3545;
+        }
+
+        header h1 .tagline {
+            font-family: 'Mulish', 'Mulish-fallback', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 300;
         }
 
         header p {
@@ -856,7 +865,7 @@
 
     <div class="container">
         <header>
-            <h1>gen<span class="red-x">X</span>: front-end changes for humans</h1>
+            <h1><span class="wordmark">gen<span class="red-x">X</span></span><span class="tagline">: front-end changes for humans</span></h1>
             <div style="max-width: 900px; margin: 20px auto 0; text-align: left;">
                 <p style="margin-bottom: 15px; font-size: 1.05rem; line-height: 1.7;">
                     Business wants percentages shown with 2 decimals instead of 3? With traditional approaches, you're modifying database schemas, backend APIs, and frontend code - all fragile, all breaking things. Over and over again.
