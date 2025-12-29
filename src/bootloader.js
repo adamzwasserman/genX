@@ -151,10 +151,11 @@
             // Mark as loading
             loadingParsers.add(style);
 
-            // Construct parser URL
-            const baseUrl = window.genxConfig?.cdn || '';
+            // Construct parser URL - use CDN_BASE which has correct default
             const parserPath = PARSER_URLS[style];
-            const parserUrl = baseUrl ? `${baseUrl}${parserPath}` : parserPath;
+            const parserUrl = parserPath.startsWith('http')
+                ? parserPath
+                : CDN_BASE + parserPath;
 
             // Load parser with dynamic import()
             const loadPromise = import(parserUrl)
