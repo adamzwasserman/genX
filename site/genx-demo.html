@@ -3123,6 +3123,11 @@
                     dateOutput.setAttribute('fx-type', inputType);
                     dateOutput.setAttribute('fx-date-format', outputFormat);
 
+                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    if (window.fxXFactory) {
+                        dateOutput.textContent = fxXFactory.format('date', inputValue, { type: inputType, dateFormat: outputFormat });
+                    }
+
                     // Update API display
                     const typeDisplay = document.getElementById('date-type-display');
                     const formatDisplay = document.getElementById('date-format-display');
@@ -3199,6 +3204,11 @@
                     relativeOutput.setAttribute('fx-raw', inputValue);
                     relativeOutput.setAttribute('fx-type', inputType);
 
+                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    if (window.fxXFactory) {
+                        relativeOutput.textContent = fxXFactory.format('relative', inputValue, { type: inputType });
+                    }
+
                     // Update API display
                     const typeDisplay = document.getElementById('relative-type-display');
                     if (typeDisplay) typeDisplay.textContent = inputType;
@@ -3233,6 +3243,11 @@
                     filesizeOutput.setAttribute('fx-binary', binary);
                     filesizeOutput.setAttribute('fx-decimals', decimals);
 
+                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    if (window.fxXFactory) {
+                        filesizeOutput.textContent = fxXFactory.format('filesize', bytes, { binary: binary, decimals: decimals });
+                    }
+
                     // Update API display
                     const binaryDisplay = document.getElementById('filesize-binary-display');
                     const decimalsDisplay = document.getElementById('filesize-decimals-display');
@@ -3253,9 +3268,15 @@
             if (decimalControlSelector && decimalControlOutput) {
                 function updateDecimalControlAttributes() {
                     const decimals = parseInt(decimalControlSelector.value, 10);
+                    const rawValue = '3.14159265';
 
                     // Update output attributes
                     decimalControlOutput.setAttribute('fx-decimals', decimals);
+
+                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    if (window.fxXFactory) {
+                        decimalControlOutput.textContent = fxXFactory.format('number', rawValue, { decimals: decimals });
+                    }
 
                     // Update API display
                     const decimalsDisplay = document.getElementById('decimal-control-display');
@@ -3304,6 +3325,13 @@
                         currencyOutput.setAttribute('fx-currency', 'USD');
                     }
 
+                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    if (window.fxXFactory) {
+                        const format = inputType === 'smart' ? 'smart' : 'currency';
+                        const opts = inputType === 'smart' ? {} : { type: inputType, currency: 'USD' };
+                        currencyOutput.textContent = fxXFactory.format(format, rawValue, opts);
+                    }
+
                     // Update API display
                     const formatDisplay = document.getElementById('currency-format-display');
                     const typeDisplay = document.getElementById('currency-type-display');
@@ -3348,6 +3376,11 @@
                     percentOutput.setAttribute('fx-type', inputType);
                     percentOutput.setAttribute('fx-decimals', decimals);
 
+                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    if (window.fxXFactory) {
+                        percentOutput.textContent = fxXFactory.format('percent', rawValue, { type: inputType, decimals: decimals });
+                    }
+
                     // Update API display
                     const typeDisplay = document.getElementById('percent-type-display');
                     const decimalsDisplay = document.getElementById('percent-decimals-display');
@@ -3376,6 +3409,11 @@
 
                     // Update output attributes
                     compactOutput.setAttribute('fx-raw', value);
+
+                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    if (window.fxXFactory) {
+                        compactOutput.textContent = fxXFactory.format('compact', value, {});
+                    }
                 }
 
                 compactSelector.addEventListener('change', updateCompactAttributes);
@@ -3401,6 +3439,11 @@
                     // Update output attributes
                     timeOutput.setAttribute('fx-raw', inputValue);
                     timeOutput.setAttribute('fx-time-format', outputFormat);
+
+                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    if (window.fxXFactory) {
+                        timeOutput.textContent = fxXFactory.format('time', inputValue, { timeFormat: outputFormat });
+                    }
 
                     // Update API display
                     const formatDisplay = document.getElementById('time-format-display');
@@ -3432,6 +3475,11 @@
                     durationOutput.setAttribute('fx-raw', inputValue);
                     durationOutput.setAttribute('fx-duration-format', outputFormat);
 
+                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    if (window.fxXFactory) {
+                        durationOutput.textContent = fxXFactory.format('duration', inputValue, { durationFormat: outputFormat });
+                    }
+
                     // Update API display
                     const formatDisplay = document.getElementById('duration-format-display');
                     if (formatDisplay) formatDisplay.textContent = outputFormat;
@@ -3461,6 +3509,11 @@
                     // Update output attributes
                     phoneOutput.setAttribute('fx-raw', inputValue);
                     phoneOutput.setAttribute('fx-phone-format', outputFormat);
+
+                    // Trigger re-format (bootloader doesn't watch attribute changes)
+                    if (window.fxXFactory) {
+                        phoneOutput.textContent = fxXFactory.format('phone', inputValue, { phoneFormat: outputFormat });
+                    }
 
                     // Update API display
                     const formatDisplay = document.getElementById('phone-format-display');
