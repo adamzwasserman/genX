@@ -14,7 +14,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "npm run build:bootloader && npm run build:modules && npm run minify && npm run gzip",
+    "build": "npm run build:bootloader && npm run build:modules && npm run minify && npm run gzip && npm run build:hash",
+    "build:hash": "node scripts/build-hashed.js",
     "build:bootloader": "esbuild src/bootloader.js --bundle --outfile=dist/bootloader.js --format=iife --global-name=genx",
     "build:modules": "esbuild src/fmtx.js src/accx.js src/bindx.js src/dragx.js src/loadx.js src/navx.js src/tablex.js src/smartx.js --outdir=dist/modules --format=iife",
     "minify": "npm run minify:bootloader && npm run minify:modules",

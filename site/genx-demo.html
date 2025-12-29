@@ -25,15 +25,30 @@
         const localBase = location.origin;
         window.genxConfig = {
             cdn: isLocal ? '/dist/modules' : 'https://cdn.genx.software/v1',
+            modulePaths: isLocal ? {} : {
+                "fx": "/fmtx.8235482c.min.js",
+                "ax": "/accx.dc757d62.min.js",
+                "bx": "/bindx.300860c4.min.js",
+                "dx": "/dragx.7afd63f8.min.js",
+                "lx": "/loadx.3bbe11c8.min.js",
+                "nx": "/navx.4156ccae.min.js",
+                "tx": "/tablex.a613afdc.min.js",
+                "sx": "/smartx.ff049b02.min.js"
+            },
             parserPaths: isLocal ? {
                 verbose: localBase + '/src/parsers/genx-parser-verbose.js',
                 colon: localBase + '/src/parsers/genx-parser-colon.js',
                 json: localBase + '/src/parsers/genx-parser-json.js',
                 class: localBase + '/src/parsers/genx-parser-class.js'
-            } : undefined
+            } : {
+                "verbose": "/parsers/genx-parser-verbose.2b52e6b3.js",
+                "colon": "/parsers/genx-parser-colon.9b4ddadb.js",
+                "json": "/parsers/genx-parser-json.625df3e0.js",
+                "class": "/parsers/genx-parser-class.9c1e09c4.js"
+            }
         };
         // Dynamically load bootloader from local (source) or CDN (minified)
-        const bootloaderSrc = isLocal ? '/src/bootloader.js' : 'https://cdn.genx.software/v1/bootloader.min.js';
+        const bootloaderSrc = isLocal ? '/src/bootloader.js' : 'https://cdn.genx.software/v1/bootloader.beaa280b.min.js';
         document.write('<script src="' + bootloaderSrc + '" defer><\/script>');
     </script>
     <link rel="stylesheet" href="css/loadx.css">
@@ -3297,10 +3312,11 @@
                     }
 
                     // Format directly - don't set fx-* attributes to avoid triggering observer with stale cache
-                    if (window.fxXFactory) {
-                        const format = inputType === 'smart' ? 'smart' : 'currency';
-                        const opts = inputType === 'smart' ? {} : { type: inputType, currency: 'USD' };
-                        currencyOutput.textContent = fxXFactory.format(format, rawValue, opts);
+                    if (inputType === 'smart' && window.SmartX) {
+                        // SmartX handles detection and formatting
+                        currencyOutput.textContent = SmartX.format(currencyOutput, rawValue);
+                    } else if (window.fxXFactory) {
+                        currencyOutput.textContent = fxXFactory.format('currency', rawValue, { type: inputType, currency: 'USD' });
                     }
 
                     // Update API display

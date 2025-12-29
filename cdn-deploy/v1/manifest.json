@@ -1,0 +1,20 @@
+{
+  "version": "2025-12-29T22:02:27.023Z",
+  "bootloader": "bootloader.beaa280b.min.js",
+  "modules": {
+    "fmtx": "fmtx.8235482c.min.js",
+    "accx": "accx.dc757d62.min.js",
+    "bindx": "bindx.300860c4.min.js",
+    "dragx": "dragx.7afd63f8.min.js",
+    "loadx": "loadx.3bbe11c8.min.js",
+    "navx": "navx.4156ccae.min.js",
+    "tablex": "tablex.a613afdc.min.js",
+    "smartx": "smartx.ff049b02.min.js"
+  },
+  "parsers": {
+    "verbose": "parsers/genx-parser-verbose.2b52e6b3.js",
+    "colon": "parsers/genx-parser-colon.9b4ddadb.js",
+    "json": "parsers/genx-parser-json.625df3e0.js",
+    "class": "parsers/genx-parser-class.9c1e09c4.js"
+  }
+}
