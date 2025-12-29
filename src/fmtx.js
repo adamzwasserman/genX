@@ -470,6 +470,12 @@
                 // Spread config into opts, excluding 'format' key
                 opts = {...config};
                 delete opts.format;
+                // Re-read dynamic attributes that may have changed since cache was built
+                // (fx-type and fx-decimals are commonly changed by interactive demos)
+                const currentType = el.getAttribute(`${pref}type`);
+                const currentDecimals = el.getAttribute(`${pref}decimals`);
+                if (currentType) opts.type = currentType;
+                if (currentDecimals !== null) opts.decimals = parseInt(currentDecimals, 10);
             }
         }
 
