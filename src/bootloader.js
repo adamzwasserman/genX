@@ -43,6 +43,18 @@
         Object.entries(CLASS_PREFIX_MAP).map(([k, v]) => [v, k])
     );
 
+    // Primary entry-point attributes for each module
+    // CSS cannot match "attribute name starts with", so we list known entry points
+    const MODULE_ENTRY_ATTRS = {
+        'fx': ['fx-format'],
+        'ax': ['ax-enhance'],
+        'bx': ['bx-model', 'bx-bind', 'bx-if', 'bx-show', 'bx-for', 'bx-form'],
+        'dx': ['dx-draggable', 'dx-drop-zone'],
+        'lx': ['lx-strategy', 'lx-loading'],
+        'tx': ['tx-sortable'],
+        'nx': ['nx-tabs', 'nx-dropdown', 'nx-breadcrumb', 'nx-mobile', 'nx-scroll-spy', 'nx-sticky', 'nx-nav']
+    };
+
     // CDN base URL (can be configured)
     const CDN_BASE = window.genxConfig?.cdn || 'https://cdn.genx.software/v1';
 
@@ -171,7 +183,10 @@
      * Single query covers attributes + CSS classes
      */
     const _buildUnifiedSelector = () => {
-        const attrSelectors = Object.keys(modules).map(p => `[${p}-]`);
+        // Build attribute selectors from known entry-point attributes
+        const attrSelectors = Object.values(MODULE_ENTRY_ATTRS)
+            .flat()
+            .map(attr => `[${attr}]`);
         const classSelectors = Object.keys(CLASS_PREFIX_MAP).map(p => `[class*="${p}-"]`);
         return [...attrSelectors, ...classSelectors].join(',');
     };
@@ -494,8 +509,9 @@
 
         try {
             const modulePath = modules[prefix];
-            // Use path as-is if it's absolute (http/https or starts with /)
-            const url = (modulePath.startsWith('http') || modulePath.startsWith('/'))
+            // Only skip CDN prefix if path is a full URL (http/https)
+            // Relative paths (including those starting with /) get CDN prepended
+            const url = modulePath.startsWith('http')
                 ? modulePath
                 : CDN_BASE + modulePath;
 
