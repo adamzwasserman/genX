@@ -35,7 +35,7 @@
             } : {}
         };
         // Dynamically load bootloader from local (source) or CDN (minified)
-        const bootloaderSrc = isLocal ? '/src/bootloader.js' : 'https://cdn.genx.software/v1/bootloader.min.js';
+        const bootloaderSrc = isLocal ? '/src/bootloader.js' : 'https://cdn.genx.software/v1/bootloader.27e707e4.min.js';
         document.write('<script src="' + bootloaderSrc + '" defer><\/script>');
     </script>
     <link rel="stylesheet" href="css/loadx.css">
@@ -3197,7 +3197,11 @@
                         relativeInputValue.textContent = inputValue;
                     }
 
-                    // Format directly - don't set fx-* attributes to avoid triggering observer with stale cache
+                    // Set fx-raw and fx-type so fmtx auto-scan uses the correct value (race condition fix)
+                    relativeOutput.setAttribute('fx-raw', inputValue);
+                    relativeOutput.setAttribute('fx-type', inputType);
+
+                    // Format directly
                     if (window.fxXFactory) {
                         relativeOutput.textContent = fxXFactory.format('relative', inputValue, { type: inputType });
                     }
