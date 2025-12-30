@@ -18,7 +18,8 @@
         'dx': '/dragx.min.js',
         'lx': '/loadx.min.js',
         'tx': '/tablex.min.js',
-        'nx': '/navx.min.js'
+        'nx': '/navx.min.js',
+        'sx': '/smartx.min.js'
     };
     const modules = (typeof window !== 'undefined' && window.genxConfig?.modulePaths)
         ? { ...defaultModules, ...window.genxConfig.modulePaths }
@@ -240,6 +241,10 @@
             const prefix = _detectPrefix(el);
             if (prefix) {
                 needed.add(prefix);
+            }
+            // SmartX dependency: load sx module when fx-format="smart" is used
+            if (el.getAttribute('fx-format') === 'smart') {
+                needed.add('sx');
             }
         }
 

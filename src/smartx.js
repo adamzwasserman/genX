@@ -747,4 +747,10 @@
     // Export to window
     window.SmartX = SmartX;
 
+    // Export factory for bootloader compatibility
+    window.sxXFactory = {
+        init: () => SmartX,
+        format: SmartX.format.bind(SmartX)
+    };
+
 })(window);
