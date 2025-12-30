@@ -146,7 +146,10 @@
 
         const str = String(convertedValue);
         const num = parseNumber(str);
-        const date = parseDate(str);
+        // If convertedValue is already a Date, use it directly instead of re-parsing stringified version
+        const date = convertedValue instanceof Date && !isNaN(convertedValue.getTime())
+            ? convertedValue
+            : parseDate(str);
         const fallback = () => str;
 
         switch (type) {
@@ -159,7 +162,7 @@
             }
             break;
             // Dates
-        case 'date': case 'datetime':
+        case 'date': case 'datetime': case 'relative':
             if (date === null) {
                 return fallback();
             }
