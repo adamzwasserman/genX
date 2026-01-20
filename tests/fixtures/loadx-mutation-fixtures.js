@@ -115,6 +115,9 @@ function countTrackedElements(container) {
  * Cleanup mutation test artifacts
  */
 function cleanupMutation() {
+    // Guard for Node.js environment
+    if (typeof document === 'undefined') return;
+
     // Remove dynamic elements
     const dynamicElements = document.querySelectorAll('[id^="dynamic-"]');
     dynamicElements.forEach(el => el.remove());
@@ -127,7 +130,7 @@ function cleanupMutation() {
     });
 
     // Disconnect mutation observer if exists
-    if (window.loadX && window.loadX._mutationObserver) {
+    if (typeof window !== 'undefined' && window.loadX && window.loadX._mutationObserver) {
         window.loadX._mutationObserver.disconnect();
     }
 }

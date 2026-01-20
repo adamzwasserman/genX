@@ -110,6 +110,9 @@ function waitForAllLoadingComplete(elements, timeout = 3000) {
  * Cleanup integration tests
  */
 function cleanupIntegration() {
+    // Guard for Node.js environment
+    if (typeof document === 'undefined') return;
+
     // Remove all forms
     const forms = document.querySelectorAll('form[lx-loading]');
     forms.forEach(form => form.remove());
@@ -122,7 +125,7 @@ function cleanupIntegration() {
     }
 
     // Reset fetch
-    if (window._originalFetch) {
+    if (typeof window !== 'undefined' && window._originalFetch) {
         window.fetch = window._originalFetch;
     }
 }

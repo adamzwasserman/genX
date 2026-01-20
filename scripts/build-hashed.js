@@ -32,7 +32,8 @@ const FILES = {
         'loadx.min.js',
         'navx.min.js',
         'tablex.min.js',
-        'smartx.min.js'
+        'smartx.min.js',
+        'uix.min.js'
     ],
     parsers: [
         'parsers/genx-parser-verbose.js',

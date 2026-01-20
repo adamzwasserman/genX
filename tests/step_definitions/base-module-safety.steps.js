@@ -92,7 +92,7 @@ Given('the {string} module is loaded', async function(moduleName) {
     throw new Error(`Unknown module: ${moduleName}`);
   }
 
-  await page.goto(`http://localhost:8040/tests/browser/fixtures/test-base.html`);
+  await page.goto(`http://localhost:3000/tests/browser/fixtures/test-base.html`);
 
   // Load the module
   await page.addScriptTag({

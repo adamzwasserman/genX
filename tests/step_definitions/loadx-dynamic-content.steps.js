@@ -18,17 +18,20 @@ Before(async function() {
 
 After(async function() {
     if (this.page) {
-        await this.page.evaluate(() => {
-            const dynamicElements = document.querySelectorAll('[id^="dynamic-"]');
-            dynamicElements.forEach(el => el.remove());
+        try {
+            await this.page.evaluate(() => {
+                const dynamicElements = document.querySelectorAll('[id^="dynamic-"]');
+                dynamicElements.forEach(el => el.remove());
 
-            if (window.loadX && window.loadX.disconnect) {
-                window.loadX.disconnect();
-            }
-        });
-    } else {
-        cleanupMutation();
+                if (window.loadX && window.loadX.disconnect) {
+                    window.loadX.disconnect();
+                }
+            });
+        } catch (e) {
+            // Page may already be closed - ignore cleanup errors
+        }
     }
+    cleanupMutation();
 });
 
 Given('in loadx-dynamic-content, loadX is initialized', async function() {
