@@ -500,12 +500,21 @@
 
 .ux-alert__dismiss {
   margin-left: auto;
-  background: none;
+  padding: 4px 6px;
+  background: transparent;
   border: none;
+  border-radius: var(--ux-radius-sm);
   cursor: pointer;
-  opacity: 0.7;
+  color: currentColor;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: color var(--ux-transition-fast), background var(--ux-transition-fast);
 }
-.ux-alert__dismiss:hover { opacity: 1; }
+.ux-alert__dismiss:hover {
+  color: white;
+  background: rgba(0, 0, 0, 0.15);
+}
 
 /* ===================
    MODAL
@@ -584,6 +593,7 @@
   font-size: 1.5rem;
   cursor: pointer;
   opacity: 0.7;
+  transition: opacity var(--ux-transition-fast);
 }
 .ux-modal__close:hover { opacity: 1; }
 
@@ -636,6 +646,7 @@
   font-weight: 500;
   text-align: left;
   cursor: pointer;
+  transition: background var(--ux-transition-fast), color var(--ux-transition-fast);
 }
 .ux-accordion__header:hover { background: var(--ux-accordion-header-hover-bg); }
 .ux-accordion__item.is-open .ux-accordion__header {
@@ -729,27 +740,23 @@
 }
 
 .ux-dropdown__menu {
+  display: none;
   position: absolute;
   top: 100%;
   left: 0;
   z-index: var(--ux-z-dropdown);
   min-width: 10rem;
   padding: var(--ux-space-1) 0;
+  margin-top: 4px;
   background: var(--ux-dropdown-bg);
   color: var(--ux-dropdown-color);
   border: 1px solid var(--ux-dropdown-border);
   border-radius: var(--ux-radius-md);
   box-shadow: var(--ux-shadow-md);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-8px);
-  transition: all var(--ux-transition-fast);
 }
 
 .ux-dropdown.is-open .ux-dropdown__menu {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(4px);
+  display: block;
 }
 
 .ux-dropdown__item {
@@ -760,6 +767,9 @@
   border: none;
   text-align: left;
   cursor: pointer;
+  color: var(--ux-neutral-700);
+  font-size: inherit;
+  transition: background var(--ux-transition-fast), color var(--ux-transition-fast);
 }
 .ux-dropdown__item:hover {
   background: var(--ux-dropdown-hover-bg);
@@ -923,6 +933,18 @@
   align-items: center;
   gap: var(--ux-space-2);
   cursor: pointer;
+}
+
+.ux-switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .ux-switch__track {
@@ -1604,40 +1626,54 @@
             if (opts.onBg) el.style.setProperty('--ux-switch-on-bg', resolveColor(opts.onBg));
             if (opts.knobColor) el.style.setProperty('--ux-switch-knob', resolveColor(opts.knobColor));
 
+            // Find checkbox input inside label
+            const checkbox = el.querySelector('input[type="checkbox"]');
+
             // Create track if not exists
             if (!el.querySelector('.ux-switch__track')) {
                 const track = document.createElement('span');
                 track.className = 'ux-switch__track';
-                el.insertBefore(track, el.firstChild);
-            }
-
-            // Add label if provided
-            if (opts.label && !el.querySelector('.ux-switch__label')) {
-                const labelSpan = document.createElement('span');
-                labelSpan.className = 'ux-switch__label';
-                labelSpan.textContent = opts.label;
-                el.appendChild(labelSpan);
+                // Insert after checkbox if exists, else at start
+                if (checkbox) {
+                    checkbox.insertAdjacentElement('afterend', track);
+                } else {
+                    el.insertBefore(track, el.firstChild);
+                }
             }
 
             el.setAttribute('role', 'switch');
-            el.setAttribute('tabindex', '0');
-            el.setAttribute('aria-checked', opts.checked ? 'true' : 'false');
-            if (opts.label) el.setAttribute('aria-label', opts.label);
 
+            // Sync with checkbox if present
             const events = createEventManager();
-            const toggle = () => {
-                const checked = el.getAttribute('aria-checked') === 'true';
-                el.setAttribute('aria-checked', !checked);
-                el.dispatchEvent(new CustomEvent('ux:change', { detail: { checked: !checked } }));
-            };
+            if (checkbox) {
+                // Set initial state from checkbox
+                el.setAttribute('aria-checked', checkbox.checked ? 'true' : 'false');
 
-            events.on(el, 'click', toggle);
-            events.on(el, 'keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    toggle();
-                }
-            });
+                // Listen for checkbox changes (triggered by native label click)
+                events.on(checkbox, 'change', () => {
+                    el.setAttribute('aria-checked', checkbox.checked ? 'true' : 'false');
+                    el.dispatchEvent(new CustomEvent('ux:change', { detail: { checked: checkbox.checked } }));
+                });
+            } else {
+                // No checkbox - use standalone switch behavior
+                el.setAttribute('tabindex', '0');
+                el.setAttribute('aria-checked', opts.checked ? 'true' : 'false');
+                if (opts.label) el.setAttribute('aria-label', opts.label);
+
+                const toggle = () => {
+                    const checked = el.getAttribute('aria-checked') === 'true';
+                    el.setAttribute('aria-checked', !checked);
+                    el.dispatchEvent(new CustomEvent('ux:change', { detail: { checked: !checked } }));
+                };
+
+                events.on(el, 'click', toggle);
+                events.on(el, 'keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggle();
+                    }
+                });
+            }
 
             trackInstance(el, { events, type: 'switch' });
         },

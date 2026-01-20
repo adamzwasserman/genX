@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>genX Module Demo - All 8 Modules with Live Examples</title>
-    <meta name="description" content="Comprehensive genX demo showing all 8 modules in action: fmtX formatting, accX accessibility, bindX data binding, dragX drag-drop, loadX loading states, navX routing, tableX tables, smartX auto-detection.">
+    <title>genX Module Demo - All 9 Modules with Live Examples</title>
+    <meta name="description" content="Comprehensive genX demo showing all 9 modules in action: fmtX formatting, accX accessibility, bindX data binding, dragX drag-drop, loadX loading states, navX routing, tableX tables, uiX components, smartX auto-detection.">
 
     <!-- SEO Meta Tags -->
     <meta name="robots" content="index, follow">
@@ -894,6 +894,7 @@
                 <li><a href="#loadx">loadX</a></li>
                 <li><a href="#navx">navX</a></li>
                 <li><a href="#tablex">tableX</a></li>
+                <li><a href="#uix">uiX</a></li>
             </ul>
         </nav>
 
@@ -2998,6 +2999,392 @@
                     </div>
                 </div>
             </div>
+        </section>
+
+        <!-- uiX Module Examples -->
+        <section id="uix" class="module-section">
+            <h2>8. uiX - UI Components</h2>
+            <p class="module-desc">Declarative UI component library with <code>ux-*</code> attributes. Pure CSS where possible, with declarative triggers for interactivity.</p>
+
+            <!-- Atoms -->
+            <h3 style="margin: 30px 0 20px; color: #64748b; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Atoms</h3>
+
+            <!-- Buttons -->
+            <div class="example">
+                <h4>Buttons</h4>
+                <p>Styled buttons with variants and sizes using <code>ux-variant</code> and <code>ux-size</code></p>
+                <div class="example-demo" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                    <button ux-enhance="button" ux-variant="primary">Primary</button>
+                    <button ux-enhance="button" ux-variant="secondary">Secondary</button>
+                    <button ux-enhance="button" ux-variant="outline">Outline</button>
+                    <button ux-enhance="button" ux-variant="ghost">Ghost</button>
+                    <button ux-enhance="button" ux-variant="danger">Danger</button>
+                </div>
+                <div class="example-demo" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 15px;">
+                    <button ux-enhance="button" ux-variant="primary" ux-size="sm">Small</button>
+                    <button ux-enhance="button" ux-variant="primary">Default</button>
+                    <button ux-enhance="button" ux-variant="primary" ux-size="lg">Large</button>
+                    <button ux-enhance="button" ux-variant="primary" ux-bg="#ec4899" ux-hover-bg="#db2777">Custom Pink</button>
+                </div>
+                <div class="example-code">
+                    <pre>&lt;button ux-enhance="button" ux-variant="primary"&gt;Primary&lt;/button&gt;
+&lt;button ux-enhance="button" ux-variant="primary" ux-size="lg"&gt;Large&lt;/button&gt;
+&lt;button ux-enhance="button" ux-bg="#ec4899"&gt;Custom Color&lt;/button&gt;</pre>
+                </div>
+            </div>
+
+            <!-- Badges -->
+            <div class="example">
+                <h4>Badges</h4>
+                <p>Status badges and labels with color variants</p>
+                <div class="example-demo" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                    <span ux-enhance="badge">Default</span>
+                    <span ux-enhance="badge" ux-variant="primary">Primary</span>
+                    <span ux-enhance="badge" ux-variant="success">Success</span>
+                    <span ux-enhance="badge" ux-variant="warning">Warning</span>
+                    <span ux-enhance="badge" ux-variant="danger">Danger</span>
+                    <span ux-enhance="badge" ux-variant="info">Info</span>
+                    <span ux-enhance="badge" ux-variant="primary" ux-pill="true">Pill Badge</span>
+                </div>
+                <div class="example-code">
+                    <pre>&lt;span ux-enhance="badge" ux-variant="success"&gt;Success&lt;/span&gt;
+&lt;span ux-enhance="badge" ux-variant="primary" ux-pill="true"&gt;Pill&lt;/span&gt;</pre>
+                </div>
+            </div>
+
+            <!-- Avatars -->
+            <div class="example">
+                <h4>Avatars</h4>
+                <p>User avatars with initials and customizable sizes/colors</p>
+                <div class="example-demo" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                    <div ux-enhance="avatar" ux-size="sm" ux-initials="SM">SM</div>
+                    <div ux-enhance="avatar" ux-initials="JD">JD</div>
+                    <div ux-enhance="avatar" ux-size="lg" ux-initials="LG">LG</div>
+                    <div ux-enhance="avatar" ux-size="xl" ux-initials="XL">XL</div>
+                    <div ux-enhance="avatar" ux-square="true" ux-initials="SQ">SQ</div>
+                    <div ux-enhance="avatar" ux-bg="#ec4899" ux-initials="PK">PK</div>
+                </div>
+                <div class="example-code">
+                    <pre>&lt;div ux-enhance="avatar" ux-size="lg" ux-initials="JD"&gt;JD&lt;/div&gt;
+&lt;div ux-enhance="avatar" ux-bg="#ec4899"&gt;PK&lt;/div&gt;</pre>
+                </div>
+            </div>
+
+            <!-- Spinners -->
+            <div class="example">
+                <h4>Spinners (Pure CSS)</h4>
+                <p>Loading indicators - pure CSS, no JavaScript required</p>
+                <div class="example-demo" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
+                    <div ux-enhance="spinner" ux-size="sm"></div>
+                    <div ux-enhance="spinner"></div>
+                    <div ux-enhance="spinner" ux-size="lg"></div>
+                </div>
+                <div class="example-code">
+                    <pre>&lt;div ux-enhance="spinner"&gt;&lt;/div&gt;
+&lt;div ux-enhance="spinner" ux-size="lg"&gt;&lt;/div&gt;</pre>
+                </div>
+            </div>
+
+            <!-- Progress -->
+            <div class="example">
+                <h4>Progress Bars</h4>
+                <p>Progress indicators with customizable values</p>
+                <div class="example-demo" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div ux-enhance="progress" ux-value="25" style="width: 100%;"></div>
+                    <div ux-enhance="progress" ux-value="50" style="width: 100%;"></div>
+                    <div ux-enhance="progress" ux-value="75" style="width: 100%;"></div>
+                </div>
+                <div class="example-code">
+                    <pre>&lt;div ux-enhance="progress" ux-value="75"&gt;&lt;/div&gt;</pre>
+                </div>
+            </div>
+
+            <!-- Tooltips -->
+            <div class="example">
+                <h4>Tooltips (Pure CSS)</h4>
+                <p>Hover tooltips - pure CSS, no JavaScript required</p>
+                <div class="example-demo" style="display: flex; gap: 20px; align-items: center;">
+                    <span ux-enhance="tooltip" ux-content="This is a tooltip!" style="padding: 8px 16px; background: #f1f5f9; border-radius: 4px; cursor: pointer;">Hover me</span>
+                    <span ux-enhance="tooltip" ux-content="Positioned at top" ux-position="top" style="padding: 8px 16px; background: #f1f5f9; border-radius: 4px; cursor: pointer;">Top tooltip</span>
+                </div>
+                <div class="example-code">
+                    <pre>&lt;span ux-enhance="tooltip" ux-content="Tooltip text"&gt;Hover me&lt;/span&gt;</pre>
+                </div>
+            </div>
+
+            <!-- Molecules -->
+            <h3 style="margin: 40px 0 20px; color: #64748b; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Molecules</h3>
+
+            <!-- Alerts -->
+            <div class="example">
+                <h4>Alerts</h4>
+                <p>Notification alerts with variants and optional dismiss</p>
+                <div class="example-demo" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div ux-enhance="alert" ux-variant="success">Success! Your changes have been saved.</div>
+                    <div ux-enhance="alert" ux-variant="warning">Warning! Please review your input.</div>
+                    <div ux-enhance="alert" ux-variant="danger">Error! Something went wrong.</div>
+                    <div ux-enhance="alert" ux-variant="info">Info: This is an informational message.</div>
+                    <div ux-enhance="alert" ux-variant="success" ux-dismissible="true">Dismissible alert - click X to close</div>
+                </div>
+                <div class="example-code">
+                    <pre>&lt;div ux-enhance="alert" ux-variant="success"&gt;Success!&lt;/div&gt;
+&lt;div ux-enhance="alert" ux-variant="danger" ux-dismissible="true"&gt;Error&lt;/div&gt;</pre>
+                </div>
+            </div>
+
+            <!-- Cards -->
+            <div class="example">
+                <h4>Cards</h4>
+                <p>Content cards with header, body, and footer sections</p>
+                <div class="example-demo" style="display: flex; flex-wrap: wrap; gap: 20px;">
+                    <div ux-enhance="card" style="width: 250px;">
+                        <div class="ux-card__header">Card Title</div>
+                        <div class="ux-card__body">This is a basic card with header and body content.</div>
+                        <div class="ux-card__footer">
+                            <button ux-enhance="button" ux-variant="primary" ux-size="sm">Action</button>
+                        </div>
+                    </div>
+                    <div ux-enhance="card" ux-elevated="true" style="width: 250px;">
+                        <div class="ux-card__body">Elevated card with enhanced shadow</div>
+                    </div>
+                    <div ux-enhance="card" ux-hoverable="true" style="width: 250px;">
+                        <div class="ux-card__body">Hoverable card - try hovering!</div>
+                    </div>
+                </div>
+                <div class="example-code">
+                    <pre>&lt;div ux-enhance="card" ux-elevated="true"&gt;
+  &lt;div class="ux-card__header"&gt;Title&lt;/div&gt;
+  &lt;div class="ux-card__body"&gt;Content&lt;/div&gt;
+&lt;/div&gt;</pre>
+                </div>
+            </div>
+
+            <!-- Accordion -->
+            <div class="example">
+                <h4>Accordion</h4>
+                <p>Collapsible content sections with single-open mode</p>
+                <div class="example-demo">
+                    <div ux-enhance="accordion" ux-single="true">
+                        <div class="ux-accordion__item is-open" data-accordion-item>
+                            <button class="ux-accordion__header" data-accordion-header>
+                                Section 1: Introduction
+                                <span class="ux-accordion__icon">▼</span>
+                            </button>
+                            <div class="ux-accordion__content" data-accordion-content>
+                                <div class="ux-accordion__body">
+                                    This accordion uses single mode - only one section can be open at a time. Click another section to see it switch.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ux-accordion__item" data-accordion-item>
+                            <button class="ux-accordion__header" data-accordion-header>
+                                Section 2: Features
+                                <span class="ux-accordion__icon">▼</span>
+                            </button>
+                            <div class="ux-accordion__content" data-accordion-content>
+                                <div class="ux-accordion__body">
+                                    Features include keyboard navigation, ARIA support, and smooth transitions.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ux-accordion__item" data-accordion-item>
+                            <button class="ux-accordion__header" data-accordion-header>
+                                Section 3: Usage
+                                <span class="ux-accordion__icon">▼</span>
+                            </button>
+                            <div class="ux-accordion__content" data-accordion-content>
+                                <div class="ux-accordion__body">
+                                    Just add <code>ux-enhance="accordion"</code> and structure your content with the appropriate classes.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="example-code">
+                    <pre>&lt;div ux-enhance="accordion" ux-single="true"&gt;
+  &lt;div class="ux-accordion__item" data-accordion-item&gt;
+    &lt;button class="ux-accordion__header" data-accordion-header&gt;...&lt;/button&gt;
+    &lt;div class="ux-accordion__content" data-accordion-content&gt;...&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="example">
+                <h4>Tabs</h4>
+                <p>Tab navigation with keyboard support and ARIA</p>
+                <div class="example-demo">
+                    <div ux-enhance="tabs">
+                        <div class="ux-tabs__list" role="tablist">
+                            <button class="ux-tabs__tab">Overview</button>
+                            <button class="ux-tabs__tab">Features</button>
+                            <button class="ux-tabs__tab">Pricing</button>
+                        </div>
+                        <div class="ux-tabs__panel">
+                            <p>This is the Overview tab content. Tabs support arrow key navigation.</p>
+                        </div>
+                        <div class="ux-tabs__panel">
+                            <p>Features include: pure declarative setup, ARIA labels, keyboard navigation, and smooth transitions.</p>
+                        </div>
+                        <div class="ux-tabs__panel">
+                            <p>Free and open source! MIT License.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="example-code">
+                    <pre>&lt;div ux-enhance="tabs"&gt;
+  &lt;div class="ux-tabs__list" role="tablist"&gt;
+    &lt;button class="ux-tabs__tab"&gt;Tab 1&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;div class="ux-tabs__panel"&gt;Content 1&lt;/div&gt;
+&lt;/div&gt;</pre>
+                </div>
+            </div>
+
+            <!-- Dropdown -->
+            <div class="example">
+                <h4>Dropdown</h4>
+                <p>Dropdown menus with keyboard navigation</p>
+                <div class="example-demo">
+                    <div ux-enhance="dropdown">
+                        <button ux-enhance="button" ux-variant="secondary" data-dropdown-trigger>
+                            Options ▼
+                        </button>
+                        <div class="ux-dropdown__menu" data-dropdown-menu>
+                            <button class="ux-dropdown__item">Edit</button>
+                            <button class="ux-dropdown__item">Duplicate</button>
+                            <button class="ux-dropdown__item">Archive</button>
+                            <hr style="margin: 4px 0; border: none; border-top: 1px solid #e2e8f0;">
+                            <button class="ux-dropdown__item" style="color: #ef4444;">Delete</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="example-code">
+                    <pre>&lt;div ux-enhance="dropdown"&gt;
+  &lt;button data-dropdown-trigger&gt;Options ▼&lt;/button&gt;
+  &lt;div class="ux-dropdown__menu" data-dropdown-menu&gt;
+    &lt;button class="ux-dropdown__item"&gt;Edit&lt;/button&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+                </div>
+            </div>
+
+            <!-- Modal with Declarative Trigger -->
+            <div class="example">
+                <h4>Modal with Declarative Trigger</h4>
+                <p>Modal dialog using <code>ux-opens</code> trigger - no JavaScript needed to open!</p>
+                <div class="example-demo">
+                    <button ux-enhance="button" ux-variant="primary" ux-opens="#uix-demo-modal">Open Modal</button>
+                </div>
+                <div ux-enhance="modal" id="uix-demo-modal" ux-label="Demo Modal">
+                    <div class="ux-modal__content">
+                        <div class="ux-modal__header">
+                            <h3>Modal Title</h3>
+                            <button class="ux-modal__close" ux-closes>&times;</button>
+                        </div>
+                        <div class="ux-modal__body">
+                            <p>This modal was opened with a declarative trigger (<code>ux-opens="#uix-demo-modal"</code>). No JavaScript event handlers needed!</p>
+                            <p style="margin-top: 12px;">Press Escape or click outside to close.</p>
+                        </div>
+                        <div class="ux-modal__footer">
+                            <button ux-enhance="button" ux-variant="secondary" ux-closes>Cancel</button>
+                            <button ux-enhance="button" ux-variant="primary" ux-closes>Confirm</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="example-code">
+                    <pre>&lt;!-- Trigger button - no JavaScript needed! --&gt;
+&lt;button ux-opens="#my-modal"&gt;Open Modal&lt;/button&gt;
+
+&lt;!-- Modal --&gt;
+&lt;div ux-enhance="modal" id="my-modal"&gt;
+  &lt;div class="ux-modal__content"&gt;
+    &lt;button ux-closes&gt;&times;&lt;/button&gt;
+    &lt;p&gt;Modal content&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+                </div>
+            </div>
+
+            <!-- Form Elements -->
+            <h3 style="margin: 40px 0 20px; color: #64748b; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Form Elements</h3>
+
+            <!-- Inputs -->
+            <div class="example">
+                <h4>Form Inputs</h4>
+                <p>Styled form inputs with validation states</p>
+                <div class="example-demo" style="display: flex; flex-direction: column; gap: 12px; max-width: 400px;">
+                    <input ux-enhance="input" type="text" placeholder="Default input">
+                    <input ux-enhance="input" type="text" placeholder="Error state" ux-error="true">
+                    <input ux-enhance="input" type="text" placeholder="Success state" ux-success="true">
+                    <textarea ux-enhance="textarea" placeholder="Textarea" rows="3"></textarea>
+                </div>
+                <div class="example-code">
+                    <pre>&lt;input ux-enhance="input" type="text" placeholder="Enter text"&gt;
+&lt;input ux-enhance="input" ux-error="true" placeholder="Error"&gt;
+&lt;textarea ux-enhance="textarea"&gt;&lt;/textarea&gt;</pre>
+                </div>
+            </div>
+
+            <!-- Checkboxes and Switches -->
+            <div class="example">
+                <h4>Checkboxes &amp; Switches</h4>
+                <p>Styled checkboxes and toggle switches</p>
+                <div class="example-demo">
+                    <div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start;">
+                        <label ux-enhance="checkbox" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" checked>
+                            <span>Checkbox option 1</span>
+                        </label>
+                        <label ux-enhance="checkbox" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox">
+                            <span>Checkbox option 2</span>
+                        </label>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start; margin-top: 20px;">
+                        <label ux-enhance="switch" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" checked>
+                            <span>Toggle switch (on)</span>
+                        </label>
+                        <label ux-enhance="switch" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox">
+                            <span>Toggle switch (off)</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="example-code">
+                    <pre>&lt;label ux-enhance="checkbox"&gt;
+  &lt;input type="checkbox"&gt; Option
+&lt;/label&gt;
+
+&lt;label ux-enhance="switch"&gt;
+  &lt;input type="checkbox"&gt; Toggle
+&lt;/label&gt;</pre>
+                </div>
+            </div>
+
+            <!-- Skeleton (Loading Placeholder) -->
+            <div class="example">
+                <h4>Skeleton (Pure CSS)</h4>
+                <p>Loading placeholder animations - pure CSS, no JavaScript</p>
+                <div class="example-demo" style="display: flex; flex-direction: column; gap: 12px; max-width: 400px;">
+                    <div ux-enhance="skeleton" style="height: 20px; border-radius: 4px;"></div>
+                    <div ux-enhance="skeleton" style="height: 20px; width: 80%; border-radius: 4px;"></div>
+                    <div ux-enhance="skeleton" style="height: 20px; width: 60%; border-radius: 4px;"></div>
+                    <div style="display: flex; gap: 12px; margin-top: 8px;">
+                        <div ux-enhance="skeleton" style="width: 48px; height: 48px; border-radius: 50%;"></div>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                            <div ux-enhance="skeleton" style="height: 16px; border-radius: 4px;"></div>
+                            <div ux-enhance="skeleton" style="height: 16px; width: 70%; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="example-code">
+                    <pre>&lt;div ux-enhance="skeleton" style="height: 20px;"&gt;&lt;/div&gt;</pre>
+                </div>
+            </div>
+
         </section>
 
         <!-- Footer -->
