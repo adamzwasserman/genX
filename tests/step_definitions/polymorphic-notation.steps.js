@@ -56,7 +56,7 @@ Given('the genX common module is loaded', async function() {
   await this.page.addScriptTag({ path: './src/common.js' });
 });
 
-Given('the test environment is clean', async function() {
+Given('the polymorphic test state is clean', async function() {
   await this.page.evaluate(() => {
     window._testState = {};
     window._parsedConfigs = [];

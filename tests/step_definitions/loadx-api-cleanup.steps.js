@@ -20,20 +20,23 @@ Before(async function() {
 
 After(async function() {
     if (this.page) {
-        await this.page.evaluate(() => {
-            const testElements = document.querySelectorAll('[id^="api-test-"]');
-            testElements.forEach(el => el.remove());
+        try {
+            await this.page.evaluate(() => {
+                const testElements = document.querySelectorAll('[id^="api-test-"]');
+                testElements.forEach(el => el.remove());
 
-            if (window.loadX && window.loadX.disconnect) {
-                window.loadX.disconnect();
-            }
-        });
-    } else {
-        if (warningCapture) {
-            warningCapture.stop();
+                if (window.loadX && window.loadX.disconnect) {
+                    window.loadX.disconnect();
+                }
+            });
+        } catch (e) {
+            // Page may already be closed - ignore cleanup errors
         }
-        cleanupApi();
     }
+    if (warningCapture) {
+        warningCapture.stop();
+    }
+    cleanupApi();
 });
 
 Given('in loadx-api-cleanup, loadX is initialized', async function() {

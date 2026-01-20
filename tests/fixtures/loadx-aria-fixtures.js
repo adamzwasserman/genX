@@ -120,6 +120,9 @@ function getAriaLiveMode() {
  * Cleanup DOM after test
  */
 function cleanupARIA() {
+    // Guard for Node.js environment
+    if (typeof document === 'undefined') return;
+
     // Remove test elements
     const elements = document.querySelectorAll('[lx-strategy]');
     elements.forEach(el => el.remove());

@@ -19,7 +19,8 @@
         'lx': '/loadx.min.js',
         'tx': '/tablex.min.js',
         'nx': '/navx.min.js',
-        'sx': '/smartx.min.js'
+        'sx': '/smartx.min.js',
+        'ux': '/uix.min.js'
     };
     const modules = (typeof window !== 'undefined' && window.genxConfig?.modulePaths)
         ? { ...defaultModules, ...window.genxConfig.modulePaths }
@@ -36,7 +37,8 @@
             'drag': 'dx',
             'load': 'lx',
             'table': 'tx',
-            'nav': 'nx'
+            'nav': 'nx',
+            'ui': 'ux'
         };
 
     // Module prefix map (inverse of CLASS_PREFIX_MAP for lookups)
@@ -53,7 +55,8 @@
         'dx': ['dx-draggable', 'dx-drop-zone'],
         'lx': ['lx-strategy', 'lx-loading'],
         'tx': ['tx-sortable'],
-        'nx': ['nx-tabs', 'nx-dropdown', 'nx-breadcrumb', 'nx-mobile', 'nx-scroll-spy', 'nx-sticky', 'nx-nav']
+        'nx': ['nx-tabs', 'nx-dropdown', 'nx-breadcrumb', 'nx-mobile', 'nx-scroll-spy', 'nx-sticky', 'nx-nav'],
+        'ux': ['ux-enhance']
     };
 
     // CDN base URL (can be configured)

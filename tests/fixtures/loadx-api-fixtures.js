@@ -76,6 +76,9 @@ function getProgressValue(element) {
  * Cleanup API test artifacts
  */
 function cleanupApi() {
+    // Guard for Node.js environment
+    if (typeof document === 'undefined') return;
+
     // Remove test elements
     const testElements = document.querySelectorAll('[id^="api-test-"]');
     testElements.forEach(el => el.remove());
@@ -88,7 +91,7 @@ function cleanupApi() {
     });
 
     // Disconnect loadX if exists
-    if (window.loadX && window.loadX.disconnect) {
+    if (typeof window !== 'undefined' && window.loadX && window.loadX.disconnect) {
         window.loadX.disconnect();
     }
 }

@@ -16,23 +16,26 @@ const { getLiveRegion, waitForAnnouncement, waitForClear } = require('../fixture
 After(async function() {
     // Cleanup after each scenario
     if (this.page) {
-        await this.page.evaluate(() => {
-            const forms = document.querySelectorAll('form[lx-loading]');
-            forms.forEach(form => form.remove());
+        try {
+            await this.page.evaluate(() => {
+                const forms = document.querySelectorAll('form[lx-loading]');
+                forms.forEach(form => form.remove());
 
-            const liveRegion = document.getElementById('lx-live-region');
-            if (liveRegion) {
-                liveRegion.textContent = '';
-                liveRegion.setAttribute('aria-live', 'polite');
-            }
+                const liveRegion = document.getElementById('lx-live-region');
+                if (liveRegion) {
+                    liveRegion.textContent = '';
+                    liveRegion.setAttribute('aria-live', 'polite');
+                }
 
-            if (window._originalFetch) {
-                window.fetch = window._originalFetch;
-            }
-        });
-    } else {
-        cleanupIntegration();
+                if (window._originalFetch) {
+                    window.fetch = window._originalFetch;
+                }
+            });
+        } catch (e) {
+            // Page may already be closed - ignore cleanup errors
+        }
     }
+    cleanupIntegration();
 });
 
 Given('a form with lx-loading and lx-urgent={string}', function(urgent) {

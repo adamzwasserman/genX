@@ -10,11 +10,12 @@ A practical guide to adding interactive behavior to your HTML without writing Ja
 2. [Getting Started](#getting-started)
 3. [Core Concepts](#core-concepts)
 4. [Common Use Cases](#common-use-cases)
-5. [Module Quick Reference](#module-quick-reference)
-6. [Framework Integration](#framework-integration)
-7. [Best Practices](#best-practices)
-8. [Troubleshooting](#troubleshooting)
-9. [Getting Help](#getting-help)
+5. [UI Components (uiX)](#ui-components-uix)
+6. [Module Quick Reference](#module-quick-reference)
+7. [Framework Integration](#framework-integration)
+8. [Best Practices](#best-practices)
+9. [Troubleshooting](#troubleshooting)
+10. [Getting Help](#getting-help)
 
 ---
 
@@ -136,6 +137,7 @@ Each genX module uses a unique two-letter prefix:
 | `bx-` | bindX | Reactive data binding |
 | `tx-` | tableX | Table enhancements (sort, filter, paginate) |
 | `sx-` | smartX | Auto-detection formatting |
+| `ux-` | uiX | UI components (buttons, modals, tabs, cards, etc.) |
 
 ### 2. On-Demand Loading
 
@@ -320,6 +322,192 @@ Click headers to sort. Shift+click for multi-column sorting.
 
 ---
 
+## UI Components (uiX)
+
+uiX provides a complete UI component library with declarative attributes. Most components are pure CSS/HTML — interactive components use **declarative triggers** so you don't need to write JavaScript.
+
+### Basic Components
+
+**Buttons:**
+```html
+<button ux-enhance="button" ux-variant="primary">Primary</button>
+<button ux-enhance="button" ux-variant="danger" ux-size="lg">Large Danger</button>
+<button ux-enhance="button" ux-bg="pink" ux-hover-bg="hotpink">Custom Pink</button>
+```
+
+**Badges & Avatars:**
+```html
+<span ux-enhance="badge" ux-variant="success">Active</span>
+<span ux-enhance="badge" ux-bg="purple" ux-color="white">Custom</span>
+
+<div ux-enhance="avatar" ux-size="lg" ux-bg="teal">JD</div>
+<div ux-enhance="avatar" ux-size="xl">
+  <img src="profile.jpg" alt="User">
+</div>
+```
+
+**Cards:**
+```html
+<div ux-enhance="card" ux-title="My Card">
+  Card content goes here.
+</div>
+
+<div ux-enhance="card" ux-title="Styled" ux-header-bg="primary" ux-header-color="white" ux-elevated>
+  Content with elevated shadow.
+</div>
+```
+
+### Interactive Components (Declarative Triggers)
+
+Control modals, tabs, accordions, and dropdowns **without JavaScript** using declarative trigger attributes.
+
+**Modal:**
+```html
+<!-- Button opens modal - no JavaScript needed -->
+<button ux-opens="#my-modal">Open Modal</button>
+
+<div ux-enhance="modal" ux-title="Confirm Action" id="my-modal">
+  <p>Are you sure you want to continue?</p>
+  <button ux-closes>Cancel</button>
+  <button ux-closes>Confirm</button>
+</div>
+```
+
+**Tabs:**
+```html
+<!-- Tabs auto-generate from comma-separated names -->
+<div ux-enhance="tabs" ux-tabs="Home, Profile, Settings" id="my-tabs">
+  <div>Home content</div>
+  <div>Profile content</div>
+  <div>Settings content</div>
+</div>
+
+<!-- External button can switch tabs -->
+<button ux-selects="#my-tabs" ux-tab="Settings">Go to Settings</button>
+```
+
+**Accordion:**
+```html
+<div ux-enhance="accordion" id="my-accordion">
+  <div class="ux-accordion__item">
+    <button class="ux-accordion__header">Section 1</button>
+    <div class="ux-accordion__content">Content 1</div>
+  </div>
+  <div class="ux-accordion__item">
+    <button class="ux-accordion__header">Section 2</button>
+    <div class="ux-accordion__content">Content 2</div>
+  </div>
+</div>
+
+<!-- External toggle -->
+<button ux-toggles="#my-accordion" ux-index="0">Toggle Section 1</button>
+```
+
+**Dropdown:**
+```html
+<div ux-enhance="dropdown" id="my-dropdown">
+  <button class="ux-dropdown__trigger">Options</button>
+  <div class="ux-dropdown__menu">
+    <a href="#" class="ux-dropdown__item">Edit</a>
+    <a href="#" class="ux-dropdown__item">Delete</a>
+  </div>
+</div>
+```
+
+### Declarative Trigger Reference
+
+| Attribute | Action | Example |
+|-----------|--------|---------|
+| `ux-opens="#id"` | Opens modal/drawer | `<button ux-opens="#my-modal">` |
+| `ux-closes` | Closes nearest modal/drawer | `<button ux-closes>Cancel</button>` |
+| `ux-closes="#id"` | Closes specific element | `<button ux-closes="#my-modal">` |
+| `ux-toggles="#id"` | Toggles dropdown/accordion | `<button ux-toggles="#menu">` |
+| `ux-selects="#id" ux-tab="name"` | Selects tab by name | `<button ux-selects="#tabs" ux-tab="Settings">` |
+| `ux-selects="#id" ux-index="0"` | Selects tab by index | `<button ux-selects="#tabs" ux-index="0">` |
+
+### Form Inputs
+
+```html
+<input ux-enhance="input" ux-size="lg" placeholder="Large input">
+<textarea ux-enhance="textarea" ux-focus-border="primary"></textarea>
+
+<select ux-enhance="select">
+  <option>Option 1</option>
+  <option>Option 2</option>
+</select>
+
+<input type="checkbox" ux-enhance="checkbox" ux-label="Accept terms">
+<input type="checkbox" ux-enhance="switch" ux-label="Dark mode" ux-on-bg="success">
+```
+
+### Navigation
+
+```html
+<!-- Nav with active states -->
+<nav ux-enhance="nav" ux-active-bg="primary" ux-active-color="white">
+  <a href="/" class="ux-nav__item is-active">Home</a>
+  <a href="/about" class="ux-nav__item">About</a>
+  <a href="/contact" class="ux-nav__item">Contact</a>
+</nav>
+
+<!-- Breadcrumb -->
+<nav ux-enhance="breadcrumb">
+  <a href="/" class="ux-breadcrumb__item">Home</a>
+  <span class="ux-breadcrumb__separator">/</span>
+  <a href="/products" class="ux-breadcrumb__item">Products</a>
+  <span class="ux-breadcrumb__separator">/</span>
+  <span class="ux-breadcrumb__item">Shoes</span>
+</nav>
+```
+
+### Color Customization
+
+All components support color customization via attributes:
+
+```html
+<!-- Named colors -->
+<button ux-enhance="button" ux-bg="tomato">Tomato</button>
+
+<!-- Hex colors -->
+<span ux-enhance="badge" ux-bg="#6366f1" ux-color="white">Indigo</span>
+
+<!-- Variant names (maps to design tokens) -->
+<button ux-enhance="button" ux-bg="primary">Primary</button>
+<button ux-enhance="button" ux-bg="success">Success</button>
+<button ux-enhance="button" ux-bg="danger">Danger</button>
+
+<!-- Auto-contrast: text color calculated from background -->
+<span ux-enhance="badge" ux-bg="yellow">Auto dark text</span>
+<span ux-enhance="badge" ux-bg="navy">Auto light text</span>
+```
+
+**Variant names:** `primary`, `secondary`, `success`, `danger`, `warning`, `info`, `neutral`
+
+### HTMX Integration
+
+uiX works seamlessly with HTMX for server-driven interactions:
+
+```html
+<!-- Load modal content from server -->
+<button ux-opens="#user-modal" hx-get="/api/user/123" hx-target="#user-modal .ux-modal__body">
+  View User
+</button>
+
+<!-- Lazy-load tab content -->
+<div ux-enhance="tabs" ux-tabs="Overview, Details" hx-trigger="ux:change" hx-get="/api/tab">
+  <div>Overview content</div>
+  <div>Loading...</div>
+</div>
+```
+
+### Available Components
+
+- **Atoms:** button, badge, avatar, spinner, input, textarea, select, checkbox, radio, switch, tag, chip, divider, tooltip
+- **Molecules:** card, alert, modal, accordion, tabs, dropdown, popover, menu, breadcrumb, pagination, progress, skeleton
+- **Organisms:** nav, sidebar, table, drawer, toast, stepper
+
+---
+
 ## Module Quick Reference
 
 ### fmtX (Formatting)
@@ -372,6 +560,23 @@ Click headers to sort. Shift+click for multi-column sorting.
 |-----------|---------|---------|
 | `ax-label` | Set aria-label | `ax-label="Close"` |
 | `ax-live` | Set aria-live | `ax-live="polite"` |
+
+### uiX (UI Components)
+
+| Attribute | Purpose | Example |
+|-----------|---------|---------|
+| `ux-enhance` | Component type | `ux-enhance="button"` |
+| `ux-variant` | Style variant | `ux-variant="primary"` |
+| `ux-size` | Size variant | `ux-size="lg"` |
+| `ux-bg` | Background color | `ux-bg="pink"` |
+| `ux-color` | Text color | `ux-color="white"` |
+| `ux-title` | Auto-generate title | `ux-title="My Modal"` |
+| `ux-label` | Label text | `ux-label="Dark mode"` |
+| `ux-tabs` | Tab names (comma-separated) | `ux-tabs="Home, Profile"` |
+| `ux-opens` | Open modal/drawer | `ux-opens="#my-modal"` |
+| `ux-closes` | Close modal/drawer | `ux-closes` |
+| `ux-toggles` | Toggle element | `ux-toggles="#dropdown"` |
+| `ux-selects` | Select tab | `ux-selects="#tabs" ux-tab="Settings"` |
 
 ---
 
@@ -653,6 +858,7 @@ When reporting issues, include:
 
 - [tableX Getting Started](guides/tablex-getting-started.md)
 - [bindX Getting Started](guides/bindx-getting-started.md)
+- [uiX Components](https://genx.software/docs.html#uix) — Full component reference
 - [Testing Guide](testing/getting-started.md)
 
 ---

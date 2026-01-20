@@ -4,7 +4,7 @@ Feature: Polymorphic Notation Parsing
 
   Background:
     Given the genX common module is loaded
-    And the test environment is clean
+    And the polymorphic test state is clean
 
   # Notation 1: Verbose Attributes (Beginner-Friendly)
   Scenario: Parse verbose attribute notation for fmtX

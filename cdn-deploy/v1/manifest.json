@@ -1,15 +1,16 @@
 {
-  "version": "2025-12-29T22:02:27.023Z",
-  "bootloader": "bootloader.beaa280b.min.js",
+  "version": "2026-01-20T15:45:59.748Z",
+  "bootloader": "bootloader.8f9146c9.min.js",
   "modules": {
-    "fmtx": "fmtx.8235482c.min.js",
+    "fmtx": "fmtx.9e17277f.min.js",
     "accx": "accx.dc757d62.min.js",
     "bindx": "bindx.300860c4.min.js",
     "dragx": "dragx.7afd63f8.min.js",
     "loadx": "loadx.3bbe11c8.min.js",
     "navx": "navx.4156ccae.min.js",
     "tablex": "tablex.a613afdc.min.js",
-    "smartx": "smartx.ff049b02.min.js"
+    "smartx": "smartx.0c0755cd.min.js",
+    "uix": "uix.ca2d400a.min.js"
   },
   "parsers": {
     "verbose": "parsers/genx-parser-verbose.2b52e6b3.js",

@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Documentation - genX | Complete API Reference & Tutorials</title>
-  <meta name="description" content="Complete genX documentation. Learn fmtX formatting, accX accessibility, bindX data binding, dragX drag-drop, tableX tables, loadX loading states, navX routing, and smartX auto-detection.">
+  <meta name="description" content="Complete genX documentation. Learn fmtX formatting, accX accessibility, bindX data binding, dragX drag-drop, tableX tables, loadX loading states, navX routing, smartX auto-detection, and uiX UI components.">
 
   <!-- SEO Meta Tags -->
-  <meta name="keywords" content="genX documentation, JavaScript library docs, HTML attributes API, fmtX, accX, bindX, dragX, tableX, loadX, navX, smartX, frontend tutorial">
+  <meta name="keywords" content="genX documentation, JavaScript library docs, HTML attributes API, fmtX, accX, bindX, dragX, tableX, loadX, navX, smartX, uiX, UI components, frontend tutorial">
   <meta name="author" content="Adam Wasserman">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://genx.software/docs.html">
@@ -123,6 +123,7 @@
           <li><a href="#bindx">bindX &mdash; Data Binding</a></li>
           <li><a href="#tablex">tableX &mdash; Tables</a></li>
           <li><a href="#smartx">smartX &mdash; Auto-Format</a></li>
+          <li><a href="#uix">uiX &mdash; UI Components</a></li>
         </ul>
 
         <div class="docs__nav-title mt-md">Integration</div>
@@ -358,6 +359,235 @@ cp genX/src/*.js your-project/static/js/</code></pre>
 
 &lt;!-- Smart links --&gt;
 &lt;span sx-linkify&gt;Visit https://example.com&lt;/span&gt;</code></pre>
+
+        <h2 id="uix">uiX &mdash; UI Components</h2>
+        <p class="text-muted">Prefix: <code>ux-*</code></p>
+        <p>A complete UI component library with declarative attributes. Most components are pure CSS/HTML. Interactive components use <strong>declarative triggers</strong> &mdash; no JavaScript required.</p>
+
+        <h3>Button</h3>
+        <pre><code>&lt;!-- Basic variants --&gt;
+&lt;button ux-enhance="button" ux-variant="primary"&gt;Primary&lt;/button&gt;
+&lt;button ux-enhance="button" ux-variant="secondary"&gt;Secondary&lt;/button&gt;
+&lt;button ux-enhance="button" ux-variant="danger"&gt;Danger&lt;/button&gt;
+
+&lt;!-- Sizes --&gt;
+&lt;button ux-enhance="button" ux-variant="primary" ux-size="sm"&gt;Small&lt;/button&gt;
+&lt;button ux-enhance="button" ux-variant="primary" ux-size="lg"&gt;Large&lt;/button&gt;
+
+&lt;!-- Custom colors --&gt;
+&lt;button ux-enhance="button" ux-bg="pink" ux-hover-bg="hotpink"&gt;Pink&lt;/button&gt;</code></pre>
+
+        <h3>Badge &amp; Avatar</h3>
+        <pre><code>&lt;!-- Badge --&gt;
+&lt;span ux-enhance="badge" ux-variant="success"&gt;Active&lt;/span&gt;
+&lt;span ux-enhance="badge" ux-bg="purple" ux-color="white"&gt;Custom&lt;/span&gt;
+
+&lt;!-- Avatar with initials --&gt;
+&lt;div ux-enhance="avatar" ux-size="lg" ux-bg="teal"&gt;JD&lt;/div&gt;
+
+&lt;!-- Avatar with image --&gt;
+&lt;div ux-enhance="avatar" ux-size="xl"&gt;
+  &lt;img src="profile.jpg" alt="Jane Doe"&gt;
+&lt;/div&gt;</code></pre>
+
+        <h3>Card</h3>
+        <pre><code>&lt;!-- Basic card with auto-generated header --&gt;
+&lt;div ux-enhance="card" ux-title="My Card"&gt;
+  Card content goes here.
+&lt;/div&gt;
+
+&lt;!-- Styled card --&gt;
+&lt;div ux-enhance="card" ux-title="Styled" ux-header-bg="primary" ux-header-color="white" ux-elevated&gt;
+  Content with elevated shadow.
+&lt;/div&gt;</code></pre>
+
+        <h3>Modal</h3>
+        <pre><code>&lt;!-- Declarative triggers - NO JavaScript needed --&gt;
+&lt;button ux-opens="#my-modal"&gt;Open Modal&lt;/button&gt;
+
+&lt;div ux-enhance="modal" ux-title="Confirm Action" id="my-modal"&gt;
+  &lt;p&gt;Are you sure you want to continue?&lt;/p&gt;
+  &lt;button ux-closes&gt;Cancel&lt;/button&gt;
+  &lt;button ux-closes&gt;Confirm&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+        <p><code>ux-opens="#id"</code> opens a modal/drawer. <code>ux-closes</code> closes the nearest parent (or specify <code>ux-closes="#id"</code>).</p>
+
+        <h3>Tabs</h3>
+        <pre><code>&lt;!-- Simple tabs - auto-generates tab buttons --&gt;
+&lt;div ux-enhance="tabs" ux-tabs="Home, Profile, Settings" id="my-tabs"&gt;
+  &lt;div&gt;Home content&lt;/div&gt;
+  &lt;div&gt;Profile content&lt;/div&gt;
+  &lt;div&gt;Settings content&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- External tab selection (declarative) --&gt;
+&lt;button ux-selects="#my-tabs" ux-tab="Settings"&gt;Go to Settings&lt;/button&gt;
+
+&lt;!-- Custom colors --&gt;
+&lt;div ux-enhance="tabs" ux-tabs="Tab 1, Tab 2" ux-active-bg="primary" ux-active-color="white"&gt;
+  &lt;div&gt;Content 1&lt;/div&gt;
+  &lt;div&gt;Content 2&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+        <p>Use <code>ux-selects="#id" ux-tab="name"</code> to switch tabs from anywhere. Or use <code>ux-index="0"</code> for index-based selection.</p>
+
+        <h3>Accordion</h3>
+        <pre><code>&lt;div ux-enhance="accordion" id="my-accordion"&gt;
+  &lt;div class="ux-accordion__item"&gt;
+    &lt;button class="ux-accordion__header"&gt;Section 1&lt;/button&gt;
+    &lt;div class="ux-accordion__content"&gt;Content 1&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class="ux-accordion__item"&gt;
+    &lt;button class="ux-accordion__header"&gt;Section 2&lt;/button&gt;
+    &lt;div class="ux-accordion__content"&gt;Content 2&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- External toggle (declarative) --&gt;
+&lt;button ux-toggles="#my-accordion" ux-index="0"&gt;Toggle Section 1&lt;/button&gt;</code></pre>
+        <p>Use <code>ux-toggles="#id" ux-index="n"</code> to toggle accordion items from anywhere.</p>
+
+        <h3>Dropdown</h3>
+        <pre><code>&lt;div ux-enhance="dropdown" id="my-dropdown"&gt;
+  &lt;button class="ux-dropdown__trigger"&gt;Options&lt;/button&gt;
+  &lt;div class="ux-dropdown__menu"&gt;
+    &lt;a href="#" class="ux-dropdown__item"&gt;Edit&lt;/a&gt;
+    &lt;a href="#" class="ux-dropdown__item"&gt;Delete&lt;/a&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- External toggle (declarative) --&gt;
+&lt;button ux-toggles="#my-dropdown"&gt;Toggle Dropdown&lt;/button&gt;</code></pre>
+
+        <h3>Form Inputs</h3>
+        <pre><code>&lt;!-- Enhanced input --&gt;
+&lt;input ux-enhance="input" ux-size="lg" placeholder="Large input"&gt;
+
+&lt;!-- Textarea --&gt;
+&lt;textarea ux-enhance="textarea" ux-focus-border="primary"&gt;&lt;/textarea&gt;
+
+&lt;!-- Select --&gt;
+&lt;select ux-enhance="select"&gt;
+  &lt;option&gt;Option 1&lt;/option&gt;
+  &lt;option&gt;Option 2&lt;/option&gt;
+&lt;/select&gt;
+
+&lt;!-- Checkbox with label --&gt;
+&lt;input type="checkbox" ux-enhance="checkbox" ux-label="Accept terms"&gt;
+
+&lt;!-- Switch toggle --&gt;
+&lt;input type="checkbox" ux-enhance="switch" ux-label="Dark mode" ux-on-bg="success"&gt;</code></pre>
+
+        <h3>Navigation</h3>
+        <pre><code>&lt;!-- Nav component --&gt;
+&lt;nav ux-enhance="nav" ux-active-bg="primary" ux-active-color="white"&gt;
+  &lt;a href="/" class="ux-nav__item is-active"&gt;Home&lt;/a&gt;
+  &lt;a href="/about" class="ux-nav__item"&gt;About&lt;/a&gt;
+  &lt;a href="/contact" class="ux-nav__item"&gt;Contact&lt;/a&gt;
+&lt;/nav&gt;
+
+&lt;!-- Breadcrumb --&gt;
+&lt;nav ux-enhance="breadcrumb"&gt;
+  &lt;a href="/" class="ux-breadcrumb__item"&gt;Home&lt;/a&gt;
+  &lt;span class="ux-breadcrumb__separator"&gt;/&lt;/span&gt;
+  &lt;a href="/products" class="ux-breadcrumb__item"&gt;Products&lt;/a&gt;
+  &lt;span class="ux-breadcrumb__separator"&gt;/&lt;/span&gt;
+  &lt;span class="ux-breadcrumb__item"&gt;Shoes&lt;/span&gt;
+&lt;/nav&gt;</code></pre>
+
+        <h3>Tooltip &amp; Spinner</h3>
+        <pre><code>&lt;!-- Tooltip --&gt;
+&lt;span ux-enhance="tooltip" ux-content="Helpful tip!" ux-bg="dark"&gt;Hover me&lt;/span&gt;
+&lt;span ux-enhance="tooltip" ux-content="Large tip" ux-size="lg"&gt;Hover&lt;/span&gt;
+
+&lt;!-- Spinner --&gt;
+&lt;div ux-enhance="spinner"&gt;&lt;/div&gt;
+&lt;div ux-enhance="spinner" ux-size="lg" ux-color="primary"&gt;&lt;/div&gt;</code></pre>
+
+        <h3>Color Customization</h3>
+        <p>All uiX components support color customization via attributes:</p>
+        <pre><code>&lt;!-- Use named colors --&gt;
+&lt;button ux-enhance="button" ux-bg="tomato"&gt;Tomato&lt;/button&gt;
+
+&lt;!-- Use hex colors --&gt;
+&lt;span ux-enhance="badge" ux-bg="#6366f1" ux-color="white"&gt;Indigo&lt;/span&gt;
+
+&lt;!-- Use variant names (maps to design tokens) --&gt;
+&lt;button ux-enhance="button" ux-bg="primary"&gt;Primary&lt;/button&gt;
+&lt;button ux-enhance="button" ux-bg="success"&gt;Success&lt;/button&gt;
+&lt;button ux-enhance="button" ux-bg="danger"&gt;Danger&lt;/button&gt;
+
+&lt;!-- Auto-contrast: text color auto-calculated from background --&gt;
+&lt;span ux-enhance="badge" ux-bg="yellow"&gt;Auto dark text&lt;/span&gt;
+&lt;span ux-enhance="badge" ux-bg="navy"&gt;Auto light text&lt;/span&gt;</code></pre>
+        <p>Variant names: <code>primary</code>, <code>secondary</code>, <code>success</code>, <code>danger</code>, <code>warning</code>, <code>info</code>, <code>neutral</code></p>
+
+        <h3>Declarative Triggers</h3>
+        <p>Control interactive components without writing JavaScript:</p>
+        <table style="width: 100%; margin-bottom: 1.5rem;">
+          <thead>
+            <tr>
+              <th style="text-align: left; padding: 0.5rem;">Attribute</th>
+              <th style="text-align: left; padding: 0.5rem;">Action</th>
+              <th style="text-align: left; padding: 0.5rem;">Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 0.5rem;"><code>ux-opens="#id"</code></td>
+              <td style="padding: 0.5rem;">Opens modal/drawer</td>
+              <td style="padding: 0.5rem;"><code>&lt;button ux-opens="#my-modal"&gt;</code></td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem;"><code>ux-closes</code></td>
+              <td style="padding: 0.5rem;">Closes nearest modal/drawer</td>
+              <td style="padding: 0.5rem;"><code>&lt;button ux-closes&gt;Cancel&lt;/button&gt;</code></td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem;"><code>ux-toggles="#id"</code></td>
+              <td style="padding: 0.5rem;">Toggles dropdown/accordion</td>
+              <td style="padding: 0.5rem;"><code>&lt;button ux-toggles="#menu"&gt;</code></td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem;"><code>ux-selects="#id" ux-tab="name"</code></td>
+              <td style="padding: 0.5rem;">Selects tab by name</td>
+              <td style="padding: 0.5rem;"><code>&lt;button ux-selects="#tabs" ux-tab="Settings"&gt;</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Pure CSS Components</h3>
+        <p>These components require no JavaScript &mdash; they're pure HTML/CSS:</p>
+        <ul>
+          <li><strong>Visual:</strong> badge, avatar, spinner, skeleton, progress, divider, tag, chip</li>
+          <li><strong>Typography:</strong> alert, card, tooltip, breadcrumb</li>
+          <li><strong>Form styling:</strong> input, textarea, select, checkbox, radio, switch</li>
+        </ul>
+
+        <h3>HTMX Integration</h3>
+        <p>uiX pairs perfectly with HTMX for server-driven interactions:</p>
+        <pre><code>&lt;!-- Load modal content from server --&gt;
+&lt;button ux-opens="#user-modal" hx-get="/api/user/123" hx-target="#user-modal .ux-modal__body"&gt;
+  View User
+&lt;/button&gt;
+
+&lt;!-- Lazy-load tab content --&gt;
+&lt;div ux-enhance="tabs" ux-tabs="Overview, Details" hx-trigger="ux:change" hx-get="/api/tab"&gt;
+  &lt;div&gt;Overview content&lt;/div&gt;
+  &lt;div&gt;Loading...&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- Infinite scroll with skeleton --&gt;
+&lt;div hx-get="/api/items?page=2" hx-trigger="revealed" hx-swap="beforeend"&gt;
+  &lt;div ux-enhance="skeleton" ux-shape="rect"&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+        <h3>Available Components</h3>
+        <p>uiX includes these components:</p>
+        <ul>
+          <li><strong>Atoms:</strong> button, badge, avatar, spinner, input, textarea, select, checkbox, radio, switch, tag, chip, divider, icon</li>
+          <li><strong>Molecules:</strong> card, alert, modal, accordion, tabs, dropdown, tooltip, popover, menu, breadcrumb, pagination, progress, skeleton</li>
+          <li><strong>Organisms:</strong> nav, sidebar, table, drawer, toast, stepper</li>
+        </ul>
 
         <h2 id="frameworks">Framework Compatibility</h2>
         <p>genX works with any framework because it operates on the DOM after rendering. Use it alongside your existing stack.</p>

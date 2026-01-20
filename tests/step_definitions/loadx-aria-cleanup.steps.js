@@ -14,18 +14,21 @@ const {
 After(async function() {
     // Cleanup after each scenario
     if (this.page) {
-        await this.page.evaluate(() => {
-            const elements = document.querySelectorAll('[lx-strategy]');
-            elements.forEach(el => el.remove());
+        try {
+            await this.page.evaluate(() => {
+                const elements = document.querySelectorAll('[lx-strategy]');
+                elements.forEach(el => el.remove());
 
-            const liveRegion = document.getElementById('lx-live-region');
-            if (liveRegion) {
-                liveRegion.textContent = '';
-            }
-        });
-    } else {
-        cleanupARIA();
+                const liveRegion = document.getElementById('lx-live-region');
+                if (liveRegion) {
+                    liveRegion.textContent = '';
+                }
+            });
+        } catch (e) {
+            // Page may already be closed - ignore cleanup errors
+        }
     }
+    cleanupARIA();
 });
 
 Given('in loadx-aria-cleanup, an element with lx-strategy={string}', function(strategy) {

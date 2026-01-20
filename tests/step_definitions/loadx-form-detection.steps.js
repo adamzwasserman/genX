@@ -20,15 +20,19 @@ Before(function() {
 After(async function() {
     // Only cleanup if we're in a browser context
     if (this.page) {
-        await this.page.evaluate(() => {
-            const forms = document.querySelectorAll('form[lx-loading]');
-            forms.forEach(form => form.remove());
+        try {
+            await this.page.evaluate(() => {
+                const forms = document.querySelectorAll('form[lx-loading]');
+                forms.forEach(form => form.remove());
 
-            // Reset fetch
-            if (window._originalFetch) {
-                window.fetch = window._originalFetch;
-            }
-        });
+                // Reset fetch
+                if (window._originalFetch) {
+                    window.fetch = window._originalFetch;
+                }
+            });
+        } catch (e) {
+            // Page may already be closed - ignore cleanup errors
+        }
     }
 });
 
