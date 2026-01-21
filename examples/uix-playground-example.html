@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UIX Playground Example - Interactive Component Configurator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            background: #f8fafc;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 2rem;
+        }
+        .section {
+            margin-bottom: 2rem;
+        }
+        .section h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .section p {
+            color: #64748b;
+            margin-bottom: 1rem;
+            font-size: 0.9375rem;
+        }
+        code {
+            font-family: 'Monaco', 'Menlo', monospace;
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.875em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>UIX Component Playground</h1>
+        <p class="subtitle">Interactive configurator with live preview and copyable code</p>
+
+        <!-- Button Playground -->
+        <div class="section">
+            <h2>Button</h2>
+            <p>Configure button variants, sizes, and text. The code updates in real-time.</p>
+            <div data-playground="button"></div>
+        </div>
+
+        <!-- Badge Playground -->
+        <div class="section">
+            <h2>Badge</h2>
+            <p>Create status badges with different colors and styles.</p>
+            <div data-playground="badge"></div>
+        </div>
+
+        <!-- Avatar Playground -->
+        <div class="section">
+            <h2>Avatar</h2>
+            <p>User avatars with customizable initials, sizes, and shapes.</p>
+            <div data-playground="avatar"></div>
+        </div>
+
+        <!-- Spinner Playground -->
+        <div class="section">
+            <h2>Spinner</h2>
+            <p>Loading spinners in different sizes (pure CSS, no JS required).</p>
+            <div data-playground="spinner"></div>
+        </div>
+
+        <!-- Alert Playground -->
+        <div class="section">
+            <h2>Alert</h2>
+            <p>Notification alerts with variants and optional dismiss button.</p>
+            <div data-playground="alert"></div>
+        </div>
+
+        <!-- Progress Playground -->
+        <div class="section">
+            <h2>Progress</h2>
+            <p>Progress bars with customizable values.</p>
+            <div data-playground="progress"></div>
+        </div>
+
+        <!-- Switch Playground -->
+        <div class="section">
+            <h2>Switch</h2>
+            <p>Toggle switches with labels and sizes.</p>
+            <div data-playground="switch"></div>
+        </div>
+    </div>
+
+    <!-- Load UIX first (provides styling and enhancement) -->
+    <script src="../src/uix.js"></script>
+
+    <!-- Load Playground (provides interactive configurator) -->
+    <script src="../site/js/uix-playground.js"></script>
+</body>
+</html>
