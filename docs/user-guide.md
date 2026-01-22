@@ -359,11 +359,11 @@ uiX provides a complete UI component library with declarative attributes. Most c
 
 ### Interactive Components (Declarative Triggers)
 
-Control modals, tabs, accordions, and dropdowns **without JavaScript** using declarative trigger attributes.
+Control modals, tabs, accordions, and dropdowns using **declarative HTML triggers** - no custom JavaScript required.
 
 **Modal:**
 ```html
-<!-- Button opens modal - no JavaScript needed -->
+<!-- Declarative HTML trigger - no custom JavaScript required -->
 <button ux-opens="#my-modal">Open Modal</button>
 
 <div ux-enhance="modal" ux-title="Confirm Action" id="my-modal">

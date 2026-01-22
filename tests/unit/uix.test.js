@@ -1,6 +1,20 @@
 /**
  * Unit tests for UIX Module
+ *
+ * These tests verify that the UIX enhancers actually transform DOM elements
+ * by adding correct classes, ARIA attributes, and event handlers.
  */
+
+// Mock UIX module for testing
+let UIX;
+let enhance;
+
+beforeAll(() => {
+    // Load the UIX module - it exposes uxXFactory globally
+    require('../../src/uix.js');
+    UIX = window.UIX || window.uxXFactory?.init?.();
+    enhance = window.uxXFactory?.enhance;
+});
 
 describe('UIX Module', () => {
     beforeEach(() => {
@@ -20,65 +34,86 @@ describe('UIX Module', () => {
     // BUTTON COMPONENT
     // ============================================
     describe('Button Component', () => {
-        test('should add ux-btn class', () => {
+        test('enhancer adds ux-btn class', () => {
             const button = document.createElement('button');
             button.setAttribute('ux-enhance', 'button');
-            button.classList.add('ux-btn');
+            document.body.appendChild(button);
+
+            enhance.button(button, {});
 
             expect(button.classList.contains('ux-btn')).toBe(true);
         });
 
-        test('should add variant class', () => {
+        test('enhancer adds variant class', () => {
             const button = document.createElement('button');
-            button.classList.add('ux-btn', 'ux-btn--primary');
+            document.body.appendChild(button);
 
+            enhance.button(button, { variant: 'primary' });
+
+            expect(button.classList.contains('ux-btn')).toBe(true);
             expect(button.classList.contains('ux-btn--primary')).toBe(true);
         });
 
-        test('should add size class', () => {
+        test('enhancer adds size class', () => {
             const button = document.createElement('button');
-            button.classList.add('ux-btn', 'ux-btn--sm');
+            document.body.appendChild(button);
+
+            enhance.button(button, { size: 'sm' });
 
             expect(button.classList.contains('ux-btn--sm')).toBe(true);
         });
 
-        test('should add loading state', () => {
+        test('enhancer adds loading state', () => {
             const button = document.createElement('button');
-            button.classList.add('ux-btn', 'ux-btn--loading');
+            document.body.appendChild(button);
+
+            enhance.button(button, { loading: true });
 
             expect(button.classList.contains('ux-btn--loading')).toBe(true);
         });
 
-        test('should support block variant', () => {
+        test('enhancer adds block variant', () => {
             const button = document.createElement('button');
-            button.classList.add('ux-btn', 'ux-btn--block');
+            document.body.appendChild(button);
+
+            enhance.button(button, { block: true });
 
             expect(button.classList.contains('ux-btn--block')).toBe(true);
         });
 
-        test('should add role=button to non-button elements', () => {
+        test('enhancer adds role=button and tabindex to non-button elements', () => {
             const div = document.createElement('div');
-            div.setAttribute('role', 'button');
-            div.setAttribute('tabindex', '0');
+            document.body.appendChild(div);
+
+            enhance.button(div, {});
 
             expect(div.getAttribute('role')).toBe('button');
             expect(div.getAttribute('tabindex')).toBe('0');
         });
 
-        test('should support keyboard activation on non-button elements', () => {
+        test('enhancer enables keyboard activation on non-button elements', () => {
             const div = document.createElement('div');
-            div.setAttribute('role', 'button');
-            div.setAttribute('tabindex', '0');
-
+            document.body.appendChild(div);
             const clickHandler = jest.fn();
             div.addEventListener('click', clickHandler);
 
+            enhance.button(div, {});
+
             // Simulate Enter key
-            const enterEvent = new KeyboardEvent('keydown', { key: 'Enter' });
+            const enterEvent = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
             div.dispatchEvent(enterEvent);
 
-            // The actual click would be triggered by the enhancer
-            expect(div.getAttribute('role')).toBe('button');
+            expect(clickHandler).toHaveBeenCalled();
+        });
+
+        test('enhancer applies custom colors via CSS variables', () => {
+            const button = document.createElement('button');
+            document.body.appendChild(button);
+
+            enhance.button(button, { bg: '#ff0000', color: '#ffffff' });
+
+            expect(button.style.getPropertyValue('--ux-btn-bg')).toBe('#ff0000');
+            expect(button.style.getPropertyValue('--ux-btn-color')).toBe('#ffffff');
         });
     });
 
@@ -86,29 +121,45 @@ describe('UIX Module', () => {
     // BADGE COMPONENT
     // ============================================
     describe('Badge Component', () => {
-        test('should add ux-badge class', () => {
+        test('enhancer adds ux-badge class', () => {
             const badge = document.createElement('span');
-            badge.classList.add('ux-badge');
+            document.body.appendChild(badge);
+
+            enhance.badge(badge, {});
 
             expect(badge.classList.contains('ux-badge')).toBe(true);
         });
 
-        test('should support variant classes', () => {
+        test('enhancer adds variant classes', () => {
             const variants = ['primary', 'success', 'warning', 'danger', 'info'];
 
             variants.forEach(variant => {
                 const badge = document.createElement('span');
-                badge.classList.add('ux-badge', `ux-badge--${variant}`);
+                document.body.appendChild(badge);
 
+                enhance.badge(badge, { variant });
+
+                expect(badge.classList.contains('ux-badge')).toBe(true);
                 expect(badge.classList.contains(`ux-badge--${variant}`)).toBe(true);
             });
         });
 
-        test('should support pill style', () => {
+        test('enhancer adds pill style', () => {
             const badge = document.createElement('span');
-            badge.classList.add('ux-badge', 'ux-badge--pill');
+            document.body.appendChild(badge);
+
+            enhance.badge(badge, { pill: true });
 
             expect(badge.classList.contains('ux-badge--pill')).toBe(true);
+        });
+
+        test('enhancer adds size class', () => {
+            const badge = document.createElement('span');
+            document.body.appendChild(badge);
+
+            enhance.badge(badge, { size: 'lg' });
+
+            expect(badge.classList.contains('ux-badge--lg')).toBe(true);
         });
     });
 
@@ -116,35 +167,42 @@ describe('UIX Module', () => {
     // AVATAR COMPONENT
     // ============================================
     describe('Avatar Component', () => {
-        test('should add ux-avatar class', () => {
+        test('enhancer adds ux-avatar class', () => {
             const avatar = document.createElement('div');
-            avatar.classList.add('ux-avatar');
+            document.body.appendChild(avatar);
+
+            enhance.avatar(avatar, {});
 
             expect(avatar.classList.contains('ux-avatar')).toBe(true);
         });
 
-        test('should support size variants', () => {
+        test('enhancer adds size variants', () => {
             const sizes = ['sm', 'lg', 'xl'];
 
             sizes.forEach(size => {
                 const avatar = document.createElement('div');
-                avatar.classList.add('ux-avatar', `ux-avatar--${size}`);
+                document.body.appendChild(avatar);
+
+                enhance.avatar(avatar, { size });
 
                 expect(avatar.classList.contains(`ux-avatar--${size}`)).toBe(true);
             });
         });
 
-        test('should support square variant', () => {
+        test('enhancer adds square variant', () => {
             const avatar = document.createElement('div');
-            avatar.classList.add('ux-avatar', 'ux-avatar--square');
+            document.body.appendChild(avatar);
+
+            enhance.avatar(avatar, { square: true });
 
             expect(avatar.classList.contains('ux-avatar--square')).toBe(true);
         });
 
-        test('should display initials', () => {
+        test('enhancer sets initials as text content', () => {
             const avatar = document.createElement('div');
-            avatar.classList.add('ux-avatar');
-            avatar.textContent = 'JD';
+            document.body.appendChild(avatar);
+
+            enhance.avatar(avatar, { initials: 'JD' });
 
             expect(avatar.textContent).toBe('JD');
         });
@@ -154,25 +212,39 @@ describe('UIX Module', () => {
     // SPINNER COMPONENT
     // ============================================
     describe('Spinner Component', () => {
-        test('should add ux-spinner class', () => {
+        test('enhancer adds ux-spinner class', () => {
             const spinner = document.createElement('div');
-            spinner.classList.add('ux-spinner');
+            document.body.appendChild(spinner);
+
+            enhance.spinner(spinner, {});
 
             expect(spinner.classList.contains('ux-spinner')).toBe(true);
         });
 
-        test('should set role=status for accessibility', () => {
+        test('enhancer sets role=status and aria-label for accessibility', () => {
             const spinner = document.createElement('div');
-            spinner.setAttribute('role', 'status');
-            spinner.setAttribute('aria-label', 'Loading');
+            document.body.appendChild(spinner);
+
+            enhance.spinner(spinner, {});
 
             expect(spinner.getAttribute('role')).toBe('status');
             expect(spinner.getAttribute('aria-label')).toBe('Loading');
         });
 
-        test('should support size variants', () => {
+        test('enhancer sets custom aria-label', () => {
             const spinner = document.createElement('div');
-            spinner.classList.add('ux-spinner', 'ux-spinner--lg');
+            document.body.appendChild(spinner);
+
+            enhance.spinner(spinner, { label: 'Processing...' });
+
+            expect(spinner.getAttribute('aria-label')).toBe('Processing...');
+        });
+
+        test('enhancer adds size variants', () => {
+            const spinner = document.createElement('div');
+            document.body.appendChild(spinner);
+
+            enhance.spinner(spinner, { size: 'lg' });
 
             expect(spinner.classList.contains('ux-spinner--lg')).toBe(true);
         });
@@ -182,25 +254,45 @@ describe('UIX Module', () => {
     // CARD COMPONENT
     // ============================================
     describe('Card Component', () => {
-        test('should add ux-card class', () => {
+        test('enhancer adds ux-card class', () => {
             const card = document.createElement('div');
-            card.classList.add('ux-card');
+            document.body.appendChild(card);
+
+            enhance.card(card, {});
 
             expect(card.classList.contains('ux-card')).toBe(true);
         });
 
-        test('should support elevated style', () => {
+        test('enhancer adds elevated style', () => {
             const card = document.createElement('div');
-            card.classList.add('ux-card', 'ux-card--elevated');
+            document.body.appendChild(card);
+
+            enhance.card(card, { elevated: true });
 
             expect(card.classList.contains('ux-card--elevated')).toBe(true);
         });
 
-        test('should support hoverable style', () => {
+        test('enhancer adds hoverable style', () => {
             const card = document.createElement('div');
-            card.classList.add('ux-card', 'ux-card--hoverable');
+            document.body.appendChild(card);
+
+            enhance.card(card, { hoverable: true });
 
             expect(card.classList.contains('ux-card--hoverable')).toBe(true);
+        });
+
+        test('enhancer auto-generates header with title', () => {
+            const card = document.createElement('div');
+            card.textContent = 'Card content';
+            document.body.appendChild(card);
+
+            enhance.card(card, { title: 'My Card' });
+
+            const header = card.querySelector('.ux-card__header');
+            const title = card.querySelector('.ux-card__title');
+            expect(header).not.toBeNull();
+            expect(title).not.toBeNull();
+            expect(title.textContent).toBe('My Card');
         });
     });
 
@@ -208,41 +300,59 @@ describe('UIX Module', () => {
     // ALERT COMPONENT
     // ============================================
     describe('Alert Component', () => {
-        test('should add ux-alert class', () => {
+        test('enhancer adds ux-alert class', () => {
             const alert = document.createElement('div');
-            alert.classList.add('ux-alert');
+            document.body.appendChild(alert);
+
+            enhance.alert(alert, {});
 
             expect(alert.classList.contains('ux-alert')).toBe(true);
         });
 
-        test('should support variant types', () => {
+        test('enhancer adds variant types', () => {
             const variants = ['success', 'warning', 'danger', 'info'];
 
             variants.forEach(variant => {
                 const alert = document.createElement('div');
-                alert.classList.add('ux-alert', `ux-alert--${variant}`);
+                document.body.appendChild(alert);
+
+                enhance.alert(alert, { variant });
 
                 expect(alert.classList.contains(`ux-alert--${variant}`)).toBe(true);
             });
         });
 
-        test('should set role=alert', () => {
+        test('enhancer sets role=alert', () => {
             const alert = document.createElement('div');
-            alert.setAttribute('role', 'alert');
+            document.body.appendChild(alert);
+
+            enhance.alert(alert, {});
 
             expect(alert.getAttribute('role')).toBe('alert');
         });
 
-        test('should support dismissible alerts', () => {
+        test('enhancer adds dismiss button when dismissible', () => {
             const alert = document.createElement('div');
-            alert.classList.add('ux-alert');
+            alert.textContent = 'Alert message';
+            document.body.appendChild(alert);
 
-            const dismissBtn = document.createElement('button');
-            dismissBtn.className = 'ux-alert__dismiss';
-            dismissBtn.innerHTML = '&times;';
-            alert.appendChild(dismissBtn);
+            enhance.alert(alert, { dismissible: true });
 
-            expect(alert.querySelector('.ux-alert__dismiss')).not.toBeNull();
+            const dismissBtn = alert.querySelector('.ux-alert__dismiss');
+            expect(dismissBtn).not.toBeNull();
+            expect(dismissBtn.getAttribute('aria-label')).toBe('Dismiss');
+        });
+
+        test('dismiss button removes alert on click', () => {
+            const alert = document.createElement('div');
+            document.body.appendChild(alert);
+
+            enhance.alert(alert, { dismissible: true });
+
+            const dismissBtn = alert.querySelector('.ux-alert__dismiss');
+            dismissBtn.click();
+
+            expect(document.body.contains(alert)).toBe(false);
         });
     });
 
@@ -250,19 +360,20 @@ describe('UIX Module', () => {
     // PROGRESS COMPONENT
     // ============================================
     describe('Progress Component', () => {
-        test('should add ux-progress class', () => {
+        test('enhancer adds ux-progress class', () => {
             const progress = document.createElement('div');
-            progress.classList.add('ux-progress');
+            document.body.appendChild(progress);
+
+            enhance.progress(progress, {});
 
             expect(progress.classList.contains('ux-progress')).toBe(true);
         });
 
-        test('should set ARIA progressbar attributes', () => {
+        test('enhancer sets ARIA progressbar attributes', () => {
             const progress = document.createElement('div');
-            progress.setAttribute('role', 'progressbar');
-            progress.setAttribute('aria-valuenow', '50');
-            progress.setAttribute('aria-valuemin', '0');
-            progress.setAttribute('aria-valuemax', '100');
+            document.body.appendChild(progress);
+
+            enhance.progress(progress, { value: 50 });
 
             expect(progress.getAttribute('role')).toBe('progressbar');
             expect(progress.getAttribute('aria-valuenow')).toBe('50');
@@ -270,236 +381,71 @@ describe('UIX Module', () => {
             expect(progress.getAttribute('aria-valuemax')).toBe('100');
         });
 
-        test('should set width percentage on bar', () => {
+        test('enhancer creates progress bar with correct width', () => {
             const progress = document.createElement('div');
-            progress.classList.add('ux-progress');
+            document.body.appendChild(progress);
 
-            const bar = document.createElement('div');
-            bar.className = 'ux-progress__bar';
-            bar.style.width = '75%';
-            progress.appendChild(bar);
+            enhance.progress(progress, { value: 75 });
 
+            const bar = progress.querySelector('.ux-progress__bar');
+            expect(bar).not.toBeNull();
             expect(bar.style.width).toBe('75%');
         });
-    });
 
-    // ============================================
-    // MODAL COMPONENT
-    // ============================================
-    describe('Modal Component', () => {
-        test('should add ux-modal class', () => {
-            const modal = document.createElement('div');
-            modal.classList.add('ux-modal');
+        test('enhancer handles custom max value', () => {
+            const progress = document.createElement('div');
+            document.body.appendChild(progress);
 
-            expect(modal.classList.contains('ux-modal')).toBe(true);
-        });
+            enhance.progress(progress, { value: 50, max: 200 });
 
-        test('should set ARIA dialog attributes', () => {
-            const modal = document.createElement('div');
-            modal.setAttribute('role', 'dialog');
-            modal.setAttribute('aria-modal', 'true');
-            modal.setAttribute('aria-label', 'Test Modal');
-
-            expect(modal.getAttribute('role')).toBe('dialog');
-            expect(modal.getAttribute('aria-modal')).toBe('true');
-            expect(modal.getAttribute('aria-label')).toBe('Test Modal');
-        });
-
-        test('should toggle is-open class', () => {
-            const modal = document.createElement('div');
-            modal.classList.add('ux-modal');
-
-            modal.classList.add('is-open');
-            expect(modal.classList.contains('is-open')).toBe(true);
-
-            modal.classList.remove('is-open');
-            expect(modal.classList.contains('is-open')).toBe(false);
-        });
-
-        test('should update aria-hidden on open/close', () => {
-            const modal = document.createElement('div');
-            modal.setAttribute('aria-hidden', 'true');
-
-            // Open
-            modal.setAttribute('aria-hidden', 'false');
-            expect(modal.getAttribute('aria-hidden')).toBe('false');
-
-            // Close
-            modal.setAttribute('aria-hidden', 'true');
-            expect(modal.getAttribute('aria-hidden')).toBe('true');
-        });
-
-        test('should have backdrop element', () => {
-            const modal = document.createElement('div');
-            modal.classList.add('ux-modal');
-
-            const backdrop = document.createElement('div');
-            backdrop.className = 'ux-modal__backdrop';
-            modal.appendChild(backdrop);
-
-            expect(modal.querySelector('.ux-modal__backdrop')).not.toBeNull();
+            expect(progress.getAttribute('aria-valuemax')).toBe('200');
+            const bar = progress.querySelector('.ux-progress__bar');
+            expect(bar.style.width).toBe('25%');
         });
     });
 
     // ============================================
-    // ACCORDION COMPONENT
+    // SKELETON COMPONENT
     // ============================================
-    describe('Accordion Component', () => {
-        test('should add ux-accordion class', () => {
-            const accordion = document.createElement('div');
-            accordion.classList.add('ux-accordion');
+    describe('Skeleton Component', () => {
+        test('enhancer adds ux-skeleton class', () => {
+            const skeleton = document.createElement('div');
+            document.body.appendChild(skeleton);
 
-            expect(accordion.classList.contains('ux-accordion')).toBe(true);
+            enhance.skeleton(skeleton, {});
+
+            expect(skeleton.classList.contains('ux-skeleton')).toBe(true);
         });
 
-        test('should toggle is-open class on items', () => {
-            const item = document.createElement('div');
-            item.classList.add('ux-accordion__item');
+        test('enhancer sets aria-busy', () => {
+            const skeleton = document.createElement('div');
+            document.body.appendChild(skeleton);
 
-            item.classList.add('is-open');
-            expect(item.classList.contains('is-open')).toBe(true);
+            enhance.skeleton(skeleton, {});
 
-            item.classList.remove('is-open');
-            expect(item.classList.contains('is-open')).toBe(false);
+            expect(skeleton.getAttribute('aria-busy')).toBe('true');
         });
 
-        test('should set aria-expanded on headers', () => {
-            const header = document.createElement('button');
-            header.className = 'ux-accordion__header';
-            header.setAttribute('aria-expanded', 'false');
+        test('enhancer adds shape variants', () => {
+            const shapes = ['text', 'circle', 'rect'];
 
-            expect(header.getAttribute('aria-expanded')).toBe('false');
+            shapes.forEach(shape => {
+                const skeleton = document.createElement('div');
+                document.body.appendChild(skeleton);
 
-            header.setAttribute('aria-expanded', 'true');
-            expect(header.getAttribute('aria-expanded')).toBe('true');
+                enhance.skeleton(skeleton, { shape });
+
+                expect(skeleton.classList.contains(`ux-skeleton--${shape}`)).toBe(true);
+            });
         });
 
-        test('should set aria-controls linking header to content', () => {
-            const header = document.createElement('button');
-            const content = document.createElement('div');
-            const id = 'accordion-content-1';
+        test('enhancer defaults to text shape', () => {
+            const skeleton = document.createElement('div');
+            document.body.appendChild(skeleton);
 
-            content.id = id;
-            header.setAttribute('aria-controls', id);
+            enhance.skeleton(skeleton, {});
 
-            expect(header.getAttribute('aria-controls')).toBe(id);
-        });
-    });
-
-    // ============================================
-    // TABS COMPONENT
-    // ============================================
-    describe('Tabs Component', () => {
-        test('should set role=tablist on list', () => {
-            const tablist = document.createElement('div');
-            tablist.setAttribute('role', 'tablist');
-
-            expect(tablist.getAttribute('role')).toBe('tablist');
-        });
-
-        test('should set role=tab on tabs', () => {
-            const tab = document.createElement('button');
-            tab.setAttribute('role', 'tab');
-
-            expect(tab.getAttribute('role')).toBe('tab');
-        });
-
-        test('should set role=tabpanel on panels', () => {
-            const panel = document.createElement('div');
-            panel.setAttribute('role', 'tabpanel');
-
-            expect(panel.getAttribute('role')).toBe('tabpanel');
-        });
-
-        test('should manage aria-selected state', () => {
-            const tab1 = document.createElement('button');
-            const tab2 = document.createElement('button');
-
-            tab1.setAttribute('aria-selected', 'true');
-            tab2.setAttribute('aria-selected', 'false');
-
-            expect(tab1.getAttribute('aria-selected')).toBe('true');
-            expect(tab2.getAttribute('aria-selected')).toBe('false');
-        });
-
-        test('should manage tabindex for keyboard navigation', () => {
-            const tab1 = document.createElement('button');
-            const tab2 = document.createElement('button');
-
-            tab1.setAttribute('tabindex', '0');
-            tab2.setAttribute('tabindex', '-1');
-
-            expect(tab1.getAttribute('tabindex')).toBe('0');
-            expect(tab2.getAttribute('tabindex')).toBe('-1');
-        });
-
-        test('should link tabs to panels via aria-controls', () => {
-            const tab = document.createElement('button');
-            const panel = document.createElement('div');
-
-            panel.id = 'panel-1';
-            tab.setAttribute('aria-controls', 'panel-1');
-            panel.setAttribute('aria-labelledby', 'tab-1');
-
-            expect(tab.getAttribute('aria-controls')).toBe('panel-1');
-        });
-    });
-
-    // ============================================
-    // DROPDOWN COMPONENT
-    // ============================================
-    describe('Dropdown Component', () => {
-        test('should add ux-dropdown class', () => {
-            const dropdown = document.createElement('div');
-            dropdown.classList.add('ux-dropdown');
-
-            expect(dropdown.classList.contains('ux-dropdown')).toBe(true);
-        });
-
-        test('should toggle is-open class', () => {
-            const dropdown = document.createElement('div');
-            dropdown.classList.add('ux-dropdown');
-
-            dropdown.classList.add('is-open');
-            expect(dropdown.classList.contains('is-open')).toBe(true);
-        });
-
-        test('should set aria-expanded on trigger', () => {
-            const trigger = document.createElement('button');
-            trigger.setAttribute('aria-haspopup', 'true');
-            trigger.setAttribute('aria-expanded', 'false');
-
-            expect(trigger.getAttribute('aria-haspopup')).toBe('true');
-            expect(trigger.getAttribute('aria-expanded')).toBe('false');
-        });
-    });
-
-    // ============================================
-    // TOOLTIP COMPONENT
-    // ============================================
-    describe('Tooltip Component', () => {
-        test('should add ux-tooltip class', () => {
-            const tooltip = document.createElement('span');
-            tooltip.classList.add('ux-tooltip');
-
-            expect(tooltip.classList.contains('ux-tooltip')).toBe(true);
-        });
-
-        test('should use data-tooltip attribute', () => {
-            const element = document.createElement('span');
-            element.setAttribute('data-tooltip', 'Tooltip text');
-
-            expect(element.getAttribute('data-tooltip')).toBe('Tooltip text');
-        });
-
-        test('should remove title attribute to prevent native tooltip', () => {
-            const element = document.createElement('span');
-            element.setAttribute('title', 'Original title');
-            element.setAttribute('data-tooltip', 'Custom tooltip');
-            element.removeAttribute('title');
-
-            expect(element.getAttribute('title')).toBeNull();
-            expect(element.getAttribute('data-tooltip')).toBe('Custom tooltip');
+            expect(skeleton.classList.contains('ux-skeleton--text')).toBe(true);
         });
     });
 
@@ -507,20 +453,32 @@ describe('UIX Module', () => {
     // INPUT COMPONENT
     // ============================================
     describe('Input Component', () => {
-        test('should add ux-input class', () => {
+        test('enhancer adds ux-input class', () => {
             const input = document.createElement('input');
-            input.classList.add('ux-input');
+            document.body.appendChild(input);
+
+            enhance.input(input, {});
 
             expect(input.classList.contains('ux-input')).toBe(true);
         });
 
-        test('should support error state', () => {
+        test('enhancer adds error state with aria-invalid', () => {
             const input = document.createElement('input');
-            input.classList.add('ux-input', 'ux-input--error');
-            input.setAttribute('aria-invalid', 'true');
+            document.body.appendChild(input);
+
+            enhance.input(input, { error: true });
 
             expect(input.classList.contains('ux-input--error')).toBe(true);
             expect(input.getAttribute('aria-invalid')).toBe('true');
+        });
+
+        test('enhancer adds size class', () => {
+            const input = document.createElement('input');
+            document.body.appendChild(input);
+
+            enhance.input(input, { size: 'lg' });
+
+            expect(input.classList.contains('ux-input--lg')).toBe(true);
         });
     });
 
@@ -528,35 +486,243 @@ describe('UIX Module', () => {
     // SWITCH COMPONENT
     // ============================================
     describe('Switch Component', () => {
-        test('should add ux-switch class', () => {
-            const switchEl = document.createElement('div');
-            switchEl.classList.add('ux-switch');
+        test('enhancer adds ux-switch class', () => {
+            const switchEl = document.createElement('label');
+            document.body.appendChild(switchEl);
+
+            enhance.switch(switchEl, {});
 
             expect(switchEl.classList.contains('ux-switch')).toBe(true);
         });
 
-        test('should set role=switch', () => {
-            const switchEl = document.createElement('div');
-            switchEl.setAttribute('role', 'switch');
+        test('enhancer sets role=switch', () => {
+            const switchEl = document.createElement('label');
+            document.body.appendChild(switchEl);
+
+            enhance.switch(switchEl, {});
 
             expect(switchEl.getAttribute('role')).toBe('switch');
         });
 
-        test('should manage aria-checked state', () => {
-            const switchEl = document.createElement('div');
-            switchEl.setAttribute('aria-checked', 'false');
+        test('enhancer creates track element', () => {
+            const switchEl = document.createElement('label');
+            document.body.appendChild(switchEl);
 
-            expect(switchEl.getAttribute('aria-checked')).toBe('false');
+            enhance.switch(switchEl, {});
 
-            switchEl.setAttribute('aria-checked', 'true');
+            const track = switchEl.querySelector('.ux-switch__track');
+            expect(track).not.toBeNull();
+        });
+
+        test('enhancer syncs with checkbox state', () => {
+            const switchEl = document.createElement('label');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = true;
+            switchEl.appendChild(checkbox);
+            document.body.appendChild(switchEl);
+
+            enhance.switch(switchEl, {});
+
             expect(switchEl.getAttribute('aria-checked')).toBe('true');
         });
 
-        test('should be keyboard accessible', () => {
-            const switchEl = document.createElement('div');
-            switchEl.setAttribute('tabindex', '0');
+        test('enhancer adds size class', () => {
+            const switchEl = document.createElement('label');
+            document.body.appendChild(switchEl);
 
-            expect(switchEl.getAttribute('tabindex')).toBe('0');
+            enhance.switch(switchEl, { size: 'sm' });
+
+            expect(switchEl.classList.contains('ux-switch--sm')).toBe(true);
+        });
+    });
+
+    // ============================================
+    // MODAL COMPONENT
+    // ============================================
+    describe('Modal Component', () => {
+        test('enhancer adds ux-modal class', () => {
+            const modal = document.createElement('div');
+            document.body.appendChild(modal);
+
+            enhance.modal(modal, {});
+
+            expect(modal.classList.contains('ux-modal')).toBe(true);
+        });
+
+        test('enhancer sets ARIA dialog attributes', () => {
+            const modal = document.createElement('div');
+            document.body.appendChild(modal);
+
+            enhance.modal(modal, { label: 'Test Modal' });
+
+            expect(modal.getAttribute('role')).toBe('dialog');
+            expect(modal.getAttribute('aria-modal')).toBe('true');
+            expect(modal.getAttribute('aria-label')).toBe('Test Modal');
+        });
+
+        test('enhancer adds size variant', () => {
+            const modal = document.createElement('div');
+            document.body.appendChild(modal);
+
+            enhance.modal(modal, { size: 'lg' });
+
+            expect(modal.classList.contains('ux-modal--lg')).toBe(true);
+        });
+
+        test('enhancer creates backdrop element', () => {
+            const modal = document.createElement('div');
+            document.body.appendChild(modal);
+
+            enhance.modal(modal, {});
+
+            const backdrop = modal.querySelector('.ux-modal__backdrop');
+            expect(backdrop).not.toBeNull();
+        });
+
+        test('enhancer exposes uxOpen and uxClose methods', () => {
+            const modal = document.createElement('div');
+            document.body.appendChild(modal);
+
+            enhance.modal(modal, {});
+
+            expect(typeof modal.uxOpen).toBe('function');
+            expect(typeof modal.uxClose).toBe('function');
+        });
+
+        test('uxOpen adds is-open class', () => {
+            const modal = document.createElement('div');
+            document.body.appendChild(modal);
+
+            enhance.modal(modal, {});
+            modal.uxOpen();
+
+            expect(modal.classList.contains('is-open')).toBe(true);
+        });
+
+        test('uxClose removes is-open class', () => {
+            const modal = document.createElement('div');
+            document.body.appendChild(modal);
+
+            enhance.modal(modal, {});
+            modal.uxOpen();
+            modal.uxClose();
+
+            expect(modal.classList.contains('is-open')).toBe(false);
+        });
+    });
+
+    // ============================================
+    // TABS COMPONENT
+    // ============================================
+    describe('Tabs Component', () => {
+        test('enhancer creates tab list with correct roles', () => {
+            const tabs = document.createElement('div');
+            tabs.innerHTML = '<div>Panel 1</div><div>Panel 2</div>';
+            document.body.appendChild(tabs);
+
+            enhance.tabs(tabs, { tabs: 'Tab 1, Tab 2' });
+
+            const tablist = tabs.querySelector('[role="tablist"]');
+            expect(tablist).not.toBeNull();
+        });
+
+        test('enhancer creates tabs with role=tab', () => {
+            const tabs = document.createElement('div');
+            tabs.innerHTML = '<div>Panel 1</div><div>Panel 2</div>';
+            document.body.appendChild(tabs);
+
+            enhance.tabs(tabs, { tabs: 'Tab 1, Tab 2' });
+
+            const tabElements = tabs.querySelectorAll('[role="tab"]');
+            expect(tabElements.length).toBe(2);
+        });
+
+        test('enhancer sets role=tabpanel on panels', () => {
+            const tabs = document.createElement('div');
+            tabs.innerHTML = '<div>Panel 1</div><div>Panel 2</div>';
+            document.body.appendChild(tabs);
+
+            enhance.tabs(tabs, { tabs: 'Tab 1, Tab 2' });
+
+            const panels = tabs.querySelectorAll('[role="tabpanel"]');
+            expect(panels.length).toBe(2);
+        });
+
+        test('enhancer sets aria-selected on active tab', () => {
+            const tabs = document.createElement('div');
+            tabs.innerHTML = '<div>Panel 1</div><div>Panel 2</div>';
+            document.body.appendChild(tabs);
+
+            enhance.tabs(tabs, { tabs: 'Tab 1, Tab 2' });
+
+            const activeTab = tabs.querySelector('[aria-selected="true"]');
+            expect(activeTab).not.toBeNull();
+        });
+    });
+
+    // ============================================
+    // DROPDOWN COMPONENT
+    // ============================================
+    describe('Dropdown Component', () => {
+        test('enhancer adds ux-dropdown class', () => {
+            const dropdown = document.createElement('div');
+            dropdown.innerHTML = '<button class="ux-dropdown__trigger">Menu</button><div class="ux-dropdown__menu"></div>';
+            document.body.appendChild(dropdown);
+
+            enhance.dropdown(dropdown, {});
+
+            expect(dropdown.classList.contains('ux-dropdown')).toBe(true);
+        });
+
+        test('enhancer sets aria-haspopup on trigger', () => {
+            const dropdown = document.createElement('div');
+            dropdown.innerHTML = '<button class="ux-dropdown__trigger">Menu</button><div class="ux-dropdown__menu"></div>';
+            document.body.appendChild(dropdown);
+
+            enhance.dropdown(dropdown, {});
+
+            const trigger = dropdown.querySelector('.ux-dropdown__trigger');
+            expect(trigger.getAttribute('aria-haspopup')).toBe('true');
+        });
+
+        test('trigger click toggles is-open class', () => {
+            const dropdown = document.createElement('div');
+            dropdown.innerHTML = '<button class="ux-dropdown__trigger">Menu</button><div class="ux-dropdown__menu"></div>';
+            document.body.appendChild(dropdown);
+
+            enhance.dropdown(dropdown, {});
+
+            const trigger = dropdown.querySelector('.ux-dropdown__trigger');
+            trigger.click();
+
+            expect(dropdown.classList.contains('is-open')).toBe(true);
+        });
+    });
+
+    // ============================================
+    // TOOLTIP COMPONENT
+    // ============================================
+    describe('Tooltip Component', () => {
+        test('enhancer adds ux-tooltip class', () => {
+            const tooltip = document.createElement('span');
+            tooltip.setAttribute('data-tooltip', 'Tooltip text');
+            document.body.appendChild(tooltip);
+
+            enhance.tooltip(tooltip, {});
+
+            expect(tooltip.classList.contains('ux-tooltip')).toBe(true);
+        });
+
+        test('enhancer removes title attribute to prevent native tooltip', () => {
+            const tooltip = document.createElement('span');
+            tooltip.setAttribute('title', 'Original title');
+            tooltip.setAttribute('data-tooltip', 'Custom tooltip');
+            document.body.appendChild(tooltip);
+
+            enhance.tooltip(tooltip, {});
+
+            expect(tooltip.getAttribute('title')).toBeNull();
         });
     });
 
@@ -564,29 +730,35 @@ describe('UIX Module', () => {
     // MENU COMPONENT
     // ============================================
     describe('Menu Component', () => {
-        test('should set role=menu', () => {
+        test('enhancer sets role=menu', () => {
             const menu = document.createElement('ul');
-            menu.setAttribute('role', 'menu');
+            menu.innerHTML = '<li>Item 1</li><li>Item 2</li>';
+            document.body.appendChild(menu);
+
+            enhance.menu(menu, {});
 
             expect(menu.getAttribute('role')).toBe('menu');
         });
 
-        test('should set role=menuitem on items', () => {
-            const item = document.createElement('li');
-            item.setAttribute('role', 'menuitem');
+        test('enhancer sets role=menuitem on items with ux-menu__item class', () => {
+            const menu = document.createElement('ul');
+            menu.innerHTML = '<li class="ux-menu__item">Item 1</li><li class="ux-menu__item">Item 2</li>';
+            document.body.appendChild(menu);
 
-            expect(item.getAttribute('role')).toBe('menuitem');
+            enhance.menu(menu, {});
+
+            const items = menu.querySelectorAll('[role="menuitem"]');
+            expect(items.length).toBe(2);
         });
 
-        test('should manage tabindex for roving tabindex', () => {
-            const items = [];
-            for (let i = 0; i < 3; i++) {
-                const item = document.createElement('li');
-                item.setAttribute('role', 'menuitem');
-                item.setAttribute('tabindex', i === 0 ? '0' : '-1');
-                items.push(item);
-            }
+        test('enhancer implements roving tabindex', () => {
+            const menu = document.createElement('ul');
+            menu.innerHTML = '<li class="ux-menu__item">Item 1</li><li class="ux-menu__item">Item 2</li><li class="ux-menu__item">Item 3</li>';
+            document.body.appendChild(menu);
 
+            enhance.menu(menu, {});
+
+            const items = menu.querySelectorAll('[role="menuitem"]');
             expect(items[0].getAttribute('tabindex')).toBe('0');
             expect(items[1].getAttribute('tabindex')).toBe('-1');
             expect(items[2].getAttribute('tabindex')).toBe('-1');
@@ -597,23 +769,29 @@ describe('UIX Module', () => {
     // TABLE COMPONENT
     // ============================================
     describe('Table Component', () => {
-        test('should add ux-table class', () => {
+        test('enhancer adds ux-table class', () => {
             const table = document.createElement('table');
-            table.classList.add('ux-table');
+            document.body.appendChild(table);
+
+            enhance.table(table, {});
 
             expect(table.classList.contains('ux-table')).toBe(true);
         });
 
-        test('should support striped variant', () => {
+        test('enhancer adds striped variant', () => {
             const table = document.createElement('table');
-            table.classList.add('ux-table', 'ux-table--striped');
+            document.body.appendChild(table);
+
+            enhance.table(table, { striped: true });
 
             expect(table.classList.contains('ux-table--striped')).toBe(true);
         });
 
-        test('should support hoverable variant', () => {
+        test('enhancer adds hoverable variant', () => {
             const table = document.createElement('table');
-            table.classList.add('ux-table', 'ux-table--hoverable');
+            document.body.appendChild(table);
+
+            enhance.table(table, { hoverable: true });
 
             expect(table.classList.contains('ux-table--hoverable')).toBe(true);
         });
@@ -623,29 +801,45 @@ describe('UIX Module', () => {
     // DRAWER COMPONENT
     // ============================================
     describe('Drawer Component', () => {
-        test('should add ux-drawer class', () => {
+        test('enhancer adds ux-drawer class', () => {
             const drawer = document.createElement('div');
-            drawer.classList.add('ux-drawer');
+            document.body.appendChild(drawer);
+
+            enhance.drawer(drawer, {});
 
             expect(drawer.classList.contains('ux-drawer')).toBe(true);
         });
 
-        test('should support position variants', () => {
+        test('enhancer adds position variants', () => {
             const positions = ['left', 'right', 'top', 'bottom'];
 
-            positions.forEach(pos => {
+            positions.forEach(position => {
                 const drawer = document.createElement('div');
-                drawer.classList.add('ux-drawer', `ux-drawer--${pos}`);
+                document.body.appendChild(drawer);
 
-                expect(drawer.classList.contains(`ux-drawer--${pos}`)).toBe(true);
+                enhance.drawer(drawer, { position });
+
+                expect(drawer.classList.contains(`ux-drawer--${position}`)).toBe(true);
             });
         });
 
-        test('should toggle is-open class', () => {
+        test('enhancer exposes uxOpen and uxClose methods', () => {
             const drawer = document.createElement('div');
-            drawer.classList.add('ux-drawer');
+            document.body.appendChild(drawer);
 
-            drawer.classList.add('is-open');
+            enhance.drawer(drawer, {});
+
+            expect(typeof drawer.uxOpen).toBe('function');
+            expect(typeof drawer.uxClose).toBe('function');
+        });
+
+        test('uxOpen adds is-open class', () => {
+            const drawer = document.createElement('div');
+            document.body.appendChild(drawer);
+
+            enhance.drawer(drawer, {});
+            drawer.uxOpen();
+
             expect(drawer.classList.contains('is-open')).toBe(true);
         });
     });
@@ -654,55 +848,33 @@ describe('UIX Module', () => {
     // BREADCRUMB COMPONENT
     // ============================================
     describe('Breadcrumb Component', () => {
-        test('should add ux-breadcrumb class', () => {
+        test('enhancer adds ux-breadcrumb class', () => {
             const nav = document.createElement('nav');
-            nav.classList.add('ux-breadcrumb');
+            document.body.appendChild(nav);
+
+            enhance.breadcrumb(nav, {});
 
             expect(nav.classList.contains('ux-breadcrumb')).toBe(true);
         });
 
-        test('should set aria-label', () => {
+        test('enhancer sets aria-label', () => {
             const nav = document.createElement('nav');
-            nav.setAttribute('aria-label', 'Breadcrumb');
+            document.body.appendChild(nav);
+
+            enhance.breadcrumb(nav, {});
 
             expect(nav.getAttribute('aria-label')).toBe('Breadcrumb');
         });
 
-        test('should set aria-current on last item', () => {
-            const item = document.createElement('span');
-            item.setAttribute('aria-current', 'page');
+        test('enhancer sets aria-current on last item', () => {
+            const nav = document.createElement('nav');
+            nav.innerHTML = '<span class="ux-breadcrumb__item">Home</span><span class="ux-breadcrumb__item">Current</span>';
+            document.body.appendChild(nav);
 
-            expect(item.getAttribute('aria-current')).toBe('page');
-        });
-    });
+            enhance.breadcrumb(nav, {});
 
-    // ============================================
-    // SKELETON COMPONENT
-    // ============================================
-    describe('Skeleton Component', () => {
-        test('should add ux-skeleton class', () => {
-            const skeleton = document.createElement('div');
-            skeleton.classList.add('ux-skeleton');
-
-            expect(skeleton.classList.contains('ux-skeleton')).toBe(true);
-        });
-
-        test('should set aria-busy', () => {
-            const skeleton = document.createElement('div');
-            skeleton.setAttribute('aria-busy', 'true');
-
-            expect(skeleton.getAttribute('aria-busy')).toBe('true');
-        });
-
-        test('should support shape variants', () => {
-            const shapes = ['text', 'circle', 'rect'];
-
-            shapes.forEach(shape => {
-                const skeleton = document.createElement('div');
-                skeleton.classList.add('ux-skeleton', `ux-skeleton--${shape}`);
-
-                expect(skeleton.classList.contains(`ux-skeleton--${shape}`)).toBe(true);
-            });
+            const items = nav.querySelectorAll('.ux-breadcrumb__item');
+            expect(items[items.length - 1].getAttribute('aria-current')).toBe('page');
         });
     });
 
@@ -710,83 +882,143 @@ describe('UIX Module', () => {
     // DIVIDER COMPONENT
     // ============================================
     describe('Divider Component', () => {
-        test('should add ux-divider class', () => {
+        test('enhancer adds ux-divider class', () => {
             const divider = document.createElement('hr');
-            divider.classList.add('ux-divider');
+            document.body.appendChild(divider);
+
+            enhance.divider(divider, {});
 
             expect(divider.classList.contains('ux-divider')).toBe(true);
         });
 
-        test('should set role=separator', () => {
+        test('enhancer sets role=separator', () => {
             const divider = document.createElement('hr');
-            divider.setAttribute('role', 'separator');
+            document.body.appendChild(divider);
+
+            enhance.divider(divider, {});
 
             expect(divider.getAttribute('role')).toBe('separator');
         });
 
-        test('should support vertical variant', () => {
+        test('enhancer adds vertical variant', () => {
             const divider = document.createElement('div');
-            divider.classList.add('ux-divider', 'ux-divider--vertical');
+            document.body.appendChild(divider);
+
+            enhance.divider(divider, { vertical: true });
 
             expect(divider.classList.contains('ux-divider--vertical')).toBe(true);
         });
     });
 
     // ============================================
-    // CSS CUSTOM PROPERTIES
+    // NAV COMPONENT
     // ============================================
-    describe('CSS Custom Properties', () => {
-        test('should define primary color variables', () => {
-            const cssVars = [
-                '--ux-primary-50',
-                '--ux-primary-500',
-                '--ux-primary-600',
-                '--ux-primary-700'
-            ];
+    describe('Nav Component', () => {
+        test('enhancer adds ux-nav class', () => {
+            const nav = document.createElement('nav');
+            document.body.appendChild(nav);
 
-            // These would be defined when styles are injected
-            cssVars.forEach(varName => {
-                expect(varName).toMatch(/^--ux-primary-\d+$/);
-            });
+            enhance.nav(nav, {});
+
+            expect(nav.classList.contains('ux-nav')).toBe(true);
         });
 
-        test('should define neutral color variables', () => {
-            const cssVars = [
-                '--ux-neutral-0',
-                '--ux-neutral-100',
-                '--ux-neutral-500',
-                '--ux-neutral-900'
-            ];
+        test('enhancer adds vertical variant', () => {
+            const nav = document.createElement('nav');
+            document.body.appendChild(nav);
 
-            cssVars.forEach(varName => {
-                expect(varName).toMatch(/^--ux-neutral-\d+$/);
-            });
+            enhance.nav(nav, { vertical: true });
+
+            expect(nav.classList.contains('ux-nav--vertical')).toBe(true);
+        });
+    });
+
+    // ============================================
+    // TAG COMPONENT
+    // ============================================
+    describe('Tag Component', () => {
+        test('enhancer adds ux-tag class', () => {
+            const tag = document.createElement('span');
+            document.body.appendChild(tag);
+
+            enhance.tag(tag, {});
+
+            expect(tag.classList.contains('ux-tag')).toBe(true);
         });
 
-        test('should define semantic color variables', () => {
-            const cssVars = [
-                '--ux-success-500',
-                '--ux-warning-500',
-                '--ux-danger-500',
-                '--ux-info-500'
-            ];
+        test('enhancer adds variant class', () => {
+            const tag = document.createElement('span');
+            document.body.appendChild(tag);
 
-            cssVars.forEach(varName => {
-                expect(varName).toMatch(/^--ux-(success|warning|danger|info)-\d+$/);
-            });
+            enhance.tag(tag, { variant: 'success' });
+
+            expect(tag.classList.contains('ux-tag--success')).toBe(true);
         });
 
-        test('should define spacing variables', () => {
-            const cssVars = [
-                '--ux-space-1',
-                '--ux-space-2',
-                '--ux-space-4',
-                '--ux-space-8'
-            ];
+        test('enhancer adds size class', () => {
+            const tag = document.createElement('span');
+            document.body.appendChild(tag);
 
-            cssVars.forEach(varName => {
-                expect(varName).toMatch(/^--ux-space-\d+$/);
-            });
+            enhance.tag(tag, { size: 'sm' });
+
+            expect(tag.classList.contains('ux-tag--sm')).toBe(true);
+        });
+    });
+
+    // ============================================
+    // ACCORDION COMPONENT
+    // ============================================
+    describe('Accordion Component', () => {
+        test('enhancer adds ux-accordion class', () => {
+            const accordion = document.createElement('div');
+            accordion.innerHTML = `
+                <div class="ux-accordion__item">
+                    <button class="ux-accordion__header">Header 1</button>
+                    <div class="ux-accordion__content">Content 1</div>
+                </div>
+            `;
+            document.body.appendChild(accordion);
+
+            enhance.accordion(accordion, {});
+
+            expect(accordion.classList.contains('ux-accordion')).toBe(true);
+        });
+
+        test('enhancer sets aria-expanded on headers', () => {
+            const accordion = document.createElement('div');
+            accordion.innerHTML = `
+                <div class="ux-accordion__item">
+                    <button class="ux-accordion__header">Header 1</button>
+                    <div class="ux-accordion__content">Content 1</div>
+                </div>
+            `;
+            document.body.appendChild(accordion);
+
+            enhance.accordion(accordion, {});
+
+            const header = accordion.querySelector('.ux-accordion__header');
+            expect(header.hasAttribute('aria-expanded')).toBe(true);
+        });
+
+        test('header click toggles item open state', () => {
+            const accordion = document.createElement('div');
+            accordion.innerHTML = `
+                <div class="ux-accordion__item">
+                    <button class="ux-accordion__header">Header 1</button>
+                    <div class="ux-accordion__content">Content 1</div>
+                </div>
+            `;
+            document.body.appendChild(accordion);
+
+            enhance.accordion(accordion, {});
+
+            const header = accordion.querySelector('.ux-accordion__header');
+            const item = accordion.querySelector('.ux-accordion__item');
+
+            header.click();
+
+            expect(item.classList.contains('is-open')).toBe(true);
+            expect(header.getAttribute('aria-expanded')).toBe('true');
         });
     });
 
@@ -794,170 +1026,101 @@ describe('UIX Module', () => {
     // CUSTOM EVENTS
     // ============================================
     describe('Custom Events', () => {
-        test('should create CustomEvent with ux: prefix', () => {
-            const event = new CustomEvent('ux:open', { detail: { modal: true } });
+        test('modal dispatches ux:open event', () => {
+            const modal = document.createElement('div');
+            document.body.appendChild(modal);
+            const openHandler = jest.fn();
+            modal.addEventListener('ux:open', openHandler);
 
-            expect(event.type).toBe('ux:open');
-            expect(event.detail.modal).toBe(true);
+            enhance.modal(modal, {});
+            modal.uxOpen();
+
+            expect(openHandler).toHaveBeenCalled();
         });
 
-        test('should support various event types', () => {
-            const eventTypes = ['ux:open', 'ux:close', 'ux:change', 'ux:toggle'];
+        test('modal dispatches ux:close event', () => {
+            const modal = document.createElement('div');
+            document.body.appendChild(modal);
+            const closeHandler = jest.fn();
+            modal.addEventListener('ux:close', closeHandler);
 
-            eventTypes.forEach(type => {
-                const event = new CustomEvent(type);
-                expect(event.type).toBe(type);
-            });
-        });
-    });
+            enhance.modal(modal, {});
+            modal.uxOpen();
+            modal.uxClose();
 
-    // ============================================
-    // FOCUS UTILITIES
-    // ============================================
-    describe('Focus Utilities', () => {
-        test('should identify focusable elements', () => {
-            const container = document.createElement('div');
-            const button = document.createElement('button');
-            const link = document.createElement('a');
-            link.href = '#';
-            const input = document.createElement('input');
-
-            container.appendChild(button);
-            container.appendChild(link);
-            container.appendChild(input);
-
-            const focusable = container.querySelectorAll(
-                'a[href], button:not([disabled]), input:not([disabled])'
-            );
-
-            expect(focusable.length).toBe(3);
+            expect(closeHandler).toHaveBeenCalled();
         });
 
-        test('should exclude disabled elements', () => {
-            const container = document.createElement('div');
-            const enabledBtn = document.createElement('button');
-            const disabledBtn = document.createElement('button');
-            disabledBtn.disabled = true;
+        test('switch dispatches ux:change event', () => {
+            const switchEl = document.createElement('label');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            switchEl.appendChild(checkbox);
+            document.body.appendChild(switchEl);
+            const changeHandler = jest.fn();
+            switchEl.addEventListener('ux:change', changeHandler);
 
-            container.appendChild(enabledBtn);
-            container.appendChild(disabledBtn);
+            enhance.switch(switchEl, {});
+            checkbox.checked = true;
+            checkbox.dispatchEvent(new Event('change'));
 
-            const focusable = container.querySelectorAll('button:not([disabled])');
-
-            expect(focusable.length).toBe(1);
+            expect(changeHandler).toHaveBeenCalled();
         });
     });
 
     // ============================================
-    // INSTANCE MANAGEMENT
-    // ============================================
-    describe('Instance Management', () => {
-        test('should support WeakMap for instance tracking', () => {
-            const instanceMap = new WeakMap();
-            const element = document.createElement('div');
-
-            instanceMap.set(element, { type: 'modal', isOpen: false });
-
-            expect(instanceMap.has(element)).toBe(true);
-            expect(instanceMap.get(element).type).toBe('modal');
-        });
-
-        test('should clean up instance on destroy', () => {
-            const instanceMap = new WeakMap();
-            const element = document.createElement('div');
-
-            instanceMap.set(element, { type: 'modal' });
-            instanceMap.delete(element);
-
-            expect(instanceMap.has(element)).toBe(false);
-        });
-    });
-
-    // ============================================
-    // DOM PROCESSING
+    // DOM PROCESSING (processElement)
     // ============================================
     describe('DOM Processing', () => {
-        test('should find elements with ux-enhance attribute', () => {
-            const container = document.createElement('div');
-            const btn1 = document.createElement('button');
-            btn1.setAttribute('ux-enhance', 'button');
-            const btn2 = document.createElement('button');
-            btn2.setAttribute('ux-enhance', 'button');
+        test('processElement enhances element with ux-enhance attribute', () => {
+            const button = document.createElement('button');
+            button.setAttribute('ux-enhance', 'button');
+            button.setAttribute('ux-variant', 'primary');
+            document.body.appendChild(button);
 
-            container.appendChild(btn1);
-            container.appendChild(btn2);
+            UIX.processElement(button);
 
-            const enhanced = container.querySelectorAll('[ux-enhance]');
-
-            expect(enhanced.length).toBe(2);
+            expect(button.classList.contains('ux-btn')).toBe(true);
+            expect(button.classList.contains('ux-btn--primary')).toBe(true);
+            expect(button.getAttribute('ux-enhanced')).toBe('true');
         });
 
-        test('should mark elements as enhanced', () => {
-            const element = document.createElement('button');
-            element.setAttribute('ux-enhance', 'button');
-            element.setAttribute('ux-enhanced', 'true');
+        test('processElement skips already enhanced elements', () => {
+            const button = document.createElement('button');
+            button.setAttribute('ux-enhance', 'button');
+            button.setAttribute('ux-enhanced', 'true');
+            document.body.appendChild(button);
 
-            expect(element.getAttribute('ux-enhanced')).toBe('true');
+            UIX.processElement(button);
+
+            // Should not add class since already enhanced
+            expect(button.classList.contains('ux-btn')).toBe(false);
         });
 
-        test('should skip already enhanced elements', () => {
-            const element = document.createElement('button');
-            element.setAttribute('ux-enhance', 'button');
-            element.setAttribute('ux-enhanced', 'true');
+        test('processElement parses boolean attributes', () => {
+            const card = document.createElement('div');
+            card.setAttribute('ux-enhance', 'card');
+            card.setAttribute('ux-elevated', 'true');
+            document.body.appendChild(card);
 
-            const hasEnhanced = element.hasAttribute('ux-enhanced');
+            UIX.processElement(card);
 
-            expect(hasEnhanced).toBe(true);
-        });
-    });
-
-    // ============================================
-    // ATTRIBUTE PARSING
-    // ============================================
-    describe('Attribute Parsing', () => {
-        test('should parse boolean attributes', () => {
-            const element = document.createElement('div');
-            element.setAttribute('ux-dismissible', 'true');
-
-            const value = element.getAttribute('ux-dismissible') === 'true';
-
-            expect(value).toBe(true);
+            expect(card.classList.contains('ux-card--elevated')).toBe(true);
         });
 
-        test('should parse string attributes', () => {
-            const element = document.createElement('button');
-            element.setAttribute('ux-variant', 'primary');
+        test('scan processes all ux-enhance elements', () => {
+            document.body.innerHTML = `
+                <button ux-enhance="button" ux-variant="primary">Button 1</button>
+                <button ux-enhance="button" ux-variant="secondary">Button 2</button>
+                <span ux-enhance="badge" ux-variant="success">Badge</span>
+            `;
 
-            expect(element.getAttribute('ux-variant')).toBe('primary');
-        });
+            UIX.scan();
 
-        test('should convert kebab-case to camelCase', () => {
-            const kebabToCamel = s => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-
-            expect(kebabToCamel('close-on-escape')).toBe('closeOnEscape');
-            expect(kebabToCamel('initial-focus')).toBe('initialFocus');
-        });
-    });
-
-    // ============================================
-    // PERFORMANCE
-    // ============================================
-    describe('Performance', () => {
-        test('should enhance 1000 elements efficiently', () => {
-            const elements = [];
-            const startTime = Date.now();
-
-            for (let i = 0; i < 1000; i++) {
-                const btn = document.createElement('button');
-                btn.setAttribute('ux-enhance', 'button');
-                btn.classList.add('ux-btn');
-                elements.push(btn);
-            }
-
-            const duration = Date.now() - startTime;
-
-            expect(duration).toBeLessThan(100);
-            expect(elements.length).toBe(1000);
+            const buttons = document.querySelectorAll('.ux-btn');
+            const badges = document.querySelectorAll('.ux-badge');
+            expect(buttons.length).toBe(2);
+            expect(badges.length).toBe(1);
         });
     });
 
@@ -965,33 +1128,52 @@ describe('UIX Module', () => {
     // TOAST NOTIFICATIONS
     // ============================================
     describe('Toast Notifications', () => {
-        test('should create toast container', () => {
+        test('toast creates container and element with correct attributes', () => {
+            const toastEl = window.uxXFactory.toast('Test message');
+
+            // Check the returned element directly (avoids stale container issues)
+            expect(toastEl).not.toBeNull();
+            expect(toastEl.classList.contains('ux-toast')).toBe(true);
+            expect(toastEl.textContent).toContain('Test message');
+            expect(toastEl.getAttribute('role')).toBe('alert');
+
+            // Check container was created
+            const container = toastEl.parentElement;
+            expect(container.classList.contains('ux-toast-container')).toBe(true);
+        });
+
+        test('toast supports type variants', () => {
+            const types = ['success', 'warning', 'danger', 'info'];
+
+            types.forEach(type => {
+                const toastEl = window.uxXFactory.toast(`${type} message`, { type });
+
+                expect(toastEl.classList.contains(`ux-toast--${type}`)).toBe(true);
+            });
+        });
+    });
+
+    // ============================================
+    // PERFORMANCE
+    // ============================================
+    describe('Performance', () => {
+        test('enhances 1000 elements efficiently', () => {
             const container = document.createElement('div');
-            container.className = 'ux-toast-container';
+            for (let i = 0; i < 1000; i++) {
+                const btn = document.createElement('button');
+                btn.setAttribute('ux-enhance', 'button');
+                btn.setAttribute('ux-variant', 'primary');
+                container.appendChild(btn);
+            }
             document.body.appendChild(container);
 
-            expect(document.querySelector('.ux-toast-container')).not.toBeNull();
-        });
+            const startTime = Date.now();
+            UIX.scan(container);
+            const duration = Date.now() - startTime;
 
-        test('should add toast element with message', () => {
-            const toast = document.createElement('div');
-            toast.className = 'ux-toast';
-            toast.textContent = 'Test message';
-            toast.setAttribute('role', 'alert');
-
-            expect(toast.textContent).toBe('Test message');
-            expect(toast.getAttribute('role')).toBe('alert');
-        });
-
-        test('should support toast variants', () => {
-            const variants = ['success', 'warning', 'danger', 'info'];
-
-            variants.forEach(variant => {
-                const toast = document.createElement('div');
-                toast.classList.add('ux-toast', `ux-toast--${variant}`);
-
-                expect(toast.classList.contains(`ux-toast--${variant}`)).toBe(true);
-            });
+            const enhancedButtons = container.querySelectorAll('.ux-btn');
+            expect(enhancedButtons.length).toBe(1000);
+            expect(duration).toBeLessThan(500); // Should complete in under 500ms
         });
     });
 });

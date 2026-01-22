@@ -1,5 +1,5 @@
 {
-  "version": "2026-01-20T18:11:38.875Z",
+  "version": "2026-01-22T06:20:13.450Z",
   "bootloader": "bootloader.8f9146c9.min.js",
   "modules": {
     "fmtx": "fmtx.9e17277f.min.js",
@@ -10,7 +10,7 @@
     "navx": "navx.4156ccae.min.js",
     "tablex": "tablex.a613afdc.min.js",
     "smartx": "smartx.0c0755cd.min.js",
-    "uix": "uix.ca2d400a.min.js"
+    "uix": "uix.f74f8fd2.min.js"
   },
   "parsers": {
     "verbose": "parsers/genx-parser-verbose.2b52e6b3.js",

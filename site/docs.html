@@ -98,6 +98,7 @@
         <a href="index.html">Home</a>
         <a href="demo.html">Demo</a>
         <a href="docs.html" class="active">Docs</a>
+        <a href="uix-playground.html">Playground</a>
         <a href="https://github.com/adamzwasserman/genX">GitHub</a>
       </nav>
     </div>
@@ -362,7 +363,7 @@ cp genX/src/*.js your-project/static/js/</code></pre>
 
         <h2 id="uix">uiX &mdash; UI Components</h2>
         <p class="text-muted">Prefix: <code>ux-*</code></p>
-        <p>A complete UI component library with declarative attributes. Most components are pure CSS/HTML. Interactive components use <strong>declarative triggers</strong> &mdash; no JavaScript required.</p>
+        <p>A complete UI component library with declarative attributes. Most components are pure CSS/HTML. Interactive components use <strong>declarative HTML triggers</strong> &mdash; no custom JavaScript required.</p>
 
         <h3>Button</h3>
         <pre><code>&lt;!-- Basic variants --&gt;
@@ -402,7 +403,7 @@ cp genX/src/*.js your-project/static/js/</code></pre>
 &lt;/div&gt;</code></pre>
 
         <h3>Modal</h3>
-        <pre><code>&lt;!-- Declarative triggers - NO JavaScript needed --&gt;
+        <pre><code>&lt;!-- Declarative HTML triggers - no custom JavaScript required --&gt;
 &lt;button ux-opens="#my-modal"&gt;Open Modal&lt;/button&gt;
 
 &lt;div ux-enhance="modal" ux-title="Confirm Action" id="my-modal"&gt;
@@ -521,8 +522,8 @@ cp genX/src/*.js your-project/static/js/</code></pre>
 &lt;span ux-enhance="badge" ux-bg="navy"&gt;Auto light text&lt;/span&gt;</code></pre>
         <p>Variant names: <code>primary</code>, <code>secondary</code>, <code>success</code>, <code>danger</code>, <code>warning</code>, <code>info</code>, <code>neutral</code></p>
 
-        <h3>Declarative Triggers</h3>
-        <p>Control interactive components without writing JavaScript:</p>
+        <h3>Declarative HTML Triggers</h3>
+        <p>Control interactive components with declarative HTML attributes - no custom JavaScript required:</p>
         <table style="width: 100%; margin-bottom: 1.5rem;">
           <thead>
             <tr>
@@ -555,8 +556,8 @@ cp genX/src/*.js your-project/static/js/</code></pre>
           </tbody>
         </table>
 
-        <h3>Pure CSS Components</h3>
-        <p>These components require no JavaScript &mdash; they're pure HTML/CSS:</p>
+        <h3>CSS-Driven Components</h3>
+        <p>These components are primarily CSS-driven with minimal JavaScript enhancement:</p>
         <ul>
           <li><strong>Visual:</strong> badge, avatar, spinner, skeleton, progress, divider, tag, chip</li>
           <li><strong>Typography:</strong> alert, card, tooltip, breadcrumb</li>
