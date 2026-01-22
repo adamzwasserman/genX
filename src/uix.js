@@ -901,6 +901,14 @@
   --ux-input-focus-ring: #fee2e2;
 }
 
+.ux-input--success,
+.ux-textarea--success,
+.ux-select--success {
+  --ux-input-border: var(--ux-success-500);
+  --ux-input-focus-border: var(--ux-success-500);
+  --ux-input-focus-ring: #dcfce7;
+}
+
 .ux-input--sm, .ux-textarea--sm, .ux-select--sm { padding: 0.375rem 0.5rem; font-size: 0.75rem; }
 .ux-input--lg, .ux-textarea--lg, .ux-select--lg { padding: 0.75rem 1rem; font-size: 1rem; }
 
@@ -1551,12 +1559,25 @@
                 el.classList.add('ux-input--error');
                 el.setAttribute('aria-invalid', 'true');
             }
+            if (opts.success) {
+                el.classList.add('ux-input--success');
+            }
             // Custom colors
             if (opts.bg) el.style.setProperty('--ux-input-bg', resolveColor(opts.bg));
             if (opts.color) el.style.setProperty('--ux-input-color', resolveColor(opts.color));
-            if (opts.borderColor) el.style.setProperty('--ux-input-border', resolveColor(opts.borderColor));
+            if (opts.borderColor && !opts.error && !opts.invalid && !opts.success) {
+                el.style.setProperty('--ux-input-border', resolveColor(opts.borderColor));
+            }
             if (opts.focusColor) el.style.setProperty('--ux-input-focus-border', resolveColor(opts.focusColor));
             if (opts.focusRing) el.style.setProperty('--ux-input-focus-ring', resolveColor(opts.focusRing));
+            // Error/success colors override custom borderColor
+            if (opts.error || opts.invalid) {
+                el.style.setProperty('--ux-input-border', 'var(--ux-danger-500)');
+                el.style.setProperty('--ux-input-focus-ring', '#fee2e2');
+            } else if (opts.success) {
+                el.style.setProperty('--ux-input-border', 'var(--ux-success-500)');
+                el.style.setProperty('--ux-input-focus-ring', '#dcfce7');
+            }
         },
 
         textarea: (el, opts) => {
@@ -1566,12 +1587,25 @@
                 el.classList.add('ux-textarea--error');
                 el.setAttribute('aria-invalid', 'true');
             }
+            if (opts.success) {
+                el.classList.add('ux-textarea--success');
+            }
             // Custom colors
             if (opts.bg) el.style.setProperty('--ux-input-bg', resolveColor(opts.bg));
             if (opts.color) el.style.setProperty('--ux-input-color', resolveColor(opts.color));
-            if (opts.borderColor) el.style.setProperty('--ux-input-border', resolveColor(opts.borderColor));
+            if (opts.borderColor && !opts.error && !opts.invalid && !opts.success) {
+                el.style.setProperty('--ux-input-border', resolveColor(opts.borderColor));
+            }
             if (opts.focusColor) el.style.setProperty('--ux-input-focus-border', resolveColor(opts.focusColor));
             if (opts.focusRing) el.style.setProperty('--ux-input-focus-ring', resolveColor(opts.focusRing));
+            // Error/success colors override custom borderColor
+            if (opts.error || opts.invalid) {
+                el.style.setProperty('--ux-input-border', 'var(--ux-danger-500)');
+                el.style.setProperty('--ux-input-focus-ring', '#fee2e2');
+            } else if (opts.success) {
+                el.style.setProperty('--ux-input-border', 'var(--ux-success-500)');
+                el.style.setProperty('--ux-input-focus-ring', '#dcfce7');
+            }
         },
 
         select: (el, opts) => {
@@ -1581,12 +1615,25 @@
                 el.classList.add('ux-select--error');
                 el.setAttribute('aria-invalid', 'true');
             }
+            if (opts.success) {
+                el.classList.add('ux-select--success');
+            }
             // Custom colors
             if (opts.bg) el.style.setProperty('--ux-input-bg', resolveColor(opts.bg));
             if (opts.color) el.style.setProperty('--ux-input-color', resolveColor(opts.color));
-            if (opts.borderColor) el.style.setProperty('--ux-input-border', resolveColor(opts.borderColor));
+            if (opts.borderColor && !opts.error && !opts.invalid && !opts.success) {
+                el.style.setProperty('--ux-input-border', resolveColor(opts.borderColor));
+            }
             if (opts.focusColor) el.style.setProperty('--ux-input-focus-border', resolveColor(opts.focusColor));
             if (opts.focusRing) el.style.setProperty('--ux-input-focus-ring', resolveColor(opts.focusRing));
+            // Error/success colors override custom borderColor
+            if (opts.error || opts.invalid) {
+                el.style.setProperty('--ux-input-border', 'var(--ux-danger-500)');
+                el.style.setProperty('--ux-input-focus-ring', '#fee2e2');
+            } else if (opts.success) {
+                el.style.setProperty('--ux-input-border', 'var(--ux-success-500)');
+                el.style.setProperty('--ux-input-focus-ring', '#dcfce7');
+            }
         },
 
         checkbox: (el, opts) => {
