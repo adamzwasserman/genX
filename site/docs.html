@@ -463,14 +463,28 @@ cp genX/src/*.js your-project/static/js/</code></pre>
         <pre><code>&lt;!-- Enhanced input --&gt;
 &lt;input ux-enhance="input" ux-size="lg" placeholder="Large input"&gt;
 
+&lt;!-- Input with error state (red border) --&gt;
+&lt;input ux-enhance="input" ux-error="true" placeholder="Invalid input"&gt;
+
+&lt;!-- Input with success state (green border) --&gt;
+&lt;input ux-enhance="input" ux-success="true" placeholder="Valid input"&gt;
+
 &lt;!-- Textarea --&gt;
 &lt;textarea ux-enhance="textarea" ux-focus-border="primary"&gt;&lt;/textarea&gt;
+
+&lt;!-- Textarea with error/success states --&gt;
+&lt;textarea ux-enhance="textarea" ux-error="true"&gt;&lt;/textarea&gt;
+&lt;textarea ux-enhance="textarea" ux-success="true"&gt;&lt;/textarea&gt;
 
 &lt;!-- Select --&gt;
 &lt;select ux-enhance="select"&gt;
   &lt;option&gt;Option 1&lt;/option&gt;
   &lt;option&gt;Option 2&lt;/option&gt;
 &lt;/select&gt;
+
+&lt;!-- Select with error/success states --&gt;
+&lt;select ux-enhance="select" ux-error="true"&gt;...&lt;/select&gt;
+&lt;select ux-enhance="select" ux-success="true"&gt;...&lt;/select&gt;
 
 &lt;!-- Checkbox with label --&gt;
 &lt;input type="checkbox" ux-enhance="checkbox" ux-label="Accept terms"&gt;
