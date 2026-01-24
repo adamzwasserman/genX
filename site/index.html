@@ -127,7 +127,7 @@
         <h1 class="hero__title">gen<span class="x">X</span></h1>
         <p class="hero__subtitle">
           Frontend devs, unite. Stop waiting on the backend.<br>
-          Formatting, tables, binding, accessibility &mdash; all from HTML attributes.<br>
+          Formatting, tables, binding, accessibility, <strong>50+ UI components</strong> &mdash; all from HTML attributes.<br>
           Define behavior once. Use it everywhere. Keep your code DRY.
         </p>
         <div class="btn-group">
@@ -235,10 +235,46 @@ document.querySelectorAll('.price').forEach(el => {
             <div class="module__name">smart<span class="x">X</span></div>
             <p class="module__desc">Auto-detection formatting</p>
           </a>
-          <a href="docs.html#uix" class="module">
+          <a href="docs.html#uix" class="module module--featured">
             <div class="module__name">ui<span class="x">X</span></div>
-            <p class="module__desc">30+ UI components</p>
+            <p class="module__desc">50+ UI components with declarative triggers</p>
+            <p class="module__credit">Contributed by Shawna Staff</p>
           </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--warm">
+      <div class="container">
+        <h2 class="text-center mb-lg">ui<span class="x">X</span>: Complete Component Library</h2>
+        <p class="text-center text-muted mb-md" style="max-width: 700px; margin-left: auto; margin-right: auto;">
+          50+ production-ready UI components &mdash; buttons, modals, tabs, accordions, alerts, forms, and more.
+          All controlled through declarative HTML attributes. No custom JavaScript required.
+        </p>
+        <p class="text-center mb-lg" style="font-size: 0.9rem;">
+          <strong>Contributed by <a href="https://github.com/ShawnaRStaff" target="_blank" rel="noopener">Shawna Staff</a></strong>
+        </p>
+        <div class="uix-features">
+          <div class="uix-feature">
+            <h4>Declarative Triggers</h4>
+            <p>Open modals, switch tabs, toggle accordions &mdash; all with HTML attributes like <code>ux-opens</code> and <code>ux-toggles</code></p>
+          </div>
+          <div class="uix-feature">
+            <h4>CSS Custom Properties</h4>
+            <p>Full theming support via <code>--ux-*</code> variables. Customize colors, spacing, and more without touching CSS files.</p>
+          </div>
+          <div class="uix-feature">
+            <h4>Accessible by Default</h4>
+            <p>ARIA attributes, keyboard navigation, and focus management built into every component.</p>
+          </div>
+          <div class="uix-feature">
+            <h4>Interactive Playground</h4>
+            <p>Configure components visually, see live previews, and copy the generated HTML. <a href="uix-playground.html">Try it now &rarr;</a></p>
+          </div>
+        </div>
+        <div class="text-center mt-lg">
+          <a href="uix-playground.html" class="btn btn--primary">Explore the Playground</a>
+          <a href="docs.html#uix" class="btn">Read uiX Docs</a>
         </div>
       </div>
     </section>
