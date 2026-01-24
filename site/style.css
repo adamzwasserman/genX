@@ -529,6 +529,63 @@ pre code {
 .mb-md { margin-bottom: var(--spacing-md); }
 .mb-lg { margin-bottom: var(--spacing-lg); }
 
+/* uiX Showcase Section */
+.uix-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.uix-feature {
+  background: var(--color-white);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+}
+
+.uix-feature h4 {
+  font-size: 1rem;
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-text);
+}
+
+.uix-feature p {
+  font-size: 0.9rem;
+  color: var(--color-text-light);
+  margin: 0;
+}
+
+.uix-feature code {
+  font-size: 0.8rem;
+}
+
+/* Featured Module Card */
+.module--featured {
+  background: var(--color-bg-warm);
+  position: relative;
+}
+
+.module--featured::before {
+  content: 'NEW';
+  position: absolute;
+  top: var(--spacing-xs);
+  right: var(--spacing-xs);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  background: var(--color-accent);
+  color: var(--color-white);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.module__credit {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: var(--spacing-xs);
+  font-style: italic;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   :root {
