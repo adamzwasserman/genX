@@ -225,7 +225,14 @@
 
     const init = async (prefix) => {
         const factory = await load(prefix);
-        return factory?.init ? factory.init(config.modules?.[prefix] || {}) : null;
+        if (!factory) return null;
+        // DATAOS: prefer autoInit (extracts state from DOM) over init (requires pre-built data)
+        const moduleConfig = config.modules?.[prefix] || {};
+        return factory.autoInit
+            ? factory.autoInit(document.body, moduleConfig)
+            : factory.init
+                ? factory.init(moduleConfig)
+                : null;
     };
 
     // --- Rescan: I/O wrapper around pure functions ---
@@ -271,9 +278,11 @@
                 const [parsedCount, t4] = time('parseElements', () => parseElements(elements, parsers));
 
                 const initStart = performance.now();
-                for (const prefix of needed) {
-                    try { await init(prefix); } catch (err) { console.error(`genX: Failed to init ${prefix}`, err); }
-                }
+                await Promise.all(
+                    Array.from(needed).map(prefix =>
+                        init(prefix).catch(err => console.error(`genX: Failed to init ${prefix}`, err))
+                    )
+                );
                 const t5 = { initModules: performance.now() - initStart };
 
                 // Phase 6: domx-bridge delegation

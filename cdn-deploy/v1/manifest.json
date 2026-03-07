@@ -1,13 +1,13 @@
 {
-  "version": "2026-01-22T06:20:13.450Z",
-  "bootloader": "bootloader.8f9146c9.min.js",
+  "version": "2026-03-07T23:42:11.180Z",
+  "bootloader": "bootloader.3c8d42d7.min.js",
   "modules": {
     "fmtx": "fmtx.9e17277f.min.js",
     "accx": "accx.dc757d62.min.js",
-    "bindx": "bindx.300860c4.min.js",
+    "bindx": "bindx.f3b0a7a3.min.js",
     "dragx": "dragx.7afd63f8.min.js",
     "loadx": "loadx.3bbe11c8.min.js",
-    "navx": "navx.4156ccae.min.js",
+    "navx": "navx.7ee0da9f.min.js",
     "tablex": "tablex.a613afdc.min.js",
     "smartx": "smartx.0c0755cd.min.js",
     "uix": "uix.f74f8fd2.min.js"

@@ -2022,21 +2022,20 @@
         }
 
         // DATAOS Pattern: Auto-initialize on DOMContentLoaded
-        // Automatically scan DOM and create bindings without requiring JS initialization
-        const autoInitOnLoad = () => {
-            // Check if there are any bx- attributes in the DOM
-            const hasBxElements = document.querySelector('[bx-model], [bx-bind]');
-            if (hasBxElements) {
-                // Auto-initializing from DOM (DATAOS pattern)
-                window._bindXInstance = autoInit(document.body, { observe: true });
-            }
-        };
+        // Skip when bootloader manages initialization (window.genx exists)
+        if (!window.genx) {
+            const autoInitOnLoad = () => {
+                const hasBxElements = document.querySelector('[bx-model], [bx-bind]');
+                if (hasBxElements) {
+                    window._bindXInstance = autoInit(document.body, { observe: true });
+                }
+            };
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', autoInitOnLoad);
-        } else {
-            // DOM already loaded
-            autoInitOnLoad();
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', autoInitOnLoad);
+            } else {
+                autoInitOnLoad();
+            }
         }
     }
 

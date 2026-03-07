@@ -35,7 +35,7 @@
             } : {}
         };
         // Dynamically load bootloader from local (source) or CDN (minified)
-        const bootloaderSrc = isLocal ? '/src/bootloader.js' : 'https://cdn.genx.software/v1/bootloader.8f9146c9.min.js';
+        const bootloaderSrc = isLocal ? '/src/bootloader.js' : 'https://cdn.genx.software/v1/bootloader.3c8d42d7.min.js';
         document.write('<script src="' + bootloaderSrc + '" defer><\/script>');
     </script>
     <link rel="stylesheet" href="css/loadx.css">
@@ -107,6 +107,7 @@
             line-height: 1.6;
             color: #333;
             background: #fafafa;
+            overflow-x: hidden;
         }
 
         .container {
@@ -943,7 +944,7 @@
             </div>
 
             <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 6px; font-size: 0.9rem; border-left: 4px solid #2196F3;">
-                <strong>Note:</strong> Metrics update in real-time using the browser's Performance Observer API. genX modules are optimized for maximum performance.
+                <strong>Note:</strong> Metrics are captured during initial page load using the browser's Performance Observer API, then frozen after 5 seconds.
             </div>
         </section>
         <section id="polymorphic-notation" class="module-section">
@@ -2375,7 +2376,7 @@
                     <h4>1. Basic Drag & Drop</h4>
                     <p>Simple draggable item</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Item in source position</span>
+                        <div class="dx-status" style="text-align:center; padding:6px 10px; border-radius:4px; background:#f0f4ff; color:#4a5568; font-weight:600; font-size:0.85rem; margin-bottom:10px;">Ready</div>
                         <div class="draggable" dx-draggable="card" dx-data='{"id":1}'>
                             Drag me!
                         </div>
@@ -2389,17 +2390,19 @@
                     </div>
                 </div>
 
-                <!-- Example 2: Multiple items -->
+                <!-- Example 2: Multiple items — reorder by dragging into zone -->
                 <div class="example">
-                    <h4>2. Multiple Draggables</h4>
-                    <p>Drag multiple items to zone</p>
+                    <h4>2. Reorder Items</h4>
+                    <p>Drag each item into the zone to build an ordered list</p>
                     <div class="example-demo">
-                        <span class="original-value">State: 3 items in list</span>
-                        <div class="draggable" dx-draggable="item">Item 1</div>
-                        <div class="draggable" dx-draggable="item">Item 2</div>
-                        <div class="draggable" dx-draggable="item">Item 3</div>
-                        <div class="drop-zone" dx-drop-zone="itemzone" dx-accepts="item">
-                            Drop items here
+                        <div class="dx-status" style="text-align:center; padding:6px 10px; border-radius:4px; background:#f0f4ff; color:#4a5568; font-weight:600; font-size:0.85rem; margin-bottom:10px;">0 of 3 placed</div>
+                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                            <div class="draggable" dx-draggable="item" dx-revert="invalid" style="flex:1; text-align:center;">🍎 Apple</div>
+                            <div class="draggable" dx-draggable="item" dx-revert="invalid" style="flex:1; text-align:center;">🍊 Orange</div>
+                            <div class="draggable" dx-draggable="item" dx-revert="invalid" style="flex:1; text-align:center;">🍋 Lemon</div>
+                        </div>
+                        <div class="drop-zone" dx-drop-zone="itemzone" dx-accepts="item" style="min-height: 60px;">
+                            ↓ Drop items here in your preferred order
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
@@ -2408,18 +2411,23 @@
                     </div>
                 </div>
 
-                <!-- Example 3: Type filtering -->
+                <!-- Example 3: Type filtering — only matching types accepted -->
                 <div class="example">
-                    <h4>3. Type-Based Drops</h4>
-                    <p>Accept specific types</p>
-                    <div class="example-demo">
-                        <span class="original-value">State: Zone accepts images only</span>
-                        <div class="draggable" dx-draggable="image" style="background:#e74c3c;">Image</div>
-                        <div class="draggable" dx-draggable="text" style="background:#3498db;">Text</div>
-                        <div class="drop-zone" dx-drop-zone="imagezone" dx-accepts="image">Images Only</div>
+                    <h4>3. Type Filtering</h4>
+                    <p>Zone only accepts images — text snaps back</p>
+                    <div class="example-demo" id="type-filter-demo">
+                        <div class="dx-status" style="text-align:center; padding:6px 10px; border-radius:4px; background:#f0f4ff; color:#4a5568; font-weight:600; font-size:0.85rem; margin-bottom:10px;">Try both — only 📷 accepted</div>
+                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                            <div class="draggable" dx-draggable="image" dx-revert="invalid" style="background:#e74c3c; flex:1; text-align:center;">📷 Image</div>
+                            <div class="draggable" dx-draggable="text" dx-revert="invalid" style="background:#3498db; flex:1; text-align:center;">📝 Text</div>
+                        </div>
+                        <div class="drop-zone" dx-drop-zone="imagezone" dx-accepts="image" style="min-height: 50px;">
+                            📷 Images only — text will be rejected
+                        </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
                         <pre style="background: #fafafa; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; overflow-x: auto; border: 1px solid #e8e8e8; font-family: 'Inconsolata', 'Monaco', 'Courier New', monospace;">&lt;div dx-draggable="image"&gt;
+&lt;div dx-draggable="text"&gt;  &lt;!-- rejected by zone --&gt;
 &lt;div dx-drop-zone="imagezone" dx-accepts="image"&gt;</pre>
                     </div>
                 </div>
@@ -2429,7 +2437,7 @@
                     <h4>4. Keyboard Dragging</h4>
                     <p>Space + Arrow keys</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Keyboard accessible drag</span>
+                        <div class="dx-status" style="text-align:center; padding:6px 10px; border-radius:4px; background:#f0f4ff; color:#4a5568; font-weight:600; font-size:0.85rem; margin-bottom:10px;">Ready</div>
                         <div class="draggable" dx-draggable="kbd" tabindex="0">
                             Press Space, use arrows
                         </div>
@@ -2447,8 +2455,8 @@
                     <h4>5. Custom Ghost Image</h4>
                     <p>Custom drag preview</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Custom preview on drag</span>
-                        <div class="draggable" dx-draggable="custom" dx-ghost="custom">
+                        <div class="dx-status" style="text-align:center; padding:6px 10px; border-radius:4px; background:#f0f4ff; color:#4a5568; font-weight:600; font-size:0.85rem; margin-bottom:10px;">Ready</div>
+                        <div class="draggable" dx-draggable="custom" dx-ghost="custom" dx-revert="always">
                             Custom preview
                         </div>
                         <br>
@@ -2462,8 +2470,8 @@
                     <h4>6. Axis Constraint</h4>
                     <p>Horizontal-only drag</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Horizontal movement only</span>
-                        <div class="draggable" dx-draggable="slider" dx-axis="horizontal">
+                        <div class="dx-status" style="text-align:center; padding:6px 10px; border-radius:4px; background:#f0f4ff; color:#4a5568; font-weight:600; font-size:0.85rem; margin-bottom:10px;">Ready</div>
+                        <div class="draggable" dx-draggable="slider" dx-axis="horizontal" dx-revert="always">
                             ← Horizontal only →
                         </div>
                         <br>
@@ -2477,7 +2485,7 @@
                     <h4>7. Clone Mode</h4>
                     <p>Leave original in place</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Original stays, copy created</span>
+                        <div class="dx-status" style="text-align:center; padding:6px 10px; border-radius:4px; background:#f0f4ff; color:#4a5568; font-weight:600; font-size:0.85rem; margin-bottom:10px;">Ready</div>
                         <div class="draggable" dx-draggable="template" dx-clone="true">
                             Drag to copy
                         </div>
@@ -2495,7 +2503,7 @@
                     <h4>8. Revert Animation</h4>
                     <p>Return to start if invalid</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Reverts on invalid drop</span>
+                        <div class="dx-status" style="text-align:center; padding:6px 10px; border-radius:4px; background:#f0f4ff; color:#4a5568; font-weight:600; font-size:0.85rem; margin-bottom:10px;">Ready</div>
                         <div class="draggable" dx-draggable="revert" dx-revert="invalid">
                             Try dropping outside
                         </div>
@@ -2513,7 +2521,7 @@
                     <h4>9. Grid Snapping</h4>
                     <p>Snap to 50px grid</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Snaps to 50px increments</span>
+                        <div class="dx-status" style="text-align:center; padding:6px 10px; border-radius:4px; background:#f0f4ff; color:#4a5568; font-weight:600; font-size:0.85rem; margin-bottom:10px;">Ready</div>
                         <div class="draggable" dx-draggable="grid" dx-snap="50">
                             Snaps to grid
                         </div>
@@ -2528,7 +2536,7 @@
                     <h4>10. Drag Events</h4>
                     <p>Track drag lifecycle</p>
                     <div class="example-demo">
-                        <span class="original-value">State: Events logged on drag</span>
+                        <div class="dx-status" style="text-align:center; padding:6px 10px; border-radius:4px; background:#f0f4ff; color:#4a5568; font-weight:600; font-size:0.85rem; margin-bottom:10px;">Ready</div>
                         <div class="draggable" dx-draggable="tracked" id="dragTracked">
                             Drag to track events
                         </div>
@@ -3426,62 +3434,77 @@
     <script>
         // Demo UI event handlers and interactions
         document.addEventListener('DOMContentLoaded', function() {
-            // Handle dragX drop events - move or clone element to drop zone
+            // Drag status helper — updates the prominent status bar
+            const dxStatus = (el, text, color) => {
+                const s = el.closest('.example-demo')?.querySelector('.dx-status');
+                if (!s) return;
+                s.textContent = text;
+                s.style.background = color || '#f0f4ff';
+                s.style.color = color ? '#fff' : '#4a5568';
+            };
+
+            // Handle dragX drop events
             document.addEventListener('dx:drop', function(e) {
                 const { element, dropZone } = e.detail;
-                if (element && dropZone) {
-                    // Check if clone mode
-                    const isClone = element.hasAttribute('dx-clone') &&
-                                   element.getAttribute('dx-clone') !== 'false';
+                if (!element || !dropZone) return;
 
-                    if (isClone) {
-                        // Clone the element
-                        const clone = element.cloneNode(true);
-                        // Remove clone attribute from copy to prevent infinite cloning
-                        clone.removeAttribute('dx-clone');
-                        clone.style.opacity = '0.8';
-                        dropZone.appendChild(clone);
-                        // Update status text
-                        const statusEl = element.closest('.example-demo')?.querySelector('.original-value');
-                        if (statusEl) {
-                            statusEl.textContent = 'State: Copy created!';
-                            statusEl.style.color = '#9b59b6';
-                        }
+                const isClone = element.hasAttribute('dx-clone') &&
+                               element.getAttribute('dx-clone') !== 'false';
+
+                if (isClone) {
+                    const clone = element.cloneNode(true);
+                    clone.removeAttribute('dx-clone');
+                    clone.style.opacity = '0.8';
+                    dropZone.appendChild(clone);
+                    dxStatus(element, '✓ Copy created', '#9b59b6');
+                } else {
+                    dropZone.appendChild(element);
+                    const itemsInZone = dropZone.querySelectorAll('.draggable').length;
+                    const totalItems = element.closest('.example-demo')?.querySelectorAll('.draggable').length || 0;
+                    if (totalItems > 1) {
+                        const allPlaced = itemsInZone === totalItems;
+                        dxStatus(element, `${itemsInZone} of ${totalItems} placed${allPlaced ? ' ✓' : ''}`, allPlaced ? '#27ae60' : '#3b82f6');
                     } else {
-                        // Move element into drop zone
-                        dropZone.appendChild(element);
-                        // Update status text
-                        const statusEl = element.closest('.example-demo')?.querySelector('.original-value');
-                        if (statusEl) {
-                            statusEl.textContent = 'State: Item dropped!';
-                            statusEl.style.color = '#27ae60';
-                        }
+                        dxStatus(element, '✓ Dropped', '#27ae60');
                     }
                 }
             });
 
-            // Handle drag start for visual feedback
+            // Handle drag start
             document.addEventListener('dx:dragstart', function(e) {
-                const statusEl = e.detail.element?.closest('.example-demo')?.querySelector('.original-value');
-                if (statusEl) {
-                    statusEl.textContent = 'State: Dragging...';
-                    statusEl.style.color = '#3498db';
-                }
+                const el = e.detail.element;
+                if (!el) return;
+                el._dragOriginParent = el.parentElement;
+                el._dragOriginNext = el.nextElementSibling;
+                dxStatus(el, '⟳ Dragging…', '#3b82f6');
             });
 
-            // Handle drag end for status update
+            // Handle drag end — snap back rejected items
             document.addEventListener('dx:dragend', function(e) {
-                if (!e.detail.success) {
-                    const statusEl = e.detail.element?.closest('.example-demo')?.querySelector('.original-value');
-                    if (statusEl) {
-                        statusEl.textContent = 'State: Drag cancelled';
-                        statusEl.style.color = '#e74c3c';
-                        setTimeout(() => {
-                            statusEl.textContent = 'State: Item in source position';
-                            statusEl.style.color = '';
-                        }, 1500);
-                    }
+                const el = e.detail.element;
+                if (!el) return;
+
+                if (!e.detail.success && el._dragOriginParent) {
+                    el.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+                    el.style.opacity = '0.5';
+                    requestAnimationFrame(() => {
+                        if (el._dragOriginNext) {
+                            el._dragOriginParent.insertBefore(el, el._dragOriginNext);
+                        } else {
+                            el._dragOriginParent.appendChild(el);
+                        }
+                        el.style.opacity = '';
+                        el.style.transition = '';
+                    });
+
+                    const isTypeDemo = el.closest('#type-filter-demo');
+                    dxStatus(el, isTypeDemo ? '✗ Rejected — wrong type' : '✗ Cancelled', '#e74c3c');
+                    setTimeout(() => {
+                        dxStatus(el, isTypeDemo ? 'Try both — only 📷 accepted' : 'Ready');
+                    }, 2000);
                 }
+                delete el._dragOriginParent;
+                delete el._dragOriginNext;
             });
 
             // Date input/output type selectors
@@ -4302,8 +4325,9 @@
             }
 
             // Use Performance Observer API for Web Vitals
+            // Observers disconnect after 5s settling period — metrics reflect initial load only
             if ('PerformanceObserver' in window) {
-                // Observe paint events (FCP, LCP)
+                const observers = [];
                 try {
                     const paintObserver = new PerformanceObserver((list) => {
                         for (const entry of list.getEntries()) {
@@ -4314,8 +4338,8 @@
                         }
                     });
                     paintObserver.observe({ entryTypes: ['paint'] });
+                    observers.push(paintObserver);
 
-                    // Observe LCP
                     const lcpObserver = new PerformanceObserver((list) => {
                         const entries = list.getEntries();
                         const lastEntry = entries[entries.length - 1];
@@ -4323,8 +4347,8 @@
                         updatePerfDisplay();
                     });
                     lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+                    observers.push(lcpObserver);
 
-                    // Observe layout shifts for CLS
                     let clsValue = 0;
                     const clsObserver = new PerformanceObserver((list) => {
                         for (const entry of list.getEntries()) {
@@ -4336,11 +4360,10 @@
                         }
                     });
                     clsObserver.observe({ entryTypes: ['layout-shift'] });
+                    observers.push(clsObserver);
 
-                    // Observe long tasks for TBT
                     const longTaskObserver = new PerformanceObserver((list) => {
                         for (const entry of list.getEntries()) {
-                            // Tasks over 50ms contribute to TBT
                             const blockingTime = entry.duration - 50;
                             if (blockingTime > 0) {
                                 perfMetrics.tbt += blockingTime;
@@ -4349,6 +4372,13 @@
                         }
                     });
                     longTaskObserver.observe({ entryTypes: ['longtask'] });
+                    observers.push(longTaskObserver);
+
+                    // Freeze metrics after 5s — initial load measurement only
+                    setTimeout(() => {
+                        observers.forEach(o => o.disconnect());
+                        updatePerfDisplay();
+                    }, 5000);
 
                 } catch (e) {
                     console.warn('Some Performance Observer features not supported:', e);
