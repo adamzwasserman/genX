@@ -141,7 +141,6 @@ graph LR
 
 **External Dependencies:**
 - Browser APIs: MutationObserver, Fetch, Dynamic Import
-- CDN: Cloudflare Workers (for )
 - Optional: Service Worker API (for advanced caching)
 
 **No Framework Dependencies:** 
@@ -292,7 +291,6 @@ graph TB
 
 **Asynchronous:**
 - Module fetching (non-blocking)
--  (cached 99%+ of time)
 - ML pipeline (background process)
 
 **Event-Driven:**
@@ -763,7 +761,6 @@ graph TB
    - Mitigation: Domain-specific keys, rate limiting, usage monitoring
 
 5. **Pattern Injection**
-   - Risk: Malicious patterns designed to exploit 
    - Mitigation: Pattern validation, resource limits, sandboxing
 
 **Threats Outside Scope:**
@@ -946,7 +943,6 @@ tests/
 ├── integration/
 │   ├── bootloader-to-engine.test.js
 │   ├── engine-to-dom.test.js
-│   └── .test.js
 ├── e2e/
 │   ├── full-page-load.test.js
 │   ├── dynamic-content.test.js
@@ -984,7 +980,6 @@ Feature: Universal Bootloader Initialization
     Then the bundle should load from browser cache
     And total initialization time should be <5ms
 
-  Scenario:  fallback
     Given a page with genx bootloader script
     And the edge CDN is unreachable
     When the page finishes loading
@@ -1042,7 +1037,6 @@ suite
 // dev.config.js
 export default {
     cdnUrl: 'http://localhost:8787',  // Wrangler dev server
-    : false,             // Use local bundles
     telemetry: false,                   // No analytics
     caching: false,                     // Always fresh
     debug: true                         // Verbose logging
@@ -1054,7 +1048,6 @@ export default {
 // staging.config.js
 export default {
     cdnUrl: 'https://staging-cdn.genx.software',
-    : true,
     telemetry: true,
     caching: true,
     debug: true,
@@ -1067,7 +1060,6 @@ export default {
 // prod.config.js
 export default {
     cdnUrl: 'https://cdn.genx.software',
-    : true,
     telemetry: true,
     caching: true,
     debug: false,
@@ -1137,7 +1129,6 @@ alerts:
     duration: 10m
     action: notify_team
   
-  - name: _slow
     condition: p95_compilation_time > 500ms
     duration: 15m
     action: investigate

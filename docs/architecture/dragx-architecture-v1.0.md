@@ -1503,7 +1503,6 @@ document.addEventListener('touchmove', handler, { passive: true });
 **Network:**
 - Initial load: 3.8KB (one-time)
 - No runtime network calls
-- Optional : 1-2KB custom build
 
 ---
 

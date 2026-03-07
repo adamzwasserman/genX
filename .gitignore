@@ -40,3 +40,7 @@ coverage/
 
 # Size limit
 .size-limit.json
+
+# Proprietary (not for public distribution)
+proprietary/
+.wrangler/

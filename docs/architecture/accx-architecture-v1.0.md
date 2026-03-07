@@ -214,7 +214,6 @@ graph TB
 
 **Security Guarantees**:
 - All user content processing happens client-side
--  receives only transformation patterns, never PII
 - Subresource Integrity (SRI) hashes for CDN delivery
 - Content Security Policy (CSP) compatible
 - No cookies, no tracking, no analytics by default
@@ -1575,7 +1574,6 @@ const metrics = {
 | Risk | Impact | Probability | Mitigation |
 |------|--------|-------------|------------|
 | CDN outage | High | Low | Multiple CDN providers |
-|  downtime | Medium | Low | Graceful degradation to client-side |
 | Support overload | Medium | Medium | Comprehensive documentation |
 | Scaling issues | High | Medium | Horizontal scaling, caching |
 

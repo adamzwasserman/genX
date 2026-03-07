@@ -1890,7 +1890,6 @@ const cacheElement = (element, bindings) => {
 **Network**:
 - Initial load: 3KB (gzipped)
 - Zero runtime network usage
-- : Optional pre-optimization
 
 ---
 
@@ -2680,7 +2679,6 @@ bindx.formatter('currency', (value, options) => {
 
 - Integration with fmtX for automatic formatting in bindings
 - Integration with accX for accessibility in dynamic content
-- Integration with  for optimal binding paths
 - Tooling: VS Code extension for binding validation
 
 ---

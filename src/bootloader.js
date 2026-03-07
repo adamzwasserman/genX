@@ -647,76 +647,19 @@
                 stats.phases.initModules = performance.now() - phase5Start;
                 stats.modules = Array.from(loaded);
 
-                // Phase 6: Setup MutationObserver for dynamic content - uses domx-bridge if available
+                // Phase 6: Delegate dynamic content observation to domx-bridge
                 const phase6Start = performance.now();
-                if (window.genxConfig?.observe !== false) {
-                    // State for debouncing
-                    let _nodes = new Set();
-                    let _timeout = null;
-
-                    const callback = (mutations) => {
-                        // Collect affected roots to process after debounce
-                        for (const mutation of mutations) {
-                            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                                mutation.addedNodes.forEach(node => {
-                                    if (node && node.nodeType === Node.ELEMENT_NODE) _nodes.add(node);
-                                });
-                            }
-
-                            if (mutation.type === 'attributes' && mutation.target && mutation.target.nodeType === Node.ELEMENT_NODE) {
-                                _nodes.add(mutation.target);
-                            }
-                        }
-
-                        // Debounce rescan for aggregated nodes
-                        clearTimeout(_timeout);
-                        _timeout = setTimeout(async () => {
-                            try {
-                                const nodes = Array.from(_nodes || []);
-                                _nodes = new Set();
-
-                                // Build element list scoped to changed subtrees
-                                const selector = _buildUnifiedSelector();
-                                const elements = new Set();
-
-                                for (const node of nodes) {
-                                    try {
-                                        if (selector && node.matches && node.matches(selector)) elements.add(node);
-                                    } catch (e) {
-                                        // ignore invalid selector errors
-                                    }
-                                    if (selector) {
-                                        const found = Array.from(node.querySelectorAll(selector));
-                                        for (const f of found) elements.add(f);
-                                    }
+                if (window.genxConfig?.observe !== false && window.domxBridge) {
+                    window.domxBridge.subscribe('bootloader', () => {
+                        rescan(document).then(() => {
+                            const { needed: newModules } = scan();
+                            for (const prefix of newModules) {
+                                if (!loaded.has(prefix)) {
+                                    init(prefix);
                                 }
-
-                                // If nothing specific found, fall back to a full rescan
-                                const parsed = await rescan(elements.size ? Array.from(elements) : document);
-
-                                // Ensure any newly-needed modules are initialized
-                                const { needed: newModules } = scan();
-                                for (const prefix of newModules) {
-                                    if (!loaded.has(prefix)) {
-                                        init(prefix);
-                                    }
-                                }
-                            } catch (err) {
-                                console.error('genX: incremental rescan failed', err);
                             }
-                        }, 100);
-                    };
-
-                    // Use domx-bridge if available, fallback to native MutationObserver
-                    if (window.domxBridge) {
-                        window.domxBridge.subscribe('bootloader', callback, { childList: true });
-                    } else {
-                        const observer = new MutationObserver(callback);
-                        observer.observe(document.body, {
-                            childList: true,
-                            subtree: true
                         });
-                    }
+                    }, { childList: true });
                 }
                 stats.phases.setupObserver = performance.now() - phase6Start;
 
@@ -803,38 +746,6 @@
         });
     };
 
-    /**
-     *  integration (optional)
-     * Fetches optimized bundle from edge service
-     */
-    const  = async () => {
-        if (!window.genxConfig?.edge?.enabled) {
-            return false;
-        }
-
-        try {
-            const { needed } = scan();
-            const patterns = Array.from(needed).join(',');
-            const response = await fetch(window.genxConfig.edge.url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ patterns })
-            });
-
-            if (response.ok) {
-                const { bundle } = await response.json();
-                // Load optimized bundle
-                const script = document.createElement('script');
-                script.textContent = bundle;
-                document.head.appendChild(script);
-                return true;
-            }
-        } catch (err) {
-            console.warn('genX:  unavailable, using standard modules', err);
-        }
-
-        return false;
-    };
 
     /**
      * Get performance metrics
