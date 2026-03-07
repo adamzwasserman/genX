@@ -27,41 +27,20 @@ function kebabToCamel(str) {
  * Parse verbose attributes from an element
  * @param {HTMLElement} element - The element to parse
  * @param {string} prefix - The module prefix (fx, bx, ax, etc.)
- * @returns {Object} Configuration object extracted from attributes
+ * @param {Object} baseConfig - Base configuration from prior parsers in the pipeline
+ * @returns {Object} Configuration object merged with baseConfig
  */
-export function parse(element, prefix) {
-    const config = {};
+export function parse(element, prefix, baseConfig = {}) {
+    if (!element?.attributes) return baseConfig;
 
-    // Guard clause: return early if no element
-    if (!element || !element.attributes) {
-        return config;
-    }
-
-    // Iterate through all attributes on the element
-    const attrs = element.attributes;
-    for (let i = 0; i < attrs.length; i++) {
-        const attrName = attrs[i].name;
-        const attrValue = attrs[i].value;
-
-        // Check if attribute starts with the target prefix
-        if (attrName.startsWith(prefix + '-')) {
-            // Skip -opts and -raw attributes
-            if (attrName.endsWith('-opts') || attrName.endsWith('-raw')) {
-                continue;
-            }
-
-            // Extract the attribute key by removing prefix and hyphen
-            const key = attrName.substring(prefix.length + 1);
-
-            // Convert kebab-case to camelCase (e.g., phone-format → phoneFormat)
-            const camelKey = kebabToCamel(key);
-
-            // Add to config object with camelCase key
-            config[camelKey] = attrValue;
-        }
-    }
-
-    return config;
+    return {
+        ...baseConfig,
+        ...Object.fromEntries(
+            Array.from(element.attributes)
+                .filter(a => a.name.startsWith(prefix + '-') && !a.name.endsWith('-opts') && !a.name.endsWith('-raw'))
+                .map(a => [kebabToCamel(a.name.substring(prefix.length + 1)), a.value])
+        )
+    };
 }
 
 /**
