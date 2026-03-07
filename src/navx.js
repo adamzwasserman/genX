@@ -1237,8 +1237,9 @@ function removeAllGlobalListeners() {
         sentinel.style.position = 'absolute';
         sentinel.style.top = `-${offset}px`;
         sentinel.style.height = '1px';
-        sentinel.style.width = '100%';
+        sentinel.style.width = '1px';
         sentinel.style.pointerEvents = 'none';
+        sentinel.style.overflow = 'hidden';
 
         // Insert sentinel before the sticky element
         element.parentNode?.insertBefore(sentinel, element);
