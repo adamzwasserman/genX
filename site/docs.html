@@ -44,49 +44,60 @@
     @font-face{font-family:'JetBrains Mono-fallback';src:local('SF Mono'),local('Monaco'),local('Consolas'),local('Courier New');size-adjust:103%;ascent-override:95%;descent-override:24%;line-gap-override:0%}
     :root{--color-bg:#fafafa;--color-bg-warm:#f5f3f0;--color-white:#fff;--color-text:#333;--color-text-light:#666;--color-text-muted:#999;--color-border:#e8e4df;--color-accent:#c4463a;--font-sans:'Inter','Inter-fallback',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--font-mono:'JetBrains Mono','JetBrains Mono-fallback','SF Mono','Fira Code',monospace;--spacing-xs:.5rem;--spacing-sm:1rem;--spacing-md:2rem;--spacing-lg:4rem;--spacing-xl:6rem;--max-width:1200px;--transition:.2s ease}
     *{margin:0;padding:0;box-sizing:border-box}
-    html{font-size:16px}body{font-family:var(--font-sans);line-height:1.7;color:var(--color-text);background:var(--color-bg);-webkit-font-smoothing:antialiased}
-    h2{font-weight:400;line-height:1.3;letter-spacing:-.02em;font-size:1.75rem;margin-bottom:var(--spacing-md)}
+    html{font-size:16px;scroll-behavior:smooth}body{font-family:var(--font-sans);line-height:1.7;color:var(--color-text);background:var(--color-bg);-webkit-font-smoothing:antialiased}
+    h1{font-weight:400;line-height:1.3;letter-spacing:-.02em;font-size:2.25rem;margin-bottom:var(--spacing-sm)}
+    h2{font-weight:400;line-height:1.3;letter-spacing:-.02em;font-size:1.75rem;margin-top:var(--spacing-lg);margin-bottom:var(--spacing-sm);padding-top:var(--spacing-sm);border-top:1px solid var(--color-border)}
+    h3{font-weight:500;font-size:1.25rem;margin-top:var(--spacing-md);margin-bottom:var(--spacing-xs)}
+    h4{font-weight:500;font-size:1rem;margin-top:var(--spacing-sm);margin-bottom:var(--spacing-xs);color:var(--color-text-light)}
+    p{margin-bottom:var(--spacing-sm)}
     a{color:var(--color-text);text-decoration:none;border-bottom:1px solid var(--color-border)}
+    ul,ol{margin-bottom:var(--spacing-sm);padding-left:1.5rem}
+    li{margin-bottom:.25rem}
     .container{max-width:var(--max-width);margin:0 auto;padding:0 var(--spacing-md)}
     .header{padding:var(--spacing-sm) 0;position:sticky;top:0;background:var(--color-bg);z-index:100;border-bottom:1px solid var(--color-border)}
     .header__inner{display:flex;justify-content:space-between;align-items:center}
     .logo{font-size:1.5rem;font-weight:400;letter-spacing:-.03em;border:none}.logo .x{color:var(--color-accent)}
     .nav{display:flex;gap:var(--spacing-md)}.nav a{font-size:.9rem;color:var(--color-text-light);border:none;padding:var(--spacing-xs) 0;position:relative}
-    .docs{display:grid;grid-template-columns:250px 1fr;gap:var(--spacing-lg);min-height:calc(100vh - 80px)}
-    .docs__nav{padding:var(--spacing-md) 0;position:sticky;top:80px;height:fit-content}
-    .docs__nav-title{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--color-text-muted);margin-bottom:var(--spacing-sm)}
-    .docs__nav-list{list-style:none}.docs__nav-list a{display:block;padding:var(--spacing-xs) 0;font-size:.9rem;color:var(--color-text-light);border:none}
-    .docs__content{padding:var(--spacing-md) 0;max-width:800px}
-    pre,code{font-family:var(--font-mono);font-size:.875rem}
+    .docs{display:grid;grid-template-columns:260px 1fr;gap:var(--spacing-lg);min-height:calc(100vh - 80px)}
+    .docs__nav{padding:var(--spacing-md) 0;position:sticky;top:80px;height:fit-content;max-height:calc(100vh - 100px);overflow-y:auto}
+    .docs__nav-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--color-text-muted);margin-bottom:var(--spacing-xs);margin-top:var(--spacing-sm)}
+    .docs__nav-title:first-child{margin-top:0}
+    .docs__nav-list{list-style:none;padding-left:0}.docs__nav-list a{display:block;padding:.25rem 0;font-size:.85rem;color:var(--color-text-light);border:none;transition:color var(--transition)}
+    .docs__nav-list a:hover{color:var(--color-text)}
+    .docs__content{padding:var(--spacing-md) 0;max-width:850px;padding-bottom:var(--spacing-xl)}
+    pre,code{font-family:var(--font-mono);font-size:.8125rem}
     code{background:var(--color-bg-warm);padding:.125em .375em;border-radius:2px}
-    pre{background:var(--color-text);color:var(--color-bg);padding:var(--spacing-md);overflow-x:auto;line-height:1.5}
-    pre code{background:none;padding:0;color:inherit}
+    pre{background:var(--color-text);color:#e8e8e8;padding:var(--spacing-sm) var(--spacing-md);overflow-x:auto;line-height:1.5;margin-bottom:var(--spacing-sm);border-radius:2px}
+    pre code{background:none;padding:0;color:inherit;font-size:.8125rem}
+    .ref-table{width:100%;border-collapse:collapse;margin-bottom:var(--spacing-md);font-size:.875rem}
+    .ref-table th{text-align:left;padding:.5rem .75rem;background:var(--color-bg-warm);border-bottom:2px solid var(--color-border);font-weight:500;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-light)}
+    .ref-table td{padding:.5rem .75rem;border-bottom:1px solid var(--color-border);vertical-align:top}
+    .ref-table td code{font-size:.8rem}
+    .ref-table tr:last-child td{border-bottom:none}
+    .text-muted{color:var(--color-text-muted)}
+    .prefix-tag{display:inline-block;font-family:var(--font-mono);font-size:.75rem;background:var(--color-accent);color:var(--color-white);padding:.125rem .5rem;border-radius:2px;margin-bottom:var(--spacing-xs)}
+    .mt-md{margin-top:var(--spacing-md)}
+    .note{background:var(--color-bg-warm);border-left:3px solid var(--color-accent);padding:var(--spacing-sm) var(--spacing-md);margin-bottom:var(--spacing-sm);font-size:.9rem}
+    .note strong{color:var(--color-accent)}
+    .footer{padding:var(--spacing-md) 0;border-top:1px solid var(--color-border);margin-top:var(--spacing-lg)}
+    .footer__text{font-size:.8rem;color:var(--color-text-muted);text-align:center}
+    @media(max-width:768px){.docs{grid-template-columns:1fr}.docs__nav{position:static;max-height:none;border-bottom:1px solid var(--color-border);padding-bottom:var(--spacing-sm)}}
   </style>
-  <!-- Full CSS - non-blocking load (media swap avoids reflow) -->
+  <!-- Full CSS - non-blocking load -->
   <link rel="stylesheet" href="style.css" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="style.css"></noscript>
 
-  <!-- Structured Data - TechArticle -->
+  <!-- Structured Data -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": "genX Documentation",
     "description": "Complete documentation for genX - the declarative JavaScript library for frontend behavior",
-    "author": {
-      "@type": "Person",
-      "name": "Adam Wasserman"
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "genX",
-      "url": "https://genx.software"
-    },
+    "author": { "@type": "Person", "name": "Adam Wasserman" },
+    "publisher": { "@type": "Organization", "name": "genX", "url": "https://genx.software" },
     "mainEntityOfPage": "https://genx.software/docs.html",
-    "about": {
-      "@type": "SoftwareApplication",
-      "name": "genX"
-    }
+    "about": { "@type": "SoftwareApplication", "name": "genX" }
   }
   </script>
 </head>
@@ -112,500 +123,1339 @@
           <li><a href="#installation">Installation</a></li>
           <li><a href="#quick-start">Quick Start</a></li>
           <li><a href="#how-it-works">How It Works</a></li>
+          <li><a href="#configuration">Configuration</a></li>
         </ul>
 
-        <div class="docs__nav-title mt-md">Modules</div>
+        <div class="docs__nav-title">Attribute Syntax</div>
+        <ul class="docs__nav-list">
+          <li><a href="#notation-verbose">Verbose (default)</a></li>
+          <li><a href="#notation-colon">Colon (compact)</a></li>
+          <li><a href="#notation-json">JSON</a></li>
+          <li><a href="#notation-class">CSS Class</a></li>
+        </ul>
+
+        <div class="docs__nav-title">Modules</div>
         <ul class="docs__nav-list">
           <li><a href="#fmtx">fmtX &mdash; Formatting</a></li>
           <li><a href="#accx">accX &mdash; Accessibility</a></li>
-          <li><a href="#loadx">loadX &mdash; Loading States</a></li>
-          <li><a href="#navx">navX &mdash; Navigation</a></li>
-          <li><a href="#dragx">dragX &mdash; Drag & Drop</a></li>
           <li><a href="#bindx">bindX &mdash; Data Binding</a></li>
+          <li><a href="#dragx">dragX &mdash; Drag &amp; Drop</a></li>
+          <li><a href="#navx">navX &mdash; Navigation</a></li>
+          <li><a href="#loadx">loadX &mdash; Loading States</a></li>
           <li><a href="#tablex">tableX &mdash; Tables</a></li>
           <li><a href="#smartx">smartX &mdash; Auto-Format</a></li>
           <li><a href="#uix">uiX &mdash; UI Components</a></li>
         </ul>
 
-        <div class="docs__nav-title mt-md">Integration</div>
+        <div class="docs__nav-title">Architecture</div>
         <ul class="docs__nav-list">
-          <li><a href="#frameworks">Framework Compatibility</a></li>
-          <li><a href="#troubleshooting">Troubleshooting</a></li>
+          <li><a href="#bootloader">Bootloader</a></li>
+          <li><a href="#parsers">Parser Pipeline</a></li>
+          <li><a href="#mutation-observer">MutationObserver</a></li>
+          <li><a href="#error-handling">Error Handling</a></li>
         </ul>
 
-        <div class="docs__nav-title mt-md">Reference</div>
+        <div class="docs__nav-title">Integration</div>
+        <ul class="docs__nav-list">
+          <li><a href="#frameworks">Frameworks</a></li>
+          <li><a href="#htmx">HTMX</a></li>
+          <li><a href="#javascript-api">JavaScript API</a></li>
+        </ul>
+
+        <div class="docs__nav-title">Reference</div>
         <ul class="docs__nav-list">
           <li><a href="#browser-support">Browser Support</a></li>
           <li><a href="#performance">Performance</a></li>
+          <li><a href="#troubleshooting">Troubleshooting</a></li>
         </ul>
       </aside>
 
       <article class="docs__content">
         <h1>Documentation</h1>
-        <p class="text-muted">Everything you need to get started with genX.</p>
+        <p class="text-muted">Complete API reference for every genX module, attribute, and configuration option.</p>
+
+        <!-- ============================================================ -->
+        <!-- GETTING STARTED -->
+        <!-- ============================================================ -->
 
         <h2 id="installation">Installation</h2>
-        <p>Choose the installation method that works best for your project.</p>
 
-        <h3>Option 1: CDN (Recommended)</h3>
-        <p>The fastest way to get started. Add this script tag to your HTML:</p>
+        <h3>CDN (Recommended)</h3>
+        <p>Add the bootloader to your HTML. It auto-detects which modules your page needs and loads only those:</p>
         <pre><code>&lt;script src="https://cdn.genx.software/v1/bootloader.js" defer&gt;&lt;/script&gt;</code></pre>
         <p>The <code>defer</code> attribute ensures the script runs after the DOM is ready.</p>
 
-        <h3>Option 2: Self-Hosted</h3>
-        <p>Download and host the files yourself for full control:</p>
-        <pre><code># Clone the repository
-git clone https://github.com/adamzwasserman/genX.git
-
-# Copy source files to your project
-cp genX/src/*.js your-project/static/js/</code></pre>
-        <p>Then reference the bootloader in your HTML:</p>
+        <h3>Self-Hosted</h3>
+        <pre><code>git clone https://github.com/adamzwasserman/genX.git
+cd genX &amp;&amp; npm run build
+cp dist/* your-project/static/js/</code></pre>
         <pre><code>&lt;script src="/static/js/bootloader.js" defer&gt;&lt;/script&gt;</code></pre>
 
-        <h3>Option 3: npm (Coming Soon)</h3>
+        <h3>npm (Coming Soon)</h3>
         <pre><code>npm install @genx/core</code></pre>
 
         <h2 id="quick-start">Quick Start</h2>
-        <p>Once installed, you can immediately use genX attributes in your HTML:</p>
+        <p>Add genX attributes to any HTML element. No JavaScript required:</p>
         <pre><code>&lt;!DOCTYPE html&gt;
 &lt;html lang="en"&gt;
 &lt;head&gt;
-  &lt;meta charset="UTF-8"&gt;
-  &lt;title&gt;My Page&lt;/title&gt;
   &lt;script src="https://cdn.genx.software/v1/bootloader.js" defer&gt;&lt;/script&gt;
 &lt;/head&gt;
 &lt;body&gt;
-  &lt;!-- Currency formatting --&gt;
-  &lt;p&gt;Price: &lt;span fx-format="currency"&gt;99.99&lt;/span&gt;&lt;/p&gt;
 
-  &lt;!-- Phone number formatting --&gt;
-  &lt;p&gt;Call us: &lt;span fx-format="phone"&gt;5551234567&lt;/span&gt;&lt;/p&gt;
+  &lt;!-- Format a price --&gt;
+  &lt;span fx-format="currency"&gt;99.99&lt;/span&gt;
+  &lt;!-- Output: $99.99 --&gt;
 
-  &lt;!-- Date formatting --&gt;
-  &lt;p&gt;Published: &lt;span fx-format="date" fx-date-format="long"&gt;2024-03-15&lt;/span&gt;&lt;/p&gt;
+  &lt;!-- Add accessibility --&gt;
+  &lt;button ax-enhance="button" ax-label="Close dialog"&gt;&amp;times;&lt;/button&gt;
+
+  &lt;!-- Reactive data binding --&gt;
+  &lt;input type="text" bx-model="name"&gt;
+  &lt;p&gt;Hello, &lt;span bx-bind="name"&gt;&lt;/span&gt;!&lt;/p&gt;
+
+  &lt;!-- Sortable table --&gt;
+  &lt;table tx-sortable&gt;...&lt;/table&gt;
+
+  &lt;!-- Styled button --&gt;
+  &lt;button ux-enhance="button" ux-variant="primary"&gt;Click me&lt;/button&gt;
+
 &lt;/body&gt;
 &lt;/html&gt;</code></pre>
 
         <h2 id="how-it-works">How It Works</h2>
-        <p>genX uses a lightweight bootloader that:</p>
         <ol>
-          <li><strong>Scans</strong> your page for genX attributes when the DOM is ready</li>
-          <li><strong>Detects</strong> which modules are needed based on attribute prefixes</li>
-          <li><strong>Loads</strong> only the required modules on-demand</li>
-          <li><strong>Processes</strong> elements with the appropriate module</li>
-          <li><strong>Watches</strong> for dynamic content via a centralized MutationObserver (powered by <a href="https://github.com/adamzwasserman/domx">domx</a>)</li>
+          <li><strong>Scan</strong> &mdash; The bootloader scans the DOM for genX attributes (<code>fx-*</code>, <code>bx-*</code>, <code>ux-*</code>, etc.)</li>
+          <li><strong>Detect</strong> &mdash; Identifies which modules are needed based on attribute prefixes</li>
+          <li><strong>Load</strong> &mdash; Fetches only the required modules from CDN (parallel loading)</li>
+          <li><strong>Parse</strong> &mdash; Runs the parser pipeline (JSON &gt; Colon &gt; Verbose &gt; Class) to extract configuration</li>
+          <li><strong>Init</strong> &mdash; Initializes each module with parsed config. Prefers <code>autoInit()</code> (DATAOS pattern) to extract initial state from the DOM</li>
+          <li><strong>Watch</strong> &mdash; A centralized MutationObserver (via <a href="https://github.com/adamzwasserman/domx">domx-bridge</a>) watches for dynamically added elements</li>
         </ol>
-        <p>This means you only pay for what you use. If your page only uses <code>fx-*</code> attributes, only the fmtX module is loaded.</p>
-        <p class="text-muted"><strong>Architecture note:</strong> genX uses a single shared MutationObserver for all modules through domx-bridge, eliminating duplication and improving performance compared to per-module observers.</p>
+        <p>You only pay for what you use. If your page only has <code>fx-*</code> attributes, only fmtX is loaded.</p>
+
+        <h2 id="configuration">Configuration</h2>
+        <p>Optional. Set <code>window.genxConfig</code> <strong>before</strong> the bootloader script to customize behavior:</p>
+        <pre><code>&lt;script&gt;
+window.genxConfig = {
+  // Override module URLs
+  modulePaths: {
+    'fx': '/my-assets/fmtx.min.js',
+    'ux': '/my-assets/uix.min.js'
+  },
+
+  // CDN base URL (default: https://cdn.genx.software/v1)
+  cdn: 'https://cdn.genx.software/v1',
+
+  // Module-specific init options
+  modules: {
+    'fx': { locale: 'de-DE', currency: 'EUR' },
+    'lx': { minDisplayMs: 500 }
+  },
+
+  // Subresource Integrity hashes
+  sri: {
+    'fx': 'sha384-...'
+  },
+
+  // Enable/disable MutationObserver
+  observe: true,
+
+  // Log bootstrap performance timing
+  performance: { logging: true }
+};
+&lt;/script&gt;
+&lt;script src="https://cdn.genx.software/v1/bootloader.js" defer&gt;&lt;/script&gt;</code></pre>
+
+        <!-- ============================================================ -->
+        <!-- ATTRIBUTE SYNTAX -->
+        <!-- ============================================================ -->
+
+        <h2 id="notation-verbose">Notation: Verbose (Default)</h2>
+        <p>Each option is a separate HTML attribute with the module prefix. This is the most readable and the recommended style:</p>
+        <pre><code>&lt;span fx-format="currency" fx-currency="EUR" fx-decimals="2"&gt;1299.99&lt;/span&gt;
+
+&lt;div ax-enhance="field" ax-error="Required" ax-help="Enter your email"&gt;
+  &lt;input type="email"&gt;
+&lt;/div&gt;
+
+&lt;div dx-draggable="card" dx-data='{"id":123}' dx-snap="20" dx-ghost&gt;
+  Drag me
+&lt;/div&gt;</code></pre>
+
+        <h2 id="notation-colon">Notation: Colon (Compact)</h2>
+        <p>Values separated by colons follow a fixed cardinality order per module. Shorter to write, but less readable for complex configs:</p>
+        <pre><code>&lt;!-- fx order: format, currency, decimals, symbol --&gt;
+&lt;span fx-format="currency:EUR:2"&gt;1299.99&lt;/span&gt;
+
+&lt;!-- bx order: bind, debounce, throttle --&gt;
+&lt;input bx-model="search:300"&gt;</code></pre>
+
+        <h4>Cardinality Orders by Module</h4>
+        <table class="ref-table">
+          <thead><tr><th>Prefix</th><th>Order</th></tr></thead>
+          <tbody>
+            <tr><td><code>fx</code></td><td>format, currency, decimals, symbol</td></tr>
+            <tr><td><code>bx</code></td><td>bind, debounce, throttle</td></tr>
+            <tr><td><code>ax</code></td><td>label, icon, value, role</td></tr>
+            <tr><td><code>dx</code></td><td>type, id, style, group</td></tr>
+            <tr><td><code>lx</code></td><td>strategy, duration, mode</td></tr>
+            <tr><td><code>nx</code></td><td>type, label, href, target</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="notation-json">Notation: JSON</h2>
+        <p>Pass a JSON object via a <code>{prefix}-opts</code> attribute. Highest priority &mdash; overrides all other notations:</p>
+        <pre><code>&lt;span fx-opts='{"format":"currency","currency":"EUR","decimals":2}'&gt;1299.99&lt;/span&gt;
+
+&lt;div dx-opts='{"draggable":"card","ghost":true,"snap":20}'&gt;Drag me&lt;/div&gt;</code></pre>
+
+        <h2 id="notation-class">Notation: CSS Class</h2>
+        <p>Encode config in CSS class names using the module's class prefix. Lowest priority &mdash; other notations override:</p>
+        <pre><code>&lt;!-- class prefix 'fmt' maps to fx module --&gt;
+&lt;span class="fmt-currency-EUR-2"&gt;1299.99&lt;/span&gt;
+
+&lt;!-- class prefix 'bind' maps to bx module --&gt;
+&lt;input class="bind-search-300"&gt;</code></pre>
+        <table class="ref-table">
+          <thead><tr><th>Class Prefix</th><th>Module</th></tr></thead>
+          <tbody>
+            <tr><td><code>fmt-*</code></td><td>fmtX (fx)</td></tr>
+            <tr><td><code>acc-*</code></td><td>accX (ax)</td></tr>
+            <tr><td><code>bind-*</code></td><td>bindX (bx)</td></tr>
+            <tr><td><code>drag-*</code></td><td>dragX (dx)</td></tr>
+            <tr><td><code>load-*</code></td><td>loadX (lx)</td></tr>
+            <tr><td><code>nav-*</code></td><td>navX (nx)</td></tr>
+            <tr><td><code>table-*</code></td><td>tableX (tx)</td></tr>
+            <tr><td><code>ui-*</code></td><td>uiX (ux)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="note">
+          <strong>Parser priority:</strong> When multiple notations exist on the same element, they merge in order: JSON (highest) &gt; Colon &gt; Verbose &gt; Class (lowest). Higher priority values override lower.
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- FMTX -->
+        <!-- ============================================================ -->
 
         <h2 id="fmtx">fmtX &mdash; Formatting</h2>
-        <p class="text-muted">Prefix: <code>fx-*</code></p>
-        <p>Format text, numbers, dates, and phone numbers with simple attributes.</p>
+        <div class="prefix-tag">fx-*</div>
+        <p>Format numbers, currencies, dates, phone numbers, durations, file sizes, and more with declarative attributes.</p>
 
-        <h3>Currency</h3>
-        <pre><code>&lt;span fx-format="currency"&gt;1299.99&lt;/span&gt;
-&lt;!-- Output: $1,299.99 --&gt;
+        <h3>Core Attributes</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>fx-format</code></td><td>string</td><td>&mdash;</td><td>Required. The format type (see table below)</td></tr>
+            <tr><td><code>fx-type</code></td><td>string</td><td><code>auto</code></td><td>Input type conversion before formatting</td></tr>
+            <tr><td><code>fx-value</code></td><td>string</td><td>&mdash;</td><td>Override source value (instead of textContent)</td></tr>
+            <tr><td><code>fx-decimals</code></td><td>number</td><td><code>2</code></td><td>Decimal places</td></tr>
+            <tr><td><code>fx-currency</code></td><td>string</td><td><code>USD</code></td><td>ISO 4217 currency code</td></tr>
+            <tr><td><code>fx-phone-format</code></td><td>string</td><td><code>us</code></td><td>Phone format style</td></tr>
+            <tr><td><code>fx-date-format</code></td><td>string</td><td><code>short</code></td><td>Date format style</td></tr>
+            <tr><td><code>fx-time-format</code></td><td>string</td><td><code>short</code></td><td>Time format style</td></tr>
+            <tr><td><code>fx-duration-format</code></td><td>string</td><td><code>short</code></td><td>Duration format style</td></tr>
+            <tr><td><code>fx-binary</code></td><td>boolean</td><td><code>false</code></td><td>Use binary (1024) units for filesize</td></tr>
+          </tbody>
+        </table>
 
+        <h3>Format Types</h3>
+        <table class="ref-table">
+          <thead><tr><th>Value</th><th>Output Example</th><th>Options</th></tr></thead>
+          <tbody>
+            <tr><td><code>currency</code></td><td><code>$1,299.99</code></td><td><code>fx-currency</code>, <code>fx-decimals</code></td></tr>
+            <tr><td><code>number</code></td><td><code>1,234,567</code></td><td><code>fx-decimals</code></td></tr>
+            <tr><td><code>percent</code></td><td><code>15.6%</code></td><td><code>fx-decimals</code> (default: 0)</td></tr>
+            <tr><td><code>accounting</code></td><td><code>($1,234.56)</code></td><td><code>fx-currency</code></td></tr>
+            <tr><td><code>scientific</code></td><td><code>1.23e+3</code></td><td><code>fx-decimals</code></td></tr>
+            <tr><td><code>abbreviated</code></td><td><code>1.5M</code></td><td><code>fx-decimals</code> (default: 1)</td></tr>
+            <tr><td><code>compact</code></td><td><code>1.5 million</code></td><td>Uses <code>Intl.NumberFormat</code></td></tr>
+            <tr><td><code>fraction</code></td><td><code>2 1/2</code></td><td>Auto-detects or custom denominator</td></tr>
+            <tr><td><code>filesize</code></td><td><code>1.50 MB</code></td><td><code>fx-binary</code>, <code>fx-decimals</code></td></tr>
+            <tr><td><code>duration</code></td><td><code>1d 2h 3m</code></td><td><code>fx-duration-format</code></td></tr>
+            <tr><td><code>date</code></td><td><code>3/15/2024</code></td><td><code>fx-date-format</code></td></tr>
+            <tr><td><code>time</code></td><td><code>2:30 PM</code></td><td><code>fx-time-format</code></td></tr>
+            <tr><td><code>datetime</code></td><td><code>3/15/24, 2:30 PM</code></td><td>&mdash;</td></tr>
+            <tr><td><code>relative</code></td><td><code>2 days ago</code></td><td>&mdash;</td></tr>
+            <tr><td><code>phone</code></td><td><code>(555) 123-4567</code></td><td><code>fx-phone-format</code></td></tr>
+            <tr><td><code>ssn</code></td><td><code>***-**-1234</code></td><td>Masked by default</td></tr>
+            <tr><td><code>creditcard</code></td><td><code>****-****-****-1234</code></td><td>Masked by default</td></tr>
+            <tr><td><code>uppercase</code></td><td><code>HELLO WORLD</code></td><td>&mdash;</td></tr>
+            <tr><td><code>lowercase</code></td><td><code>hello world</code></td><td>&mdash;</td></tr>
+            <tr><td><code>capitalize</code></td><td><code>Hello World</code></td><td>&mdash;</td></tr>
+            <tr><td><code>truncate</code></td><td><code>Long text th...</code></td><td>length (default: 50), suffix (default: "...")</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Date Format Styles</h3>
+        <table class="ref-table">
+          <thead><tr><th>Style</th><th>Output</th></tr></thead>
+          <tbody>
+            <tr><td><code>short</code> (default)</td><td><code>12/31/2024</code></td></tr>
+            <tr><td><code>medium</code></td><td><code>Dec 31, 2024</code></td></tr>
+            <tr><td><code>long</code></td><td><code>December 31, 2024</code></td></tr>
+            <tr><td><code>full</code></td><td><code>Wednesday, December 31, 2024</code></td></tr>
+            <tr><td><code>iso</code></td><td><code>2024-12-31</code></td></tr>
+            <tr><td><code>custom</code></td><td>Uses pattern: <code>YYYY</code>, <code>MM</code>, <code>DD</code>, <code>HH</code>, <code>mm</code>, <code>ss</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Phone Format Styles</h3>
+        <table class="ref-table">
+          <thead><tr><th>Style</th><th>Output</th></tr></thead>
+          <tbody>
+            <tr><td><code>us</code> (default)</td><td><code>(555) 123-4567</code></td></tr>
+            <tr><td><code>us-dash</code></td><td><code>555-123-4567</code></td></tr>
+            <tr><td><code>us-dot</code></td><td><code>555.123.4567</code></td></tr>
+            <tr><td><code>intl</code></td><td><code>+1 555 123 4567</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Duration Format Styles</h3>
+        <table class="ref-table">
+          <thead><tr><th>Style</th><th>Output (for 90061 seconds)</th></tr></thead>
+          <tbody>
+            <tr><td><code>short</code> (default)</td><td><code>1d 1h 1m 1s</code></td></tr>
+            <tr><td><code>medium</code></td><td><code>1 day 1 hr 1 min 1 sec</code></td></tr>
+            <tr><td><code>long</code></td><td><code>1 day, 1 hour, 1 minute, 1 second</code></td></tr>
+            <tr><td><code>compact</code> / <code>clock</code></td><td><code>1:01:01:01</code> (D:HH:MM:SS)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Input Type Conversions</h3>
+        <p>Use <code>fx-type</code> to convert raw values before formatting:</p>
+        <table class="ref-table">
+          <thead><tr><th>Type</th><th>Conversion</th></tr></thead>
+          <tbody>
+            <tr><td><code>cents</code> / <code>pennies</code></td><td>Divide by 100 (integer cents to dollars)</td></tr>
+            <tr><td><code>unix</code> / <code>timestamp</code></td><td>Seconds since epoch &times; 1000</td></tr>
+            <tr><td><code>milliseconds</code> / <code>ms</code></td><td>Milliseconds since epoch</td></tr>
+            <tr><td><code>seconds</code> / <code>minutes</code> / <code>hours</code></td><td>Duration input conversion to seconds</td></tr>
+            <tr><td><code>bytes</code> / <code>kb</code> / <code>mb</code> / <code>gb</code></td><td>File size input conversion to bytes</td></tr>
+            <tr><td><code>decimal</code> / <code>fraction</code></td><td>Percent: value is already 0&ndash;1</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Examples</h3>
+        <pre><code>&lt;!-- Currency with locale override --&gt;
 &lt;span fx-format="currency" fx-currency="EUR"&gt;1299.99&lt;/span&gt;
 &lt;!-- Output: &euro;1,299.99 --&gt;
 
-&lt;span fx-format="currency" fx-currency="JPY"&gt;1299&lt;/span&gt;
-&lt;!-- Output: &yen;1,299 --&gt;</code></pre>
+&lt;!-- Cents stored as integers --&gt;
+&lt;span fx-format="currency" fx-type="cents"&gt;12999&lt;/span&gt;
+&lt;!-- Output: $129.99 --&gt;
 
-        <h3>Phone Numbers</h3>
-        <pre><code>&lt;span fx-format="phone"&gt;5551234567&lt;/span&gt;
-&lt;!-- Output: (555) 123-4567 --&gt;
+&lt;!-- Unix timestamp to relative date --&gt;
+&lt;span fx-format="relative" fx-type="unix"&gt;1710460800&lt;/span&gt;
+&lt;!-- Output: 2 days ago --&gt;
 
-&lt;span fx-format="phone" fx-phone-format="intl"&gt;15551234567&lt;/span&gt;
-&lt;!-- Output: +1 555 123 4567 --&gt;</code></pre>
+&lt;!-- File size with binary units --&gt;
+&lt;span fx-format="filesize" fx-binary&gt;1073741824&lt;/span&gt;
+&lt;!-- Output: 1.00 GiB --&gt;
 
-        <h3>Dates</h3>
-        <pre><code>&lt;span fx-format="date"&gt;2024-03-15&lt;/span&gt;
-&lt;!-- Output: 3/15/2024 --&gt;
+&lt;!-- Duration from minutes --&gt;
+&lt;span fx-format="duration" fx-type="minutes" fx-duration-format="long"&gt;90&lt;/span&gt;
+&lt;!-- Output: 1 hour, 30 minutes --&gt;
 
-&lt;span fx-format="date" fx-date-format="long"&gt;2024-03-15&lt;/span&gt;
-&lt;!-- Output: March 15, 2024 --&gt;
+&lt;!-- Abbreviated large numbers --&gt;
+&lt;span fx-format="abbreviated" fx-decimals="1"&gt;1500000&lt;/span&gt;
+&lt;!-- Output: 1.5M --&gt;
 
-&lt;span fx-format="date" fx-date-format="relative"&gt;2024-03-15&lt;/span&gt;
-&lt;!-- Output: 2 days ago --&gt;</code></pre>
+&lt;!-- Masked SSN --&gt;
+&lt;span fx-format="ssn"&gt;123456789&lt;/span&gt;
+&lt;!-- Output: ***-**-6789 --&gt;</code></pre>
 
-        <h3>Numbers</h3>
-        <pre><code>&lt;span fx-format="number"&gt;1234567&lt;/span&gt;
-&lt;!-- Output: 1,234,567 --&gt;
+        <h3>Value Source Priority</h3>
+        <ol>
+          <li><code>fx-raw</code> attribute (cached after first format)</li>
+          <li><code>fx-value</code> attribute</li>
+          <li>Element's <code>textContent</code></li>
+          <li>Element's <code>.value</code> property (for INPUT/TEXTAREA)</li>
+        </ol>
 
-&lt;span fx-format="number" fx-decimals="2"&gt;1234.5&lt;/span&gt;
-&lt;!-- Output: 1,234.50 --&gt;
-
-&lt;span fx-format="percent"&gt;0.156&lt;/span&gt;
-&lt;!-- Output: 15.6% --&gt;</code></pre>
+        <!-- ============================================================ -->
+        <!-- ACCX -->
+        <!-- ============================================================ -->
 
         <h2 id="accx">accX &mdash; Accessibility</h2>
-        <p class="text-muted">Prefix: <code>ax-*</code></p>
-        <p>Enhance accessibility with ARIA attributes and keyboard navigation.</p>
+        <div class="prefix-tag">ax-*</div>
+        <p>Enhance accessibility with ARIA attributes, keyboard navigation, focus management, and screen reader support.</p>
 
-        <pre><code>&lt;!-- Accessible button with label --&gt;
-&lt;button ax-label="Close dialog"&gt;&times;&lt;/button&gt;
+        <h3>Enhancement Types</h3>
+        <p>Set <code>ax-enhance</code> to one of these values to enable the corresponding behavior:</p>
+        <table class="ref-table">
+          <thead><tr><th>Type</th><th>Purpose</th><th>Key Attributes</th></tr></thead>
+          <tbody>
+            <tr><td><code>srOnly</code></td><td>Screen reader-only text</td><td><code>ax-sr-text</code></td></tr>
+            <tr><td><code>label</code></td><td>Auto ARIA labels (icon, abbreviation, currency, date)</td><td><code>ax-label</code></td></tr>
+            <tr><td><code>live</code></td><td>Live region for dynamic content</td><td><code>aria-live</code> set to <code>polite</code> or <code>assertive</code></td></tr>
+            <tr><td><code>field</code></td><td>Form field with error/help text, character count</td><td><code>ax-error</code>, <code>ax-help</code></td></tr>
+            <tr><td><code>nav</code></td><td>Navigation with active link detection</td><td><code>ax-nav-label</code>, <code>ax-current</code></td></tr>
+            <tr><td><code>button</code></td><td>Button accessibility (role, keyboard, loading state)</td><td><code>ax-label</code>, <code>ax-loading</code></td></tr>
+            <tr><td><code>table</code></td><td>Table headers, caption, sortable columns</td><td><code>ax-caption</code>, <code>ax-sortable</code></td></tr>
+            <tr><td><code>image</code></td><td>Alt text, decorative images, long descriptions</td><td><code>ax-decorative</code>, <code>ax-description</code></td></tr>
+            <tr><td><code>modal</code></td><td>Dialog with focus trap, Escape to close</td><td>Auto label from heading</td></tr>
+            <tr><td><code>skipLink</code></td><td>Skip-to-main-content link</td><td>Default target: <code>#main</code></td></tr>
+            <tr><td><code>landmark</code></td><td>Landmark roles (main, search, region)</td><td><code>ax-role</code>, <code>ax-landmark</code></td></tr>
+            <tr><td><code>focus</code></td><td>Enhanced focus indicators &amp; focus trapping</td><td>&mdash;</td></tr>
+            <tr><td><code>keyboardNav</code></td><td>Arrow key navigation with multi-select</td><td>Supports Shift+Arrow, Ctrl+A</td></tr>
+            <tr><td><code>tooltip</code></td><td>Accessible tooltips</td><td><code>ax-tooltip</code></td></tr>
+            <tr><td><code>input</code></td><td>Auto-label inputs from placeholder/name</td><td>&mdash;</td></tr>
+            <tr><td><code>error</code></td><td>Error announcements (<code>role="alert"</code>)</td><td>&mdash;</td></tr>
+            <tr><td><code>status</code></td><td>Status announcements (<code>role="status"</code>)</td><td>&mdash;</td></tr>
+          </tbody>
+        </table>
 
-&lt;!-- Accessible image --&gt;
-&lt;img src="chart.png" ax-desc="Sales chart showing 20% growth"&gt;
+        <h3>Attributes Reference</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>ax-enhance</code></td><td>&mdash;</td><td>Required. Enhancement type (see above)</td></tr>
+            <tr><td><code>ax-label</code></td><td>&mdash;</td><td>ARIA label text</td></tr>
+            <tr><td><code>ax-sr-text</code></td><td>&mdash;</td><td>Screen reader-only text content</td></tr>
+            <tr><td><code>ax-error</code></td><td>&mdash;</td><td>Error message for form fields</td></tr>
+            <tr><td><code>ax-help</code></td><td>&mdash;</td><td>Help text for form fields</td></tr>
+            <tr><td><code>ax-loading</code></td><td><code>false</code></td><td>Button loading state (<code>aria-busy</code>, <code>aria-disabled</code>)</td></tr>
+            <tr><td><code>ax-caption</code></td><td>&mdash;</td><td>Table caption text</td></tr>
+            <tr><td><code>ax-sortable</code></td><td>&mdash;</td><td>On <code>&lt;th&gt;</code> elements: make column sortable</td></tr>
+            <tr><td><code>ax-decorative</code></td><td><code>false</code></td><td>Mark image as decorative (empty alt, <code>aria-hidden</code>)</td></tr>
+            <tr><td><code>ax-description</code></td><td>&mdash;</td><td>Long description for images</td></tr>
+            <tr><td><code>ax-role</code></td><td><code>region</code></td><td>Landmark role</td></tr>
+            <tr><td><code>ax-tooltip</code></td><td>&mdash;</td><td>Tooltip text content</td></tr>
+            <tr><td><code>ax-nav-label</code></td><td><code>Navigation</code></td><td>ARIA label for nav elements</td></tr>
+            <tr><td><code>ax-current</code></td><td>&mdash;</td><td>Marks current page link</td></tr>
+          </tbody>
+        </table>
 
-&lt;!-- Skip to main content link --&gt;
-&lt;a href="#main" ax-skip-link&gt;Skip to content&lt;/a&gt;
+        <h3>Keyboard Navigation (keyboardNav)</h3>
+        <table class="ref-table">
+          <thead><tr><th>Key</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td>Arrow Down / Up</td><td>Move focus between items</td></tr>
+            <tr><td>Home / End</td><td>Jump to first / last item</td></tr>
+            <tr><td>Space</td><td>Toggle selection (multiselect)</td></tr>
+            <tr><td>Shift+Arrow</td><td>Range selection</td></tr>
+            <tr><td>Ctrl/Cmd+A</td><td>Select all items</td></tr>
+            <tr><td>Ctrl/Cmd+Arrow</td><td>Move focus without selecting</td></tr>
+          </tbody>
+        </table>
 
-&lt;!-- Live region for dynamic updates --&gt;
-&lt;div ax-live="polite"&gt;3 items in cart&lt;/div&gt;</code></pre>
+        <h3>Examples</h3>
+        <pre><code>&lt;!-- Form field with validation feedback --&gt;
+&lt;div ax-enhance="field" ax-error="Email is required" ax-help="We'll never share your email"&gt;
+  &lt;input type="email" maxlength="100" placeholder="you@example.com"&gt;
+&lt;/div&gt;
+&lt;!-- Sets aria-required, aria-invalid, aria-describedby --&gt;
+&lt;!-- Auto-adds character count for maxlength fields --&gt;
 
-        <h2 id="loadx">loadX &mdash; Loading States</h2>
-        <p class="text-muted">Prefix: <code>lx-*</code></p>
-        <p>Add loading indicators, skeletons, and progress states.</p>
+&lt;!-- Accessible icon button --&gt;
+&lt;button ax-enhance="button" ax-label="Close dialog"&gt;
+  &lt;i class="icon-close"&gt;&lt;/i&gt;
+&lt;/button&gt;
+&lt;!-- Sets role="button", aria-label, Enter/Space handlers --&gt;
 
-        <pre><code>&lt;!-- Loading spinner --&gt;
-&lt;button lx-loading="true"&gt;Submit&lt;/button&gt;
+&lt;!-- Image with long description --&gt;
+&lt;img src="chart.png" ax-enhance="image" ax-description="Bar chart showing Q1 sales at $2.4M, Q2 at $3.1M, Q3 at $2.8M"&gt;
 
-&lt;!-- Skeleton loading --&gt;
-&lt;div lx-skeleton="text"&gt;Loading content...&lt;/div&gt;
-&lt;div lx-skeleton="card"&gt;&lt;/div&gt;
+&lt;!-- Skip navigation link --&gt;
+&lt;a href="#main" ax-enhance="skipLink"&gt;Skip to content&lt;/a&gt;
 
-&lt;!-- Progress bar --&gt;
-&lt;div lx-progress="75"&gt;&lt;/div&gt;</code></pre>
-
-        <h2 id="navx">navX &mdash; Navigation</h2>
-        <p class="text-muted">Prefix: <code>nx-*</code></p>
-        <p>Client-side routing and navigation enhancement.</p>
-
-        <pre><code>&lt;!-- SPA-style navigation --&gt;
-&lt;a href="/about" nx-link&gt;About Us&lt;/a&gt;
-
-&lt;!-- Active state on current page --&gt;
-&lt;nav&gt;
-  &lt;a href="/" nx-link nx-active-class="current"&gt;Home&lt;/a&gt;
-  &lt;a href="/products" nx-link nx-active-class="current"&gt;Products&lt;/a&gt;
-&lt;/nav&gt;
-
-&lt;!-- Page content container --&gt;
-&lt;main nx-outlet&gt;&lt;/main&gt;</code></pre>
-
-        <h2 id="dragx">dragX &mdash; Drag & Drop</h2>
-        <p class="text-muted">Prefix: <code>dx-*</code></p>
-        <p>Make elements draggable with drop zone support.</p>
-
-        <pre><code>&lt;!-- Draggable item --&gt;
-&lt;div dx-draggable="card"&gt;Drag me&lt;/div&gt;
-
-&lt;!-- Drop zone --&gt;
-&lt;div dx-drop-zone="cards"&gt;Drop cards here&lt;/div&gt;
-
-&lt;!-- Sortable list --&gt;
-&lt;ul dx-sortable&gt;
-  &lt;li dx-draggable&gt;Item 1&lt;/li&gt;
-  &lt;li dx-draggable&gt;Item 2&lt;/li&gt;
-  &lt;li dx-draggable&gt;Item 3&lt;/li&gt;
+&lt;!-- Keyboard-navigable list --&gt;
+&lt;ul ax-enhance="keyboardNav"&gt;
+  &lt;li role="option" tabindex="0"&gt;Item 1&lt;/li&gt;
+  &lt;li role="option" tabindex="0"&gt;Item 2&lt;/li&gt;
+  &lt;li role="option" tabindex="0"&gt;Item 3&lt;/li&gt;
 &lt;/ul&gt;</code></pre>
 
-        <h2 id="bindx">bindX &mdash; Data Binding</h2>
-        <p class="text-muted">Prefix: <code>bx-*</code></p>
-        <p>Reactive data binding for dynamic content.</p>
+        <h3>Validation API</h3>
+        <p>Programmatic accessibility auditing:</p>
+        <pre><code>const issues = window.AccessX.validate(document.body);
+// Returns: [{ element, issue: "Image missing alt attribute", severity: "error" }]</code></pre>
 
-        <pre><code>&lt;!-- Two-way binding --&gt;
-&lt;input type="text" bx-model="name"&gt;
-&lt;p&gt;Hello, &lt;span bx-text="name"&gt;&lt;/span&gt;!&lt;/p&gt;
+        <!-- ============================================================ -->
+        <!-- BINDX -->
+        <!-- ============================================================ -->
+
+        <h2 id="bindx">bindX &mdash; Data Binding</h2>
+        <div class="prefix-tag">bx-*</div>
+        <p>Reactive data binding using JavaScript Proxy. Supports two-way binding, computed properties, conditionals, and form validation.</p>
+
+        <h3>Binding Attributes</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Description</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td><code>bx-model</code></td><td>Two-way binding (input &harr; data). Supports dot-notation paths and optional debounce.</td><td><code>bx-model="user.name"</code><br><code>bx-model="search:300"</code></td></tr>
+            <tr><td><code>bx-bind</code></td><td>One-way binding (data &rarr; DOM). Updates <code>textContent</code> (or <code>.value</code> for inputs).</td><td><code>bx-bind="user.fullName"</code></td></tr>
+            <tr><td><code>bx-computed</code></td><td>Computed expression with auto-dependency tracking. Requires <code>bx-bind</code> on same element.</td><td><code>bx-computed="price * qty"</code></td></tr>
+            <tr><td><code>bx-if</code></td><td>Conditional display. Expression returning truthy/falsy controls visibility.</td><td><code>bx-if="items.length > 0"</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Input Type Handling</h3>
+        <table class="ref-table">
+          <thead><tr><th>Input Type</th><th>Read</th><th>Write</th></tr></thead>
+          <tbody>
+            <tr><td><code>checkbox</code></td><td><code>el.checked</code> (boolean)</td><td><code>el.checked = bool</code></td></tr>
+            <tr><td><code>radio</code></td><td><code>el.value</code> (only if checked)</td><td><code>el.checked = (el.value === val)</code></td></tr>
+            <tr><td><code>number</code> / <code>range</code></td><td><code>parseFloat(el.value)</code></td><td><code>el.value = String(val)</code></td></tr>
+            <tr><td><code>text</code> / <code>textarea</code></td><td><code>el.value</code></td><td><code>el.value = String(val)</code></td></tr>
+            <tr><td><code>select</code></td><td><code>el.value</code></td><td><code>el.value = String(val)</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Form Validation</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>bx-form</code></td><td>Wrap a <code>&lt;form&gt;</code> to enable validation and state tracking</td></tr>
+            <tr><td><code>bx-validate</code></td><td>Validation rules (space-separated or JSON)</td></tr>
+            <tr><td><code>bx-form-submit</code></td><td>Global function name called on valid submit</td></tr>
+            <tr><td><code>bx-error-{rule}</code></td><td>Custom error message for a specific rule</td></tr>
+          </tbody>
+        </table>
+
+        <h4>Validation Rules</h4>
+        <table class="ref-table">
+          <thead><tr><th>Rule</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>required</code></td><td>Non-empty value</td></tr>
+            <tr><td><code>email</code></td><td>Valid email format</td></tr>
+            <tr><td><code>url</code></td><td>Valid URL</td></tr>
+            <tr><td><code>number</code></td><td>Valid number</td></tr>
+            <tr><td><code>integer</code></td><td>Valid integer</td></tr>
+            <tr><td><code>alpha</code></td><td>Letters only</td></tr>
+            <tr><td><code>alphanumeric</code></td><td>Letters and digits only</td></tr>
+            <tr><td><code>phone</code></td><td>Phone number (min 10 digits)</td></tr>
+            <tr><td><code>min:N</code></td><td>Numeric minimum</td></tr>
+            <tr><td><code>max:N</code></td><td>Numeric maximum</td></tr>
+            <tr><td><code>minLength:N</code></td><td>Minimum string length</td></tr>
+            <tr><td><code>maxLength:N</code></td><td>Maximum string length</td></tr>
+            <tr><td><code>pattern:regex</code></td><td>Regex pattern match</td></tr>
+            <tr><td><code>custom:fnName</code></td><td>Custom validator function from data</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Form State</h3>
+        <p>When using <code>bx-form</code>, a <code>formState</code> object is automatically created in the reactive data:</p>
+        <pre><code>data.formState = {
+  pristine: true,       // Never modified
+  dirty: false,         // User has changed fields
+  valid: true,          // All validation passes
+  invalid: false,       // Any field fails
+  errors: {},           // { fieldPath: ["Error message"] }
+  touched: Set()        // Field names the user has interacted with
+}</code></pre>
+
+        <h4>CSS Classes (auto-applied)</h4>
+        <table class="ref-table">
+          <thead><tr><th>Class</th><th>Applied To</th></tr></thead>
+          <tbody>
+            <tr><td><code>.bx-pristine</code> / <code>.bx-dirty</code></td><td>Form element</td></tr>
+            <tr><td><code>.bx-valid</code> / <code>.bx-invalid</code></td><td>Form and individual fields</td></tr>
+            <tr><td><code>.bx-error</code></td><td>Invalid fields</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Events</h3>
+        <table class="ref-table">
+          <thead><tr><th>Event</th><th>Detail</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><code>bx-form-valid</code></td><td><code>{ data: formData }</code></td><td>Form submitted and validation passes</td></tr>
+            <tr><td><code>bx-form-invalid</code></td><td><code>{ errors: {...} }</code></td><td>Form submitted and validation fails</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Examples</h3>
+        <pre><code>&lt;!-- Two-way binding with debounce --&gt;
+&lt;input type="text" bx-model="search:300" placeholder="Search..."&gt;
+&lt;p&gt;Searching for: &lt;span bx-bind="search"&gt;&lt;/span&gt;&lt;/p&gt;
+
+&lt;!-- Computed property --&gt;
+&lt;input type="number" bx-model="price"&gt;
+&lt;input type="number" bx-model="quantity"&gt;
+&lt;p&gt;Total: &lt;span bx-computed="price * quantity" bx-bind="total"&gt;&lt;/span&gt;&lt;/p&gt;
 
 &lt;!-- Conditional display --&gt;
-&lt;div bx-show="isLoggedIn"&gt;Welcome back!&lt;/div&gt;
+&lt;div bx-if="items.length > 0"&gt;You have items in your cart.&lt;/div&gt;
+&lt;div bx-if="items.length === 0"&gt;Your cart is empty.&lt;/div&gt;
 
-&lt;!-- List rendering --&gt;
-&lt;ul bx-for="item in items"&gt;
-  &lt;li bx-text="item.name"&gt;&lt;/li&gt;
+&lt;!-- Form with validation --&gt;
+&lt;form bx-form bx-form-submit="handleSignup"&gt;
+  &lt;input type="email" bx-model="email"
+         bx-validate="required email"
+         bx-error-required="Email is required"
+         bx-error-email="Enter a valid email"&gt;
+  &lt;input type="password" bx-model="password"
+         bx-validate="required minLength:8"&gt;
+  &lt;button type="submit" bx-if="formState.valid"&gt;Sign Up&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+
+        <h3>DATAOS Pattern</h3>
+        <p>bindX extracts initial state directly from the DOM. Input values become the initial reactive data:</p>
+        <pre><code>&lt;!-- The DOM IS the initial state --&gt;
+&lt;input type="text" bx-model="user.name" value="John"&gt;
+&lt;input type="number" bx-model="age" value="30"&gt;
+&lt;input type="checkbox" bx-model="newsletter" checked&gt;
+
+&lt;!-- Automatically creates: { user: { name: "John" }, age: 30, newsletter: true } --&gt;</code></pre>
+
+        <!-- ============================================================ -->
+        <!-- DRAGX -->
+        <!-- ============================================================ -->
+
+        <h2 id="dragx">dragX &mdash; Drag &amp; Drop</h2>
+        <div class="prefix-tag">dx-*</div>
+        <p>Drag-and-drop with spatial indexing (quad-tree), ghost images, snap-to-grid, axis constraints, and full keyboard accessibility.</p>
+
+        <h3>Draggable Attributes</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>dx-draggable</code></td><td>string</td><td>&mdash;</td><td>Required. Type identifier for the draggable element</td></tr>
+            <tr><td><code>dx-data</code></td><td>JSON</td><td><code>{}</code></td><td>Custom data payload (passed to drop handler)</td></tr>
+            <tr><td><code>dx-handle</code></td><td>CSS selector</td><td>&mdash;</td><td>Restrict drag initiation to a handle element</td></tr>
+            <tr><td><code>dx-ghost</code></td><td>boolean</td><td><code>false</code></td><td>Show ghost image during drag (canvas-based)</td></tr>
+            <tr><td><code>dx-snap</code></td><td>number</td><td>&mdash;</td><td>Snap to grid (px). Empty or <code>"true"</code> = 10px</td></tr>
+            <tr><td><code>dx-axis</code></td><td>string</td><td>&mdash;</td><td><code>horizontal</code> or <code>vertical</code> constraint</td></tr>
+            <tr><td><code>dx-revert</code></td><td>string</td><td><code>never</code></td><td><code>always</code>, <code>invalid</code>, or <code>never</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Drop Zone Attributes</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>dx-drop-zone</code></td><td>string</td><td>&mdash;</td><td>Required. Drop zone identifier</td></tr>
+            <tr><td><code>dx-accepts</code></td><td>string</td><td><code>*</code></td><td>Comma-separated list of accepted draggable types. <code>*</code> = accept all</td></tr>
+            <tr><td><code>dx-priority</code></td><td>number</td><td><code>0</code></td><td>Higher priority wins when zones overlap</td></tr>
+            <tr><td><code>dx-sort</code></td><td>boolean</td><td><code>false</code></td><td>Enable sortable behavior within the zone</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Events</h3>
+        <table class="ref-table">
+          <thead><tr><th>Event</th><th>Fired On</th><th>Detail</th></tr></thead>
+          <tbody>
+            <tr><td><code>dx:dragstart</code></td><td>Draggable element</td><td><code>{ element, type, data, x, y }</code></td></tr>
+            <tr><td><code>dx:drop</code></td><td>Drop zone</td><td><code>{ element, dropZone, type, data, x, y }</code></td></tr>
+            <tr><td><code>dx:dragend</code></td><td>Draggable element</td><td><code>{ element, dropZone, success, cancelled }</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>CSS Classes (auto-applied)</h3>
+        <table class="ref-table">
+          <thead><tr><th>Class</th><th>Applied When</th></tr></thead>
+          <tbody>
+            <tr><td><code>dx-dragging</code></td><td>Element is being dragged</td></tr>
+            <tr><td><code>dx-drag-over</code></td><td>Drop zone has a draggable hovering over it</td></tr>
+            <tr><td><code>dx-keyboard-dragging</code></td><td>Element is being dragged via keyboard</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Keyboard Accessibility</h3>
+        <table class="ref-table">
+          <thead><tr><th>Key</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td>Arrow keys</td><td>Move dragged element</td></tr>
+            <tr><td>Tab</td><td>Cycle to next drop zone</td></tr>
+            <tr><td>Enter</td><td>Drop on current/focused zone</td></tr>
+            <tr><td>Escape</td><td>Cancel drag</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Examples</h3>
+        <pre><code>&lt;!-- Draggable card with ghost and custom data --&gt;
+&lt;div dx-draggable="task" dx-data='{"id":42,"status":"todo"}' dx-ghost&gt;
+  Task #42: Fix login bug
+&lt;/div&gt;
+
+&lt;!-- Drop zone that only accepts "task" type --&gt;
+&lt;div dx-drop-zone="in-progress" dx-accepts="task"&gt;
+  In Progress
+&lt;/div&gt;
+
+&lt;!-- Constrained drag with snap --&gt;
+&lt;div dx-draggable="slider" dx-axis="horizontal" dx-snap="10"&gt;
+  &lt;span dx-handle&gt;|||&lt;/span&gt; Slider Handle
+&lt;/div&gt;
+
+&lt;!-- Sortable list --&gt;
+&lt;ul dx-drop-zone="items" dx-sort&gt;
+  &lt;li dx-draggable="item"&gt;Item 1&lt;/li&gt;
+  &lt;li dx-draggable="item"&gt;Item 2&lt;/li&gt;
+  &lt;li dx-draggable="item"&gt;Item 3&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;!-- Event handling --&gt;
-&lt;button bx-on:click="handleClick"&gt;Click me&lt;/button&gt;</code></pre>
+&lt;!-- Listen for drops --&gt;
+&lt;script&gt;
+document.addEventListener('dx:drop', e =&gt; {
+  console.log('Dropped:', e.detail.type, 'on:', e.detail.dropZone.id);
+  console.log('Data:', e.detail.data);
+});
+&lt;/script&gt;</code></pre>
+
+        <!-- ============================================================ -->
+        <!-- NAVX -->
+        <!-- ============================================================ -->
+
+        <h2 id="navx">navX &mdash; Navigation</h2>
+        <div class="prefix-tag">nx-*</div>
+        <p>Client-side navigation, breadcrumbs, tabs, scroll spy, sticky headers, mobile menus, dropdowns, and pagination.</p>
+
+        <h3>Feature Types</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>nx-nav</code></td><td>Navigation with active link tracking</td></tr>
+            <tr><td><code>nx-breadcrumb</code></td><td>Hierarchical breadcrumbs (auto, trail, or data-parent)</td></tr>
+            <tr><td><code>nx-tabs</code></td><td>Accessible tab navigation (arrow keys, Home/End)</td></tr>
+            <tr><td><code>nx-scroll-spy</code></td><td>Highlight nav links as sections scroll into view</td></tr>
+            <tr><td><code>nx-sticky</code></td><td>Sticky header with stuck-state detection</td></tr>
+            <tr><td><code>nx-mobile</code></td><td>Hamburger menu with focus trap</td></tr>
+            <tr><td><code>nx-dropdown</code></td><td>Dropdown menus with keyboard navigation</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Navigation (nx-nav)</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>nx-nav-activeClass</code></td><td><code>nx-active</code></td><td>CSS class for the active link</td></tr>
+            <tr><td><code>nx-nav-exact</code></td><td><code>false</code></td><td>Require exact path match</td></tr>
+            <tr><td><code>nx-nav-smoothScroll</code></td><td><code>true</code></td><td>Enable smooth scrolling for anchor links</td></tr>
+            <tr><td><code>nx-confirm</code></td><td>&mdash;</td><td>Show confirmation dialog before navigating</td></tr>
+            <tr><td><code>nx-shortcut</code></td><td>&mdash;</td><td>Keyboard shortcut (e.g., <code>ctrl+h</code>)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Breadcrumbs (nx-breadcrumb)</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>nx-breadcrumb</code></td><td><code>auto</code></td><td>Mode: <code>hierarchical</code>, <code>trail</code>, <code>data-parent</code></td></tr>
+            <tr><td><code>nx-breadcrumb-separator</code></td><td><code>&gt;</code></td><td>HTML separator between items</td></tr>
+            <tr><td><code>nx-breadcrumb-rootLabel</code></td><td><code>Home</code></td><td>Label for the root/home link</td></tr>
+            <tr><td><code>nx-breadcrumb-schema</code></td><td><code>false</code></td><td>Include Schema.org structured data</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Sticky Headers (nx-sticky)</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>nx-sticky-top</code></td><td><code>0</code></td><td>Top offset when stuck</td></tr>
+            <tr><td><code>nx-sticky-zIndex</code></td><td><code>1000</code></td><td>Z-index when stuck</td></tr>
+            <tr><td><code>nx-sticky-stickyClass</code></td><td><code>nx-stuck</code></td><td>CSS class when element is stuck</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Scroll Spy (nx-scroll-spy)</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>nx-scroll-spy-threshold</code></td><td><code>0.5</code></td><td>IntersectionObserver threshold</td></tr>
+            <tr><td><code>nx-scroll-spy-activeClass</code></td><td><code>nx-active</code></td><td>CSS class for active link</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Mobile Menu (nx-mobile)</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>nx-mobile-preventScroll</code></td><td><code>true</code></td><td>Prevent body scroll when menu is open</td></tr>
+            <tr><td><code>nx-mobile-closeOnClick</code></td><td><code>true</code></td><td>Close menu when a link is clicked</td></tr>
+            <tr><td><code>nx-mobile-closeOnOutsideClick</code></td><td><code>true</code></td><td>Close menu on outside click</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Events</h3>
+        <table class="ref-table">
+          <thead><tr><th>Event</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><code>nx:navigate</code></td><td>Link click in <code>nx-nav</code></td></tr>
+            <tr><td><code>nx:tab-change</code></td><td>Tab selected in <code>nx-tabs</code></td></tr>
+            <tr><td><code>nx:page-change</code></td><td>Page button clicked in pagination</td></tr>
+            <tr><td><code>nx:content-loaded</code></td><td>Lazy content loaded in <code>nx-dropdown</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Examples</h3>
+        <pre><code>&lt;!-- Nav with active link detection --&gt;
+&lt;nav nx-nav nx-nav-activeClass="current"&gt;
+  &lt;a href="/"&gt;Home&lt;/a&gt;
+  &lt;a href="/products"&gt;Products&lt;/a&gt;
+  &lt;a href="/contact"&gt;Contact&lt;/a&gt;
+&lt;/nav&gt;
+
+&lt;!-- Auto-generated breadcrumbs from URL path --&gt;
+&lt;nav nx-breadcrumb="hierarchical" nx-breadcrumb-separator="/"&gt;&lt;/nav&gt;
+
+&lt;!-- Sticky header with stuck detection --&gt;
+&lt;header nx-sticky nx-sticky-stickyClass="is-stuck"&gt;
+  &lt;h1&gt;Page Title&lt;/h1&gt;
+&lt;/header&gt;
+
+&lt;!-- Scroll spy sidebar --&gt;
+&lt;nav nx-scroll-spy nx-scroll-spy-threshold="0.3"&gt;
+  &lt;a href="#section1"&gt;Section 1&lt;/a&gt;
+  &lt;a href="#section2"&gt;Section 2&lt;/a&gt;
+  &lt;a href="#section3"&gt;Section 3&lt;/a&gt;
+&lt;/nav&gt;
+
+&lt;!-- Mobile hamburger menu --&gt;
+&lt;div nx-mobile&gt;
+  &lt;button data-mobile-trigger&gt;Menu&lt;/button&gt;
+  &lt;nav data-mobile-menu&gt;
+    &lt;a href="/"&gt;Home&lt;/a&gt;
+    &lt;a href="/about"&gt;About&lt;/a&gt;
+  &lt;/nav&gt;
+&lt;/div&gt;
+
+&lt;!-- Dropdown with keyboard nav --&gt;
+&lt;div nx-dropdown&gt;
+  &lt;button data-dropdown-trigger&gt;Options&lt;/button&gt;
+  &lt;ul data-dropdown-menu&gt;
+    &lt;li&gt;&lt;a href="#"&gt;Edit&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href="#"&gt;Delete&lt;/a&gt;&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/div&gt;</code></pre>
+
+        <!-- ============================================================ -->
+        <!-- LOADX -->
+        <!-- ============================================================ -->
+
+        <h2 id="loadx">loadX &mdash; Loading States</h2>
+        <div class="prefix-tag">lx-*</div>
+        <p>Loading spinners, skeleton screens, progress bars, and fade states. Auto-detects async operations (fetch, XHR, HTMX, forms).</p>
+
+        <h3>Attributes</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>lx-strategy</code></td><td>string</td><td>&mdash;</td><td><code>spinner</code>, <code>skeleton</code>, <code>progress</code>, or <code>fade</code></td></tr>
+            <tr><td><code>lx-loading</code></td><td>boolean</td><td>&mdash;</td><td>Mark element as having a loading state</td></tr>
+            <tr><td><code>lx-spinner-type</code></td><td>string</td><td><code>circle</code></td><td><code>circle</code>, <code>dots</code>, or <code>bars</code></td></tr>
+            <tr><td><code>lx-spinner-size</code></td><td>string</td><td><code>medium</code></td><td><code>small</code>, <code>medium</code>, or <code>large</code></td></tr>
+            <tr><td><code>lx-spinner-color</code></td><td>CSS color</td><td>&mdash;</td><td>Spinner color</td></tr>
+            <tr><td><code>lx-rows</code></td><td>number</td><td><code>auto</code></td><td>Number of skeleton rows (auto-detects from content)</td></tr>
+            <tr><td><code>lx-animate</code></td><td>boolean</td><td><code>true</code></td><td>Animate skeleton shimmer</td></tr>
+            <tr><td><code>lx-value</code></td><td>number</td><td>&mdash;</td><td>Progress bar current value</td></tr>
+            <tr><td><code>lx-max</code></td><td>number</td><td><code>100</code></td><td>Progress bar maximum</td></tr>
+            <tr><td><code>lx-progress-mode</code></td><td>string</td><td><code>determinate</code></td><td><code>determinate</code> or <code>indeterminate</code></td></tr>
+            <tr><td><code>lx-duration</code></td><td>number</td><td><code>300</code></td><td>Fade duration in ms</td></tr>
+            <tr><td><code>lx-message</code></td><td>string</td><td><code>Loading...</code></td><td>Loading message text (fade strategy)</td></tr>
+            <tr><td><code>lx-urgent</code></td><td>boolean</td><td><code>false</code></td><td>Use <code>aria-live="assertive"</code> for announcements</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Auto-Detection</h3>
+        <p>loadX can automatically show loading states for async operations:</p>
+        <table class="ref-table">
+          <thead><tr><th>Source</th><th>Detection</th></tr></thead>
+          <tbody>
+            <tr><td>Fetch API</td><td>Intercepts <code>fetch()</code> calls</td></tr>
+            <tr><td>XMLHttpRequest</td><td>Monitors XHR open/send</td></tr>
+            <tr><td>HTMX</td><td>Listens to <code>htmx:beforeRequest</code> / <code>htmx:afterSwap</code></td></tr>
+            <tr><td>Forms</td><td>Monitors form submit events</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Configuration</h3>
+        <pre><code>window.genxConfig = {
+  modules: {
+    'lx': {
+      minDisplayMs: 300,        // Minimum time to show loading indicator
+      autoDetect: {
+        fetch: true,            // Monitor fetch API
+        xhr: true,              // Monitor XMLHttpRequest
+        htmx: true,             // Monitor HTMX events
+        forms: true             // Monitor form submissions
+      },
+      preventCLS: true          // Use ResizeObserver to prevent layout shift
+    }
+  }
+};</code></pre>
+
+        <h3>Accessibility</h3>
+        <ul>
+          <li>Creates ARIA live region (<code>#lx-live-region</code>) for screen reader announcements</li>
+          <li>Announces "Loading" on apply, "Loading complete" on remove</li>
+          <li>Respects <code>prefers-reduced-motion</code> (shows static text instead of animation)</li>
+          <li>Progress bars include <code>role="progressbar"</code>, <code>aria-valuenow</code>, <code>aria-valuemax</code></li>
+        </ul>
+
+        <h3>Examples</h3>
+        <pre><code>&lt;!-- Spinner --&gt;
+&lt;button lx-strategy="spinner" lx-spinner-type="dots" lx-spinner-size="small"&gt;
+  Submitting...
+&lt;/button&gt;
+
+&lt;!-- Skeleton loading --&gt;
+&lt;div lx-strategy="skeleton" lx-rows="3"&gt;
+  Content loading...
+&lt;/div&gt;
+
+&lt;!-- Progress bar --&gt;
+&lt;div lx-strategy="progress" lx-value="75" lx-max="100"&gt;&lt;/div&gt;
+
+&lt;!-- Indeterminate progress --&gt;
+&lt;div lx-strategy="progress" lx-progress-mode="indeterminate"&gt;&lt;/div&gt;
+
+&lt;!-- Fade with message --&gt;
+&lt;div lx-strategy="fade" lx-duration="500" lx-message="Please wait..."&gt;
+  Page content
+&lt;/div&gt;</code></pre>
+
+        <!-- ============================================================ -->
+        <!-- TABLEX -->
+        <!-- ============================================================ -->
 
         <h2 id="tablex">tableX &mdash; Tables</h2>
-        <p class="text-muted">Prefix: <code>tx-*</code></p>
-        <p>Enhanced tables with sorting, filtering, and pagination.</p>
+        <div class="prefix-tag">tx-*</div>
+        <p>Table sorting (multi-column), client-side pagination, search filtering, and virtual scrolling for large datasets.</p>
 
-        <pre><code>&lt;table tx-sortable&gt;
+        <h3>Attributes</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>tx-sortable</code></td><td>boolean</td><td>&mdash;</td><td>On <code>&lt;table&gt;</code>: enable sorting on all columns. On <code>&lt;th&gt;</code>: enable on that column only.</td></tr>
+            <tr><td><code>tx-paginate</code></td><td>boolean</td><td>&mdash;</td><td>Enable client-side pagination</td></tr>
+            <tr><td><code>tx-per-page</code></td><td>number</td><td><code>10</code></td><td>Rows per page</td></tr>
+            <tr><td><code>tx-filterable</code></td><td>boolean</td><td>&mdash;</td><td>Enable search/filter input</td></tr>
+            <tr><td><code>tx-filter-columns</code></td><td>string</td><td>all</td><td>Comma-separated column names to search</td></tr>
+            <tr><td><code>tx-filter-debounce</code></td><td>number</td><td><code>300</code></td><td>Filter input debounce delay (ms)</td></tr>
+            <tr><td><code>tx-virtual</code></td><td>string</td><td><code>auto</code></td><td><code>true</code>, <code>false</code>, or <code>auto</code> (auto-enables for &gt;1000 rows)</td></tr>
+            <tr><td><code>tx-buffer</code></td><td>number</td><td><code>10</code></td><td>Buffer rows above/below viewport (virtual scroll)</td></tr>
+            <tr><td><code>data-value</code></td><td>string</td><td>&mdash;</td><td>On <code>&lt;td&gt;</code>: override sort value (instead of textContent)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Sorting Behavior</h3>
+        <ul>
+          <li><strong>Click</strong> a header: cycles through ascending &rarr; descending &rarr; clear</li>
+          <li><strong>Shift+Click</strong>: multi-column sort (adds/toggles column to sort stack)</li>
+          <li><strong>Keyboard</strong>: Space or Enter on focused header to sort</li>
+          <li><strong>Auto-detection</strong>: Column types detected from first 10 non-empty values (number, date, or string)</li>
+        </ul>
+
+        <h3>CSS Classes (auto-applied)</h3>
+        <table class="ref-table">
+          <thead><tr><th>Class</th><th>Applied To</th></tr></thead>
+          <tbody>
+            <tr><td><code>tx-sortable</code></td><td>Sortable headers (cursor: pointer)</td></tr>
+            <tr><td><code>tx-sort-active</code></td><td>Currently sorted column header</td></tr>
+            <tr><td><code>tx-sort-asc</code> / <code>tx-sort-desc</code></td><td>Sort direction indicator</td></tr>
+            <tr><td><code>tx-pagination</code></td><td>Generated pagination container</td></tr>
+            <tr><td><code>tx-filter-input</code></td><td>Generated search input</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Events</h3>
+        <table class="ref-table">
+          <thead><tr><th>Event</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><code>tx:virtual-scroll</code></td><td>Viewport change during virtual scroll</td></tr>
+            <tr><td><code>tx:performance</code></td><td>Performance metrics available</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Examples</h3>
+        <pre><code>&lt;!-- Sortable + paginated + filterable table --&gt;
+&lt;table tx-sortable tx-paginate tx-per-page="25" tx-filterable&gt;
   &lt;thead&gt;
     &lt;tr&gt;
-      &lt;th tx-sort="name"&gt;Name&lt;/th&gt;
-      &lt;th tx-sort="date" tx-sort-type="date"&gt;Date&lt;/th&gt;
-      &lt;th tx-sort="price" tx-sort-type="number"&gt;Price&lt;/th&gt;
+      &lt;th&gt;Name&lt;/th&gt;
+      &lt;th&gt;Date&lt;/th&gt;
+      &lt;th&gt;Price&lt;/th&gt;
     &lt;/tr&gt;
   &lt;/thead&gt;
   &lt;tbody&gt;
     &lt;tr&gt;
       &lt;td&gt;Widget&lt;/td&gt;
       &lt;td&gt;2024-03-15&lt;/td&gt;
-      &lt;td&gt;29.99&lt;/td&gt;
+      &lt;td data-value="29.99"&gt;$29.99&lt;/td&gt;
     &lt;/tr&gt;
-    &lt;!-- More rows --&gt;
+    &lt;!-- more rows --&gt;
   &lt;/tbody&gt;
 &lt;/table&gt;
 
-&lt;!-- With pagination --&gt;
-&lt;table tx-sortable tx-paginate="10"&gt;
+&lt;!-- Sort only specific columns --&gt;
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th tx-sortable&gt;Name&lt;/th&gt;
+      &lt;th&gt;Description&lt;/th&gt;
+      &lt;th tx-sortable&gt;Price&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
   &lt;!-- ... --&gt;
+&lt;/table&gt;
+
+&lt;!-- Virtual scroll for large datasets --&gt;
+&lt;table tx-sortable tx-virtual="true" tx-buffer="20"&gt;
+  &lt;!-- 10,000+ rows --&gt;
 &lt;/table&gt;</code></pre>
 
+        <!-- ============================================================ -->
+        <!-- SMARTX -->
+        <!-- ============================================================ -->
+
         <h2 id="smartx">smartX &mdash; Auto-Format</h2>
-        <p class="text-muted">Prefix: <code>sx-*</code></p>
-        <p>Automatically detect and format content based on patterns.</p>
+        <div class="prefix-tag">sx-*</div>
+        <p>Automatically detect content type (currency, date, phone, email, URL, percentage, number) and apply formatting with a confidence score.</p>
 
-        <pre><code>&lt;!-- Auto-detect formatting --&gt;
-&lt;span sx-auto&gt;$1,234.56&lt;/span&gt;
-&lt;span sx-auto&gt;(555) 123-4567&lt;/span&gt;
-&lt;span sx-auto&gt;2024-03-15&lt;/span&gt;
-&lt;span sx-auto&gt;user@example.com&lt;/span&gt;
-
-&lt;!-- Smart links --&gt;
-&lt;span sx-linkify&gt;Visit https://example.com&lt;/span&gt;</code></pre>
-
-        <h2 id="uix">uiX &mdash; UI Components</h2>
-        <p class="text-muted">Prefix: <code>ux-*</code></p>
-        <p>A complete UI component library with declarative attributes. Most components are pure CSS/HTML. Interactive components use <strong>declarative HTML triggers</strong> &mdash; no custom JavaScript required.</p>
-
-        <h3>Button</h3>
-        <pre><code>&lt;!-- Basic variants --&gt;
-&lt;button ux-enhance="button" ux-variant="primary"&gt;Primary&lt;/button&gt;
-&lt;button ux-enhance="button" ux-variant="secondary"&gt;Secondary&lt;/button&gt;
-&lt;button ux-enhance="button" ux-variant="danger"&gt;Danger&lt;/button&gt;
-
-&lt;!-- Sizes --&gt;
-&lt;button ux-enhance="button" ux-variant="primary" ux-size="sm"&gt;Small&lt;/button&gt;
-&lt;button ux-enhance="button" ux-variant="primary" ux-size="lg"&gt;Large&lt;/button&gt;
-
-&lt;!-- Custom colors --&gt;
-&lt;button ux-enhance="button" ux-bg="pink" ux-hover-bg="hotpink"&gt;Pink&lt;/button&gt;</code></pre>
-
-        <h3>Badge &amp; Avatar</h3>
-        <pre><code>&lt;!-- Badge --&gt;
-&lt;span ux-enhance="badge" ux-variant="success"&gt;Active&lt;/span&gt;
-&lt;span ux-enhance="badge" ux-bg="purple" ux-color="white"&gt;Custom&lt;/span&gt;
-
-&lt;!-- Avatar with initials --&gt;
-&lt;div ux-enhance="avatar" ux-size="lg" ux-bg="teal"&gt;JD&lt;/div&gt;
-
-&lt;!-- Avatar with image --&gt;
-&lt;div ux-enhance="avatar" ux-size="xl"&gt;
-  &lt;img src="profile.jpg" alt="Jane Doe"&gt;
-&lt;/div&gt;</code></pre>
-
-        <h3>Card</h3>
-        <pre><code>&lt;!-- Basic card with auto-generated header --&gt;
-&lt;div ux-enhance="card" ux-title="My Card"&gt;
-  Card content goes here.
-&lt;/div&gt;
-
-&lt;!-- Styled card --&gt;
-&lt;div ux-enhance="card" ux-title="Styled" ux-header-bg="primary" ux-header-color="white" ux-elevated&gt;
-  Content with elevated shadow.
-&lt;/div&gt;</code></pre>
-
-        <h3>Modal</h3>
-        <pre><code>&lt;!-- Declarative HTML triggers - no custom JavaScript required --&gt;
-&lt;button ux-opens="#my-modal"&gt;Open Modal&lt;/button&gt;
-
-&lt;div ux-enhance="modal" ux-title="Confirm Action" id="my-modal"&gt;
-  &lt;p&gt;Are you sure you want to continue?&lt;/p&gt;
-  &lt;button ux-closes&gt;Cancel&lt;/button&gt;
-  &lt;button ux-closes&gt;Confirm&lt;/button&gt;
-&lt;/div&gt;</code></pre>
-        <p><code>ux-opens="#id"</code> opens a modal/drawer. <code>ux-closes</code> closes the nearest parent (or specify <code>ux-closes="#id"</code>).</p>
-
-        <h3>Tabs</h3>
-        <pre><code>&lt;!-- Simple tabs - auto-generates tab buttons --&gt;
-&lt;div ux-enhance="tabs" ux-tabs="Home, Profile, Settings" id="my-tabs"&gt;
-  &lt;div&gt;Home content&lt;/div&gt;
-  &lt;div&gt;Profile content&lt;/div&gt;
-  &lt;div&gt;Settings content&lt;/div&gt;
-&lt;/div&gt;
-
-&lt;!-- External tab selection (declarative) --&gt;
-&lt;button ux-selects="#my-tabs" ux-tab="Settings"&gt;Go to Settings&lt;/button&gt;
-
-&lt;!-- Custom colors --&gt;
-&lt;div ux-enhance="tabs" ux-tabs="Tab 1, Tab 2" ux-active-bg="primary" ux-active-color="white"&gt;
-  &lt;div&gt;Content 1&lt;/div&gt;
-  &lt;div&gt;Content 2&lt;/div&gt;
-&lt;/div&gt;</code></pre>
-        <p>Use <code>ux-selects="#id" ux-tab="name"</code> to switch tabs from anywhere. Or use <code>ux-index="0"</code> for index-based selection.</p>
-
-        <h3>Accordion</h3>
-        <pre><code>&lt;div ux-enhance="accordion" id="my-accordion"&gt;
-  &lt;div class="ux-accordion__item"&gt;
-    &lt;button class="ux-accordion__header"&gt;Section 1&lt;/button&gt;
-    &lt;div class="ux-accordion__content"&gt;Content 1&lt;/div&gt;
-  &lt;/div&gt;
-  &lt;div class="ux-accordion__item"&gt;
-    &lt;button class="ux-accordion__header"&gt;Section 2&lt;/button&gt;
-    &lt;div class="ux-accordion__content"&gt;Content 2&lt;/div&gt;
-  &lt;/div&gt;
-&lt;/div&gt;
-
-&lt;!-- External toggle (declarative) --&gt;
-&lt;button ux-toggles="#my-accordion" ux-index="0"&gt;Toggle Section 1&lt;/button&gt;</code></pre>
-        <p>Use <code>ux-toggles="#id" ux-index="n"</code> to toggle accordion items from anywhere.</p>
-
-        <h3>Dropdown</h3>
-        <pre><code>&lt;div ux-enhance="dropdown" id="my-dropdown"&gt;
-  &lt;button class="ux-dropdown__trigger"&gt;Options&lt;/button&gt;
-  &lt;div class="ux-dropdown__menu"&gt;
-    &lt;a href="#" class="ux-dropdown__item"&gt;Edit&lt;/a&gt;
-    &lt;a href="#" class="ux-dropdown__item"&gt;Delete&lt;/a&gt;
-  &lt;/div&gt;
-&lt;/div&gt;
-
-&lt;!-- External toggle (declarative) --&gt;
-&lt;button ux-toggles="#my-dropdown"&gt;Toggle Dropdown&lt;/button&gt;</code></pre>
-
-        <h3>Form Inputs</h3>
-        <pre><code>&lt;!-- Enhanced input --&gt;
-&lt;input ux-enhance="input" ux-size="lg" placeholder="Large input"&gt;
-
-&lt;!-- Input with error state (red border) --&gt;
-&lt;input ux-enhance="input" ux-error="true" placeholder="Invalid input"&gt;
-
-&lt;!-- Input with success state (green border) --&gt;
-&lt;input ux-enhance="input" ux-success="true" placeholder="Valid input"&gt;
-
-&lt;!-- Textarea --&gt;
-&lt;textarea ux-enhance="textarea" ux-focus-border="primary"&gt;&lt;/textarea&gt;
-
-&lt;!-- Textarea with error/success states --&gt;
-&lt;textarea ux-enhance="textarea" ux-error="true"&gt;&lt;/textarea&gt;
-&lt;textarea ux-enhance="textarea" ux-success="true"&gt;&lt;/textarea&gt;
-
-&lt;!-- Select --&gt;
-&lt;select ux-enhance="select"&gt;
-  &lt;option&gt;Option 1&lt;/option&gt;
-  &lt;option&gt;Option 2&lt;/option&gt;
-&lt;/select&gt;
-
-&lt;!-- Select with error/success states --&gt;
-&lt;select ux-enhance="select" ux-error="true"&gt;...&lt;/select&gt;
-&lt;select ux-enhance="select" ux-success="true"&gt;...&lt;/select&gt;
-
-&lt;!-- Checkbox with label --&gt;
-&lt;input type="checkbox" ux-enhance="checkbox" ux-label="Accept terms"&gt;
-
-&lt;!-- Switch toggle --&gt;
-&lt;input type="checkbox" ux-enhance="switch" ux-label="Dark mode" ux-on-bg="success"&gt;</code></pre>
-
-        <h3>Navigation</h3>
-        <pre><code>&lt;!-- Nav component --&gt;
-&lt;nav ux-enhance="nav" ux-active-bg="primary" ux-active-color="white"&gt;
-  &lt;a href="/" class="ux-nav__item is-active"&gt;Home&lt;/a&gt;
-  &lt;a href="/about" class="ux-nav__item"&gt;About&lt;/a&gt;
-  &lt;a href="/contact" class="ux-nav__item"&gt;Contact&lt;/a&gt;
-&lt;/nav&gt;
-
-&lt;!-- Breadcrumb --&gt;
-&lt;nav ux-enhance="breadcrumb"&gt;
-  &lt;a href="/" class="ux-breadcrumb__item"&gt;Home&lt;/a&gt;
-  &lt;span class="ux-breadcrumb__separator"&gt;/&lt;/span&gt;
-  &lt;a href="/products" class="ux-breadcrumb__item"&gt;Products&lt;/a&gt;
-  &lt;span class="ux-breadcrumb__separator"&gt;/&lt;/span&gt;
-  &lt;span class="ux-breadcrumb__item"&gt;Shoes&lt;/span&gt;
-&lt;/nav&gt;</code></pre>
-
-        <h3>Tooltip &amp; Spinner</h3>
-        <pre><code>&lt;!-- Tooltip --&gt;
-&lt;span ux-enhance="tooltip" ux-content="Helpful tip!" ux-bg="dark"&gt;Hover me&lt;/span&gt;
-&lt;span ux-enhance="tooltip" ux-content="Large tip" ux-size="lg"&gt;Hover&lt;/span&gt;
-
-&lt;!-- Spinner --&gt;
-&lt;div ux-enhance="spinner"&gt;&lt;/div&gt;
-&lt;div ux-enhance="spinner" ux-size="lg" ux-color="primary"&gt;&lt;/div&gt;</code></pre>
-
-        <h3>Color Customization</h3>
-        <p>All uiX components support color customization via attributes:</p>
-        <pre><code>&lt;!-- Use named colors --&gt;
-&lt;button ux-enhance="button" ux-bg="tomato"&gt;Tomato&lt;/button&gt;
-
-&lt;!-- Use hex colors --&gt;
-&lt;span ux-enhance="badge" ux-bg="#6366f1" ux-color="white"&gt;Indigo&lt;/span&gt;
-
-&lt;!-- Use variant names (maps to design tokens) --&gt;
-&lt;button ux-enhance="button" ux-bg="primary"&gt;Primary&lt;/button&gt;
-&lt;button ux-enhance="button" ux-bg="success"&gt;Success&lt;/button&gt;
-&lt;button ux-enhance="button" ux-bg="danger"&gt;Danger&lt;/button&gt;
-
-&lt;!-- Auto-contrast: text color auto-calculated from background --&gt;
-&lt;span ux-enhance="badge" ux-bg="yellow"&gt;Auto dark text&lt;/span&gt;
-&lt;span ux-enhance="badge" ux-bg="navy"&gt;Auto light text&lt;/span&gt;</code></pre>
-        <p>Variant names: <code>primary</code>, <code>secondary</code>, <code>success</code>, <code>danger</code>, <code>warning</code>, <code>info</code>, <code>neutral</code></p>
-
-        <h3>Declarative HTML Triggers</h3>
-        <p>Control interactive components with declarative HTML attributes - no custom JavaScript required:</p>
-        <table style="width: 100%; margin-bottom: 1.5rem;">
-          <thead>
-            <tr>
-              <th style="text-align: left; padding: 0.5rem;">Attribute</th>
-              <th style="text-align: left; padding: 0.5rem;">Action</th>
-              <th style="text-align: left; padding: 0.5rem;">Example</th>
-            </tr>
-          </thead>
+        <h3>Attributes</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
           <tbody>
-            <tr>
-              <td style="padding: 0.5rem;"><code>ux-opens="#id"</code></td>
-              <td style="padding: 0.5rem;">Opens modal/drawer</td>
-              <td style="padding: 0.5rem;"><code>&lt;button ux-opens="#my-modal"&gt;</code></td>
-            </tr>
-            <tr>
-              <td style="padding: 0.5rem;"><code>ux-closes</code></td>
-              <td style="padding: 0.5rem;">Closes nearest modal/drawer</td>
-              <td style="padding: 0.5rem;"><code>&lt;button ux-closes&gt;Cancel&lt;/button&gt;</code></td>
-            </tr>
-            <tr>
-              <td style="padding: 0.5rem;"><code>ux-toggles="#id"</code></td>
-              <td style="padding: 0.5rem;">Toggles dropdown/accordion</td>
-              <td style="padding: 0.5rem;"><code>&lt;button ux-toggles="#menu"&gt;</code></td>
-            </tr>
-            <tr>
-              <td style="padding: 0.5rem;"><code>ux-selects="#id" ux-tab="name"</code></td>
-              <td style="padding: 0.5rem;">Selects tab by name</td>
-              <td style="padding: 0.5rem;"><code>&lt;button ux-selects="#tabs" ux-tab="Settings"&gt;</code></td>
-            </tr>
+            <tr><td><code>fx-format="smart"</code></td><td>string</td><td>&mdash;</td><td>Trigger smart detection via fmtX</td></tr>
+            <tr><td><code>fx-smart-threshold</code></td><td>number</td><td><code>75</code></td><td>Minimum confidence (0&ndash;100) to apply formatting</td></tr>
+            <tr><td><code>fx-smart-types</code></td><td>string</td><td>all</td><td>Comma-separated list of allowed types</td></tr>
           </tbody>
         </table>
 
-        <h3>CSS-Driven Components</h3>
-        <p>These components are primarily CSS-driven with minimal JavaScript enhancement:</p>
+        <h3>Detection Types &amp; Confidence</h3>
+        <table class="ref-table">
+          <thead><tr><th>Type</th><th>Patterns</th><th>Confidence Range</th></tr></thead>
+          <tbody>
+            <tr><td><code>email</code></td><td><code>user@domain.com</code></td><td>100</td></tr>
+            <tr><td><code>url</code></td><td><code>https://example.com</code></td><td>100</td></tr>
+            <tr><td><code>percentage</code></td><td><code>45.67%</code></td><td>100</td></tr>
+            <tr><td><code>date</code></td><td>ISO, US, named months</td><td>75&ndash;98</td></tr>
+            <tr><td><code>currency</code></td><td><code>$1234</code>, <code>100 euros</code></td><td>60&ndash;95</td></tr>
+            <tr><td><code>phone</code></td><td>International, US formats</td><td>40&ndash;95</td></tr>
+            <tr><td><code>number</code></td><td><code>1,234</code>, <code>123.45</code></td><td>50&ndash;85</td></tr>
+            <tr><td><code>text</code></td><td>Fallback</td><td>0</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Configuration</h3>
+        <pre><code>&lt;script&gt;
+// Configure after module loads
+window.addEventListener('genx:ready', () =&gt; {
+  window.SmartX.configure({
+    threshold: 80,          // Raise confidence threshold
+    logTarget: 'console'    // Log low-confidence detections
+  });
+});
+&lt;/script&gt;</code></pre>
+
+        <h3>Examples</h3>
+        <pre><code>&lt;!-- Auto-detect and format --&gt;
+&lt;span fx-format="smart"&gt;$1,234.56&lt;/span&gt;
+&lt;!-- Detected: currency (confidence: 95), formatted --&gt;
+
+&lt;span fx-format="smart"&gt;(555) 123-4567&lt;/span&gt;
+&lt;!-- Detected: phone (confidence: 90), formatted --&gt;
+
+&lt;span fx-format="smart"&gt;2024-03-15&lt;/span&gt;
+&lt;!-- Detected: date (confidence: 98), formatted --&gt;
+
+&lt;!-- Restrict to specific types --&gt;
+&lt;span fx-format="smart" fx-smart-types="currency,number"&gt;42.50&lt;/span&gt;
+
+&lt;!-- Higher threshold for strict matching --&gt;
+&lt;span fx-format="smart" fx-smart-threshold="90"&gt;maybe a phone&lt;/span&gt;
+&lt;!-- Below threshold: left unformatted --&gt;</code></pre>
+
+        <h3>Data Attributes Set</h3>
+        <p>After detection, smartX sets these attributes on the element for inspection:</p>
         <ul>
-          <li><strong>Visual:</strong> badge, avatar, spinner, skeleton, progress, divider, tag, chip</li>
-          <li><strong>Typography:</strong> alert, card, tooltip, breadcrumb</li>
-          <li><strong>Form styling:</strong> input, textarea, select, checkbox, radio, switch</li>
+          <li><code>data-smart-detected</code> &mdash; detected type name</li>
+          <li><code>data-smart-confidence</code> &mdash; confidence score</li>
+          <li><code>data-smart-applied</code> / <code>data-smart-fallback</code> &mdash; whether formatting was applied</li>
         </ul>
 
-        <h3>HTMX Integration</h3>
-        <p>uiX pairs perfectly with HTMX for server-driven interactions:</p>
-        <pre><code>&lt;!-- Load modal content from server --&gt;
-&lt;button ux-opens="#user-modal" hx-get="/api/user/123" hx-target="#user-modal .ux-modal__body"&gt;
-  View User
-&lt;/button&gt;
+        <!-- ============================================================ -->
+        <!-- UIX -->
+        <!-- ============================================================ -->
 
-&lt;!-- Lazy-load tab content --&gt;
-&lt;div ux-enhance="tabs" ux-tabs="Overview, Details" hx-trigger="ux:change" hx-get="/api/tab"&gt;
-  &lt;div&gt;Overview content&lt;/div&gt;
-  &lt;div&gt;Loading...&lt;/div&gt;
-&lt;/div&gt;
+        <h2 id="uix">uiX &mdash; UI Components</h2>
+        <div class="prefix-tag">ux-*</div>
+        <p>A full UI component library. Most components are CSS-driven with minimal JavaScript. Interactive components use declarative HTML triggers &mdash; no custom JavaScript required.</p>
 
-&lt;!-- Infinite scroll with skeleton --&gt;
-&lt;div hx-get="/api/items?page=2" hx-trigger="revealed" hx-swap="beforeend"&gt;
-  &lt;div ux-enhance="skeleton" ux-shape="rect"&gt;&lt;/div&gt;
+        <h3>Component Types</h3>
+        <table class="ref-table">
+          <thead><tr><th>Category</th><th>Components</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Atoms</strong></td><td>button, badge, avatar, spinner, progress, skeleton, divider, tag, tooltip</td></tr>
+            <tr><td><strong>Form</strong></td><td>input, textarea, select, checkbox, radio, switch</td></tr>
+            <tr><td><strong>Molecules</strong></td><td>card, alert, modal, drawer, dropdown, accordion, tabs, popover, menu, breadcrumb, pagination</td></tr>
+            <tr><td><strong>Organisms</strong></td><td>nav, sidebar, table, stepper, toast</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Universal Attributes</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>ux-enhance="type"</code></td><td>Required. Component type to enhance</td></tr>
+            <tr><td><code>ux-bg="color"</code></td><td>Background color (named, hex, or variant)</td></tr>
+            <tr><td><code>ux-color="color"</code></td><td>Text color (auto-calculated from bg if omitted)</td></tr>
+            <tr><td><code>ux-size="sm|lg"</code></td><td>Size variant (most components default to md)</td></tr>
+            <tr><td><code>ux-variant="name"</code></td><td>Preset style variant</td></tr>
+          </tbody>
+        </table>
+
+        <h4>Color System</h4>
+        <p>All components accept color values in three formats:</p>
+        <ul>
+          <li><strong>Named CSS colors:</strong> <code>tomato</code>, <code>navy</code>, <code>hotpink</code></li>
+          <li><strong>Hex values:</strong> <code>#6366f1</code>, <code>#fff</code></li>
+          <li><strong>Variant names:</strong> <code>primary</code> (teal), <code>secondary</code>, <code>success</code> (green), <code>danger</code> (red), <code>warning</code> (amber), <code>info</code> (blue), <code>neutral</code> (slate)</li>
+        </ul>
+        <p>When <code>ux-bg</code> is set without <code>ux-color</code>, text color is auto-calculated using WCAG luminance for contrast.</p>
+
+        <h3>Button</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Values</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>ux-variant</code></td><td><code>primary</code>, <code>secondary</code>, <code>outline</code>, <code>ghost</code>, <code>danger</code></td><td>Visual style</td></tr>
+            <tr><td><code>ux-size</code></td><td><code>sm</code>, <code>lg</code></td><td>Button size</td></tr>
+            <tr><td><code>ux-block</code></td><td>boolean</td><td>Full-width button</td></tr>
+            <tr><td><code>ux-loading</code></td><td>boolean</td><td>Disabled with opacity</td></tr>
+            <tr><td><code>ux-hover-bg</code></td><td>color</td><td>Custom hover background</td></tr>
+            <tr><td><code>ux-active-bg</code></td><td>color</td><td>Custom active/pressed background</td></tr>
+          </tbody>
+        </table>
+        <pre><code>&lt;button ux-enhance="button" ux-variant="primary" ux-size="lg"&gt;Submit&lt;/button&gt;
+&lt;button ux-enhance="button" ux-bg="hotpink" ux-hover-bg="deeppink"&gt;Custom&lt;/button&gt;
+&lt;button ux-enhance="button" ux-variant="outline" ux-block&gt;Full Width&lt;/button&gt;</code></pre>
+
+        <h3>Badge &amp; Avatar</h3>
+        <pre><code>&lt;!-- Badge with variant --&gt;
+&lt;span ux-enhance="badge" ux-variant="success"&gt;Active&lt;/span&gt;
+&lt;span ux-enhance="badge" ux-variant="danger" ux-pill&gt;3&lt;/span&gt;
+&lt;span ux-enhance="badge" ux-bg="#6366f1" ux-color="white"&gt;Custom&lt;/span&gt;
+
+&lt;!-- Avatar with image fallback to initials --&gt;
+&lt;div ux-enhance="avatar" ux-size="xl" ux-bg="teal"&gt;JD&lt;/div&gt;
+&lt;div ux-enhance="avatar" ux-size="lg"&gt;
+  &lt;img src="photo.jpg" alt="Jane Doe"&gt;
 &lt;/div&gt;</code></pre>
 
-        <h3>Available Components</h3>
-        <p>uiX includes these components:</p>
+        <h3>Card</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>ux-title</code></td><td>Auto-generate a card header with this title</td></tr>
+            <tr><td><code>ux-elevated</code></td><td>Remove border, add box shadow</td></tr>
+            <tr><td><code>ux-hoverable</code></td><td>Lift effect on hover</td></tr>
+            <tr><td><code>ux-header-bg</code> / <code>ux-header-color</code></td><td>Header styling</td></tr>
+          </tbody>
+        </table>
+        <pre><code>&lt;div ux-enhance="card" ux-title="Dashboard" ux-elevated ux-header-bg="primary" ux-header-color="white"&gt;
+  &lt;p&gt;Card body content.&lt;/p&gt;
+&lt;/div&gt;</code></pre>
+
+        <h3>Modal</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>ux-size</code></td><td><code>md</code> (32rem)</td><td><code>sm</code>, <code>md</code>, <code>lg</code>, <code>xl</code>, <code>full</code></td></tr>
+            <tr><td><code>ux-title</code></td><td>&mdash;</td><td>Auto-generate modal header</td></tr>
+            <tr><td><code>ux-close-on-escape</code></td><td><code>true</code></td><td>Close on Escape key</td></tr>
+            <tr><td><code>ux-close-on-backdrop</code></td><td><code>true</code></td><td>Close on backdrop click</td></tr>
+          </tbody>
+        </table>
+        <pre><code>&lt;!-- Open/close with declarative triggers --&gt;
+&lt;button ux-opens="#confirm-modal"&gt;Delete Account&lt;/button&gt;
+
+&lt;div ux-enhance="modal" ux-title="Confirm Delete" ux-size="sm" id="confirm-modal"&gt;
+  &lt;p&gt;This action cannot be undone.&lt;/p&gt;
+  &lt;button ux-closes ux-enhance="button" ux-variant="danger"&gt;Delete&lt;/button&gt;
+  &lt;button ux-closes ux-enhance="button" ux-variant="ghost"&gt;Cancel&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+
+        <h3>Tabs</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>ux-tabs</code></td><td>Comma-separated tab names (auto-generates tab buttons)</td></tr>
+            <tr><td><code>ux-active-bg</code> / <code>ux-active-color</code></td><td>Active tab styling</td></tr>
+          </tbody>
+        </table>
+        <pre><code>&lt;!-- Auto-generated tabs --&gt;
+&lt;div ux-enhance="tabs" ux-tabs="Overview, Details, Settings" id="my-tabs"
+     ux-active-bg="primary" ux-active-color="white"&gt;
+  &lt;div&gt;Overview content&lt;/div&gt;
+  &lt;div&gt;Details content&lt;/div&gt;
+  &lt;div&gt;Settings content&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- External tab selection --&gt;
+&lt;button ux-selects="#my-tabs" ux-tab="Settings"&gt;Go to Settings&lt;/button&gt;</code></pre>
+
+        <h3>Accordion</h3>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>ux-single</code></td><td><code>false</code></td><td>Only one section open at a time</td></tr>
+            <tr><td><code>ux-header-bg</code></td><td>&mdash;</td><td>Header background color</td></tr>
+          </tbody>
+        </table>
+        <pre><code>&lt;div ux-enhance="accordion" ux-single id="faq"&gt;
+  &lt;div class="ux-accordion__item"&gt;
+    &lt;button class="ux-accordion__header"&gt;What is genX?&lt;/button&gt;
+    &lt;div class="ux-accordion__content"&gt;
+      A declarative JavaScript library...
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class="ux-accordion__item"&gt;
+    &lt;button class="ux-accordion__header"&gt;How do I install it?&lt;/button&gt;
+    &lt;div class="ux-accordion__content"&gt;
+      Add a single script tag...
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- External toggle --&gt;
+&lt;button ux-toggles="#faq" ux-index="0"&gt;Toggle First Section&lt;/button&gt;</code></pre>
+
+        <h3>Drawer</h3>
+        <pre><code>&lt;button ux-opens="#side-panel"&gt;Open Panel&lt;/button&gt;
+
+&lt;div ux-enhance="drawer" ux-position="right" ux-size="lg" id="side-panel"&gt;
+  &lt;h2&gt;Settings&lt;/h2&gt;
+  &lt;p&gt;Panel content...&lt;/p&gt;
+  &lt;button ux-closes&gt;Close&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+
+        <h3>Form Inputs</h3>
+        <pre><code>&lt;!-- Input with validation states --&gt;
+&lt;input ux-enhance="input" ux-size="lg" placeholder="Email" ux-focus-color="primary"&gt;
+&lt;input ux-enhance="input" ux-error="true" placeholder="Invalid input"&gt;
+&lt;input ux-enhance="input" ux-success="true" placeholder="Valid input"&gt;
+
+&lt;!-- Switch toggle --&gt;
+&lt;input type="checkbox" ux-enhance="switch" ux-label="Dark mode" ux-on-bg="success"&gt;
+
+&lt;!-- Checkbox with label --&gt;
+&lt;input type="checkbox" ux-enhance="checkbox" ux-label="Accept terms"&gt;</code></pre>
+
+        <h3>Tooltip &amp; Alert</h3>
+        <pre><code>&lt;!-- Tooltip --&gt;
+&lt;span ux-enhance="tooltip" ux-content="Helpful information!" ux-bg="dark"&gt;Hover me&lt;/span&gt;
+
+&lt;!-- Dismissible alert --&gt;
+&lt;div ux-enhance="alert" ux-variant="warning" ux-dismissible&gt;
+  Your session will expire in 5 minutes.
+&lt;/div&gt;</code></pre>
+
+        <h3>Declarative Trigger Attributes</h3>
+        <p>Control interactive components from anywhere in the page. No JavaScript required:</p>
+        <table class="ref-table">
+          <thead><tr><th>Attribute</th><th>Action</th><th>Works With</th></tr></thead>
+          <tbody>
+            <tr><td><code>ux-opens="#id"</code></td><td>Open a modal or drawer</td><td>modal, drawer</td></tr>
+            <tr><td><code>ux-closes</code></td><td>Close nearest modal/drawer/dropdown (or specify <code>ux-closes="#id"</code>)</td><td>modal, drawer, dropdown</td></tr>
+            <tr><td><code>ux-toggles="#id"</code></td><td>Toggle open/close state</td><td>dropdown, accordion (with <code>ux-index</code>)</td></tr>
+            <tr><td><code>ux-selects="#id"</code></td><td>Select a tab (with <code>ux-tab="name"</code> or <code>ux-index="0"</code>)</td><td>tabs</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Events</h3>
+        <table class="ref-table">
+          <thead><tr><th>Event</th><th>Components</th><th>Detail</th></tr></thead>
+          <tbody>
+            <tr><td><code>ux:open</code></td><td>modal, drawer, dropdown</td><td>&mdash;</td></tr>
+            <tr><td><code>ux:close</code></td><td>modal, drawer, dropdown</td><td>&mdash;</td></tr>
+            <tr><td><code>ux:change</code></td><td>tabs, accordion, switch</td><td>Tabs: <code>{ index, name, tab, panel }</code><br>Accordion: <code>{ index, item, action }</code><br>Switch: <code>{ checked }</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Toast API</h3>
+        <p>Toasts are created programmatically:</p>
+        <pre><code>// After genx:ready
+window.UIX.toast('Item saved successfully', { type: 'success', duration: 3000 });
+window.UIX.toast('Something went wrong', { type: 'danger', duration: 5000 });</code></pre>
+
+        <!-- ============================================================ -->
+        <!-- ARCHITECTURE -->
+        <!-- ============================================================ -->
+
+        <h2 id="bootloader">Bootloader</h2>
+        <p>The bootloader (<code>bootloader.js</code>) is the single entry point. It handles module discovery, loading, parsing, and initialization.</p>
+
+        <h3>Module Detection</h3>
+        <p>The bootloader looks for these entry attributes to determine which modules to load:</p>
+        <table class="ref-table">
+          <thead><tr><th>Prefix</th><th>Module</th><th>Entry Attributes</th></tr></thead>
+          <tbody>
+            <tr><td><code>fx</code></td><td>fmtX</td><td><code>fx-format</code></td></tr>
+            <tr><td><code>ax</code></td><td>accX</td><td><code>ax-enhance</code></td></tr>
+            <tr><td><code>bx</code></td><td>bindX</td><td><code>bx-model</code>, <code>bx-bind</code>, <code>bx-if</code>, <code>bx-form</code></td></tr>
+            <tr><td><code>dx</code></td><td>dragX</td><td><code>dx-draggable</code>, <code>dx-drop-zone</code></td></tr>
+            <tr><td><code>lx</code></td><td>loadX</td><td><code>lx-strategy</code>, <code>lx-loading</code></td></tr>
+            <tr><td><code>tx</code></td><td>tableX</td><td><code>tx-sortable</code></td></tr>
+            <tr><td><code>nx</code></td><td>navX</td><td><code>nx-tabs</code>, <code>nx-dropdown</code>, <code>nx-breadcrumb</code>, <code>nx-mobile</code>, <code>nx-scroll-spy</code>, <code>nx-sticky</code>, <code>nx-nav</code></td></tr>
+            <tr><td><code>sx</code></td><td>smartX</td><td>Loaded when fmtX encounters <code>fx-format="smart"</code></td></tr>
+            <tr><td><code>ux</code></td><td>uiX</td><td><code>ux-enhance</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Bootstrap Event</h3>
+        <p>Listen for <code>genx:ready</code> to know when all modules are loaded:</p>
+        <pre><code>window.addEventListener('genx:ready', (e) =&gt; {
+  console.log('Loaded modules:', e.detail.loaded);   // ['fx', 'ux']
+  console.log('Elements parsed:', e.detail.elements.parsed);
+  console.log('Total time:', e.detail.timing.total + 'ms');
+  console.log('Phase breakdown:', e.detail.timing.phases);
+});</code></pre>
+
+        <h3>Public API</h3>
+        <pre><code>// Check which modules are loaded
+window.genx.loaded();           // ['fx', 'bx', 'ux']
+window.genx.isLoaded('fx');     // true
+
+// Get parsed config for an element (from WeakMap cache)
+window.genx.getConfig(element); // { format: 'currency', currency: 'EUR' }
+
+// Rescan after adding dynamic content
+window.genx.rescan();           // Processes new elements
+window.genx.rescan(myDiv);      // Rescan specific subtree</code></pre>
+
+        <h2 id="parsers">Parser Pipeline</h2>
+        <p>Configuration is extracted from DOM elements through 4 parser stages, merged in priority order:</p>
+        <ol>
+          <li><strong>JSON</strong> (highest priority) &mdash; <code>{prefix}-opts='{"key":"value"}'</code></li>
+          <li><strong>Colon</strong> &mdash; <code>{prefix}-format="currency:EUR:2"</code></li>
+          <li><strong>Verbose</strong> &mdash; individual <code>{prefix}-key="value"</code> attributes</li>
+          <li><strong>Class</strong> (lowest priority) &mdash; CSS class names like <code>fmt-currency-EUR</code></li>
+        </ol>
+        <p>Each parser merges into the result of the previous one. Higher-priority values override lower.</p>
+
+        <h2 id="mutation-observer">MutationObserver</h2>
+        <p>genX uses a single shared MutationObserver (via <a href="https://github.com/adamzwasserman/domx">domx-bridge</a>) for all modules. Each module subscribes with an attribute filter and only receives mutations relevant to its prefix.</p>
+        <p>Elements added dynamically (via JavaScript, HTMX, or any other mechanism) are automatically detected and processed.</p>
+
+        <h2 id="error-handling">Error Handling</h2>
+        <p>genX uses a structured error hierarchy:</p>
+        <table class="ref-table">
+          <thead><tr><th>Error Class</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><code>GenXError</code></td><td>Base class for all errors. Has <code>code</code>, <code>message</code>, <code>context</code>, <code>timestamp</code></td></tr>
+            <tr><td><code>ParseError</code></td><td>Attribute/config parsing failures</td></tr>
+            <tr><td><code>EnhancementError</code></td><td>Element enhancement failures</td></tr>
+            <tr><td><code>ValidationError</code></td><td>Configuration validation failures</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Circuit Breaker</h3>
+        <p>Modules that repeatedly fail are protected by a circuit breaker (default: 5 failures, 60s timeout):</p>
         <ul>
-          <li><strong>Atoms:</strong> button, badge, avatar, spinner, input, textarea, select, checkbox, radio, switch, tag, chip, divider, icon</li>
-          <li><strong>Molecules:</strong> card, alert, modal, accordion, tabs, dropdown, tooltip, popover, menu, breadcrumb, pagination, progress, skeleton</li>
-          <li><strong>Organisms:</strong> nav, sidebar, table, drawer, toast, stepper</li>
+          <li><strong>CLOSED</strong> &mdash; Normal operation, failures counted</li>
+          <li><strong>OPEN</strong> &mdash; After threshold failures, operations fail immediately for the timeout period</li>
+          <li><strong>HALF_OPEN</strong> &mdash; After timeout, allows one test operation. Success resets to CLOSED; failure returns to OPEN</li>
         </ul>
 
+        <!-- ============================================================ -->
+        <!-- INTEGRATION -->
+        <!-- ============================================================ -->
+
         <h2 id="frameworks">Framework Compatibility</h2>
-        <p>genX works with any framework because it operates on the DOM after rendering. Use it alongside your existing stack.</p>
+        <p>genX works with any framework because it operates on the DOM after rendering:</p>
 
         <h3>React</h3>
         <pre><code>function ProductCard({ price }) {
@@ -623,16 +1473,7 @@ cp genX/src/*.js your-project/static/js/</code></pre>
   &lt;/div&gt;
 &lt;/template&gt;</code></pre>
 
-        <h3>htmx</h3>
-        <p>genX and htmx complement each other perfectly:</p>
-        <pre><code>&lt;!-- htmx loads content, genX formats it --&gt;
-&lt;div hx-get="/api/products" hx-trigger="load"&gt;
-  &lt;!-- Server returns: &lt;span fx-format="currency"&gt;29.99&lt;/span&gt; --&gt;
-  &lt;!-- genX automatically formats to: $29.99 --&gt;
-&lt;/div&gt;</code></pre>
-
         <h3>Server-Side (Django, Rails, Laravel, PHP)</h3>
-        <p>genX is ideal for server-rendered HTML. Your backend outputs raw values, genX formats them:</p>
         <pre><code>&lt;!-- Django --&gt;
 &lt;span fx-format="currency"&gt;{{ product.price }}&lt;/span&gt;
 
@@ -645,76 +1486,110 @@ cp genX/src/*.js your-project/static/js/</code></pre>
 &lt;!-- PHP --&gt;
 &lt;span fx-format="currency"&gt;&lt;?= $product['price'] ?&gt;&lt;/span&gt;</code></pre>
 
-        <h2 id="troubleshooting">Troubleshooting</h2>
+        <h2 id="htmx">HTMX Integration</h2>
+        <p>genX and HTMX complement each other. HTMX loads content from the server, genX formats and enhances it. The MutationObserver automatically processes HTMX-swapped content:</p>
+        <pre><code>&lt;!-- Server returns raw values, genX formats them --&gt;
+&lt;div hx-get="/api/products" hx-trigger="load"&gt;
+  &lt;!-- Server responds with: &lt;span fx-format="currency"&gt;29.99&lt;/span&gt; --&gt;
+  &lt;!-- genX auto-formats to: $29.99 --&gt;
+&lt;/div&gt;
 
-        <h3>Elements Not Formatting</h3>
-        <p><strong>Check:</strong></p>
-        <ol>
-          <li>Script is loading (check browser console for errors)</li>
-          <li>Script has <code>defer</code> attribute</li>
-          <li>Attribute names are correct (<code>fx-format</code>, not <code>fx_format</code> or <code>data-fx-format</code>)</li>
-          <li>Values are valid (numbers for currency, ISO dates for dates)</li>
-        </ol>
+&lt;!-- Modal with server-loaded content --&gt;
+&lt;button ux-opens="#user-modal" hx-get="/api/user/123" hx-target="#user-modal .ux-modal__body"&gt;
+  View User
+&lt;/button&gt;
 
-        <h3>Dynamic Content Not Processing</h3>
-        <p>Elements added via JavaScript should process automatically. If not:</p>
-        <ol>
-          <li>Verify elements are added to the DOM, not just created</li>
-          <li>Check for JavaScript errors blocking execution</li>
-          <li>Ensure MutationObserver is supported (all modern browsers)</li>
-        </ol>
+&lt;!-- Skeleton loading while HTMX fetches --&gt;
+&lt;div hx-get="/api/items" hx-trigger="revealed" hx-indicator="#loading"&gt;
+  &lt;div id="loading" ux-enhance="skeleton" ux-shape="rect"&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
 
-        <h3>Table Sorting Not Working</h3>
-        <p><strong>Check:</strong></p>
-        <ol>
-          <li><code>tx-sortable</code> class is on <code>&lt;th&gt;</code> elements</li>
-          <li>Table has proper <code>&lt;thead&gt;</code> and <code>&lt;tbody&gt;</code> structure</li>
-          <li>No conflicting JavaScript handling click events</li>
-        </ol>
+        <h2 id="javascript-api">JavaScript API</h2>
+        <p>Each module exposes a factory for programmatic use:</p>
+        <pre><code>// Format a value without touching the DOM
+window.FormatX.format('currency', 99.99, { currency: 'EUR' });
+// Returns: "€99.99"
 
-        <h3>Common Console Errors</h3>
-        <table style="width: 100%; margin-bottom: 1.5rem;">
-          <thead>
-            <tr>
-              <th style="text-align: left; padding: 0.5rem;">Error</th>
-              <th style="text-align: left; padding: 0.5rem;">Fix</th>
-            </tr>
-          </thead>
+// Create reactive data programmatically
+const { data } = window.bxXFactory.autoInit(document.body);
+data.userName = 'Jane';  // Updates all bound elements
+
+// Programmatic drag
+window.DragX.startKeyboardDrag(element);
+
+// Accessibility validation
+const issues = window.AccessX.validate(document.body);
+
+// Show a toast
+window.UIX.toast('Saved!', { type: 'success' });
+
+// Check table state
+const state = window.tableX.getState(tableElement);</code></pre>
+
+        <!-- ============================================================ -->
+        <!-- REFERENCE -->
+        <!-- ============================================================ -->
+
+        <h2 id="browser-support">Browser Support</h2>
+        <table class="ref-table">
+          <thead><tr><th>Browser</th><th>Minimum Version</th></tr></thead>
           <tbody>
-            <tr>
-              <td style="padding: 0.5rem;"><code>genX is not defined</code></td>
-              <td style="padding: 0.5rem;">Check script URL and network tab</td>
-            </tr>
-            <tr>
-              <td style="padding: 0.5rem;"><code>Invalid date</code></td>
-              <td style="padding: 0.5rem;">Use ISO format: <code>2024-03-15</code></td>
-            </tr>
-            <tr>
-              <td style="padding: 0.5rem;"><code>NaN</code></td>
-              <td style="padding: 0.5rem;">Ensure numeric values are clean</td>
-            </tr>
+            <tr><td>Chrome</td><td>90+</td></tr>
+            <tr><td>Firefox</td><td>88+</td></tr>
+            <tr><td>Safari</td><td>14+</td></tr>
+            <tr><td>Edge</td><td>90+</td></tr>
+          </tbody>
+        </table>
+        <p>Requirements: ES6+, Proxy, MutationObserver, IntersectionObserver, async/await</p>
+
+        <h2 id="performance">Performance</h2>
+        <table class="ref-table">
+          <thead><tr><th>Metric</th><th>Target</th></tr></thead>
+          <tbody>
+            <tr><td>Bootloader scan (1000 elements)</td><td>&lt;5ms</td></tr>
+            <tr><td>Element parsing (1000 elements)</td><td>&lt;100ms</td></tr>
+            <tr><td>Total bootstrap</td><td>&lt;105ms</td></tr>
+            <tr><td>Drag event processing</td><td>&lt;0.5ms</td></tr>
+            <tr><td>Drop zone lookup (100 zones)</td><td>&lt;1ms (quad-tree)</td></tr>
+            <tr><td>All operations</td><td>&lt;16ms (60 FPS)</td></tr>
           </tbody>
         </table>
 
-        <h2 id="browser-support">Browser Support</h2>
-        <p>genX supports all modern browsers:</p>
-        <ul>
-          <li>Chrome 90+</li>
-          <li>Firefox 88+</li>
-          <li>Safari 14+</li>
-          <li>Edge 90+</li>
-        </ul>
-        <p>Requirements: ES6+, Proxy, MutationObserver, async/await</p>
+        <h2 id="troubleshooting">Troubleshooting</h2>
 
-        <h2 id="performance">Performance</h2>
-        <p>genX is designed for speed:</p>
-        <ul>
-          <li><strong>Bootloader:</strong> &lt;5ms to scan 1000 elements</li>
-          <li><strong>Parsing:</strong> &lt;100ms for 1000 elements</li>
-          <li><strong>Operations:</strong> &lt;16ms (60 FPS target)</li>
-          <li><strong>Module init:</strong> &lt;105ms total bootstrap</li>
-        </ul>
-        <p>The bootloader uses <code>MutationObserver</code> to watch for dynamic content, so elements added after page load are automatically processed.</p>
+        <h3>Elements not formatting</h3>
+        <ol>
+          <li>Check browser console for script loading errors</li>
+          <li>Verify the <code>defer</code> attribute is on the script tag</li>
+          <li>Confirm attribute names use hyphens (<code>fx-format</code>, not <code>fx_format</code>)</li>
+          <li>Ensure values are valid (numbers for currency, ISO dates for dates)</li>
+        </ol>
+
+        <h3>Dynamic content not processed</h3>
+        <ol>
+          <li>Elements must be appended to the DOM (not just created)</li>
+          <li>Check for JavaScript errors blocking MutationObserver</li>
+          <li>Call <code>window.genx.rescan()</code> to manually trigger a rescan</li>
+        </ol>
+
+        <h3>Common console errors</h3>
+        <table class="ref-table">
+          <thead><tr><th>Error</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr><td><code>genX is not defined</code></td><td>Check script URL and network tab</td></tr>
+            <tr><td><code>Invalid date</code></td><td>Use ISO format: <code>2024-03-15</code></td></tr>
+            <tr><td><code>NaN</code></td><td>Ensure numeric values are clean (no non-numeric characters)</td></tr>
+            <tr><td><code>CircuitBreaker OPEN</code></td><td>A module had repeated failures. Check earlier errors and reload</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Module not loading</h3>
+        <ol>
+          <li>Verify the entry attribute is present (e.g., <code>fx-format</code> not just <code>fx-currency</code>)</li>
+          <li>Check the <code>genx:ready</code> event detail for loaded modules</li>
+          <li>If using <code>modulePaths</code>, verify the URLs are correct</li>
+        </ol>
+
       </article>
     </div>
   </main>
@@ -726,7 +1601,7 @@ cp genX/src/*.js your-project/static/js/</code></pre>
     </div>
   </footer>
 
-    <!-- Cloudflare Web Analytics -->
-    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6fad005ab14f464897c576b4d5a0b33b"}'></script>
+  <!-- Cloudflare Web Analytics -->
+  <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6fad005ab14f464897c576b4d5a0b33b"}'></script>
 </body>
 </html>
