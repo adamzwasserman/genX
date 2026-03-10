@@ -109,6 +109,10 @@
       padding-bottom: var(--spacing-xs);
       border-bottom: 1px solid var(--color-border);
     }
+    /* Reserve space for JS-populated playgrounds to prevent CLS */
+    [data-playground] {
+      min-height: 480px;
+    }
   </style>
 </head>
 <body>
