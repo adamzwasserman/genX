@@ -351,8 +351,12 @@
     </div>
   </footer>
 
-  <!-- Load UIX library -->
-  <script src="/dist/modules/uix.js"></script>
+  <!-- Load UIX library (local dev or CDN) -->
+  <script>
+    const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    const uixSrc = isLocal ? '/dist/modules/uix.js' : 'https://cdn.genx.software/v1/uix.min.js';
+    document.write('<script src="' + uixSrc + '"><\/script>');
+  </script>
 
   <!-- Load Playground configurator -->
   <script src="js/uix-playground.js"></script>
