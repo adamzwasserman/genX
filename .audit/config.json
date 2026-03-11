@@ -1,0 +1,21 @@
+{
+  "sources": {
+    "playground": { "path": "site/js/uix-playground.js" },
+    "enhancers": { "path": "src/uix.js" }
+  },
+  "visual": {
+    "url": "http://localhost:7050/site/uix-playground.html",
+    "playgroundSelector": "[data-playground]",
+    "previewSelector": ".ux-playground__preview",
+    "controlSelector": ".ux-playground__control",
+    "screenshotDir": ".audit/screenshots"
+  },
+  "attrPrefix": "ux-",
+  "groups": {
+    "atoms": ["button", "badge", "avatar", "spinner", "progress", "tooltip", "tag", "divider", "skeleton"],
+    "molecules": ["alert", "card", "table"],
+    "forms": ["input", "textarea", "select", "checkbox", "radio", "switch"],
+    "navigation": ["nav", "breadcrumb", "pagination", "menu", "tabs", "stepper", "sidebar"],
+    "overlays": ["modal", "drawer", "dropdown", "popover", "accordion", "toast"]
+  }
+}

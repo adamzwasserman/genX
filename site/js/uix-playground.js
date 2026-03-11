@@ -97,8 +97,7 @@
                     choices: [
                         { value: '', label: 'Default (md)' },
                         { value: 'sm', label: 'Small' },
-                        { value: 'lg', label: 'Large' },
-                        { value: 'xl', label: 'Extra Large' }
+                        { value: 'lg', label: 'Large' }
                     ]
                 },
                 text: {
@@ -150,13 +149,15 @@
             render: (opts) => {
                 const attrs = [`ux-enhance="button"`];
                 if (opts.variant) attrs.push(`ux-variant="${opts.variant}"`);
-                if (opts.bgColor) attrs.push(`ux-bg="${opts.bgColor}"`);
-                if (opts.textColor) attrs.push(`ux-color="${opts.textColor}"`);
-                if (opts.borderColor) attrs.push(`ux-border-color="${opts.borderColor}"`);
-                if (opts.hoverBg) attrs.push(`ux-hover-bg="${opts.hoverBg}"`);
-                if (opts.hoverColor) attrs.push(`ux-hover-color="${opts.hoverColor}"`);
-                if (opts.activeBg) attrs.push(`ux-active-bg="${opts.activeBg}"`);
-                if (opts.activeColor) attrs.push(`ux-active-color="${opts.activeColor}"`);
+                if (!opts.variant) {
+                    if (opts.bgColor) attrs.push(`ux-bg="${opts.bgColor}"`);
+                    if (opts.textColor) attrs.push(`ux-color="${opts.textColor}"`);
+                    if (opts.borderColor) attrs.push(`ux-border-color="${opts.borderColor}"`);
+                    if (opts.hoverBg) attrs.push(`ux-hover-bg="${opts.hoverBg}"`);
+                    if (opts.hoverColor) attrs.push(`ux-hover-color="${opts.hoverColor}"`);
+                    if (opts.activeBg) attrs.push(`ux-active-bg="${opts.activeBg}"`);
+                    if (opts.activeColor) attrs.push(`ux-active-color="${opts.activeColor}"`);
+                }
                 if (opts.size) attrs.push(`ux-size="${opts.size}"`);
                 if (opts.block) attrs.push(`ux-block="true"`);
                 if (opts.loading) attrs.push(`ux-loading="true"`);
@@ -224,8 +225,10 @@
             render: (opts) => {
                 const attrs = [`ux-enhance="badge"`];
                 if (opts.variant) attrs.push(`ux-variant="${opts.variant}"`);
-                if (opts.bgColor) attrs.push(`ux-bg="${opts.bgColor}"`);
-                if (opts.textColor) attrs.push(`ux-color="${opts.textColor}"`);
+                if (!opts.variant) {
+                    if (opts.bgColor) attrs.push(`ux-bg="${opts.bgColor}"`);
+                    if (opts.textColor) attrs.push(`ux-color="${opts.textColor}"`);
+                }
                 if (opts.size) attrs.push(`ux-size="${opts.size}"`);
                 if (opts.pill) attrs.push(`ux-pill="true"`);
                 return `<span ${attrs.join(' ')}>${escapeHtml(opts.text || 'Badge')}</span>`;
@@ -324,8 +327,7 @@
                     choices: [
                         { value: '', label: 'Default (md)' },
                         { value: 'sm', label: 'Small' },
-                        { value: 'lg', label: 'Large' },
-                        { value: 'xl', label: 'Extra Large' }
+                        { value: 'lg', label: 'Large' }
                     ]
                 },
                 color: {
@@ -404,9 +406,11 @@
             render: (opts) => {
                 const attrs = [`ux-enhance="alert"`];
                 if (opts.variant) attrs.push(`ux-variant="${opts.variant}"`);
-                if (opts.bgColor) attrs.push(`ux-bg="${opts.bgColor}"`);
-                if (opts.textColor) attrs.push(`ux-color="${opts.textColor}"`);
-                if (opts.borderColor) attrs.push(`ux-border-color="${opts.borderColor}"`);
+                if (!opts.variant) {
+                    if (opts.bgColor) attrs.push(`ux-bg="${opts.bgColor}"`);
+                    if (opts.textColor) attrs.push(`ux-color="${opts.textColor}"`);
+                    if (opts.borderColor) attrs.push(`ux-border-color="${opts.borderColor}"`);
+                }
                 if (opts.dismissible) attrs.push(`ux-dismissible="true"`);
                 return `<div ${attrs.join(' ')}>${escapeHtml(opts.text || 'Alert message')}</div>`;
             }
@@ -659,8 +663,11 @@
                 if (!opts.animated) attrs.push(`ux-animated="false"`);
                 if (opts.bgColor) attrs.push(`ux-bg="${opts.bgColor}"`);
                 if (opts.highlightColor) attrs.push(`ux-highlight="${opts.highlightColor}"`);
-                const width = opts.shape === 'circle' ? '48px' : (opts.width || '100%');
-                const height = opts.shape === 'circle' ? '48px' : (opts.shape === 'rect' ? '80px' : (opts.height || '16px'));
+                // Shape-aware defaults: ignore stale height/width from previous shape
+                const shapeDefaults = { text: { w: '100%', h: '16px' }, circle: { w: '48px', h: '48px' }, rect: { w: '100%', h: '80px' } };
+                const sd = shapeDefaults[opts.shape] || shapeDefaults.text;
+                const width = (opts.width && opts.width !== '100%' && opts.width !== '48px') ? opts.width : sd.w;
+                const height = (opts.height && opts.height !== '16px' && opts.height !== '48px' && opts.height !== '80px') ? opts.height : sd.h;
                 return `<div ${attrs.join(' ')} style="width: ${width}; height: ${height};"></div>`;
             }
         },
@@ -713,8 +720,7 @@
                     choices: [
                         { value: '', label: 'Default (md)' },
                         { value: 'sm', label: 'Small' },
-                        { value: 'lg', label: 'Large' },
-                        { value: 'xl', label: 'Extra Large' }
+                        { value: 'lg', label: 'Large' }
                     ]
                 },
                 error: {
@@ -989,8 +995,7 @@
                     choices: [
                         { value: '', label: 'Default (md)' },
                         { value: 'sm', label: 'Small' },
-                        { value: 'lg', label: 'Large' },
-                        { value: 'xl', label: 'Extra Large' }
+                        { value: 'lg', label: 'Large' }
                     ]
                 },
                 checked: {
@@ -1048,8 +1053,7 @@
                     choices: [
                         { value: '', label: 'Default (md)' },
                         { value: 'sm', label: 'Small' },
-                        { value: 'lg', label: 'Large' },
-                        { value: 'xl', label: 'Extra Large' }
+                        { value: 'lg', label: 'Large' }
                     ]
                 },
                 orientation: {
@@ -1211,9 +1215,11 @@
             render: (opts) => {
                 const attrs = [`ux-enhance="tag"`];
                 if (opts.variant) attrs.push(`ux-variant="${opts.variant}"`);
-                if (opts.bgColor) attrs.push(`ux-bg="${opts.bgColor}"`);
-                if (opts.textColor) attrs.push(`ux-color="${opts.textColor}"`);
-                if (opts.borderColor) attrs.push(`ux-border-color="${opts.borderColor}"`);
+                if (!opts.variant) {
+                    if (opts.bgColor) attrs.push(`ux-bg="${opts.bgColor}"`);
+                    if (opts.textColor) attrs.push(`ux-color="${opts.textColor}"`);
+                    if (opts.borderColor) attrs.push(`ux-border-color="${opts.borderColor}"`);
+                }
                 if (opts.size) attrs.push(`ux-size="${opts.size}"`);
                 const removeBtn = opts.removable ? '<button class="ux-tag__remove">&times;</button>' : '';
                 return `<span ${attrs.join(' ')}>${escapeHtml(opts.text || 'Tag')}${removeBtn}</span>`;
@@ -1267,14 +1273,20 @@
                 const attrs = [`ux-enhance="divider"`];
                 if (opts.vertical) attrs.push(`ux-vertical="true"`);
                 if (opts.style) attrs.push(`ux-style="${opts.style}"`);
-                const styles = ['border: none'];
                 const thickness = opts.thickness || '1px';
                 const color = opts.color || '#e2e8f0';
                 const lineStyle = opts.style || 'solid';
+                const styles = ['border: none'];
                 if (opts.vertical) {
                     styles.push(`width: ${thickness}`, `background: ${color}`, 'height: 60px', 'display: inline-block');
                 } else {
-                    styles.push(`border-top: ${thickness} ${lineStyle} ${color}`);
+                    if (lineStyle === 'dashed') {
+                        styles.push(`height: 0`, `border-top: ${thickness} dashed ${color}`);
+                    } else if (lineStyle === 'dotted') {
+                        styles.push(`height: 0`, `border-top: ${thickness} dotted ${color}`);
+                    } else {
+                        styles.push(`height: ${thickness}`, `background: ${color}`);
+                    }
                 }
                 if (opts.spacing) {
                     if (opts.vertical) {
@@ -1283,8 +1295,7 @@
                         styles.push(`margin: ${opts.spacing} 0`);
                     }
                 }
-                const styleAttr = ` style="${styles.join('; ')}"`;
-                return `<hr ${attrs.join(' ')}${styleAttr}>`;
+                return `<hr ${attrs.join(' ')} style="${styles.join('; ')}">`;
             }
         },
 
@@ -1646,8 +1657,7 @@
                     choices: [
                         { value: '', label: 'Default (md)' },
                         { value: 'sm', label: 'Small' },
-                        { value: 'lg', label: 'Large' },
-                        { value: 'xl', label: 'Extra Large' }
+                        { value: 'lg', label: 'Large' }
                     ]
                 },
                 closeOnBackdrop: {

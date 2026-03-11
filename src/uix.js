@@ -80,6 +80,9 @@
                 el.style.borderTopColor = textColor;
             }
         }
+        if (opts.borderColor) {
+            el.style.borderColor = resolveColor(opts.borderColor);
+        }
     };
 
     // Instance tracking
@@ -793,9 +796,6 @@
 .ux-tooltip::after {
   content: attr(data-tooltip);
   position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%) translateY(-8px);
   padding: var(--ux-space-1) var(--ux-space-2);
   background: var(--ux-tooltip-bg);
   color: var(--ux-tooltip-color);
@@ -806,12 +806,47 @@
   visibility: hidden;
   transition: all var(--ux-transition-fast);
   z-index: var(--ux-z-tooltip);
+  /* Default position: top */
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
 }
 
 .ux-tooltip:hover::after {
   opacity: 1;
   visibility: visible;
+}
+
+/* Default (top) hover transform */
+.ux-tooltip:not(.ux-tooltip--bottom):not(.ux-tooltip--left):not(.ux-tooltip--right):hover::after {
   transform: translateX(-50%) translateY(-4px);
+}
+
+/* Tooltip positions */
+.ux-tooltip--bottom::after {
+  bottom: auto;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+}
+.ux-tooltip--bottom:hover::after { transform: translateX(-50%) translateY(4px); }
+
+.ux-tooltip--left::after {
+  bottom: auto;
+  top: 50%;
+  right: 100%;
+  left: auto;
+  transform: translateY(-50%) translateX(-8px);
+}
+.ux-tooltip--left:hover::after { transform: translateY(-50%) translateX(-4px); }
+
+.ux-tooltip--right::after {
+  bottom: auto;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%) translateX(8px);
+}
+.ux-tooltip--right:hover::after { transform: translateY(-50%) translateX(4px);
 }
 
 .ux-tooltip--sm::after { font-size: 0.625rem; padding: 2px 6px; }
@@ -1141,15 +1176,15 @@
 }
 
 .ux-breadcrumb__item {
-  color: var(--ux-neutral-600);
+  color: var(--ux-breadcrumb-color, var(--ux-neutral-600));
   text-decoration: none;
 }
 
-.ux-breadcrumb__item:hover { color: var(--ux-primary-600); }
-.ux-breadcrumb__item[aria-current="page"] { color: var(--ux-neutral-900); font-weight: 500; }
+.ux-breadcrumb__item:hover { color: var(--ux-breadcrumb-hover-color, var(--ux-primary-600)); }
+.ux-breadcrumb__item[aria-current="page"] { color: var(--ux-breadcrumb-active-color, var(--ux-neutral-900)); font-weight: 500; }
 
 .ux-breadcrumb__separator {
-  color: var(--ux-neutral-400);
+  color: var(--ux-breadcrumb-separator-color, var(--ux-neutral-400));
 }
 
 /* ===================
@@ -1168,17 +1203,18 @@
   min-width: 2rem;
   height: 2rem;
   padding: 0 var(--ux-space-2);
-  border: 1px solid var(--ux-neutral-300);
+  border: 1px solid var(--ux-pagination-border, var(--ux-neutral-300));
   border-radius: var(--ux-radius-md);
-  background: var(--ux-neutral-0);
+  background: var(--ux-pagination-bg, var(--ux-neutral-0));
+  color: var(--ux-pagination-color, inherit);
   cursor: pointer;
   transition: all var(--ux-transition-fast);
 }
 
-.ux-pagination__item:hover { background: var(--ux-neutral-100); }
+.ux-pagination__item:hover { background: var(--ux-pagination-hover-bg, var(--ux-neutral-100)); }
 .ux-pagination__item[aria-current="page"] {
-  background: var(--ux-primary-500);
-  border-color: var(--ux-primary-500);
+  background: var(--ux-pagination-accent, var(--ux-primary-500));
+  border-color: var(--ux-pagination-accent, var(--ux-primary-500));
   color: white;
 }
 
@@ -1189,8 +1225,9 @@
   position: absolute;
   z-index: var(--ux-z-popover);
   padding: var(--ux-space-4);
-  background: var(--ux-neutral-0);
-  border: 1px solid var(--ux-neutral-200);
+  background: var(--ux-popover-bg, var(--ux-neutral-0));
+  color: var(--ux-popover-color, inherit);
+  border: 1px solid var(--ux-popover-border, var(--ux-neutral-200));
   border-radius: var(--ux-radius-md);
   box-shadow: var(--ux-shadow-lg);
   opacity: 0;
@@ -1222,15 +1259,26 @@
 
 .ux-table th {
   font-weight: 600;
-  background: var(--ux-neutral-50);
+  background: var(--ux-table-header-bg, var(--ux-neutral-50));
+  color: var(--ux-table-header-color, inherit);
 }
 
 .ux-table--striped tr:nth-child(even) {
-  background: var(--ux-neutral-50);
+  background: var(--ux-table-striped-bg, var(--ux-neutral-50));
 }
 
 .ux-table--hoverable tr:hover {
-  background: var(--ux-neutral-100);
+  background: var(--ux-table-hover-bg, var(--ux-neutral-100));
+}
+
+.ux-table--bordered th,
+.ux-table--bordered td {
+  border: 1px solid var(--ux-table-border, var(--ux-neutral-200));
+}
+
+.ux-table--compact th,
+.ux-table--compact td {
+  padding: var(--ux-space-1) var(--ux-space-2);
 }
 
 /* ===================
@@ -1317,9 +1365,25 @@
    =================== */
 .ux-sidebar {
   width: 16rem;
-  background: var(--ux-neutral-0);
-  border-right: 1px solid var(--ux-neutral-200);
+  background: var(--ux-sidebar-bg, var(--ux-neutral-0));
+  color: var(--ux-sidebar-color, inherit);
+  border-right: 1px solid var(--ux-sidebar-border, var(--ux-neutral-200));
   padding: var(--ux-space-4);
+}
+
+.ux-sidebar a:hover,
+.ux-sidebar .ux-sidebar__item:hover {
+  background: var(--ux-sidebar-hover-bg, var(--ux-neutral-100));
+}
+
+.ux-sidebar a[aria-current="page"],
+.ux-sidebar .ux-sidebar__item--active {
+  background: var(--ux-sidebar-active-bg, var(--ux-primary-100));
+  color: var(--ux-sidebar-active-color, var(--ux-primary-700));
+}
+
+.ux-sidebar--collapsed {
+  width: 4rem;
 }
 
 /* ===================
@@ -1344,26 +1408,37 @@
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background: var(--ux-neutral-200);
+  background: var(--ux-stepper-pending-color, var(--ux-neutral-200));
   color: var(--ux-neutral-600);
   font-weight: 600;
 }
 
 .ux-stepper__step[data-status="complete"] .ux-stepper__indicator {
-  background: var(--ux-primary-500);
+  background: var(--ux-stepper-completed-color, var(--ux-primary-500));
   color: white;
 }
 
 .ux-stepper__step[data-status="current"] .ux-stepper__indicator {
-  background: var(--ux-primary-100);
+  background: var(--ux-stepper-active-color, var(--ux-primary-100));
   color: var(--ux-primary-700);
-  border: 2px solid var(--ux-primary-500);
+  border: 2px solid var(--ux-stepper-completed-color, var(--ux-primary-500));
 }
 
 .ux-stepper__connector {
   flex: 1;
   height: 2px;
-  background: var(--ux-neutral-200);
+  background: var(--ux-stepper-connector-color, var(--ux-neutral-200));
+}
+
+.ux-stepper--vertical {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.ux-stepper--vertical .ux-stepper__connector {
+  width: 2px;
+  height: 2rem;
+  margin-left: 1rem;
 }
 
 /* ===================
@@ -1548,7 +1623,14 @@
             if (opts.shape === 'circle') el.classList.add('ux-skeleton--circle');
             else if (opts.shape === 'rect') el.classList.add('ux-skeleton--rect');
             else el.classList.add('ux-skeleton--text');
+            if (opts.animated === false || opts.animated === 'false') {
+                el.classList.add('ux-skeleton--static');
+            }
             el.setAttribute('aria-busy', 'true');
+
+            // Custom colors
+            if (opts.bg) el.style.setProperty('--ux-skeleton-bg', resolveColor(opts.bg));
+            if (opts.highlight) el.style.setProperty('--ux-skeleton-highlight', resolveColor(opts.highlight));
         },
 
         // FORM ELEMENTS
@@ -1828,13 +1910,16 @@
             if (opts.hoverBg) el.style.setProperty('--ux-accordion-header-hover-bg', resolveColor(opts.hoverBg));
             if (opts.activeBg) el.style.setProperty('--ux-accordion-active-bg', resolveColor(opts.activeBg));
             if (opts.activeColor) el.style.setProperty('--ux-accordion-active-color', resolveColor(opts.activeColor));
+            if (opts.contentBg) el.style.setProperty('--ux-accordion-content-bg', resolveColor(opts.contentBg));
 
             const openItem = (index) => {
                 const item = items[index];
                 if (!item) return;
                 const header = item.querySelector('.ux-accordion__header, [data-accordion-header]');
 
-                if (opts.single) {
+                // single mode: close others. Triggered by opts.single or !opts.multiple
+                const singleMode = opts.single || (opts.multiple === false || opts.multiple === 'false');
+                if (singleMode) {
                     items.forEach((i, idx) => {
                         i.classList.remove('is-open');
                         const h = i.querySelector('.ux-accordion__header, [data-accordion-header]');
@@ -2095,8 +2180,11 @@
         tooltip: (el, opts) => {
             el.classList.add('ux-tooltip');
             if (opts.size) el.classList.add(`ux-tooltip--${opts.size}`);
+            if (opts.position && opts.position !== 'top') {
+                el.classList.add(`ux-tooltip--${opts.position}`);
+            }
 
-            const content = opts.content || el.getAttribute('title');
+            const content = opts.content || opts.tooltip || el.getAttribute('title');
             if (content) {
                 el.setAttribute('data-tooltip', content);
                 el.removeAttribute('title');
@@ -2166,12 +2254,25 @@
             if (items.length) {
                 items[items.length - 1].setAttribute('aria-current', 'page');
             }
+
+            // Custom colors
+            if (opts.color) el.style.setProperty('--ux-breadcrumb-color', resolveColor(opts.color));
+            if (opts.hoverColor) el.style.setProperty('--ux-breadcrumb-hover-color', resolveColor(opts.hoverColor));
+            if (opts.activeColor) el.style.setProperty('--ux-breadcrumb-active-color', resolveColor(opts.activeColor));
+            if (opts.separatorColor) el.style.setProperty('--ux-breadcrumb-separator-color', resolveColor(opts.separatorColor));
         },
 
         pagination: (el, opts) => {
             el.classList.add('ux-pagination');
             el.setAttribute('role', 'navigation');
             el.setAttribute('aria-label', 'Pagination');
+
+            // Custom colors
+            if (opts.accent) el.style.setProperty('--ux-pagination-accent', resolveColor(opts.accent));
+            if (opts.bg) el.style.setProperty('--ux-pagination-bg', resolveColor(opts.bg));
+            if (opts.color) el.style.setProperty('--ux-pagination-color', resolveColor(opts.color));
+            if (opts.borderColor) el.style.setProperty('--ux-pagination-border', resolveColor(opts.borderColor));
+            if (opts.hoverBg) el.style.setProperty('--ux-pagination-hover-bg', resolveColor(opts.hoverBg));
         },
 
         tag: (el, opts) => {
@@ -2183,6 +2284,13 @@
 
         popover: (el, opts) => {
             el.classList.add('ux-popover');
+            if (opts.position) el.classList.add(`ux-popover--${opts.position}`);
+
+            // Custom colors
+            if (opts.bg) el.style.setProperty('--ux-popover-bg', resolveColor(opts.bg));
+            if (opts.color) el.style.setProperty('--ux-popover-color', resolveColor(opts.color));
+            if (opts.border) el.style.setProperty('--ux-popover-border', resolveColor(opts.border));
+
             const events = createEventManager();
 
             const open = () => {
@@ -2207,10 +2315,18 @@
             el.classList.add(`ux-drawer--${position}`);
             if (opts.size) el.classList.add(`ux-drawer--${opts.size}`);
 
+            // Custom colors
+            if (opts.bg) el.style.setProperty('--ux-drawer-bg', resolveColor(opts.bg));
+            if (opts.borderColor) el.style.setProperty('--ux-drawer-border', resolveColor(opts.borderColor));
+            if (opts.overlay) el.style.setProperty('--ux-drawer-overlay', resolveColor(opts.overlay));
+
+            const closeOnBackdrop = opts.closeOnBackdrop !== false;
+            const closeOnEscape = opts.closeOnEscape !== false;
+
             const events = createEventManager();
             const focusTrap = createFocusTrap(el, {
                 returnFocus: true,
-                onEscape: () => close()
+                onEscape: closeOnEscape ? () => close() : undefined
             });
 
             const open = () => {
@@ -2235,6 +2351,15 @@
             el.classList.add('ux-table');
             if (opts.striped) el.classList.add('ux-table--striped');
             if (opts.hoverable) el.classList.add('ux-table--hoverable');
+            if (opts.bordered) el.classList.add('ux-table--bordered');
+            if (opts.compact) el.classList.add('ux-table--compact');
+
+            // Custom colors
+            if (opts.headerBg) el.style.setProperty('--ux-table-header-bg', resolveColor(opts.headerBg));
+            if (opts.headerColor) el.style.setProperty('--ux-table-header-color', resolveColor(opts.headerColor));
+            if (opts.stripedBg) el.style.setProperty('--ux-table-striped-bg', resolveColor(opts.stripedBg));
+            if (opts.hoverBg) el.style.setProperty('--ux-table-hover-bg', resolveColor(opts.hoverBg));
+            if (opts.borderColor) el.style.setProperty('--ux-table-border', resolveColor(opts.borderColor));
         },
 
         nav: (el, opts) => {
@@ -2252,16 +2377,38 @@
 
         sidebar: (el, opts) => {
             el.classList.add('ux-sidebar');
+            if (opts.collapsed) el.classList.add('ux-sidebar--collapsed');
+
+            // Custom colors
+            if (opts.bg) el.style.setProperty('--ux-sidebar-bg', resolveColor(opts.bg));
+            if (opts.color) el.style.setProperty('--ux-sidebar-color', resolveColor(opts.color));
+            if (opts.border) el.style.setProperty('--ux-sidebar-border', resolveColor(opts.border));
+            if (opts.hoverBg) el.style.setProperty('--ux-sidebar-hover-bg', resolveColor(opts.hoverBg));
+            if (opts.activeBg) el.style.setProperty('--ux-sidebar-active-bg', resolveColor(opts.activeBg));
+            if (opts.activeColor) el.style.setProperty('--ux-sidebar-active-color', resolveColor(opts.activeColor));
         },
 
         stepper: (el, opts) => {
             el.classList.add('ux-stepper');
+            if (opts.vertical) el.classList.add('ux-stepper--vertical');
+
+            // Custom colors
+            if (opts.completedColor) el.style.setProperty('--ux-stepper-completed-color', resolveColor(opts.completedColor));
+            if (opts.activeColor) el.style.setProperty('--ux-stepper-active-color', resolveColor(opts.activeColor));
+            if (opts.pendingColor) el.style.setProperty('--ux-stepper-pending-color', resolveColor(opts.pendingColor));
+            if (opts.connectorColor) el.style.setProperty('--ux-stepper-connector-color', resolveColor(opts.connectorColor));
         },
 
         divider: (el, opts) => {
             el.classList.add('ux-divider');
             if (opts.vertical) el.classList.add('ux-divider--vertical');
             el.setAttribute('role', 'separator');
+
+            // Border style (dashed, dotted, solid)
+            if (opts.style && opts.style !== 'solid') {
+                el.style.borderTop = `1px ${opts.style} var(--ux-neutral-200)`;
+                el.style.background = 'none';
+            }
         }
     };
 
