@@ -202,7 +202,7 @@
         }
         // Abbrev/scale (shared logic)
         case 'abbreviated': {
-            const abs = Math.abs(num); const d = rest.decimals ?? 1; const t = rest.threshold ?? 1000; const p = rest.prefix || ''; const s = rest.suffix || '';
+            const abs = Math.abs(num); const d = opts.decimals !== undefined ? opts.decimals : 1; const t = rest.threshold ?? 1000; const p = rest.prefix || ''; const s = rest.suffix || '';
             let res; if (abs >= 1e12) {
                 res = (num / 1e12).toFixed(d) + 'T';
             } else if (abs >= 1e9) {

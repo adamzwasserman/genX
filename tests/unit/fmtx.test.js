@@ -690,3 +690,40 @@ describe('FormatX Module', () => {
         });
     });
 });
+
+// Regression: abbreviated formatter honoured caller's decimals (bug fix 2026-05-14)
+// Bug: rest.decimals was always undefined after `const { decimals, ...rest } = opts`,
+// so the abbreviated case always fell back to its internal default of 1.
+describe('FormatX abbreviated decimals (regression)', () => {
+    let format;
+
+    beforeAll(() => {
+        // Load the real fmtx module — it's an IIFE that exports { initFormatX, format }
+        jest.isolateModules(() => {
+            ({ format } = require('../../src/fmtx.js'));
+        });
+    });
+
+    test('abbreviated honours explicit decimals (billions)', () => {
+        expect(format('abbreviated', 915166064277, { decimals: 2, prefix: '$' })).toBe('$915.17B');
+        expect(format('abbreviated', 915166064277, { decimals: 0, prefix: '$' })).toBe('$915B');
+        expect(format('abbreviated', 915166064277, { decimals: 3, prefix: '$' })).toBe('$915.166B');
+    });
+
+    test('abbreviated default decimals stays at 1 when caller omits', () => {
+        expect(format('abbreviated', 915166064277, { prefix: '$' })).toBe('$915.2B');
+    });
+
+    test('abbreviated honours decimals across all magnitude buckets', () => {
+        expect(format('abbreviated', 1234567890123, { decimals: 2, prefix: '$' })).toBe('$1.23T');
+        expect(format('abbreviated', 1234567890, { decimals: 2, prefix: '$' })).toBe('$1.23B');
+        expect(format('abbreviated', 1234567, { decimals: 2, prefix: '$' })).toBe('$1.23M');
+        expect(format('abbreviated', 1234, { decimals: 2, prefix: '$' })).toBe('$1.23K');
+    });
+
+    test('abbreviated honours decimals=0 (falsy guard regression)', () => {
+        // Critical: opts.decimals !== undefined must accept 0, not coerce to default
+        expect(format('abbreviated', 1234567, { decimals: 0, prefix: '$' })).toBe('$1M');
+        expect(format('abbreviated', 1234567890, { decimals: 0, prefix: '$' })).toBe('$1B');
+    });
+});
