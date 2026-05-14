@@ -1,8 +1,8 @@
 {
-  "version": "2026-05-14T17:28:50.770Z",
-  "bootloader": "bootloader.3c8d42d7.min.js",
+  "version": "2026-05-14T18:40:17.445Z",
+  "bootloader": "bootloader.38e27b68.min.js",
   "modules": {
-    "fmtx": "fmtx.1ed1017f.min.js",
+    "fmtx": "fmtx.4cb3b714.min.js",
     "accx": "accx.dc757d62.min.js",
     "bindx": "bindx.f3b0a7a3.min.js",
     "dragx": "dragx.7afd63f8.min.js",

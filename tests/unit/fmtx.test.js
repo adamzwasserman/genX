@@ -739,3 +739,80 @@ describe('FormatX abbreviated decimals (regression)', () => {
         expect(format('scientific', 1234567, {})).toBe('1.23e+6');
     });
 });
+
+// Regression: scan(root) processes dynamically-injected fx-format elements
+// (bug fix 2026-05-14 — BUG_REPORT_scan_ignores_unprocessed_fx_format_spans.md).
+// Reported symptom: HTMX/insertAdjacentHTML-injected spans never formatted,
+// and calling window.genx.rescan() was a silent no-op.
+describe('FormatX dynamic scan (regression)', () => {
+    let formatXApi;
+
+    beforeEach(() => {
+        document.body.innerHTML = '';
+        // Ensure no leftover bootloader stub from earlier suites
+        delete window.genx;
+        delete window.FormatX;
+        delete window.fxXFactory;
+        delete window.genxCommon;
+        jest.isolateModules(() => {
+            // genx-common provides parseNotation, which formatElement falls back to
+            // when there's no bootloader/parseMap. Load it before fmtx.
+            require('../../src/genx-common.js');
+            require('../../src/fmtx.js');
+        });
+        // The IIFE auto-inits FormatX when window.genx is absent
+        formatXApi = window.FormatX;
+    });
+
+    test('scan(container) formats fx-format spans inside the container', () => {
+        document.body.insertAdjacentHTML('beforeend',
+            '<div id="late-container"><span fx-format="abbreviated" fx-prefix="$" fx-decimals="2">915166064277</span></div>'
+        );
+        const container = document.getElementById('late-container');
+        formatXApi.scan(container);
+        const span = container.querySelector('span');
+        expect(span.textContent).toBe('$915.17B');
+        expect(span.getAttribute('fx-raw')).toBe('915166064277');
+    });
+
+    test('scan(span) formats a single fx-format leaf element (leaf case)', () => {
+        // Bug-fix: scanElements used to only do querySelectorAll on root,
+        // which excludes root itself — so passing a leaf was a no-op.
+        document.body.insertAdjacentHTML('beforeend',
+            '<span id="leaf" fx-format="abbreviated" fx-prefix="$" fx-decimals="2">31210137967</span>'
+        );
+        const span = document.getElementById('leaf');
+        formatXApi.scan(span);
+        expect(span.textContent).toBe('$31.21B');
+        expect(span.getAttribute('fx-raw')).toBe('31210137967');
+    });
+
+    test('scan(document) formats spans added after initial scan', () => {
+        // Reproduces the HTMX scenario: initial DOM empty → scan → inject → scan again
+        formatXApi.scan(document);
+        document.body.insertAdjacentHTML('beforeend',
+            '<table><tbody id="late-tbody"></tbody></table>'
+        );
+        const tbody = document.getElementById('late-tbody');
+        tbody.insertAdjacentHTML('beforeend',
+            '<tr><td><span class="late-span" fx-format="abbreviated" fx-prefix="$" fx-decimals="2">58028169364</span></td></tr>'
+        );
+        formatXApi.scan(tbody);
+        const span = tbody.querySelector('.late-span');
+        expect(span.textContent).toBe('$58.03B');
+        expect(span.getAttribute('fx-raw')).toBe('58028169364');
+    });
+
+    test('scan(container) is idempotent — re-scanning already-formatted spans does not corrupt them', () => {
+        document.body.insertAdjacentHTML('beforeend',
+            '<span id="x" fx-format="abbreviated" fx-prefix="$" fx-decimals="2">915166064277</span>'
+        );
+        const span = document.getElementById('x');
+        formatXApi.scan(span);
+        const firstPass = span.textContent;
+        formatXApi.scan(span);   // second scan should be a no-op
+        formatXApi.scan(span);   // third scan should be a no-op
+        expect(span.textContent).toBe(firstPass);
+        expect(span.textContent).toBe('$915.17B');
+    });
+});

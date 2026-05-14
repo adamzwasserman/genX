@@ -555,7 +555,14 @@
         }
         return raw;
     };
-    const scanElements = (root = document, pref = 'fx-') => root.querySelectorAll(`[${pref}format]`).forEach(el => formatElement(el, pref));
+    const scanElements = (root = document, pref = 'fx-') => {
+        // Handle leaf case: root itself may carry the format attribute
+        // (when caller passes a single span rather than a container).
+        if (root.nodeType === 1 && root.matches?.(`[${pref}format]`)) {
+            formatElement(root, pref);
+        }
+        root.querySelectorAll?.(`[${pref}format]`)?.forEach(el => formatElement(el, pref));
+    };
 
     // Observer - uses domx-bridge for centralized observation
     const createObserver = (pref, obsMut) => {

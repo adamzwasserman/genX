@@ -61,6 +61,7 @@
     const loaded = new Set();
     const pending = new Set();
     const factories = {};
+    const moduleApis = {};           // prefix → api returned by factory.init/autoInit (exposes scan/destroy/etc)
     const parserCache = {};          // loaded parser modules
     const parserPromises = {};       // dedup in-flight parser loads (replaces setInterval polling)
     const parseMap = new WeakMap();   // element → parsed config
@@ -228,19 +229,23 @@
         if (!factory) return null;
         // DATAOS: prefer autoInit (extracts state from DOM) over init (requires pre-built data)
         const moduleConfig = config.modules?.[prefix] || {};
-        return factory.autoInit
+        const api = factory.autoInit
             ? factory.autoInit(document.body, moduleConfig)
             : factory.init
                 ? factory.init(moduleConfig)
                 : null;
+        if (api) moduleApis[prefix] = api;   // Captured so rescan() can drive per-module scanning
+        return api;
     };
 
     // --- Rescan: I/O wrapper around pure functions ---
 
     const rescan = async (rootOrElements = document) => {
         let elements;
+        let root;
         if (Array.isArray(rootOrElements)) {
             elements = rootOrElements.filter(el => el?.nodeType === Node.ELEMENT_NODE);
+            root = document;
         } else if (rootOrElements?.nodeType === Node.ELEMENT_NODE || rootOrElements === document) {
             const selector = buildSelector();
             elements = rootOrElements === document
@@ -249,6 +254,7 @@
                     ...(rootOrElements.matches?.(selector) ? [rootOrElements] : []),
                     ...Array.from(rootOrElements.querySelectorAll(selector))
                   ];
+            root = rootOrElements === document ? document : rootOrElements;
         } else {
             return 0;
         }
@@ -256,7 +262,23 @@
 
         const styles = detectNotationStyles(elements);
         const parsers = await loadParsers(styles);
-        return parseElements(elements, parsers);
+        const parsed = parseElements(elements, parsers);
+
+        // Drive each loaded module's own scan() so dynamically-injected content
+        // is actually formatted/enhanced (not just parsed into parseMap).
+        // Without this, `rescan()` was a silent no-op for HTMX/insertAdjacentHTML
+        // content — the user-visible bug reported as "fx-format spans inserted
+        // after initial load never get formatted".
+        for (const prefix of Object.keys(moduleApis)) {
+            const api = moduleApis[prefix];
+            if (api && typeof api.scan === 'function') {
+                try { api.scan(root); } catch (err) {
+                    console.error(`genX: ${prefix} scan failed during rescan`, err);
+                }
+            }
+        }
+
+        return parsed;
     };
 
     // --- Bootstrap: the single boundary where I/O + timing live ---
