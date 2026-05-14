@@ -726,4 +726,16 @@ describe('FormatX abbreviated decimals (regression)', () => {
         expect(format('abbreviated', 1234567, { decimals: 0, prefix: '$' })).toBe('$1M');
         expect(format('abbreviated', 1234567890, { decimals: 0, prefix: '$' })).toBe('$1B');
     });
+
+    test('scientific honours explicit decimals', () => {
+        // Same bug class as abbreviated: rest.decimals was always undefined
+        // because decimals had been destructured out of opts into its own var.
+        expect(format('scientific', 1234567, { decimals: 4 })).toBe('1.2346e+6');
+        expect(format('scientific', 1234567, { decimals: 0 })).toBe('1e+6');
+        expect(format('scientific', 1234567, { decimals: 6 })).toBe('1.234567e+6');
+    });
+
+    test('scientific default decimals stays at 2 when caller omits', () => {
+        expect(format('scientific', 1234567, {})).toBe('1.23e+6');
+    });
 });

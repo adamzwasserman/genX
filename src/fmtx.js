@@ -195,7 +195,7 @@
             return `${(num * factor).toFixed(percentDecimals)}%`;
         }
         case 'scientific':
-            return num.toExponential(rest.decimals ?? 2);
+            return num.toExponential(opts.decimals !== undefined ? opts.decimals : 2);
         case 'accounting': {
             const absFmt = new Intl.NumberFormat(locale, { style: 'currency', currency: rest.currency || 'USD' }).format(Math.abs(num));
             return num < 0 ? `(${absFmt})` : absFmt;
