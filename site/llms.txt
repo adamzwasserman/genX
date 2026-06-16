@@ -1,0 +1,37 @@
+# genX
+
+> The Tailwind of Frontend Behavior by Adam Zachary Wasserman
+
+## What this is
+
+genX is a lightweight (~1KB) declarative JavaScript library that adds behavior to HTML elements through attributes alone. Formatting, accessibility (WCAG), data binding, drag and drop, and more, all declared in HTML with no JavaScript required from the developer. Zero dependencies, 60 FPS performance.
+
+## Why it exists
+
+Just as Tailwind CSS moved styling from CSS files into HTML attributes, genX moves behavior from JavaScript files into HTML attributes. This eliminates the class-based event handler pattern and keeps behavior declarations co-located with the elements they affect.
+
+## Key features
+
+- Declarative behaviors via HTML attributes (data-genx-*)
+- Built-in formatting, accessibility, drag-and-drop, data binding
+- Under 1KB minified and gzipped
+- 60 FPS rendering performance
+- Zero dependencies
+- Part of the DATAOS ecosystem (DOM As The Authority On State)
+
+## Pages
+
+- [Home](https://genx.software/): Feature overview, demos, quick start
+- [Docs](https://genx.software/docs.html): Full API and attribute reference
+- [Demo](https://genx.software/demo.html): Interactive demonstrations
+- [UIX Playground](https://genx.software/uix-playground.html): Live experimentation
+
+## Related projects
+
+- [DATAOS](https://dataos.software): The architectural philosophy genX implements
+- [domx](https://domx.software): DOM state observer, complementary to genX
+- [stateless](https://stateless.software): React hook built on the same DOM-as-state principle
+
+## Author
+
+Adam Zachary Wasserman — [adamzacharywasserman.com](https://adamzacharywasserman.com)
