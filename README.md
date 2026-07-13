@@ -744,6 +744,7 @@ MIT License - See [LICENSE](LICENSE) for details
 - **Repository:** [https://github.com/adamzwasserman/genX](https://github.com/adamzwasserman/genX)
 - **Live Demo:** [https://genx.software/examples/genx-demo.html](https://genx.software/examples/genx-demo.html)
 - **Issues:** [https://github.com/adamzwasserman/genX/issues](https://github.com/adamzwasserman/genX/issues)
+- **Author:** [Adam Zachary Wasserman](https://adamzacharywasserman.com)
 
 ---
 
