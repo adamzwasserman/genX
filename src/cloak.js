@@ -30,7 +30,10 @@
 
     // --- Constants ---
 
-    const DEFAULT_TIMEOUT_MS = 400;
+    // 1500ms sits comfortably above the observed live format-pass time (247-512ms on
+    // the CDN), so the failsafe is a genuine last resort rather than a routine racer
+    // against formatting. genx:error still lifts the cloak immediately on a real failure.
+    const DEFAULT_TIMEOUT_MS = 1500;
     const DEFAULT_MARKERS = [{ mark: 'fx-format', done: 'fx-raw' }];
     // Generic failsafe escape: force-revealed elements gain this attribute. It is module
     // -agnostic on purpose — the watchdog cannot synthesise a valid per-module done value,
@@ -113,9 +116,15 @@
         // Per-batch fail-open: each batch of cloaked elements that appears gets its own
         // timer, so a batch inserted at T=0 and a swap inserted at T=10s each reveal
         // within timeoutMs if genX never stamps them. This is the half CSS cannot do.
+        // Re-check the selector at fire time so an element genX has since finished (it
+        // now carries its done-marker) is NOT stamped with a redundant failsafe escape.
         const armReveal = (elements) => {
             if (elements.length === 0) return;
-            win.setTimeout(() => elements.forEach(revealElement), cfg.timeoutMs);
+            win.setTimeout(() => {
+                for (const el of elements) {
+                    if (el.matches && el.matches(selector)) revealElement(el);
+                }
+            }, cfg.timeoutMs);
         };
 
         // The watchdog: the one signal that survives a dead bootloader. It watches for

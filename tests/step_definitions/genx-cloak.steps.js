@@ -136,3 +136,8 @@ Then('element {string} shows {string}', async function (id, text) {
     const actual = await this.page.evaluate(id => document.getElementById(id).textContent.trim(), id);
     assert.strictEqual(actual, text, `expected ${id} to show "${text}", got "${actual}"`);
 });
+
+Then('element {string} is not failsafe-marked', async function (id) {
+    const marked = await this.page.evaluate(id => document.getElementById(id).hasAttribute('genx-uncloak'), id);
+    assert.strictEqual(marked, false, `${id} should not carry genx-uncloak (already formatted before the failsafe)`);
+});

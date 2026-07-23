@@ -104,6 +104,21 @@ Feature: Opt-in cloak removes the format-on-load flash (FOUC)
     And genX signals ready
     Then element "mc" is visible
 
+  # --- The failsafe must not touch an element genX already finished ---
+
+  Scenario: The failsafe does not re-mark an element genX formatted before the timeout
+    Given genX cloak is enabled with a 120ms timeout
+    And the page body is:
+      """
+      <span id="mc" fx-format="currency">871580000000</span>
+      """
+    When the cloak page is rendered
+    And genX formats element "mc" as "$871.58B"
+    And the failsafe timeout elapses
+    Then element "mc" is visible
+    And element "mc" shows "$871.58B"
+    And element "mc" is not failsafe-marked
+
   # --- Acceptance criterion: cloak scoped only to elements genX will process ---
 
   Scenario: Non-genX values are never cloaked

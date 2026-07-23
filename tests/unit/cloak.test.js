@@ -27,11 +27,14 @@ describe('resolveCloakConfig — config gate and explicit-absence defaulting', (
         expect(r.enabled).toBe(false);
     });
 
-    // FP: cloak:true -> enabled with the sensible default timeout
-    test('cloak:true with no cloakTimeoutMs resolves to enabled at the 400ms default', () => {
+    // FP: cloak:true -> enabled with the sensible default timeout.
+    // Default is 1500ms: comfortably above the observed live format-pass time
+    // (247-512ms on the CDN) so the failsafe is a true last resort, not a routine
+    // racer against formatting. See root-cause analysis 2026-07-23.
+    test('cloak:true with no cloakTimeoutMs resolves to enabled at the 1500ms default', () => {
         const r = cloak.resolveCloakConfig({ cloak: true });
         expect(r.enabled).toBe(true);
-        expect(r.timeoutMs).toBe(400);
+        expect(r.timeoutMs).toBe(1500);
     });
 
     // FP: explicit timeout is honoured (the named-present case that pairs with the absent case)
