@@ -911,6 +911,7 @@
                 <li><a href="#navx">navX</a></li>
                 <li><a href="#tablex">tableX</a></li>
                 <li><a href="#uix">uiX</a></li>
+                <li><a href="#cloak">cloak</a></li>
             </ul>
         </nav>
 
@@ -962,6 +963,98 @@
                 <strong>Note:</strong> Metrics are captured during initial page load using the browser's Performance Observer API, then frozen after 5 seconds.
             </div>
         </section>
+
+        <!-- Cloak (FOUC remover) -->
+        <style>
+            #cloak-stage .metric-card { background:#fafafa;border:1px solid #e8e8e8;border-radius:8px;padding:14px 16px; }
+            #cloak-stage .metric-label { font-size:0.72rem;text-transform:uppercase;letter-spacing:.04em;color:#888;margin-bottom:6px; }
+            #cloak-stage .metric-value { font-size:1.35rem;font-weight:700;color:#1a1a1a;transition:color .1s; }
+            /* The cloak mechanism, mirrored: hide values genX has not formatted yet.
+               Real rule on this page is [fx-format]:not([fx-raw]){visibility:hidden}. */
+            #cloak-stage.cloaking .metric-value:not([data-shown]) { visibility:hidden; }
+            /* With the cloak OFF, an unformatted value is on screen — flag the FOUC in red. */
+            #cloak-stage:not(.cloaking) .metric-value:not([data-shown]) { color:#c0392b; }
+        </style>
+        <section id="cloak" class="module-section">
+            <h2>🎭 cloak - No Format-on-Load Flash</h2>
+            <p class="description">genX serves raw values and formats them on the client, so for a frame or two the raw value can flash before it is rewritten (<code>871580000000</code> &rarr; <code>$871.58B</code>). The opt-in cloak hides <code>fx-format</code> elements until genX formats them, and <strong>fails open</strong>: if genX never finishes, elements reveal their raw value rather than staying blank.</p>
+
+            <div style="margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 6px; font-size: 0.9rem; border-left: 4px solid #4CAF50;">
+                <strong>Opt-in, one line of config — and this whole page uses it:</strong>
+                <pre style="background:#2d2d2d;color:#f8f8f2;padding:12px;border-radius:4px;margin-top:8px;overflow-x:auto;font-family:'Inconsolata','Monaco','Courier New',monospace;">window.genxConfig = {
+  cloak: true,          // default false
+  cloakTimeoutMs: 1500  // fail-open reveal if genX never finishes
+};</pre>
+                Every formatted value above appeared already styled instead of flashing raw — that is the cloak at work.
+            </div>
+
+            <div class="example">
+                <h4>Watch the difference</h4>
+                <p>Replay a page load with the cloak on or off. With it <strong>off</strong>, the raw values flash <span style="color:#c0392b;font-weight:600;">red</span> before formatting (FOUC). With it <strong>on</strong>, the space is reserved and only the finished value ever appears.</p>
+                <div class="example-demo">
+                    <label style="user-select:none;"><input type="checkbox" id="cloak-toggle" checked> Enable cloak</label>
+                    <button id="cloak-replay" style="margin-left:16px;padding:8px 16px;border:0;border-radius:6px;background:#4CAF50;color:#fff;font-weight:600;cursor:pointer;">&#9654; Replay page load</button>
+                    <span id="cloak-status" style="margin-left:14px;font-size:0.85rem;color:#666;"></span>
+                    <div id="cloak-stage" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:18px;"></div>
+                </div>
+            </div>
+        </section>
+        <script>
+        (function () {
+            // Illustrative dashboard mirroring the reported IDD case (market cap, peer %).
+            var METRICS = [
+                { label: 'Market Cap',    raw: '871580000000', fmt: '$871.58B' },
+                { label: 'Revenue (TTM)', raw: '48435000000',  fmt: '$48.44B' },
+                { label: 'YoY Growth',    raw: '14.3',         fmt: '+14.3%' },
+                { label: 'P/E Ratio',     raw: '28.6',         fmt: '28.6×' },
+                { label: 'Employees',     raw: '164000',       fmt: '164,000' },
+                { label: 'Updated',       raw: '2024-03-15',   fmt: 'Mar 15, 2024' }
+            ];
+            function init() {
+                var stage = document.getElementById('cloak-stage');
+                var toggle = document.getElementById('cloak-toggle');
+                var replay = document.getElementById('cloak-replay');
+                var status = document.getElementById('cloak-status');
+                if (!stage || !toggle || !replay) return;
+
+                stage.innerHTML = METRICS.map(function (m, i) {
+                    return '<div class="metric-card"><div class="metric-label">' + m.label +
+                        '</div><div class="metric-value" id="cv-' + i + '" data-shown>' + m.fmt + '</div></div>';
+                }).join('');
+
+                var timer = null;
+                function run() {
+                    if (timer) { clearTimeout(timer); timer = null; }
+                    var cloaked = toggle.checked;
+                    stage.classList.toggle('cloaking', cloaked);
+                    METRICS.forEach(function (m, i) {
+                        var el = document.getElementById('cv-' + i);
+                        el.removeAttribute('data-shown');   // back to "not yet formatted"
+                        el.textContent = m.raw;             // raw value present in the DOM
+                    });
+                    status.textContent = cloaked
+                        ? 'loading… raw values hidden, layout reserved'
+                        : 'loading… raw values visible (FOUC!)';
+                    // genX formats after first paint; delay so the window is visible to the eye.
+                    timer = setTimeout(function () {
+                        METRICS.forEach(function (m, i) {
+                            var el = document.getElementById('cv-' + i);
+                            el.textContent = m.fmt;          // genX rewrites to formatted
+                            el.setAttribute('data-shown', ''); // stamped -> cloak reveals it
+                        });
+                        stage.classList.remove('cloaking');
+                        status.textContent = cloaked
+                            ? '✓ formatted — no raw value was ever visible'
+                            : '✓ formatted — but the raw values flashed first';
+                    }, 1100);
+                }
+                replay.addEventListener('click', run);
+            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+            else init();
+        })();
+        </script>
+
         <section id="polymorphic-notation" class="module-section">
             <h2>1. Polymorphic Notation - Four Ways, One Result</h2>
             <p class="description">genX supports 4 notation styles that compile to identical transformations. Choose your preferred style.</p>
