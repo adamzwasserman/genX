@@ -31,7 +31,9 @@ function kebabToCamel(str) {
  * @returns {Object} Configuration object merged with baseConfig
  */
 export function parse(element, prefix, baseConfig = {}) {
-    if (!element?.attributes) return baseConfig;
+    if (!element?.attributes) {
+        return baseConfig;
+    }
 
     return {
         ...baseConfig,

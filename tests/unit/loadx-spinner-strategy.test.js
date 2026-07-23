@@ -75,8 +75,7 @@ describe('loadX Spinner Strategy', () => {
     });
 
     afterEach(() => {
-        delete global.window;
-        delete global.document;
+        // jsdom cleanup is handled automatically
     });
 
     describe('applySpinnerStrategy', () => {
