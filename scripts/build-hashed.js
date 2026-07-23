@@ -24,6 +24,7 @@ const MANIFEST_PATH = path.join(CDN_DIR, 'manifest.json');
 // Files to hash
 const FILES = {
     bootloader: 'bootloader.min.js',
+    cloak: 'cloak.min.js',
     modules: [
         'fmtx.min.js',
         'accx.min.js',
@@ -115,6 +116,7 @@ function build() {
     const manifest = {
         version: new Date().toISOString(),
         bootloader: null,
+        cloak: null,
         modules: {},
         parsers: {}
     };
@@ -127,6 +129,17 @@ function build() {
         manifest.bootloader = result.hashed;
     } else {
         console.log(`  WARNING: ${FILES.bootloader} not found in dist/`);
+    }
+
+    // Process cloak (loaded synchronously in <head> before the bootloader, so it is
+    // hashed like the bootloader — a critical-path file that must cache-bust cleanly).
+    console.log('\nCloak:');
+    const cloakSrc = path.join(DIST_DIR, FILES.cloak);
+    if (fs.existsSync(cloakSrc)) {
+        const result = processFile(cloakSrc, CDN_DIR, FILES.cloak);
+        manifest.cloak = result.hashed;
+    } else {
+        console.log(`  WARNING: ${FILES.cloak} not found in dist/`);
     }
 
     // Process modules
@@ -243,6 +256,12 @@ function updateDemoHtml(manifest) {
     // Update bootloader URL
     const bootloaderPattern = /(const bootloaderSrc = isLocal \? '[^']+' : 'https:\/\/cdn\.genx\.software\/v1\/)[^']+(')/;
     html = html.replace(bootloaderPattern, `$1${manifest.bootloader}$2`);
+
+    // Update cloak URL
+    if (manifest.cloak) {
+        const cloakPattern = /(const cloakSrc = isLocal \? '[^']+' : 'https:\/\/cdn\.genx\.software\/v1\/)[^']+(')/;
+        html = html.replace(cloakPattern, `$1${manifest.cloak}$2`);
+    }
 
     fs.writeFileSync(demoPath, html);
     console.log('  Updated genxConfig with hashed paths');

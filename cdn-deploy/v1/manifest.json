@@ -1,6 +1,7 @@
 {
-  "version": "2026-05-14T18:40:17.445Z",
-  "bootloader": "bootloader.38e27b68.min.js",
+  "version": "2026-07-23T20:56:49.307Z",
+  "bootloader": "bootloader.a7a4a8b2.min.js",
+  "cloak": "cloak.4018bc7e.min.js",
   "modules": {
     "fmtx": "fmtx.4cb3b714.min.js",
     "accx": "accx.dc757d62.min.js",

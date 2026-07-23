@@ -37,10 +37,17 @@
                 colon: localBase + '/src/parsers/genx-parser-colon.js',
                 json: localBase + '/src/parsers/genx-parser-json.js',
                 class: localBase + '/src/parsers/genx-parser-class.js'
-            } : {}
+            } : {},
+            // Opt-in FOUC cloak: hide raw values until genX formats them, fail open on timeout.
+            cloak: true,
+            cloakTimeoutMs: 400
         };
+        // Load the cloak SYNCHRONOUSLY (no defer), before the deferred bootloader, so it
+        // installs before first paint and its fail-open watchdog survives a dead bootloader.
+        const cloakSrc = isLocal ? '/src/cloak.js' : 'https://cdn.genx.software/v1/cloak.4018bc7e.min.js';
+        document.write('<script src="' + cloakSrc + '"><\/script>');
         // Dynamically load bootloader from local (source) or CDN (minified)
-        const bootloaderSrc = isLocal ? '/src/bootloader.js' : 'https://cdn.genx.software/v1/bootloader.38e27b68.min.js';
+        const bootloaderSrc = isLocal ? '/src/bootloader.js' : 'https://cdn.genx.software/v1/bootloader.a7a4a8b2.min.js';
         document.write('<script src="' + bootloaderSrc + '" defer><\/script>');
     </script>
     <style>

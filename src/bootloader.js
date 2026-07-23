@@ -342,6 +342,9 @@
 
             } catch (err) {
                 console.error('genX Bootloader: Initialization failed', err);
+                // Signal the cloak (and any other listener) that the format pass failed,
+                // so cloaked elements reveal their raw value instead of staying hidden.
+                window.dispatchEvent(new CustomEvent('genx:error', { detail: { error: String(err) } }));
             }
         });
     };

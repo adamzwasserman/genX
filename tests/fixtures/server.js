@@ -46,8 +46,20 @@ const server = http.createServer((req, res) => {
 });
 
 function startServer() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+        // Without this handler an EADDRINUSE (e.g. a second parallel cucumber worker,
+        // or a stale server on this port) emits 'error' and the promise never settles,
+        // hanging BeforeAll — and the whole run — forever. Reject fast and legibly instead.
+        const onError = (err) => {
+            reject(new Error(
+                `Test server could not bind port ${PORT}: ${err.code || err.message}. ` +
+                `Free the port (lsof -ti :${PORT} | xargs kill) or run with --parallel 0 ` +
+                `(each parallel worker starts its own server on this hardcoded port).`
+            ));
+        };
+        server.once('error', onError);
         server.listen(PORT, () => {
+            server.removeListener('error', onError);
             console.log(`Test server running on http://localhost:${PORT}`);
             resolve();
         });
