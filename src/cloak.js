@@ -98,6 +98,19 @@
 
     // --- Lifecycle (the single boundary that wires pure logic to DOM + time) ---
 
+    /**
+     * Install the cloak and its fail-open machinery — the single boundary wiring the pure
+     * logic to the DOM and timers. Runs synchronously on load; a no-op (returns null) when
+     * cloak is disabled, which is the default.
+     *
+     * @param {Window}   win - boundary source: reads win.genxConfig and uses win.setTimeout,
+     *   win.MutationObserver, win.addEventListener (passed in so tests can inject them).
+     * @param {Document} doc - document to cloak: the <style> is injected into its <head> and
+     *   its documentElement is observed for genX markers appearing (initial parse and swaps).
+     * @returns {?{reveal: function, selector: string, observer: MutationObserver}} null when
+     *   disabled; otherwise a handle — reveal() one-shot force-lifts the whole cloak, selector
+     *   is the still-cloaked predicate, observer is the live fail-open watchdog.
+     */
     const init = (win, doc) => {
         const cfg = resolveCloakConfig(win.genxConfig);
         if (!cfg.enabled) return null;
