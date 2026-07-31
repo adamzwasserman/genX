@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Creating a Custom genX Module — genX</title>
+    <title>Creating a Custom genX Module | genX</title>
     <meta name="description" content="How to write a custom genX module for your project: the factory contract, a complete worked example, wiring it in via genxConfig, handling dynamic content, and opting into the FOUC cloak.">
     <link rel="canonical" href="https://genx.software/creating-a-custom-genx-module.html">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -86,19 +86,19 @@
         </header>
 
         <article>
-            <p class="lead">genX ships a handful of modules — formatting, accessibility, binding, drag, loading, navigation, tables, UI. But the architecture is open: any project can write its own module, host it anywhere, and have genX load and manage it exactly like a built-in. This guide walks through the module contract, builds a real one end to end, and wires it into a specific project.</p>
+            <p class="lead">genX ships a handful of modules: formatting, accessibility, binding, drag, loading, navigation, tables, UI. But the architecture is open: any project can write its own module, host it anywhere, and have genX load and manage it exactly like a built-in. This guide walks through the module contract, builds a real one end to end, and wires it into a specific project.</p>
 
             <h2>The mental model</h2>
-            <p>A genX module turns a <strong>declarative HTML attribute</strong> into a <strong>client-side enhancement</strong>. You write <code>&lt;time ta-since="2026-07-01"&gt;</code> in your markup; the module finds it after the page paints and rewrites it to <code>3 weeks ago</code>. The DOM is the source of truth — genX reads intent from attributes and reconciles the element to its finished state. There is no client-side store, no framework, no build step required in the page. That is the whole model, and your module follows it too.</p>
-            <p>A module is three small things: <strong>pure functions</strong> that compute the enhancement, a <strong>scan</strong> that finds the elements and applies it, and a <strong>factory</strong> — a single global the bootloader looks for by name. Everything else is convention.</p>
+            <p>A genX module turns a <strong>declarative HTML attribute</strong> into a <strong>client-side enhancement</strong>. You write <code>&lt;time ta-since="2026-07-01"&gt;</code> in your markup; the module finds it after the page paints and rewrites it to <code>3 weeks ago</code>. The DOM is the source of truth; genX reads intent from attributes and reconciles the element to its finished state. There is no client-side store, no framework, no build step required in the page. That is the whole model, and your module follows it too.</p>
+            <p>A module is three small things: <strong>pure functions</strong> that compute the enhancement, a <strong>scan</strong> that finds the elements and applies it, and a <strong>factory</strong>, a single global the bootloader looks for by name. Everything else is convention.</p>
 
             <h2>The contract</h2>
             <p>When the bootloader loads a module for the prefix <code>ta</code>, it does exactly one thing after the script runs: it looks for a global named <code>taXFactory</code> on <code>window</code>. The rule is <code>window[prefix + 'XFactory']</code>. If that global is missing, the module is considered broken and genX logs an error. If it is present, genX calls it to initialize the module.</p>
-            <p>The factory is a plain object with an <code>init</code> and/or an <code>autoInit</code> method. genX prefers <code>autoInit</code> because it follows the DOM-as-state principle — it is handed the live DOM to read from, rather than pre-built data:</p>
+            <p>The factory is a plain object with an <code>init</code> and/or an <code>autoInit</code> method. genX prefers <code>autoInit</code> because it follows the DOM-as-state principle: it is handed the live DOM to read from, rather than pre-built data:</p>
             <pre><code>// genX calls whichever of these you expose, preferring autoInit:
 factory.autoInit(document.body, moduleConfig);   // preferred: read state from the DOM
 factory.init(moduleConfig);                       // fallback: no DOM handed in</code></pre>
-            <p><code>moduleConfig</code> is whatever the consuming project put under <code>genxConfig.modules[prefix]</code> — your module's configuration, passed in as a parameter (never read from a global inside the module). Whatever <code>init</code>/<code>autoInit</code> returns is the module's <strong>public API</strong>. If that API exposes a <code>scan(root)</code> method, genX keeps a reference to it and calls it again whenever new content is inserted — so your module handles HTMX swaps, infinite scroll, and any dynamic DOM for free. Return at least <code>{ scan, destroy }</code>.</p>
+            <p><code>moduleConfig</code> is whatever the consuming project put under <code>genxConfig.modules[prefix]</code>: your module's configuration, passed in as a parameter (never read from a global inside the module). Whatever <code>init</code>/<code>autoInit</code> returns is the module's <strong>public API</strong>. If that API exposes a <code>scan(root)</code> method, genX keeps a reference to it and calls it again whenever new content is inserted, so your module handles HTMX swaps, infinite scroll, and any dynamic DOM for free. Return at least <code>{ scan, destroy }</code>.</p>
             <p>That is the entire contract:</p>
             <ol>
                 <li>Expose <code>window.&lt;prefix&gt;XFactory</code> with <code>init(config)</code> and/or <code>autoInit(root, config)</code>.</li>
@@ -108,7 +108,7 @@ factory.init(moduleConfig);                       // fallback: no DOM handed in<
 
             <h2>Build one: timeagoX</h2>
             <p>Here is a complete module. It enhances any element carrying <code>ta-since</code> (an ISO date) into a human-readable relative time, and keeps it accurate. The prefix is <code>ta</code>, so the factory must be <code>window.taXFactory</code>.</p>
-            <pre><code>// timeagox.js — a custom genX module (prefix "ta")
+            <pre><code>// timeagox.js: a custom genX module (prefix "ta")
 (function () {
   'use strict';
 
@@ -161,7 +161,7 @@ factory.init(moduleConfig);                       // fallback: no DOM handed in<
     const everyMs = config.refreshMs === undefined ? 60000 : config.refreshMs;
     const timer = everyMs &gt; 0 ? setInterval(refresh, everyMs) : null;
     return {
-      // scan(root) is the important one — genX calls it on dynamically inserted content.
+      // scan(root) is the important one; genX calls it on dynamically inserted content.
       scan: (root) =&gt; scanElements(root || document, Date.now()),
       destroy: () =&gt; { if (timer) clearInterval(timer); }
     };
@@ -181,7 +181,7 @@ factory.init(moduleConfig);                       // fallback: no DOM handed in<
             <p>Notice the shape: <code>relativeTime</code> is pure and independently testable (<code>relativeTime('2026-07-01', Date.parse('2026-07-22')) === '3 weeks ago'</code>), the DOM work is confined to <code>enhanceElement</code>/<code>scanElements</code>, and the factory wires it together and returns <code>{ scan, destroy }</code>. No class, no <code>this</code>, no hidden state.</p>
 
             <h2>Wire it into your project</h2>
-            <p>Your module lives at a URL you control — your own CDN, your app's static assets, anywhere. You tell genX about it through <code>window.genxConfig</code>, set <strong>before</strong> the bootloader script runs.</p>
+            <p>Your module lives at a URL you control: your own CDN, your app's static assets, anywhere. You tell genX about it through <code>window.genxConfig</code>, set <strong>before</strong> the bootloader script runs.</p>
             <pre><code>&lt;script&gt;
   window.genxConfig = {
     // Map your prefix to your module's URL. An absolute URL is used as-is;
@@ -204,19 +204,19 @@ factory.init(moduleConfig);                       // fallback: no DOM handed in<
   addEventListener('genx:ready', () =&gt; window.genx.init('ta'));
 &lt;/script&gt;</code></pre>
             <p>That single <code>genx.init('ta')</code> call does the whole lifecycle: it fetches your script (applying <code>sri</code> if given), verifies <code>window.taXFactory</code> exists, calls <code>autoInit(document.body, { refreshMs: 30000 })</code>, and remembers the returned API so every later <code>rescan</code> re-runs your <code>scan</code>. From then on your module is a first-class citizen alongside the built-ins.</p>
-            <p><strong>Why the explicit <code>init</code> call?</strong> genX auto-loads its <em>built-in</em> modules by recognizing their entry attributes (<code>fx-format</code>, <code>ax-enhance</code>, and so on) during its initial DOM scan. That attribute table is fixed in the bootloader, so a brand-new prefix like <code>ta-since</code> won't trigger an automatic load — you opt it in with one line. Everything after that (dynamic rescanning, teardown, config) is automatic.</p>
+            <p><strong>Why the explicit <code>init</code> call?</strong> genX auto-loads its <em>built-in</em> modules by recognizing their entry attributes (<code>fx-format</code>, <code>ax-enhance</code>, and so on) during its initial DOM scan. That attribute table is fixed in the bootloader, so a brand-new prefix like <code>ta-since</code> won't trigger an automatic load; you opt it in with one line. Everything after that (dynamic rescanning, teardown, config) is automatic.</p>
 
             <h3>Simpler still: standalone</h3>
             <p>If you don't need the bootloader to manage your module, just load it with a plain <code>&lt;script&gt;</code> and let it self-initialize (the last few lines of the module above handle that). You lose automatic rescanning, but you can call <code>window.genx?.rescan(node)</code> yourself after inserting content, or run your own observer. Use this when the module is small and self-contained; use the bootloader-managed path when you want lifecycle and dynamic content handled for you.</p>
 
             <h2>Dynamic content is already handled</h2>
-            <p>Because genX kept a reference to your <code>scan</code>, anything that inserts <code>ta-since</code> elements later — an HTMX swap, a "load more" button, a client render — is picked up automatically. genX watches the DOM and calls your <code>scan(insertedSubtree)</code>; your enhancement runs on exactly the new nodes. You wrote <code>scan</code> once; you never wire up a MutationObserver yourself.</p>
+            <p>Because genX kept a reference to your <code>scan</code>, anything that inserts <code>ta-since</code> elements later (an HTMX swap, a "load more" button, a client render) is picked up automatically. genX watches the DOM and calls your <code>scan(insertedSubtree)</code>; your enhancement runs on exactly the new nodes. You wrote <code>scan</code> once; you never wire up a MutationObserver yourself.</p>
             <p>If you're in standalone mode, do the same thing manually after an insert:</p>
             <pre><code>container.insertAdjacentHTML('beforeend', newRowsHtml);
 window.genx ? window.genx.rescan(container) : window.taXFactory.init({});</code></pre>
 
             <h2>Advanced: opt your module into the cloak</h2>
-            <p>genX serves raw values and formats them on the client, so a value can flash in its raw form for a frame or two before your module rewrites it — the same format-on-load flash the built-in <strong>cloak</strong> removes. The cloak is a general primitive: it hides any element carrying a <em>marker</em> attribute until that element gains its <em>done</em> attribute. Out of the box it is wired only to formatting (<code>fx-format</code> → <code>fx-raw</code>), but a project can extend it to a custom module by adding a marker pair.</p>
+            <p>genX serves raw values and formats them on the client, so a value can flash in its raw form for a frame or two before your module rewrites it, the same format-on-load flash the built-in <strong>cloak</strong> removes. The cloak is a general primitive: it hides any element carrying a <em>marker</em> attribute until that element gains its <em>done</em> attribute. Out of the box it is wired only to formatting (<code>fx-format</code> → <code>fx-raw</code>), but a project can extend it to a custom module by adding a marker pair.</p>
             <p>Our <code>timeagoX</code> module already stamps <code>ta-done</code> on each element after it processes it (see <code>enhanceElement</code>). That's the done-marker. Tell the cloak about it:</p>
             <pre><code>&lt;script&gt;
   window.genxConfig = {
@@ -231,7 +231,7 @@ window.genx ? window.genx.rescan(container) : window.taXFactory.init({});</code>
 &lt;!-- Load the cloak synchronously, before the bootloader, then the bootloader. --&gt;
 &lt;script src="https://cdn.genx.software/v1/cloak.&lt;hash&gt;.min.js"&gt;&lt;/script&gt;
 &lt;script src="https://cdn.genx.software/v1/bootloader.&lt;hash&gt;.min.js" defer&gt;&lt;/script&gt;</code></pre>
-            <p>Now a <code>&lt;time ta-since="…"&gt;</code> is hidden (its layout reserved, not collapsed) until your module stamps <code>ta-done</code> — so the raw ISO date never flashes. And it still <strong>fails open</strong>: if your module never runs, the cloak's timeout reveals the raw value rather than leaving a blank. Your module got FOUC protection for free, just by stamping one attribute.</p>
+            <p>Now a <code>&lt;time ta-since="…"&gt;</code> is hidden (its layout reserved, not collapsed) until your module stamps <code>ta-done</code>, so the raw ISO date never flashes. And it still <strong>fails open</strong>: if your module never runs, the cloak's timeout reveals the raw value rather than leaving a blank. Your module got FOUC protection for free, just by stamping one attribute.</p>
 
             <h2>Checklist</h2>
             <ul>
@@ -239,11 +239,11 @@ window.genx ? window.genx.rescan(container) : window.taXFactory.init({});</code>
                 <li><strong>Factory name matches.</strong> Prefix <code>ta</code> → global <code>window.taXFactory</code>. genX looks for exactly <code>prefix + 'XFactory'</code>.</li>
                 <li><strong>Return an API with <code>scan(root)</code>.</strong> That's what makes dynamic content work. Add <code>destroy()</code> for teardown.</li>
                 <li><strong>Prefer <code>autoInit(root, config)</code>.</strong> Read state from the DOM you're handed; take config as a parameter, never from a global.</li>
-                <li><strong>Keep the transform pure.</strong> The function that computes the enhancement should take inputs and return outputs — no DOM, no <code>this</code>. Test it directly.</li>
+                <li><strong>Keep the transform pure.</strong> The function that computes the enhancement should take inputs and return outputs, with no DOM and no <code>this</code>. Test it directly.</li>
                 <li><strong>Configure from the project, not the module.</strong> <code>genxConfig.modulePaths</code> points at your URL; <code>genxConfig.modules[prefix]</code> carries your options.</li>
                 <li><strong>Opt into the cloak</strong> if your module rewrites visible values, by stamping a done-marker and adding a <code>cloakMarkers</code> pair.</li>
             </ul>
-            <p>That's the whole surface. A genX module is a global factory over a couple of pure functions — small enough to read in one sitting, and once registered, it behaves exactly like the modules genX ships.</p>
+            <p>That's the whole surface. A genX module is a global factory over a couple of pure functions, small enough to read in one sitting, and once registered, it behaves exactly like the modules genX ships.</p>
         </article>
     </div>
 

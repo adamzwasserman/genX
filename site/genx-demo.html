@@ -973,7 +973,7 @@
             /* The cloak mechanism, mirrored: hide values genX has not formatted yet.
                Real rule on this page is [fx-format]:not([fx-raw]){visibility:hidden}. */
             #cloak-stage.cloaking .metric-value:not([data-shown]) { visibility:hidden; }
-            /* With the cloak OFF, an unformatted value is on screen — flag the FOUC in red. */
+            /* With the cloak OFF, an unformatted value is on screen; flag the FOUC in red. */
             #cloak-stage:not(.cloaking) .metric-value:not([data-shown]) { color:#c0392b; }
         </style>
         <section id="cloak" class="module-section">
@@ -981,12 +981,12 @@
             <p class="description">genX serves raw values and formats them on the client, so for a frame or two the raw value can flash before it is rewritten (<code>871580000000</code> &rarr; <code>$871.58B</code>). The opt-in cloak hides <code>fx-format</code> elements until genX formats them, and <strong>fails open</strong>: if genX never finishes, elements reveal their raw value rather than staying blank.</p>
 
             <div style="margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 6px; font-size: 0.9rem; border-left: 4px solid #4CAF50;">
-                <strong>Opt-in, one line of config — and this whole page uses it:</strong>
+                <strong>Opt-in, one line of config, and this whole page uses it:</strong>
                 <pre style="background:#2d2d2d;color:#f8f8f2;padding:12px;border-radius:4px;margin-top:8px;overflow-x:auto;font-family:'Inconsolata','Monaco','Courier New',monospace;">window.genxConfig = {
   cloak: true,          // default false
   cloakTimeoutMs: 1500  // fail-open reveal if genX never finishes
 };</pre>
-                Every formatted value above appeared already styled instead of flashing raw — that is the cloak at work.
+                Every formatted value above appeared already styled instead of flashing raw; that is the cloak at work.
             </div>
 
             <div class="example">
@@ -1045,8 +1045,8 @@
                         });
                         stage.classList.remove('cloaking');
                         status.textContent = cloaked
-                            ? '✓ formatted — no raw value was ever visible'
-                            : '✓ formatted — but the raw values flashed first';
+                            ? '✓ formatted, no raw value was ever visible'
+                            : '✓ formatted, but the raw values flashed first';
                     }, 1100);
                 }
                 replay.addEventListener('click', run);
@@ -1996,7 +1996,7 @@
                     <p style="font-size: 0.85rem; color: #666; margin-top: 6px; line-height: 1.6;">
                         Audited using <a href="https://github.com/dequelabs/axe-core" target="_blank" rel="noopener" style="color: #e53935;">axe-core</a>,
                         the industry-standard accessibility engine used by Microsoft, Google, and the US government.
-                        This page dogfoods accX—all accessibility compliance is achieved using accX attributes, not raw ARIA.
+                        This page dogfoods accX; all accessibility compliance is achieved using accX attributes, not raw ARIA.
                     </p>
                     <p style="font-size: 0.8rem; color: #999; margin-top: 8px; line-height: 1.5; font-style: italic;">
                         Note: The sole color-contrast violation reported above is axe-core's own attribution link, not a genX component.
@@ -2499,7 +2499,7 @@
                     </div>
                 </div>
 
-                <!-- Example 2: Multiple items — reorder by dragging into zone -->
+                <!-- Example 2: Multiple items: reorder by dragging into zone -->
                 <div class="example">
                     <h4>2. Reorder Items</h4>
                     <p>Drag each item into the zone to build an ordered list</p>
@@ -2520,18 +2520,18 @@
                     </div>
                 </div>
 
-                <!-- Example 3: Type filtering — only matching types accepted -->
+                <!-- Example 3: Type filtering: only matching types accepted -->
                 <div class="example">
                     <h4>3. Type Filtering</h4>
-                    <p>Zone only accepts images — text snaps back</p>
+                    <p>Zone only accepts images; text snaps back</p>
                     <div class="example-demo" id="type-filter-demo">
-                        <div class="dx-status" style="text-align:center; padding:6px 10px; border-radius:4px; background:#f0f4ff; color:#4a5568; font-weight:600; font-size:0.85rem; margin-bottom:10px;">Try both — only 📷 accepted</div>
+                        <div class="dx-status" style="text-align:center; padding:6px 10px; border-radius:4px; background:#f0f4ff; color:#4a5568; font-weight:600; font-size:0.85rem; margin-bottom:10px;">Try both: only 📷 accepted</div>
                         <div style="display: flex; gap: 8px; margin-bottom: 10px;">
                             <div class="draggable" dx-draggable="image" dx-revert="invalid" style="background:#e74c3c; flex:1; text-align:center;">📷 Image</div>
                             <div class="draggable" dx-draggable="text" dx-revert="invalid" style="background:#3498db; flex:1; text-align:center;">📝 Text</div>
                         </div>
                         <div class="drop-zone" dx-drop-zone="imagezone" dx-accepts="image" style="min-height: 50px;">
-                            📷 Images only — text will be rejected
+                            📷 Images only; text will be rejected
                         </div>
                         <br>
                         <strong style="color: #666; font-size: 0.9rem;">genX Attributes:</strong>
@@ -3543,7 +3543,7 @@
     <script>
         // Demo UI event handlers and interactions
         document.addEventListener('DOMContentLoaded', function() {
-            // Drag status helper — updates the prominent status bar
+            // Drag status helper: updates the prominent status bar
             const dxStatus = (el, text, color) => {
                 const s = el.closest('.example-demo')?.querySelector('.dx-status');
                 if (!s) return;
@@ -3588,7 +3588,7 @@
                 dxStatus(el, '⟳ Dragging…', '#3b82f6');
             });
 
-            // Handle drag end — snap back rejected items
+            // Handle drag end: snap back rejected items
             document.addEventListener('dx:dragend', function(e) {
                 const el = e.detail.element;
                 if (!el) return;
@@ -3607,9 +3607,9 @@
                     });
 
                     const isTypeDemo = el.closest('#type-filter-demo');
-                    dxStatus(el, isTypeDemo ? '✗ Rejected — wrong type' : '✗ Cancelled', '#e74c3c');
+                    dxStatus(el, isTypeDemo ? '✗ Rejected: wrong type' : '✗ Cancelled', '#e74c3c');
                     setTimeout(() => {
-                        dxStatus(el, isTypeDemo ? 'Try both — only 📷 accepted' : 'Ready');
+                        dxStatus(el, isTypeDemo ? 'Try both: only 📷 accepted' : 'Ready');
                     }, 2000);
                 }
                 delete el._dragOriginParent;
@@ -4434,7 +4434,7 @@
             }
 
             // Use Performance Observer API for Web Vitals
-            // Observers disconnect after 5s settling period — metrics reflect initial load only
+            // Observers disconnect after 5s settling period: metrics reflect initial load only
             if ('PerformanceObserver' in window) {
                 const observers = [];
                 try {
@@ -4483,7 +4483,7 @@
                     longTaskObserver.observe({ entryTypes: ['longtask'] });
                     observers.push(longTaskObserver);
 
-                    // Freeze metrics after 5s — initial load measurement only
+                    // Freeze metrics after 5s: initial load measurement only
                     setTimeout(() => {
                         observers.forEach(o => o.disconnect());
                         updatePerfDisplay();

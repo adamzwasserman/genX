@@ -1,11 +1,11 @@
 /**
- * genX Cloak — opt-in FOUC (format-on-load flash) remover.
+ * genX Cloak: opt-in FOUC (format-on-load flash) remover.
  * @version 1.0.0
  *
  * genX serves raw values and formats them on the client, so there is a one-to-two
  * frame window where the raw value ("871580000000") paints before genX rewrites it
  * ("$871.58B"). This module hides genX-marked elements until genX has processed them,
- * so the raw value never flashes — while guaranteeing the cloak can never outlive genX.
+ * so the raw value never flashes, while guaranteeing the cloak can never outlive genX.
  *
  * It is a GENERAL continuous-reconciliation primitive: it watches the DOM for any genX
  * marker appearing (initial parse AND later HTMX/dynamic swaps, uniformly) and reveals
@@ -19,7 +19,7 @@
  * Principles applied:
  * - Configuration as Parameters: config resolved once at the boundary (init).
  * - No Implicit Defaults (Rule 14): absence of cloakTimeoutMs is a named case resolved
- *   explicitly in resolveCloakConfig, exercised by a test — not an `=` default.
+ *   explicitly in resolveCloakConfig, exercised by a test, not an `=` default.
  * - Pure Functions: resolve/build/select/collect are input-in, output-out.
  * - I/O at the Boundary: DOM mutation and timers live only in the lifecycle functions.
  * - Declarative reveal: an element reveals itself via CSS the instant it gains fx-raw;
@@ -36,7 +36,7 @@
     const DEFAULT_TIMEOUT_MS = 1500;
     const DEFAULT_MARKERS = [{ mark: 'fx-format', done: 'fx-raw' }];
     // Generic failsafe escape: force-revealed elements gain this attribute. It is module
-    // -agnostic on purpose — the watchdog cannot synthesise a valid per-module done value,
+    // -agnostic on purpose: the watchdog cannot synthesise a valid per-module done value,
     // so it reveals via a neutral marker that genX still ignores when it later processes.
     const UNCLOAK_ATTR = 'genx-uncloak';
 
@@ -99,7 +99,7 @@
     // --- Lifecycle (the single boundary that wires pure logic to DOM + time) ---
 
     /**
-     * Install the cloak and its fail-open machinery — the single boundary wiring the pure
+     * Install the cloak and its fail-open machinery: the single boundary wiring the pure
      * logic to the DOM and timers. Runs synchronously on load; a no-op (returns null) when
      * cloak is disabled, which is the default.
      *
@@ -108,7 +108,7 @@
      * @param {Document} doc - document to cloak: the <style> is injected into its <head> and
      *   its documentElement is observed for genX markers appearing (initial parse and swaps).
      * @returns {?{reveal: function, selector: string, observer: MutationObserver}} null when
-     *   disabled; otherwise a handle — reveal() one-shot force-lifts the whole cloak, selector
+     *   disabled; otherwise a handle: reveal() one-shot force-lifts the whole cloak, selector
      *   is the still-cloaked predicate, observer is the live fail-open watchdog.
      */
     const init = (win, doc) => {
@@ -141,7 +141,7 @@
         };
 
         // The watchdog: the one signal that survives a dead bootloader. It watches for
-        // genX markers appearing — initial body parse and later swaps, the same path.
+        // genX markers appearing: initial body parse and later swaps, the same path.
         const observer = new win.MutationObserver((records) => {
             const appeared = [];
             for (const rec of records) {
@@ -155,7 +155,7 @@
         // runs at all, the whole cloak lifts by timeoutMs regardless of the observer.
         win.setTimeout(revealEverything, cfg.timeoutMs);
 
-        // Fast paths — reveal sooner than the ceiling, whichever comes first.
+        // Fast paths: reveal sooner than the ceiling, whichever comes first.
         win.addEventListener('genx:ready', revealEverything, { once: true });
         win.addEventListener('genx:error', revealEverything, { once: true });
 
