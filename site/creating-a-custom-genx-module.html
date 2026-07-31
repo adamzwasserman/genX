@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creating a Custom genX Module — genX</title>
+    <meta name="description" content="How to write a custom genX module for your project: the factory contract, a complete worked example, wiring it in via genxConfig, handling dynamic content, and opting into the FOUC cloak.">
+    <link rel="canonical" href="https://genx.software/creating-a-custom-genx-module.html">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://cdn.genx.software" crossorigin>
+    <link rel="preload" href="https://cdn.genx.software/fonts/dongle-logo.woff2" as="font" type="font/woff2" crossorigin>
+    <style>
+        @font-face { font-family:'Dongle'; src:url('https://cdn.genx.software/fonts/dongle-logo.woff2') format('woff2'); font-weight:400; font-style:normal; font-display:block; }
+        @font-face { font-family:'Mulish'; src:url('https://cdn.genx.software/fonts/mulish-regular.woff2') format('woff2'); font-weight:400; font-style:normal; font-display:optional; }
+        @font-face { font-family:'Inconsolata'; src:url('https://cdn.genx.software/fonts/inconsolata-regular.woff2') format('woff2'); font-weight:400; font-style:normal; font-display:optional; }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        :root {
+            --bg-primary:#fafafa; --bg-secondary:#ffffff; --text-primary:#333; --text-secondary:#666;
+            --border-color:#e8e8e8; --shadow:0 1px 3px rgba(0,0,0,0.08); --hover-bg:#f5f5f5; --accent:#667eea;
+        }
+        body.dark-mode {
+            --bg-primary:#1a1a1a; --bg-secondary:#2a2a2a; --text-primary:#e0e0e0; --text-secondary:#999;
+            --border-color:#444; --shadow:0 1px 3px rgba(0,0,0,0.3); --hover-bg:#333; --accent:#8b9dff;
+        }
+
+        body {
+            font-family:'Mulish', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height:1.6; color:var(--text-primary); background:var(--bg-primary);
+            transition:background .2s, color .2s; overflow-x:hidden;
+        }
+        .container { max-width:1100px; margin:0 auto; padding:20px; }
+
+        header {
+            background:var(--bg-secondary); color:var(--text-primary); padding:40px 20px; text-align:center;
+            margin-bottom:32px; border-radius:8px; border:1px solid var(--border-color); box-shadow:var(--shadow);
+        }
+        header h1 { font-size:2.6rem; font-weight:400; margin-bottom:4px; }
+        header h1 .wordmark { font-family:'Dongle', sans-serif; }
+        header h1 .wordmark .red-x { color:#dc3545; }
+        header .kicker { font-family:'Mulish', sans-serif; font-size:1.35rem; font-weight:300; color:var(--text-secondary); }
+        .back { display:inline-block; margin-top:14px; color:var(--accent); text-decoration:none; font-size:.95rem; }
+        .back:hover { text-decoration:underline; }
+
+        article {
+            max-width:820px; margin:0 auto 60px; background:var(--bg-secondary);
+            border:1px solid var(--border-color); border-radius:8px; box-shadow:var(--shadow);
+            padding:44px 48px;
+        }
+        article h2 { font-size:1.7rem; font-weight:600; margin:38px 0 14px; padding-bottom:8px; border-bottom:1px solid var(--border-color); }
+        article h3 { font-size:1.2rem; font-weight:600; margin:26px 0 10px; }
+        article p { margin:0 0 16px; }
+        article ul, article ol { margin:0 0 16px 26px; }
+        article li { margin:6px 0; }
+        article a { color:var(--accent); }
+        article strong { font-weight:600; }
+        .lead { font-size:1.08rem; }
+
+        code { font-family:'Inconsolata', 'SF Mono', Monaco, 'Courier New', monospace; }
+        :not(pre) > code { background:var(--hover-bg); padding:2px 6px; border-radius:4px; font-size:.9em; }
+        pre {
+            background:#2d2d2d; color:#f8f8f2; padding:16px 18px; border-radius:6px; margin:0 0 18px;
+            overflow-x:auto; font-size:13px; line-height:1.55;
+        }
+        pre code { background:none; padding:0; font-size:inherit; }
+
+        .callout { border-left:4px solid #4CAF50; background:var(--hover-bg); padding:12px 16px; border-radius:6px; margin:0 0 18px; font-size:.96rem; }
+
+        #darkModeToggle {
+            position:fixed; top:16px; right:16px; z-index:100; width:44px; height:44px;
+            border:1px solid var(--border-color); border-radius:50%; background:var(--bg-secondary);
+            font-size:1.2rem; cursor:pointer; box-shadow:var(--shadow);
+        }
+        @media (max-width:768px) { article { padding:28px 20px; } header h1 { font-size:2rem; } }
+    </style>
+</head>
+<body>
+    <button id="darkModeToggle" aria-label="Toggle dark mode">🌙</button>
+
+    <div class="container">
+        <header>
+            <h1><span class="wordmark">gen<span class="red-x">X</span></span></h1>
+            <div class="kicker">Creating a Custom Module</div>
+            <a class="back" href="/genx-demo.html">← Back to the demo</a>
+        </header>
+
+        <article>
+            <p class="lead">genX ships a handful of modules — formatting, accessibility, binding, drag, loading, navigation, tables, UI. But the architecture is open: any project can write its own module, host it anywhere, and have genX load and manage it exactly like a built-in. This guide walks through the module contract, builds a real one end to end, and wires it into a specific project.</p>
+
+            <h2>The mental model</h2>
+            <p>A genX module turns a <strong>declarative HTML attribute</strong> into a <strong>client-side enhancement</strong>. You write <code>&lt;time ta-since="2026-07-01"&gt;</code> in your markup; the module finds it after the page paints and rewrites it to <code>3 weeks ago</code>. The DOM is the source of truth — genX reads intent from attributes and reconciles the element to its finished state. There is no client-side store, no framework, no build step required in the page. That is the whole model, and your module follows it too.</p>
+            <p>A module is three small things: <strong>pure functions</strong> that compute the enhancement, a <strong>scan</strong> that finds the elements and applies it, and a <strong>factory</strong> — a single global the bootloader looks for by name. Everything else is convention.</p>
+
+            <h2>The contract</h2>
+            <p>When the bootloader loads a module for the prefix <code>ta</code>, it does exactly one thing after the script runs: it looks for a global named <code>taXFactory</code> on <code>window</code>. The rule is <code>window[prefix + 'XFactory']</code>. If that global is missing, the module is considered broken and genX logs an error. If it is present, genX calls it to initialize the module.</p>
+            <p>The factory is a plain object with an <code>init</code> and/or an <code>autoInit</code> method. genX prefers <code>autoInit</code> because it follows the DOM-as-state principle — it is handed the live DOM to read from, rather than pre-built data:</p>
+            <pre><code>// genX calls whichever of these you expose, preferring autoInit:
+factory.autoInit(document.body, moduleConfig);   // preferred: read state from the DOM
+factory.init(moduleConfig);                       // fallback: no DOM handed in</code></pre>
+            <p><code>moduleConfig</code> is whatever the consuming project put under <code>genxConfig.modules[prefix]</code> — your module's configuration, passed in as a parameter (never read from a global inside the module). Whatever <code>init</code>/<code>autoInit</code> returns is the module's <strong>public API</strong>. If that API exposes a <code>scan(root)</code> method, genX keeps a reference to it and calls it again whenever new content is inserted — so your module handles HTMX swaps, infinite scroll, and any dynamic DOM for free. Return at least <code>{ scan, destroy }</code>.</p>
+            <p>That is the entire contract:</p>
+            <ol>
+                <li>Expose <code>window.&lt;prefix&gt;XFactory</code> with <code>init(config)</code> and/or <code>autoInit(root, config)</code>.</li>
+                <li>Return an API object; include <code>scan(root)</code> so genX can re-run you on new content, and <code>destroy()</code> for teardown.</li>
+                <li>Keep the transform itself in pure functions.</li>
+            </ol>
+
+            <h2>Build one: timeagoX</h2>
+            <p>Here is a complete module. It enhances any element carrying <code>ta-since</code> (an ISO date) into a human-readable relative time, and keeps it accurate. The prefix is <code>ta</code>, so the factory must be <code>window.taXFactory</code>.</p>
+            <pre><code>// timeagox.js — a custom genX module (prefix "ta")
+(function () {
+  'use strict';
+
+  // --- Pure functions: input in, output out, no DOM, no globals ---
+
+  const UNITS = [
+    ['year',   31536000000],
+    ['month',   2592000000],
+    ['week',     604800000],
+    ['day',       86400000],
+    ['hour',       3600000],
+    ['minute',       60000]
+  ];
+
+  // relativeTime(fromISO, nowMs) -> "3 weeks ago" | "in 2 days" | "just now"
+  const relativeTime = (fromISO, nowMs) =&gt; {
+    const then = Date.parse(fromISO);
+    if (Number.isNaN(then)) return fromISO;            // fail safe: show the raw value
+    const diff = nowMs - then;
+    const abs = Math.abs(diff);
+    for (const [unit, ms] of UNITS) {
+      if (abs &gt;= ms) {
+        const n = Math.round(abs / ms);
+        const label = n === 1 ? unit : unit + 's';
+        return diff &gt;= 0 ? `${n} ${label} ago` : `in ${n} ${label}`;
+      }
+    }
+    return 'just now';
+  };
+
+  // --- Enhancement: apply the transform to one element, then to a subtree ---
+
+  const enhanceElement = (el, nowMs) =&gt; {
+    const since = el.getAttribute('ta-since');
+    if (!since) return;
+    el.textContent = relativeTime(since, nowMs);
+    el.setAttribute('ta-done', '');                    // mark as processed (see cloak section)
+  };
+
+  const scanElements = (root, nowMs) =&gt; {
+    if (root.matches &amp;&amp; root.matches('[ta-since]')) enhanceElement(root, nowMs);
+    root.querySelectorAll &amp;&amp; root.querySelectorAll('[ta-since]').forEach(el =&gt; enhanceElement(el, nowMs));
+  };
+
+  // --- Factory: the single global the bootloader looks for ---
+
+  const create = (config) =&gt; {
+    const refresh = () =&gt; scanElements(document, Date.now());
+    // Keep relative times fresh; interval is configurable, resolved explicitly at the boundary.
+    const everyMs = config.refreshMs === undefined ? 60000 : config.refreshMs;
+    const timer = everyMs &gt; 0 ? setInterval(refresh, everyMs) : null;
+    return {
+      // scan(root) is the important one — genX calls it on dynamically inserted content.
+      scan: (root) =&gt; scanElements(root || document, Date.now()),
+      destroy: () =&gt; { if (timer) clearInterval(timer); }
+    };
+  };
+
+  window.taXFactory = {
+    // Preferred: read straight from the DOM.
+    autoInit: (root, config) =&gt; { const api = create(config || {}); api.scan(root || document); return api; },
+    // Fallback for environments without a root element.
+    init: (config) =&gt; { const api = create(config || {}); api.scan(document); return api; }
+  };
+
+  // Optional: work standalone (without the bootloader) too.
+  if (!window.genx &amp;&amp; document.readyState !== 'loading') window.taXFactory.init({});
+  else if (!window.genx) document.addEventListener('DOMContentLoaded', () =&gt; window.taXFactory.init({}));
+})();</code></pre>
+            <p>Notice the shape: <code>relativeTime</code> is pure and independently testable (<code>relativeTime('2026-07-01', Date.parse('2026-07-22')) === '3 weeks ago'</code>), the DOM work is confined to <code>enhanceElement</code>/<code>scanElements</code>, and the factory wires it together and returns <code>{ scan, destroy }</code>. No class, no <code>this</code>, no hidden state.</p>
+
+            <h2>Wire it into your project</h2>
+            <p>Your module lives at a URL you control — your own CDN, your app's static assets, anywhere. You tell genX about it through <code>window.genxConfig</code>, set <strong>before</strong> the bootloader script runs.</p>
+            <pre><code>&lt;script&gt;
+  window.genxConfig = {
+    // Map your prefix to your module's URL. An absolute URL is used as-is;
+    // a leading-slash path is resolved against `cdn` (below).
+    modulePaths: { ta: 'https://assets.myproject.com/genx/timeagox.min.js' },
+    // Per-module config, handed to your init/autoInit as the `config` parameter.
+    modules:     { ta: { refreshMs: 30000 } },
+    // Optional: subresource integrity for your module.
+    sri:         { ta: 'sha384-…' }
+  };
+&lt;/script&gt;
+
+&lt;!-- The genX bootloader (built-in modules load automatically by their attributes). --&gt;
+&lt;script src="https://cdn.genx.software/v1/bootloader.&lt;hash&gt;.min.js" defer&gt;&lt;/script&gt;
+
+&lt;!-- Custom prefixes aren't in the bootloader's built-in attribute table, so ask for
+     yours explicitly. genx.init() loads it, initializes it, and registers it so genX
+     drives its scan() on all future dynamic content. --&gt;
+&lt;script&gt;
+  addEventListener('genx:ready', () =&gt; window.genx.init('ta'));
+&lt;/script&gt;</code></pre>
+            <p>That single <code>genx.init('ta')</code> call does the whole lifecycle: it fetches your script (applying <code>sri</code> if given), verifies <code>window.taXFactory</code> exists, calls <code>autoInit(document.body, { refreshMs: 30000 })</code>, and remembers the returned API so every later <code>rescan</code> re-runs your <code>scan</code>. From then on your module is a first-class citizen alongside the built-ins.</p>
+            <p><strong>Why the explicit <code>init</code> call?</strong> genX auto-loads its <em>built-in</em> modules by recognizing their entry attributes (<code>fx-format</code>, <code>ax-enhance</code>, and so on) during its initial DOM scan. That attribute table is fixed in the bootloader, so a brand-new prefix like <code>ta-since</code> won't trigger an automatic load — you opt it in with one line. Everything after that (dynamic rescanning, teardown, config) is automatic.</p>
+
+            <h3>Simpler still: standalone</h3>
+            <p>If you don't need the bootloader to manage your module, just load it with a plain <code>&lt;script&gt;</code> and let it self-initialize (the last few lines of the module above handle that). You lose automatic rescanning, but you can call <code>window.genx?.rescan(node)</code> yourself after inserting content, or run your own observer. Use this when the module is small and self-contained; use the bootloader-managed path when you want lifecycle and dynamic content handled for you.</p>
+
+            <h2>Dynamic content is already handled</h2>
+            <p>Because genX kept a reference to your <code>scan</code>, anything that inserts <code>ta-since</code> elements later — an HTMX swap, a "load more" button, a client render — is picked up automatically. genX watches the DOM and calls your <code>scan(insertedSubtree)</code>; your enhancement runs on exactly the new nodes. You wrote <code>scan</code> once; you never wire up a MutationObserver yourself.</p>
+            <p>If you're in standalone mode, do the same thing manually after an insert:</p>
+            <pre><code>container.insertAdjacentHTML('beforeend', newRowsHtml);
+window.genx ? window.genx.rescan(container) : window.taXFactory.init({});</code></pre>
+
+            <h2>Advanced: opt your module into the cloak</h2>
+            <p>genX serves raw values and formats them on the client, so a value can flash in its raw form for a frame or two before your module rewrites it — the same format-on-load flash the built-in <strong>cloak</strong> removes. The cloak is a general primitive: it hides any element carrying a <em>marker</em> attribute until that element gains its <em>done</em> attribute. Out of the box it is wired only to formatting (<code>fx-format</code> → <code>fx-raw</code>), but a project can extend it to a custom module by adding a marker pair.</p>
+            <p>Our <code>timeagoX</code> module already stamps <code>ta-done</code> on each element after it processes it (see <code>enhanceElement</code>). That's the done-marker. Tell the cloak about it:</p>
+            <pre><code>&lt;script&gt;
+  window.genxConfig = {
+    cloak: true,
+    cloakMarkers: [
+      { mark: 'fx-format', done: 'fx-raw'  },   // keep the built-in default
+      { mark: 'ta-since',  done: 'ta-done' }    // add yours
+    ],
+    modulePaths: { ta: 'https://assets.myproject.com/genx/timeagox.min.js' }
+  };
+&lt;/script&gt;
+&lt;!-- Load the cloak synchronously, before the bootloader, then the bootloader. --&gt;
+&lt;script src="https://cdn.genx.software/v1/cloak.&lt;hash&gt;.min.js"&gt;&lt;/script&gt;
+&lt;script src="https://cdn.genx.software/v1/bootloader.&lt;hash&gt;.min.js" defer&gt;&lt;/script&gt;</code></pre>
+            <p>Now a <code>&lt;time ta-since="…"&gt;</code> is hidden (its layout reserved, not collapsed) until your module stamps <code>ta-done</code> — so the raw ISO date never flashes. And it still <strong>fails open</strong>: if your module never runs, the cloak's timeout reveals the raw value rather than leaving a blank. Your module got FOUC protection for free, just by stamping one attribute.</p>
+
+            <h2>Checklist</h2>
+            <ul>
+                <li><strong>Prefix is unique.</strong> Avoid the built-ins (<code>fx</code>, <code>ax</code>, <code>bx</code>, <code>dx</code>, <code>lx</code>, <code>tx</code>, <code>nx</code>, <code>sx</code>, <code>ux</code>). Pick a two-or-three letter prefix that's yours.</li>
+                <li><strong>Factory name matches.</strong> Prefix <code>ta</code> → global <code>window.taXFactory</code>. genX looks for exactly <code>prefix + 'XFactory'</code>.</li>
+                <li><strong>Return an API with <code>scan(root)</code>.</strong> That's what makes dynamic content work. Add <code>destroy()</code> for teardown.</li>
+                <li><strong>Prefer <code>autoInit(root, config)</code>.</strong> Read state from the DOM you're handed; take config as a parameter, never from a global.</li>
+                <li><strong>Keep the transform pure.</strong> The function that computes the enhancement should take inputs and return outputs — no DOM, no <code>this</code>. Test it directly.</li>
+                <li><strong>Configure from the project, not the module.</strong> <code>genxConfig.modulePaths</code> points at your URL; <code>genxConfig.modules[prefix]</code> carries your options.</li>
+                <li><strong>Opt into the cloak</strong> if your module rewrites visible values, by stamping a done-marker and adding a <code>cloakMarkers</code> pair.</li>
+            </ul>
+            <p>That's the whole surface. A genX module is a global factory over a couple of pure functions — small enough to read in one sitting, and once registered, it behaves exactly like the modules genX ships.</p>
+        </article>
+    </div>
+
+    <script>
+        (function () {
+            var body = document.body, btn = document.getElementById('darkModeToggle');
+            if (localStorage.getItem('darkMode') === 'true') { body.classList.add('dark-mode'); btn.textContent = '☀️'; }
+            btn.addEventListener('click', function () {
+                body.classList.toggle('dark-mode');
+                var dark = body.classList.contains('dark-mode');
+                localStorage.setItem('darkMode', dark);
+                btn.textContent = dark ? '☀️' : '🌙';
+            });
+        })();
+    </script>
+</body>
+</html>
