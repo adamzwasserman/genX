@@ -190,8 +190,9 @@
             });
         }
 
-        pending.add(prefix);
         const path = modules[prefix];
+        if (!path) throw new Error(`genX: unknown module prefix "${prefix}" (not in modulePaths)`);
+        pending.add(prefix);
         const url = path.startsWith('http') ? path : CDN_BASE + path;
 
         const script = document.createElement('script');
@@ -283,8 +284,23 @@
 
     // --- Bootstrap: the single boundary where I/O + timing live ---
 
-    const bootstrap = () => {
-        requestAnimationFrame(async () => {
+    // Fallback delay (ms) for the hidden-tab case. In a foreground tab the rAF wins (fires
+    // within ~16ms, before this timer); in a hidden/unfocused tab, where requestAnimationFrame
+    // is paused, this timer guarantees the bootstrap still runs instead of stalling silently.
+    const BOOTSTRAP_FALLBACK_MS = 100;
+
+    /**
+     * Run `fn` exactly once, preferring a paint frame but falling back to a timer so the
+     * bootstrap still runs in hidden/unfocused tabs. `win` is injected for unit tests.
+     */
+    const scheduleOnce = (fn, win) => {
+        let started = false;
+        const run = () => { if (started) return; started = true; fn(); };
+        win.requestAnimationFrame(run);
+        win.setTimeout(run, BOOTSTRAP_FALLBACK_MS);
+    };
+
+    const bootstrapBody = async () => {
             const t0 = performance.now();
             const time = (label, fn) => { const s = performance.now(); const r = fn(); return [r, { [label]: performance.now() - s }]; };
 
@@ -346,8 +362,9 @@
                 // so cloaked elements reveal their raw value instead of staying hidden.
                 window.dispatchEvent(new CustomEvent('genx:error', { detail: { error: String(err) } }));
             }
-        });
     };
+
+    const bootstrap = () => scheduleOnce(bootstrapBody, window);
 
     // --- Public API ---
 
@@ -359,7 +376,7 @@
         getFactory: (prefix) => factories[prefix],
         getConfig: (el) => parseMap.get(el) || null,
         detectNotationStyles, loadParsers, parseElements,
-        buildSelector, detectPrefix
+        buildSelector, detectPrefix, scheduleOnce
     };
 
     window.genx = api;
