@@ -44,3 +44,10 @@ coverage/
 # Proprietary (not for public distribution)
 proprietary/
 .wrangler/
+
+# UI-audit screenshots + Playwright/MCP scratch artifacts (dumped in repo root)
+/*.png
+/*.jpeg
+genx-ui-scan.txt
+playground-snapshot.md
+.playwright-mcp/
