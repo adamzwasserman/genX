@@ -1,3 +1,4 @@
+@wip # no step definitions written for this spec yet
 Feature: Bootloader Bootstrap Sequence
   As a genX bootloader
   I want to initialize in 6 optimized phases

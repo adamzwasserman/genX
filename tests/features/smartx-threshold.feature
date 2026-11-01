@@ -1,3 +1,4 @@
+@wip # no step definitions written for this spec yet
 Feature: SmartX Confidence Threshold Configuration
   As a SmartX user
   I want to configure confidence thresholds for smart formatting

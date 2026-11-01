@@ -1,3 +1,4 @@
+@wip # no step definitions written for this spec yet
 Feature: SmartX HTTP Logging with Rate Limiting
   As a SmartX user
   I want to send low-confidence detections to an analytics endpoint

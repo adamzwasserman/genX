@@ -1,3 +1,4 @@
+@wip # no step definitions written for this spec yet
 Feature: tableX Virtual Scrolling - High-Performance Large Dataset Handling
   As a web developer
   I want virtual scrolling for tables with 10,000+ rows

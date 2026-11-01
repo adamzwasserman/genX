@@ -1,3 +1,4 @@
+@wip # no step definitions written for this spec yet
 Feature: Bootloader Unified DOM Scan
   As a genX bootloader
   I want to scan the DOM once using a single querySelector

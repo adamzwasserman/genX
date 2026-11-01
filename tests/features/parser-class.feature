@@ -1,3 +1,4 @@
+@wip # no step definitions written for this spec yet
 Feature: CSS Class Parser
   As a genX parser module
   I want to parse CSS class notation into configuration objects

@@ -1,3 +1,4 @@
+@wip # no step definitions written for this spec yet
 Feature: Verbose Attribute Parser
   As a genX parser module
   I want to parse verbose attribute notation into configuration objects

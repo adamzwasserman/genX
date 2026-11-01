@@ -11,6 +11,7 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
   # FMTX - FormatX Module Tests
   # ============================================================================
 
+  @wip # no step definitions written for this scenario yet
   Scenario Outline: FormatX notation equivalence for <format>
     Given I have a FormatX element with <format> formatting
     When I render all 4 notation styles (verbose, colon, json, class)
@@ -26,18 +27,21 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
       | date       | 2024-11-25 | 2024-11-25  |
       | phone      | 5551234567 | (555) 123-4567 |
 
+  @wip # no step definitions written for this scenario yet
   Scenario: FormatX notation priority resolution
     Given I have an element with multiple notation styles
     When JSON notation is present with verbose and CSS class
     Then JSON should take priority
     And resulting format should be from JSON notation
 
+  @wip # no step definitions written for this scenario yet
   Scenario: FormatX complex configuration with colon notation
     Given a complex currency format with EUR, 2 decimals, prefix symbol
     When using colon notation: fx-format="currency:EUR:2:prefix"
     Then output should match verbose notation equivalent
     And output should be € 9,876,543.89
 
+  @wip # no step definitions written for this scenario yet
   Scenario: FormatX edge case with null values
     Given a FormatX element with null/empty input
     When all 4 notation styles process the value
@@ -48,6 +52,7 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
   # ACCX - AccessX Module Tests
   # ============================================================================
 
+  @wip # no step definitions written for this scenario yet
   Scenario Outline: AccessX notation equivalence for <enhancement>
     Given I have an AccX element with <enhancement> enhancement
     When I render all 4 notation styles (verbose, colon, json, class)
@@ -62,17 +67,20 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
       | time        | 2:30 PM EST                   |
       | percentage  | 85.5 percent                  |
 
+  @wip # no step definitions written for this scenario yet
   Scenario: AccessX live region equivalence
     Given I have a live region for dynamic content
     When I set all 4 notation styles for ax-live="polite"
     Then all should set aria-live="polite" attribute
     And all should set aria-atomic="true" if specified
 
+  @wip # no step definitions written for this scenario yet
   Scenario: AccessX priority resolution with JSON
     Given an element with verbose label and JSON opts
     When both contain label configurations
     Then JSON notation should take priority
 
+  @wip # no step definitions written for this scenario yet
   Scenario: AccessX semantic correctness
     Given an abbreviation with WCAG expanded text
     When using colon notation ax-abbreviation="WCAG:Web Content Accessibility Guidelines"
@@ -83,6 +91,7 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
   # BINDX - BindX Module Tests
   # ============================================================================
 
+  @wip # no step definitions written for this scenario yet
   Scenario Outline: BindX notation equivalence for <binding_type>
     Given I have a BindX element with <binding_type> binding
     When I render all 4 notation styles (verbose, colon, json, class)
@@ -96,24 +105,28 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
       | debounced    | email    | 500      |
       | complex      | searchQuery | 300    |
 
+  @wip # no step definitions written for this scenario yet
   Scenario: BindX nested property binding
     Given a nested property path user.profile.email
     When using all 4 notation styles
     Then all should correctly resolve nested path
     And all should propagate changes bidirectionally
 
+  @wip # no step definitions written for this scenario yet
   Scenario: BindX event binding equivalence
     Given click event handler "handleSave"
     When using colon notation bx-click="handleSave:500"
     Then should create debounced click handler
     And should match verbose and JSON equivalents
 
+  @wip # no step definitions written for this scenario yet
   Scenario: BindX validation with async
     Given async validation function "checkUsernameAvailable"
     When using JSON notation with error message
     Then validation should be applied to binding
     And error message should display on validation failure
 
+  @wip # no step definitions written for this scenario yet
   Scenario: BindX complex configuration
     Given complex binding with debounce, throttle, and conditional
     When using colon notation with all parameters
@@ -124,6 +137,7 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
   # LOADX - LoadX Module Tests
   # ============================================================================
 
+  @wip # no step definitions written for this scenario yet
   Scenario Outline: LoadX notation equivalence for <trigger_type>
     Given I have a LoadX element with <trigger_type> trigger
     When I render all 4 notation styles (verbose, colon, json, class)
@@ -137,24 +151,28 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
       | click        | /api/data   | click   |
       | poll         | /api/status | poll    |
 
+  @wip # no step definitions written for this scenario yet
   Scenario: LoadX with cache configuration
     Given a LoadX element with cache enabled
     When using JSON notation with cache: true
     Then subsequent requests should use cached data
     And should match verbose behavior
 
+  @wip # no step definitions written for this scenario yet
   Scenario: LoadX error handling with retry
     Given a LoadX element configured for retry
     When JSON notation specifies retry: 3, retry_delay: 1000
     Then should retry failed requests up to 3 times
     And should wait 1000ms between retries
 
+  @wip # no step definitions written for this scenario yet
   Scenario: LoadX dependency-based loading
     Given a LoadX element that depends on itemId
     When itemId changes in the data model
     Then should trigger new load request
     And all notation styles should respond identically
 
+  @wip # no step definitions written for this scenario yet
   Scenario: LoadX swap modes equivalence
     Given LoadX with swap="beforebegin" and target="#modal"
     When using all 4 notation styles
@@ -165,6 +183,7 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
   # NAVX - NavX Module Tests
   # ============================================================================
 
+  @wip # no step definitions written for this scenario yet
   Scenario Outline: NavX notation equivalence for <nav_type>
     Given I have a NavX element with <nav_type> navigation
     When I render all 4 notation styles (verbose, colon, json, class)
@@ -177,12 +196,14 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
       | scroll-spy   | current      |
       | breadcrumb   | (auto)       |
 
+  @wip # no step definitions written for this scenario yet
   Scenario: NavX scroll-spy with offset
     Given scroll-spy navigation with offset: 100px
     When using JSON notation: scroll_offset: 100
     Then section becomes active when 100px from viewport top
     And should match verbose notation behavior
 
+  @wip # no step definitions written for this scenario yet
   Scenario: NavX dropdown menu with hover trigger
     Given dropdown menu with hover trigger
     When using colon notation nx-dropdown="true:hover:click-outside"
@@ -190,6 +211,7 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
     And closes when clicking outside
     And matches verbose behavior
 
+  @wip # no step definitions written for this scenario yet
   Scenario: NavX keyboard navigation with cycling
     Given keyboard navigation with arrow keys
     When using JSON notation with cycle: true
@@ -197,6 +219,7 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
     And focus cycles at list ends
     And all styles behave identically
 
+  @wip # no step definitions written for this scenario yet
   Scenario: NavX mobile hamburger menu
     Given responsive hamburger menu
     When using CSS class notation
@@ -207,6 +230,7 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
   # DRAGX - DragX Module Tests
   # ============================================================================
 
+  @wip # no step definitions written for this scenario yet
   Scenario Outline: DragX notation equivalence for <drag_type>
     Given I have a DragX element with <drag_type> configuration
     When I render all 4 notation styles (verbose, colon, json, class)
@@ -219,12 +243,14 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
       | handle    | panel       |
       | complex   | list-item   |
 
+  @wip # no step definitions written for this scenario yet
   Scenario: DragX with constrained axis
     Given draggable element with axis constraint
     When using colon notation dx-drag="slider::x"
     Then can only drag horizontally
     And matches verbose and JSON behavior
 
+  @wip # no step definitions written for this scenario yet
   Scenario: DragX with custom ghost image
     Given draggable with custom ghost image
     When using JSON notation with ghost_src and offset
@@ -232,6 +258,7 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
     And offset applied correctly
     And all styles match
 
+  @wip # no step definitions written for this scenario yet
   Scenario: DragX drop zone with type filtering
     Given drop zone accepting "card" and "task" types
     When using all 4 notation styles
@@ -239,6 +266,7 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
     And drop effect respected (move/copy)
     And all styles behave identically
 
+  @wip # no step definitions written for this scenario yet
   Scenario: DragX swap behavior in sortable list
     Given sortable list with swap behavior
     When using colon notation with behavior="swap"
@@ -249,6 +277,7 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
   # CROSS-MODULE INTEGRATION TESTS
   # ============================================================================
 
+  @wip # no step definitions written for this scenario yet
   Scenario: Mixed notation styles on same page
     Given a page with verbose, colon, JSON, and class notations mixed
     When all modules parse and initialize
@@ -256,12 +285,14 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
     And no conflicts between different styles
     And performance under 100ms total
 
+  @wip # no step definitions written for this scenario yet
   Scenario: Notation priority resolution across modules
     Given elements with multiple notation styles (verbose + JSON + class)
     When modules process these elements
     Then priority order: JSON > Colon > Verbose > Class
     And higher priority always wins
 
+  @wip # no step definitions written for this scenario yet
   Scenario: Performance test with 1000 mixed elements
     Given 1000 elements using all 4 notation styles
     When all modules scan and parse the page
@@ -269,6 +300,7 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
     And per-element parsing under 0.2ms average
     And no memory leaks detected
 
+  @wip # no step definitions written for this scenario yet
   Scenario: Edge case - empty configurations
     Given elements with empty notation values
     When all modules attempt to process them
@@ -276,6 +308,7 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
     And should not apply enhancements
     And should not throw errors
 
+  @wip # no step definitions written for this scenario yet
   Scenario: Edge case - malformed JSON
     Given elements with invalid JSON in -opts attributes
     When modules parse configurations
@@ -283,6 +316,7 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
     Then should fall back to verbose notation
     And should log warnings appropriately
 
+  @wip # no step definitions written for this scenario yet
   Scenario: Validation - all 4 styles produce identical behavior
     Given 20 common format configurations
     When rendered with all 4 notation styles
@@ -306,6 +340,7 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
     Then second access should be under 0.1ms
     And no re-parsing occurs
 
+  @wip # no step definitions written for this scenario yet
   Scenario: Memory efficiency
     Given 10000 elements with polymorphic notation
     When all are parsed and cached
@@ -316,24 +351,28 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
   # DOCUMENTATION AND BACKWARDS COMPATIBILITY
   # ============================================================================
 
+  @wip # no step definitions written for this scenario yet
   Scenario: Verbose notation remains primary
     Given developer familiarity with verbose syntax
     When using verbose notation across project
     Then should work identically to other notations
     And should be first choice in documentation
 
+  @wip # no step definitions written for this scenario yet
   Scenario: Colon notation for conciseness
     Given need for compact configuration syntax
     When using colon notation
     Then should produce identical output to verbose
     And should be documented as shorthand
 
+  @wip # no step definitions written for this scenario yet
   Scenario: JSON notation for programmatic generation
     Given configuration generated from JavaScript
     When using JSON notation with dynamic values
     Then should support full flexibility
     And should be documented for generated configs
 
+  @wip # no step definitions written for this scenario yet
   Scenario: CSS class notation for static markup
     Given static HTML templates
     When using CSS class notation

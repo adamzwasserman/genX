@@ -1,3 +1,4 @@
+@wip # no step definitions written for this spec yet
 Feature: JSON Parser
   As a genX parser module
   I want to parse JSON-encoded configuration from -opts attributes

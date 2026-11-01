@@ -1,3 +1,4 @@
+@wip # no step definitions written for this spec yet
 Feature: SmartX - Auto-Detection Formatting
   As a web developer
   I want automatic data type detection and formatting

@@ -1,3 +1,4 @@
+@wip # no step definitions written for this spec yet
 Feature: SmartX Console Logging for Low Confidence
   As a SmartX developer
   I want to log low-confidence detections to console
