@@ -757,7 +757,7 @@ describe('tableX - Column Sorting', () => {
                 expect(resultCount.textContent).toContain('1 row found');
             });
 
-            it.skip('resets pagination when filtering', async () => {
+            it('resets pagination when filtering', async () => {
                 container.innerHTML = `
                     <table tx-filterable tx-filter-debounce="100" tx-paginate tx-per-page="2">
                         <tbody>
@@ -791,6 +791,63 @@ describe('tableX - Column Sorting', () => {
                 expect(pageInfo.textContent).toContain('Page 1');
             });
 
+            it('pages through matching rows only', async () => {
+                container.innerHTML = `
+                    <table tx-filterable tx-filter-debounce="10" tx-paginate tx-per-page="2">
+                        <tbody>
+                            <tr><td>Ann</td></tr><tr><td>Bob</td></tr><tr><td>Anna</td></tr>
+                            <tr><td>Cid</td></tr><tr><td>Hannah</td></tr>
+                        </tbody>
+                    </table>`;
+                const table = container.querySelector('table');
+                tableX.initTable(table);
+                const input = container.querySelector('.tx-filter-input');
+                input.value = 'ann';
+                input.dispatchEvent(new Event('input'));
+                await new Promise(resolve => setTimeout(resolve, 50));
+                const shown = () => Array.from(table.querySelectorAll('tbody tr'))
+                    .filter(r => r.style.display !== 'none').map(r => r.textContent);
+                expect(shown()).toEqual(['Ann', 'Anna']);
+                expect(container.querySelector('.tx-pagination-info').textContent).toBe('Page 1 of 2');
+                container.querySelector('.tx-pagination-next').click();
+                expect(shown()).toEqual(['Hannah']);
+            });
+
+            it('shows every match on a table without pagination', async () => {
+                const rows = Array.from({ length: 12 }, (_, i) => `<tr><td>${i < 11 ? 'x' : 'y'}${i}</td></tr>`).join('');
+                container.innerHTML = `<table tx-filterable tx-filter-debounce="10"><tbody>${rows}</tbody></table>`;
+                const table = container.querySelector('table');
+                tableX.initTable(table);
+                const input = container.querySelector('.tx-filter-input');
+                input.value = 'y';
+                input.dispatchEvent(new Event('input'));
+                await new Promise(resolve => setTimeout(resolve, 50));
+                const shown = Array.from(table.querySelectorAll('tbody tr'))
+                    .filter(r => r.style.display !== 'none').map(r => r.textContent);
+                expect(shown).toEqual(['y11']);
+            });
+
+            it('uses the input named by tx-filter and emits tx:filter', async () => {
+                container.innerHTML = `
+                    <input type="search" id="ext-search">
+                    <table tx-filter="#ext-search" tx-filter-debounce="10">
+                        <tbody><tr><td>Alice</td></tr><tr><td>Bob</td></tr></tbody>
+                    </table>`;
+                const table = container.querySelector('table');
+                tableX.initTable(table);
+                expect(container.querySelector('.tx-filter-input')).toBeNull();
+                const details = [];
+                table.addEventListener('tx:filter', e => details.push(e.detail));
+                const input = container.querySelector('#ext-search');
+                input.value = 'bob';
+                input.dispatchEvent(new Event('input'));
+                await new Promise(resolve => setTimeout(resolve, 50));
+                const rows = table.querySelectorAll('tbody tr');
+                expect(rows[0].style.display).toBe('none');
+                expect(rows[1].style.display).toBe('');
+                expect(details).toEqual([{ filterTerm: 'bob', matches: 1, totalRows: 2 }]);
+            });
+
             it('handles table without tbody', () => {
                 container.innerHTML = `<table tx-filterable></table>`;
 
@@ -814,6 +871,50 @@ describe('tableX - Column Sorting', () => {
 
         afterEach(() => {
             document.body.removeChild(container);
+        });
+
+        it('emits a bubbling tx:sort event with column and direction', () => {
+            container.innerHTML = `
+                <table tx-sortable>
+                    <thead><tr><th>Name</th></tr></thead>
+                    <tbody><tr><td>B</td></tr><tr><td>A</td></tr></tbody>
+                </table>`;
+            const table = container.querySelector('table');
+            tableX.init(table);
+            const seen = [];
+            container.addEventListener('tx:sort', e => seen.push([e.detail.column, e.detail.direction]));
+            const th = table.querySelector('th');
+            th.click();
+            th.click();
+            th.click();
+            expect(seen).toEqual([[0, 'asc'], [0, 'desc'], [0, null]]);
+        });
+
+        it('emits tx:page when the page changes', () => {
+            const rows = Array.from({ length: 4 }, (_, i) => `<tr><td>${i}</td></tr>`).join('');
+            container.innerHTML = `<table tx-paginate tx-per-page="2"><tbody>${rows}</tbody></table>`;
+            const table = container.querySelector('table');
+            tableX.initTable(table);
+            const pages = [];
+            table.addEventListener('tx:page', e => pages.push(e.detail));
+            container.querySelector('.tx-pagination-next').click();
+            expect(pages).toEqual([{ page: 2, totalPages: 2 }]);
+        });
+
+        it('leaves a header with tx-sortable="false" unsortable', () => {
+            container.innerHTML = `
+                <table tx-sortable>
+                    <thead><tr><th>Name</th><th tx-sortable="false">Notes</th></tr></thead>
+                    <tbody><tr><td>B</td><td>2</td></tr><tr><td>A</td><td>1</td></tr></tbody>
+                </table>`;
+            const table = container.querySelector('table');
+            tableX.init(table);
+            const [nameTh, notesTh] = table.querySelectorAll('th');
+            expect(nameTh.classList.contains('tx-sortable')).toBe(true);
+            expect(notesTh.classList.contains('tx-sortable')).toBe(false);
+            expect(notesTh.hasAttribute('aria-sort')).toBe(false);
+            notesTh.click();
+            expect(table.querySelector('tbody td').textContent).toBe('B');
         });
 
         it('sorts on header click', () => {
@@ -1051,6 +1152,26 @@ describe('tableX - Column Sorting', () => {
             expect(newState.sortState.column).toBe(0);
             expect(state.sortState.column).toBe(null);
         });
+    });
+});
+
+describe('tableX - Virtual scrolling', () => {
+    it('wraps the table in a scroll container where the table was', () => {
+        const host = document.createElement('div');
+        host.id = 'vs-host';
+        const rows = Array.from({ length: 50 }, (_, i) => `<tr><td>Row ${i + 1}</td></tr>`).join('');
+        host.innerHTML = `<table tx-virtual="true"><thead><tr><th>Item</th></tr></thead><tbody>${rows}</tbody></table>`;
+        document.body.appendChild(host);
+
+        const table = host.querySelector('table');
+        expect(() => tableX.initTable(table)).not.toThrow();
+
+        const container = host.querySelector(':scope > .tx-virtual-scroll-container');
+        expect(container).toBeTruthy();
+        expect(container.querySelector(':scope > .tx-virtual-table-wrapper > table')).toBe(table);
+        expect(table.getAttribute('aria-rowcount')).toBe('50');
+
+        host.remove();
     });
 });
 

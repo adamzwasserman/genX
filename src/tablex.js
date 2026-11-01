@@ -462,6 +462,16 @@
         liveRegion.textContent = message;
     };
 
+    /**
+     * Dispatch a bubbling tableX event (tx:sort, tx:page, tx:filter)
+     * @param {HTMLTableElement} table - Table element
+     * @param {string} name - Event name
+     * @param {Object} detail - Event detail
+     */
+    const emit = (table, name, detail) => {
+        table.dispatchEvent(new CustomEvent(name, { bubbles: true, detail }));
+    };
+
     // ====================
     // SORT HANDLER
     // ====================
@@ -564,6 +574,7 @@
             const th = table.querySelector('thead th:nth-child(' + (columnIndex + 1) + ')');
             const columnName = th ? th.textContent.trim() : 'column ' + (columnIndex + 1);
             announceSortChange(table, columnName, null);
+            emit(table, 'tx:sort', { column: columnIndex, columnName, direction: null, columns: [] });
             return;
         }
 
@@ -594,6 +605,12 @@
         const columnName = th ? th.textContent.trim() : 'column ' + (columnIndex + 1);
         const dir = newColumns.find(col => col.column === columnIndex)?.direction;
         announceSortChange(table, columnName, dir || null);
+        emit(table, 'tx:sort', {
+            column: columnIndex,
+            columnName,
+            direction: dir || null,
+            columns: newColumns.map(col => ({ ...col }))
+        });
     };
 
     // ====================
@@ -635,9 +652,15 @@
             return;
         }
 
-        const rows = tbody.querySelectorAll('tr');
-        rows.forEach((row, index) => {
-            if (index >= startRow && index < endRow) {
+        // Rows hidden by an active filter never count toward a page
+        let index = 0;
+        tbody.querySelectorAll('tr').forEach(row => {
+            const inPage = !row.hasAttribute('data-tx-filtered-out') &&
+                index >= startRow && index < endRow;
+            if (!row.hasAttribute('data-tx-filtered-out')) {
+                index++;
+            }
+            if (inPage) {
                 row.style.display = '';
                 row.removeAttribute('aria-hidden');
             } else {
@@ -646,6 +669,14 @@
             }
         });
     };
+
+    /**
+     * Count rows that pass the active filter
+     * @param {HTMLElement} tbody - Table body
+     * @returns {number} Row count
+     */
+    const countPageableRows = (tbody) =>
+        tbody.querySelectorAll('tr:not([data-tx-filtered-out])').length;
 
     /**
      * Create pagination controls
@@ -733,7 +764,7 @@
             return;
         }
 
-        const totalRows = tbody.querySelectorAll('tr').length;
+        const totalRows = countPageableRows(tbody);
         const perPage = state.paginationState.perPage;
 
         // Calculate new pagination
@@ -760,6 +791,7 @@
 
         // Announce page change
         announcePaginationChange(table, pagination.currentPage, pagination.totalPages);
+        emit(table, 'tx:page', { page: pagination.currentPage, totalPages: pagination.totalPages });
     };
 
     /**
@@ -810,8 +842,9 @@
 
         headers.forEach((th, index) => {
             // Check if this header is sortable
-            const isSortable = th.hasAttribute('tx-sortable') ||
-                             table.hasAttribute('tx-sortable');
+            // tx-sortable="false" on a header opts that column out
+            const isSortable = th.getAttribute('tx-sortable') !== 'false' &&
+                             (th.hasAttribute('tx-sortable') || table.hasAttribute('tx-sortable'));
 
             if (isSortable) {
                 // Make header clickable
@@ -1005,39 +1038,28 @@
 
         rows.forEach((row, index) => {
             if (visibleSet.has(index)) {
-                row.style.display = '';
-                row.removeAttribute('aria-hidden');
+                row.removeAttribute('data-tx-filtered-out');
             } else {
-                row.style.display = 'none';
-                row.setAttribute('aria-hidden', 'true');
+                row.setAttribute('data-tx-filtered-out', '');
             }
         });
 
-        // If pagination is enabled, reset to page 1 after filtering
+        // Paginated tables page through the matching rows, starting at page 1
         const state = tableStates.get(table);
-        if (state && state.paginationState && state.paginationState.perPage > 0) {
-            // Update pagination to reflect filtered results
-            const perPage = state.paginationState.perPage;
-            const pagination = calculatePagination(visibleRows.length, perPage, 1);
-
-            // Update state
-            const newState = updateState(state, {
-                paginationState: {
-                    ...state.paginationState,
-                    currentPage: 1,
-                    totalRows: visibleRows.length,
-                    totalPages: pagination.totalPages
-                }
-            });
-            tableStates.set(table, newState);
-
-            // Apply pagination to visible rows only
-            applyPagination(table, 0, Math.min(perPage, visibleRows.length));
-
-            // Update pagination controls
-            updatePaginationControls(table, 1, pagination.totalPages, pagination.hasNext, pagination.hasPrev);
-            announcePaginationChange(table, 1, pagination.totalPages);
+        if (table.hasAttribute('tx-paginate') && state && state.paginationState.perPage > 0) {
+            navigateToPage(table, 1);
+            return;
         }
+
+        rows.forEach(row => {
+            if (row.hasAttribute('data-tx-filtered-out')) {
+                row.style.display = 'none';
+                row.setAttribute('aria-hidden', 'true');
+            } else {
+                row.style.display = '';
+                row.removeAttribute('aria-hidden');
+            }
+        });
     };
 
     /**
@@ -1152,15 +1174,29 @@
         });
         tableStates.set(table, state);
 
-        // Create and insert filter input
-        const filterControl = createFilterInput(table, debounceMs);
-        table.parentElement?.insertBefore(filterControl, table);
+        // tx-filter="#selector" names an existing search input; otherwise
+        // tableX inserts its own input above the table
+        const filterTarget = table.getAttribute('tx-filter');
+        let externalInput = null;
+        if (filterTarget && filterTarget !== 'true' && filterTarget !== '') {
+            try {
+                externalInput = document.querySelector(filterTarget);
+            } catch (e) {
+                externalInput = null;
+            }
+        }
 
-        const input = filterControl.querySelector('input');
-        const resultCount = filterControl.querySelector('.tx-filter-count');
-
-        // Initial result count
-        resultCount.textContent = `${totalRows} rows`;
+        let input;
+        let resultCount = null;
+        if (externalInput) {
+            input = externalInput;
+        } else {
+            const filterControl = createFilterInput(table, debounceMs);
+            table.parentElement?.insertBefore(filterControl, table);
+            input = filterControl.querySelector('input');
+            resultCount = filterControl.querySelector('.tx-filter-count');
+            resultCount.textContent = `${totalRows} rows`;
+        }
 
         // Handle filter input with debouncing
         const handleFilter = debounce((query) => {
@@ -1185,13 +1221,20 @@
             applyFilter(table, filterResult.visibleRows);
 
             // Update result count
-            const matchText = filterResult.totalMatches === 1 ? 'row' : 'rows';
-            resultCount.textContent = query.trim()
-                ? `${filterResult.totalMatches} ${matchText} found`
-                : `${totalRows} rows`;
+            if (resultCount) {
+                const matchText = filterResult.totalMatches === 1 ? 'row' : 'rows';
+                resultCount.textContent = query.trim()
+                    ? `${filterResult.totalMatches} ${matchText} found`
+                    : `${totalRows} rows`;
+            }
 
             // Announce to screen readers
             announceFilterResults(table, filterResult.totalMatches, totalRows);
+            emit(table, 'tx:filter', {
+                filterTerm: query,
+                matches: filterResult.totalMatches,
+                totalRows
+            });
         }, debounceMs);
 
         input.addEventListener('input', (e) => {
@@ -1314,13 +1357,12 @@
             will-change: transform;
         `;
 
+        // Put the container where the table was, then move the table into
+        // a wrapper inside it
         const tableWrapper = document.createElement('div');
         tableWrapper.className = 'tx-virtual-table-wrapper';
-        table.parentNode.insertBefore(tableWrapper, table);
+        table.parentNode.insertBefore(container, table);
         tableWrapper.appendChild(table);
-
-        container.appendChild(tableWrapper);
-        tableWrapper.parentNode.replaceChild(container, tableWrapper);
         container.appendChild(tableWrapper);
 
         return container;
@@ -1653,7 +1695,7 @@
         paginatedTables.forEach(initTablePagination);
 
         // Initialize filterable tables
-        const filterableTables = document.querySelectorAll('table[tx-filterable]');
+        const filterableTables = document.querySelectorAll('table[tx-filterable], table[tx-filter]');
         filterableTables.forEach(initTableFilter);
     };
 
@@ -1690,7 +1732,7 @@
         }
 
         // Initialize filtering if applicable
-        if (table.hasAttribute('tx-filterable')) {
+        if (table.hasAttribute('tx-filterable') || table.hasAttribute('tx-filter')) {
             initTableFilter(table);
         }
     };
