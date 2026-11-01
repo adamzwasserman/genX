@@ -17,6 +17,7 @@ let performanceMetrics = {};
 
 Given('I have a test page with bindX loaded', async function() {
     await this.page.goto('about:blank');
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/bindx.js' });
 });
 

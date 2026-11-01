@@ -5,6 +5,7 @@ const assert = require('assert');
 // Background
 Given('the fmtX module is loaded', async function() {
     await this.page.goto('about:blank');
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/fmtx.js' });
 });
 
@@ -24,6 +25,7 @@ Given('an element with attributes:', async function(dataTable) {
             <span id="test" ${attrString}>${attrs['fx-raw'] || ''}</span>
         </body></html>
     `);
+    this.element = this.page.locator('#test');
 });
 
 When('the element is processed', async function() {
@@ -47,6 +49,7 @@ defineElement('an element with fx-format={string} fx-currency={string} fx-locale
             <span id="test" fx-format="${format}" fx-currency="${currency}" fx-locale="${locale}">1234.56</span>
         </body></html>
     `);
+    this.element = this.page.locator('#test');
 });
 
 Given('the fx-raw value is {string}', async function(value) {
@@ -63,6 +66,7 @@ defineElement('an element with fx-format={string} fx-currency={string}', async f
             <span id="test" fx-format="${format}" fx-currency="${currency}" fx-raw="99.99">99.99</span>
         </body></html>
     `);
+    this.element = this.page.locator('#test');
 });
 
 defineElement('an element with fx-format={string} fx-date-format={string}', async function(format, dateFormat) {
@@ -71,6 +75,7 @@ defineElement('an element with fx-format={string} fx-date-format={string}', asyn
             <span id="test" fx-format="${format}" fx-date-format="${dateFormat}" fx-raw="2024-03-15">2024-03-15</span>
         </body></html>
     `);
+    this.element = this.page.locator('#test');
 });
 
 defineElement('an element with fx-format={string}', async function(format) {
@@ -79,6 +84,7 @@ defineElement('an element with fx-format={string}', async function(format) {
             <span id="test" fx-format="${format}">placeholder</span>
         </body></html>
     `);
+    this.element = this.page.locator('#test');
 });
 
 defineElement('an element with fx-format={string} fx-raw={string}', async function(format, raw) {
@@ -87,6 +93,7 @@ defineElement('an element with fx-format={string} fx-raw={string}', async functi
             <span id="test" fx-format="${format}" fx-raw="${raw}">${raw}</span>
         </body></html>
     `);
+    this.element = this.page.locator('#test');
 });
 
 // Phone formatting
@@ -96,6 +103,7 @@ defineElement('an element with fx-format={string} fx-phone-format={string}', asy
             <span id="test" fx-format="${format}" fx-phone-format="${phoneFormat}">5551234567</span>
         </body></html>
     `);
+    this.element = this.page.locator('#test');
 });
 
 // Text truncation
@@ -105,6 +113,7 @@ defineElement('an element with fx-format={string} fx-length={string}', async fun
             <span id="test" fx-format="${format}" fx-length="${length}" fx-raw="This is a very long text">This is a very long text</span>
         </body></html>
     `);
+    this.element = this.page.locator('#test');
 });
 
 // Duration formatting
@@ -114,11 +123,13 @@ defineElement('an element with fx-format={string} fx-duration-format={string}', 
             <span id="test" fx-format="${format}" fx-duration-format="${durationFormat}">93784</span>
         </body></html>
     `);
+    this.element = this.page.locator('#test');
 });
 
 // Dynamic content
 Given('the fmtX module is initialized', async function() {
     await this.page.goto('about:blank');
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/fmtx.js' });
     await this.page.waitForTimeout(100);
 });
@@ -187,6 +198,7 @@ Given('{int} elements with fx-format={string}', async function(count, format) {
     ).join('');
 
     await this.page.setContent(`<html><body>${elements}</body></html>`);
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/fmtx.js' });
 });
 

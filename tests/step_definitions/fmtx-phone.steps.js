@@ -12,6 +12,7 @@ Given('elements with different phone formats:', async function(docString) {
         </body>
         </html>
     `);
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/fmtx.js' });
 });
 
@@ -29,6 +30,7 @@ Given('{int} elements with fx-format={string} fx-phone-format={string}', async f
     }).join('');
 
     await this.page.setContent(`<html><body>${elements}</body></html>`);
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/fmtx.js' });
 });
 
@@ -58,6 +60,7 @@ When('phone numbers from test matrix are processed', async function() {
             await this.page.setContent(`
                 <span id="test" fx-format="phone" fx-phone-format="${format}" fx-raw="${scenario.input}">${scenario.input}</span>
             `);
+            await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
             await this.page.addScriptTag({ path: './src/fmtx.js' });
             await this.page.evaluate(() => {
                 const el = document.getElementById('test');
@@ -141,6 +144,7 @@ Given('a phone element with input {string} and format {string}', async function(
             <span id="test" fx-format="phone" fx-phone-format="${format}" fx-raw="${input}">${input}</span>
         </body></html>
     `);
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/fmtx.js' });
 });
 

@@ -43,7 +43,7 @@ Given('a reactive data object with {word}.{word}.{word}={string}', async functio
     await this.page.evaluate(([o1, o2, p, v]) => {
         window._testData = { [o1]: { [o2]: { [p]: v } } };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, [obj1, obj2, prop, value]);
 });
@@ -72,7 +72,7 @@ Given('a reactive data object with {word}={string}, {word}={string}, {word}={str
     await this.page.evaluate(([keys, vals]) => {
         window._testData = { [keys[0]]: vals[0], [keys[1]]: vals[1], [keys[2]]: vals[2] };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, [[k1, k2, k3], [v1, v2, v3]]);
 });

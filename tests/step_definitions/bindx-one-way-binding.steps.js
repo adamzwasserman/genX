@@ -24,7 +24,7 @@ Given('reactive data \\{ user: \\{ name: {string} } }', async function(name) {
     await this.page.evaluate((n) => {
         window._testData = { user: { name: n } };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, name);
 });
@@ -43,7 +43,7 @@ Given('reactive data \\{ {word}: {int} }', async function(key, value) {
     await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, [key, value]);
 });
@@ -62,7 +62,7 @@ Given('reactive data with nested properties', async function() {
     await this.page.evaluate(() => {
         window._testData = { user: { profile: { city: 'San Francisco' } } };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     });
 });
@@ -81,7 +81,7 @@ Given('reactive data \\{ {word}: {string} }', async function(key, value) {
     await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, [key, value]);
 });
@@ -99,7 +99,7 @@ Given('data containing {string}', async function(maliciousContent) {
     await this.page.evaluate((content) => {
         window._testData = { malicious: content };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, maliciousContent);
 });
@@ -108,7 +108,7 @@ Given('data \\{ {word}: {string} }', async function(key, value) {
     await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v === '""' ? '' : v };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, [key, value]);
 });
@@ -119,7 +119,7 @@ Given(/^data \{ (\w+): ([^"'\s]+) \}$/, async function(key, value) {
     await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, [key, parsedValue]);
 });
@@ -128,7 +128,7 @@ Given('data \\{ }', async function() {
     await this.page.evaluate(() => {
         window._testData = {};
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     });
 });

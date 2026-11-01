@@ -23,7 +23,7 @@ Given('I have reactive data \\{ {word}: {int}, {word}: {float} }', async functio
     await this.page.evaluate(([k1, v1, k2, v2]) => {
         window._testData = { [k1]: v1, [k2]: v2 };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, [key1, val1, key2, val2]);
 });
@@ -39,7 +39,7 @@ Given('I have reactive data \\{ {word}: {int} }', async function(key, value) {
     await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, [key, value]);
 });

@@ -13,6 +13,7 @@ const { expect } = require('@playwright/test');
 
 Given('the loadX module is loaded', async function() {
     await this.page.goto('about:blank');
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/loadx.js' });
 
     // Wait for loadX to be available

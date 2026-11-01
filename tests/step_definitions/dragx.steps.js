@@ -9,6 +9,7 @@ const { expect } = require('@playwright/test');
 
 Given('the dragX module is loaded', async function() {
     await this.page.goto('about:blank');
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/dragx.js' });
 
     // Wait for DragX to be available
@@ -1693,6 +1694,7 @@ Then('drag updates should complete in less than 16ms', async function() {
 
 Given('the dragX module is initialized with observe=true', async function() {
     await this.page.goto('about:blank');
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/dragx.js' });
 
     // Wait for DragX to be available

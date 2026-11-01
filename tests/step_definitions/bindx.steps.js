@@ -15,10 +15,11 @@ const { expect } = require('@playwright/test');
 
 Given('the bindX module is loaded', async function() {
     await this.page.goto('about:blank');
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/bindx.js' });
 
     // Wait for bindX to be available
-    await this.page.waitForFunction(() => typeof window.bindx === 'function');
+    await this.page.waitForFunction(() => typeof window.bindX?.bindx === 'function');
 });
 
 // ============================================================================
@@ -30,7 +31,7 @@ Given('the reactive data object has {word}.{word}={string}', async function(obj,
         if (!window._testData) window._testData = {};
         if (!window._testData[o]) window._testData[o] = {};
         window._testData[o][p] = v;
-        window._reactive = window.bindx(window._testData);
+        window._reactive = window.bindX.bindx(window._testData);
     }, {o: obj, p: prop, v: value});
 });
 
@@ -40,21 +41,21 @@ Given('the reactive data object has {word}.{word}=value {word}', async function(
         if (!window._testData) window._testData = {};
         if (!window._testData[o]) window._testData[o] = {};
         window._testData[o][p] = v;
-        window._reactive = window.bindx(window._testData);
+        window._reactive = window.bindX.bindx(window._testData);
     }, {o: obj, p: prop, v: parsedValue});
 });
 
 Given('the reactive data has {word}={string} and {word}={string}', async function(key1, val1, key2, val2) {
     await this.page.evaluate(({k1, v1, k2, v2}) => {
         window._testData = { [k1]: v1, [k2]: v2 };
-        window._reactive = window.bindx(window._testData);
+        window._reactive = window.bindX.bindx(window._testData);
     }, {k1: key1, v1: val1, k2: key2, v2: val2});
 });
 
 Given('the reactive data has {word}={int} and {word}={int}', async function(key1, val1, key2, val2) {
     await this.page.evaluate(({k1, v1, k2, v2}) => {
         window._testData = { [k1]: v1, [k2]: v2 };
-        window._reactive = window.bindx(window._testData);
+        window._reactive = window.bindX.bindx(window._testData);
     }, {k1: key1, v1: val1, k2: key2, v2: val2});
 });
 
@@ -62,21 +63,21 @@ Given('the reactive data has {word}={word}', async function(key, value) {
     const parsedValue = value === 'true' ? true : value === 'false' ? false : parseInt(value) || value;
     await this.page.evaluate(({k, v}) => {
         window._testData = { [k]: v };
-        window._reactive = window.bindx(window._testData);
+        window._reactive = window.bindX.bindx(window._testData);
     }, {k: key, v: parsedValue});
 });
 
 Given('the nested reactive data has {word}.{word}={string}', async function(obj, prop, value) {
     await this.page.evaluate(({o, p, v}) => {
         window._testData = { [o]: { [p]: v } };
-        window._reactive = window.bindx(window._testData);
+        window._reactive = window.bindX.bindx(window._testData);
     }, {o: obj, p: prop, v: value});
 });
 
 Given('the reactive data does not have this path', async function() {
     await this.page.evaluate(() => {
         window._testData = {};
-        window._reactive = window.bindx(window._testData);
+        window._reactive = window.bindX.bindx(window._testData);
     });
 });
 
@@ -364,7 +365,7 @@ Given('the reactive data has items=[{word}:{string}, {word}:{string}]', async fu
         window._testData = {
             items: [{[k1]: v1}, {[k2]: v2}]
         };
-        window._reactive = window.bindx(window._testData);
+        window._reactive = window.bindX.bindx(window._testData);
     }, {t: this.template, expr: this.eachExpression, k1: key1, v1: val1, k2: key2, v2: val2});
 
     await this.page.setContent(`
@@ -381,7 +382,7 @@ Given('the reactive data has items=[{word}:{string}]', async function(key, val) 
         window._testData = {
             items: [{[k]: v}]
         };
-        window._reactive = window.bindx(window._testData);
+        window._reactive = window.bindX.bindx(window._testData);
     }, {k: key, v: val});
 
     await this.page.setContent(`
@@ -423,7 +424,7 @@ Given('an element with invalid bx-model={string}', async function(model) {
 Given('bindx\\(\\) is called with a non-object', async function() {
     this.error = await this.page.evaluate(() => {
         try {
-            window.bindx("not an object");
+            window.bindX.bindx("not an object");
         } catch (e) {
             return {name: e.constructor.name, message: e.message};
         }

@@ -101,6 +101,7 @@ Given(/^an element with ((?:[\w:.-]+=(?:"[^"]*"|'[^']*')(?: |$))+)$/, async func
   const attrs = pairs.map(p => `${p.name}="${p.value.replace(/"/g, '&quot;')}"`).join(' ');
   const html = `<!DOCTYPE html><html><body><span id="test-element" ${attrs}></span></body></html>`;
   await this.page.setContent(html);
+  this.element = this.page.locator('#test-element');
   this.lastAttribute = pairs[0].name;
   this.lastValue = pairs[0].value;
 });

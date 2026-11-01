@@ -14,7 +14,7 @@ Given('I have a reactive object with properties {word}={int} and {word}={int}', 
     await this.page.evaluate(([k1, v1, k2, v2]) => {
         window._testData = { [k1]: v1, [k2]: v2 };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, [key1, val1, key2, val2]);
 });
@@ -25,7 +25,7 @@ Given('I have a reactive object with {word}.{word}={string}', async function(obj
     await this.page.evaluate(([o, p, v]) => {
         window._testData = { [o]: { [p]: v } };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, [obj, prop, value]);
 });
@@ -40,7 +40,7 @@ Given('I have a reactive object with data', async function() {
     await this.page.evaluate(() => {
         window._testData = { data: { value: 42 } };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     });
 });
@@ -49,7 +49,7 @@ Given('I have a reactive array [1, 2, 3]', async function() {
     await this.page.evaluate(() => {
         window._testData = { items: [1, 2, 3] };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     });
 });

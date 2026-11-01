@@ -17,6 +17,7 @@ Given('the document body exists', async function() {
 
 // Core Initialization
 When('loadX is initialized without configuration', async function() {
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/loadx.js' });
     this.loadxResult = await this.page.evaluate(() => {
         if (window.loadX && window.loadX.initLoadX) {
@@ -27,6 +28,7 @@ When('loadX is initialized without configuration', async function() {
 });
 
 When('loadX is initialized with:', async function(dataTable) {
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/loadx.js' });
 
     const config = {};
@@ -47,6 +49,7 @@ When('loadX is initialized with:', async function(dataTable) {
 });
 
 When('loadX is initialized with autoDetect={word}', async function(autoDetect) {
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/loadx.js' });
     const config = { autoDetect: autoDetect === 'true' };
 
@@ -71,6 +74,7 @@ When('an attempt is made to modify the configuration', async function() {
 });
 
 When('loadX is initialized', async function() {
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/loadx.js' });
     this.loadxResult = await this.page.evaluate(() => {
         if (window.loadX && window.loadX.initLoadX) {
@@ -90,6 +94,7 @@ When('loadX is initialized again', async function() {
 });
 
 When('loadX is initialized with invalid configuration', async function() {
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/loadx.js' });
     this.consoleLogs = [];
 

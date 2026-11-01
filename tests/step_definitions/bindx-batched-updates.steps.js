@@ -10,7 +10,7 @@ Given('I have a reactive object with {word}={int}, {word}={int}, and {word}={int
     await this.page.evaluate(([keys, vals]) => {
         window._testData = { [keys[0]]: vals[0], [keys[1]]: vals[1], [keys[2]]: vals[2] };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
             window._batchCount = 0;
         }
     }, [[k1, k2, k3], [v1, v2, v3]]);
@@ -23,7 +23,7 @@ Given('I have {int} reactive properties', async function(count) {
             window._testData[`prop${i}`] = i;
         }
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, count);
 });
@@ -41,7 +41,7 @@ Given('I have a reactive object with {word}={int}', async function(key, value) {
     await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, [key, value]);
 });

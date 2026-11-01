@@ -15,7 +15,7 @@ Given(/^a reactive data object with ([A-Za-z_$][\w$]*)="([^"]*)"$/, async functi
     await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, [key, value]);
 });
@@ -60,7 +60,7 @@ Given('a reactive data object with {word}={int}', async function(key, value) {
     await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, [key, value]);
 });

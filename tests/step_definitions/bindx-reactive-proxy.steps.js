@@ -35,7 +35,7 @@ Given('I have a reactive object', async function() {
     await this.page.evaluate(() => {
         window._testData = { value: 42 };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     });
 });
@@ -44,7 +44,7 @@ Given('I have a reactive object with {word} {int}', async function(key, value) {
     await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
+            window._reactive = window.bindX.bindx(window._testData);
         }
     }, [key, value]);
 });
@@ -64,7 +64,7 @@ Given('I have an array [1, 2, 3]', async function() {
 When('I wrap it with bindx\\(\\)', async function() {
     await this.page.evaluate(() => {
         if (window.bindx) {
-            window._reactive = window.bindx(window._plainObject || window._plainArray);
+            window._reactive = window.bindX.bindx(window._plainObject || window._plainArray);
         }
     });
 });
@@ -72,7 +72,7 @@ When('I wrap it with bindx\\(\\)', async function() {
 When('I wrap it with bindx with deep option true', async function() {
     await this.page.evaluate(() => {
         if (window.bindx) {
-            window._reactive = window.bindx(window._plainObject, { deep: true });
+            window._reactive = window.bindX.bindx(window._plainObject, { deep: true });
         }
     });
 });
@@ -80,7 +80,7 @@ When('I wrap it with bindx with deep option true', async function() {
 When('I wrap it with bindx with deep option false', async function() {
     await this.page.evaluate(() => {
         if (window.bindx) {
-            window._reactive = window.bindx(window._plainObject, { deep: false });
+            window._reactive = window.bindX.bindx(window._plainObject, { deep: false });
         }
     });
 });

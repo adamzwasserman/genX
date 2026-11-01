@@ -5,6 +5,7 @@ const assert = require('assert');
 // Background
 Given('the accX module is loaded', async function() {
     await this.page.goto('about:blank');
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/accx.js' });
 });
 
@@ -361,6 +362,7 @@ Given('{int} elements with various ax- attributes', async function(count) {
     ).join('');
 
     await this.page.setContent(`<html><body>${elements}</body></html>`);
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/accx.js' });
 });
 
@@ -384,6 +386,7 @@ Then('in accX, it should maintain 60 FPS', async function() {
 // Dynamic content
 Given('the accX module is initialized with observe=true', async function() {
     await this.page.goto('about:blank');
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/accx.js' });
     await this.page.waitForTimeout(100);
 });
