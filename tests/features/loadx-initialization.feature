@@ -38,7 +38,7 @@ Feature: loadX Initialization Engine
     Then an element with id "lx-live-region" should exist
     And it should have aria-live="polite"
     And it should have aria-atomic="true"
-    And it should have class "ax-sr-only"
+    And in loadx-initialization, it should have class "ax-sr-only"
 
   Scenario: Skip ARIA live region if already exists
     Given an element with id "lx-live-region" exists
@@ -104,10 +104,11 @@ Feature: loadX Initialization Engine
     And no duplicate event listeners should be attached
 
   # Error Handling
-  Scenario: Handle invalid configuration gracefully
+  # docs/modules/loadx/api.md: init() rejects invalid config with a descriptive error
+  Scenario: Reject invalid configuration with a descriptive error
     When loadX is initialized with invalid configuration
-    Then loadX should use default configuration
-    And an error should be logged
+    Then loadX initialization should fail with "loadX config error: minDisplayMs must be a number, got string"
+    And no loadX configuration should be stored
 
   Scenario: Handle missing document.body gracefully
     Given document.body does not exist
@@ -121,11 +122,13 @@ Feature: loadX Initialization Engine
     Then no telemetry data should be collected
     And no network requests should be made
 
-  # Performance
+  # Performance (timing thresholds run only under @perf)
+  @perf
   Scenario: Fast initialization time
     When loadX is initialized
     Then initialization should complete in less than 50ms
 
+  @perf
   Scenario: Minimal memory footprint
     When loadX is initialized
     Then memory usage should be less than 100KB

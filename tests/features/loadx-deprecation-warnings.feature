@@ -62,7 +62,7 @@ Feature: loadX v2.0 Deprecation Warnings
       | modernSyntax  | true  |
     And an element with attribute "data-lx-strategy=spinner" is added to the DOM
     And the element is enhanced
-    Then no errors should occur
+    Then in loadx-deprecation-warnings, no errors should occur
     And the element should be enhanced with spinner strategy
 
   # Silence deprecations

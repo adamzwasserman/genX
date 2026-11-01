@@ -1,6 +1,41 @@
 const { Given, When, Then } = require('@cucumber/cucumber');
 const assert = require('assert');
 
+// loadX processes added elements from its MutationObserver; strict-mode
+// throws surface there as page errors, so capture them per scenario.
+function hookPageErrors(world) {
+    if (world._lxErrorsHooked) return;
+    world._lxErrorsHooked = true;
+    world.lxPageErrors = [];
+    world.page.on('pageerror', err => world.lxPageErrors.push(err.message));
+}
+
+let elementCounter = 0;
+
+// Wait until loadX has processed the element (or failed to), then show its
+// loading state with the parsed config. Returns the error message or null.
+async function enhance(world, elementId) {
+    await world.page.waitForFunction(
+        id => { const el = document.getElementById(id); return !el || el.hasAttribute('data-lx-tracked'); },
+        elementId, { timeout: 1000 }
+    ).catch(() => {});
+    const err = await world.page.evaluate((id) => {
+        const el = document.getElementById(id);
+        if (!el || !el._lxConfig) return '__unprocessed';
+        try {
+            window.loadX.apply(el, el._lxConfig);
+            return null;
+        } catch (e) {
+            return e.message;
+        }
+    }, elementId);
+    if (err === '__unprocessed') {
+        const pageError = world.lxPageErrors.find(m => m.includes('[loadX'));
+        return pageError || `loadX did not process #${elementId}`;
+    }
+    return err;
+}
+
 // Monitor console.warn
 Given('console.warn is being monitored', async function() {
     this.consoleWarnings = [];
@@ -26,22 +61,27 @@ Given('console.warn is being monitored', async function() {
 
 // Add element with specific class
 When('an element with class {string} is added to the DOM', async function(className) {
-    this.lastElementId = await this.page.evaluate((cls) => {
+    hookPageErrors(this);
+    this.lxElementIds = this.lxElementIds || [];
+    this.lastElementId = await this.page.evaluate(([cls, n]) => {
         const el = document.createElement('button');
-        const id = `test-element-${Date.now()}`;
+        const id = `test-element-${n}`;
         el.id = id;
         el.className = cls;
         el.textContent = 'Test Button';
         document.body.appendChild(el);
         return id;
-    }, className);
+    }, [className, ++elementCounter]);
+    this.lxElementIds.push(this.lastElementId);
 });
 
 // Add element with data attribute
 When('an element with attribute {string} is added to the DOM', async function(attribute) {
-    this.lastElementId = await this.page.evaluate((attr) => {
+    hookPageErrors(this);
+    this.lxElementIds = this.lxElementIds || [];
+    this.lastElementId = await this.page.evaluate(([attr, n]) => {
         const el = document.createElement('button');
-        const id = `test-element-${Date.now()}`;
+        const id = `test-element-${n}`;
         el.id = id;
 
         // Parse attribute string like "data-lx-strategy=spinner"
@@ -50,44 +90,29 @@ When('an element with attribute {string} is added to the DOM', async function(at
         el.textContent = 'Test Button';
         document.body.appendChild(el);
         return id;
-    }, attribute);
+    }, [attribute, ++elementCounter]);
+    this.lxElementIds.push(this.lastElementId);
+    this.lxModernIds = [...(this.lxModernIds || []), this.lastElementId];
 });
 
 // Enhance the element
 When('the element is enhanced', async function() {
-    this.enhanceError = await this.page.evaluate((elementId) => {
-        try {
-            const el = document.getElementById(elementId);
-            if (el && window.loadX && window.loadX.parseElement) {
-                window.loadX.parseElement(el);
-            }
-            return null;
-        } catch (e) {
-            return e.message;
-        }
-    }, this.lastElementId);
+    this.enhanceError = await enhance(this, this.lastElementId);
 });
 
 // Enhance all elements
 When('all elements are enhanced', async function() {
-    this.enhanceError = await this.page.evaluate(() => {
-        try {
-            const elements = document.querySelectorAll('[class*="lx"], [data-lx-strategy]');
-            elements.forEach(el => {
-                if (window.loadX && window.loadX.parseElement) {
-                    window.loadX.parseElement(el);
-                }
-            });
-            return null;
-        } catch (e) {
-            return e.message;
-        }
-    });
+    this.enhanceError = null;
+    for (const id of this.lxElementIds || []) {
+        const err = await enhance(this, id);
+        if (err && !this.enhanceError) this.enhanceError = err;
+    }
 });
 
 // Error expectations
 Then('enhancing the element should throw an error', async function() {
-    assert.strictEqual(this.enhanceError !== null, true, 'Expected an error to be thrown');
+    this.enhanceError = await enhance(this, this.lastElementId);
+    assert.ok(this.enhanceError, 'Expected an error to be thrown');
 });
 
 Then('the error should contain {string}', async function(expectedText) {
@@ -173,57 +198,47 @@ Then('the element should be enhanced with spinner strategy', async function() {
 });
 
 Then('the duration should be {int}', async function(expectedDuration) {
-    // This would need to check the actual enhancement configuration
-    // For now, we'll just verify the element was parsed
-    const hasElement = await this.page.evaluate((elementId) => {
-        return !!document.getElementById(elementId);
-    }, this.lastElementId);
-
-    assert.ok(hasElement, 'Element should exist');
+    const duration = await this.page.evaluate(
+        id => document.getElementById(id)?._lxConfig?.duration, this.lastElementId);
+    assert.strictEqual(duration, expectedDuration);
 });
 
 Then('both elements should be enhanced correctly', async function() {
-    const enhanced = await this.page.evaluate(() => {
-        const elements = document.querySelectorAll('[class*="lx"], [data-lx-strategy]');
-        return Array.from(elements).every(el => el.getAttribute('aria-busy') === 'true');
-    });
+    const enhanced = await this.page.evaluate((ids) => {
+        return ids.every(id => document.getElementById(id)?.getAttribute('aria-busy') === 'true');
+    }, this.lxElementIds);
 
     assert.ok(enhanced, 'All elements should be enhanced');
 });
 
 Then('all elements should be enhanced correctly', async function() {
-    const enhanced = await this.page.evaluate(() => {
-        const elements = document.querySelectorAll('[class*="lx"], [data-lx-strategy]');
-        return Array.from(elements).every(el => el.getAttribute('aria-busy') === 'true');
-    });
+    const enhanced = await this.page.evaluate((ids) => {
+        return ids.every(id => document.getElementById(id)?.getAttribute('aria-busy') === 'true');
+    }, this.lxElementIds);
 
     assert.ok(enhanced, 'All elements should be enhanced');
 });
 
 Then('the modern syntax element should not trigger warnings', async function() {
-    // This is already validated by checking total warning count
-    // Just verify we have at least one element with modern syntax
-    const hasModernElement = await this.page.evaluate(() => {
-        return !!document.querySelector('[data-lx-strategy]');
-    });
-
-    assert.ok(hasModernElement, 'Should have modern syntax element');
+    const ids = this.lxModernIds || [];
+    const tracked = ids.length > 0 && await this.page.evaluate(
+        list => list.every(id => document.getElementById(id)?.hasAttribute('data-lx-tracked')), ids);
+    assert.ok(tracked, 'Modern syntax elements should exist and be processed');
+    for (const w of this.consoleWarnings) {
+        assert.ok(w.includes('(lx-') || w.includes('(lx:'), `Warning not about legacy class syntax: ${w}`);
+    }
 });
 
 // Config verification
 Then('modernSyntax should be {word}', async function(expectedValue) {
-    const actualValue = await this.page.evaluate(() => {
-        return this.loadxResult?.config?.modernSyntax;
-    });
+    const actualValue = this.loadxResult?.config?.modernSyntax;
 
     const expected = expectedValue === 'true';
     assert.strictEqual(actualValue, expected, `Expected modernSyntax to be ${expected}, got ${actualValue}`);
 });
 
 Then('silenceDeprecations should be {word}', async function(expectedValue) {
-    const actualValue = await this.page.evaluate(() => {
-        return this.loadxResult?.config?.silenceDeprecations;
-    });
+    const actualValue = this.loadxResult?.config?.silenceDeprecations;
 
     const expected = expectedValue === 'true';
     assert.strictEqual(actualValue, expected, `Expected silenceDeprecations to be ${expected}, got ${actualValue}`);

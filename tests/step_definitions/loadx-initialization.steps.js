@@ -1,6 +1,11 @@
 const { Given, When, Then } = require('@cucumber/cucumber');
 const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
 const fixtures = require('../fixtures/loadx-fixtures');
+
+const SRC = path.resolve(__dirname, '../../src');
+const inlineScript = name => fs.readFileSync(path.join(SRC, name), 'utf8').replace(/<\/script/gi, '<\\/script');
 
 // Background
 Given('the page has loaded', async function() {
@@ -74,6 +79,21 @@ When('an attempt is made to modify the configuration', async function() {
 });
 
 When('loadX is initialized', async function() {
+    if (this.lxNoBody) {
+        // Run init from <head>, before the parser has created <body>
+        await this.page.setContent(`<!DOCTYPE html><html><head>
+<script>${inlineScript('genx-common.js')}</script>
+<script>${inlineScript('loadx.js')}</script>
+<script>
+  window.__lxInit = { bodyAtInit: !!document.body, readyState: document.readyState, error: null };
+  try { window.loadX.init(); } catch (e) { window.__lxInit.error = e.message; }
+  window.__lxInit.liveRegionAtInit = !!document.getElementById('lx-live-region');
+</script>
+</head><body><div id="lx-deferred" lx-strategy="spinner">Deferred</div></body></html>`);
+        this.loadxResult = await this.page.evaluate(() => window.loadX.config && window.loadX.config.config
+            ? { config: window.loadX.config.config } : null);
+        return;
+    }
     await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/loadx.js' });
     this.loadxResult = await this.page.evaluate(() => {
@@ -85,12 +105,44 @@ When('loadX is initialized', async function() {
 });
 
 When('loadX is initialized again', async function() {
-    await this.page.evaluate(() => {
-        if (window.loadX && window.loadX.init) {
-            return window.loadX.init();
+    // Count listeners and global patches the second init() adds
+    this.reinitEffects = await this.page.evaluate(() => {
+        const added = [];
+        const originalAdd = EventTarget.prototype.addEventListener;
+        EventTarget.prototype.addEventListener = function(type, ...rest) {
+            if (this === document || this === window) added.push(type);
+            return originalAdd.call(this, type, ...rest);
+        };
+        const fetchBefore = window.fetch;
+        const xhrBefore = window.XMLHttpRequest;
+        try {
+            window.loadX.init();
+        } finally {
+            EventTarget.prototype.addEventListener = originalAdd;
         }
-        return null;
+        return {
+            added,
+            fetchRewrapped: window.fetch !== fetchBefore,
+            xhrRewrapped: window.XMLHttpRequest !== xhrBefore
+        };
     });
+});
+
+When('loadX is initialized with custom configuration', async function() {
+    await this.page.addScriptTag({ path: './src/genx-common.js' });
+    await this.page.addScriptTag({ path: './src/loadx.js' });
+    this.loadxResult = await this.page.evaluate(
+        () => window.loadX.init({ minDisplayMs: 500, autoDetect: false, telemetry: false }));
+});
+
+When('loadX is initialized without telemetry setting', async function() {
+    this.lxRequests = [];
+    this.page.on('request', req => this.lxRequests.push(req.url()));
+    await this.page.addScriptTag({ path: './src/genx-common.js' });
+    await this.page.addScriptTag({ path: './src/loadx.js' });
+    this.loadxResult = await this.page.evaluate(() => window.loadX.init({ minDisplayMs: 300 }));
+    // Give any deferred work a chance to send something
+    await this.page.waitForTimeout(100);
 });
 
 When('loadX is initialized with invalid configuration', async function() {
@@ -104,11 +156,13 @@ When('loadX is initialized with invalid configuration', async function() {
         }
     });
 
-    this.loadxResult = await this.page.evaluate((invalidCfg) => {
-        if (window.loadX && window.loadX.init) {
-            return window.loadX.init(invalidCfg);
+    this.initError = await this.page.evaluate((invalidCfg) => {
+        try {
+            window.loadX.init(invalidCfg);
+            return null;
+        } catch (e) {
+            return e.message;
         }
-        return null;
     }, fixtures.invalidConfig);
 });
 
@@ -250,34 +304,63 @@ Given('an element with no lx- attributes', async function() {
 });
 
 Then('the element should be detected and registered', async function() {
-    // This will be verified by checking if the element was processed
-    // For now, we just verify loadX ran without errors
-    assert.ok(this.loadxResult, 'loadX should have initialized');
+    const tracked = await this.page.evaluate(() =>
+        Array.from(document.querySelectorAll('[lx-strategy], [lx-loading], [class*="lx-"]'))
+            .filter(el => el.id !== 'lx-live-region')
+            .map(el => el.getAttribute('data-lx-tracked')));
+    assert.ok(tracked.length > 0, 'Test element should exist');
+    assert.ok(tracked.every(v => v === 'true'), `Element should be marked data-lx-tracked, got ${JSON.stringify(tracked)}`);
 });
 
 Then('the element should not be registered', async function() {
-    // Negative test - just verify initialization completed
-    assert.ok(this.loadxResult, 'loadX should have initialized');
+    const state = await this.page.evaluate(() => ({
+        regular: !!document.querySelector('.regular'),
+        tracked: document.querySelectorAll('[data-lx-tracked]').length
+    }));
+    assert.ok(state.regular, 'Test element should exist');
+    assert.strictEqual(state.tracked, 0, 'No element should be registered');
 });
 
 // Async Detection
 Then('async detection should be enabled', async function() {
-    const isEnabled = await this.page.evaluate(() => {
-        // Check if fetch or XHR are monitored (implementation specific)
-        return window.loadX && window.loadX.asyncDetectionEnabled === true;
-    });
-    // For now, just check initialization succeeded
-    assert.ok(this.loadxResult, 'loadX initialized with async detection');
+    const isEnabled = await this.page.evaluate(() => window.loadX.asyncDetectionEnabled === true);
+    assert.ok(isEnabled, 'loadX should report async detection enabled');
+    for (const detector of ['fetch', 'xhr', 'htmx', 'forms']) {
+        assert.strictEqual(this.loadxResult.config.autoDetect[detector], true, `autoDetect.${detector} should be on`);
+    }
 });
 
+// Adds a registered button, focuses it, and returns its aria-busy right after
+// the request starts (the detectors key off document.activeElement).
+async function busyAfterRequest(page, startRequest) {
+    await page.evaluate(() => {
+        const btn = document.createElement('button');
+        btn.id = 'lx-async-target';
+        btn.setAttribute('lx-strategy', 'spinner');
+        btn.textContent = 'Load';
+        document.body.appendChild(btn);
+    });
+    await page.waitForFunction(() =>
+        document.getElementById('lx-async-target').hasAttribute('data-lx-tracked'));
+    return page.evaluate((src) => {
+        const btn = document.getElementById('lx-async-target');
+        btn.focus();
+        new Function(src)();
+        const busy = btn.getAttribute('aria-busy');
+        btn.remove();
+        return busy;
+    }, startRequest);
+}
+
 Then('fetch should be monitored', async function() {
-    // Implementation specific - will verify when implementing
-    assert.ok(true, 'Fetch monitoring will be implemented');
+    const busy = await busyAfterRequest(this.page, "fetch('data:text/plain,ok').catch(() => {});");
+    assert.strictEqual(busy, 'true', 'fetch from a registered element should apply the loading state');
 });
 
 Then('XMLHttpRequest should be monitored', async function() {
-    // Implementation specific - will verify when implementing
-    assert.ok(true, 'XHR monitoring will be implemented');
+    const busy = await busyAfterRequest(this.page,
+        "const x = new XMLHttpRequest(); x.open('GET', 'data:text/plain,ok'); x.send();");
+    assert.strictEqual(busy, 'true', 'XHR from a registered element should apply the loading state');
 });
 
 Then('async detection should not be enabled', async function() {
@@ -347,37 +430,38 @@ Then('the registry should be empty initially', async function() {
 });
 
 // Error Handling
-Then('loadX should use default configuration', async function() {
-    assert.strictEqual(
-        this.loadxResult.config.minDisplayMs,
-        fixtures.defaultConfig.minDisplayMs,
-        'Should use default minDisplayMs'
-    );
-    assert.strictEqual(
-        this.loadxResult.config.autoDetect,
-        fixtures.defaultConfig.autoDetect,
-        'Should use default autoDetect'
-    );
+Then('loadX initialization should fail with {string}', async function(expected) {
+    assert.ok(this.initError && this.initError.includes(expected),
+        `Expected init() to throw "${expected}", got: ${this.initError}`);
+});
+
+Then('no loadX configuration should be stored', async function() {
+    const stored = await this.page.evaluate(() => !!(window.loadX && window.loadX.config));
+    assert.strictEqual(stored, false, 'A rejected config must not become the active config');
 });
 
 // Removed duplicate - exists in common.steps.js
 
 Given('document.body does not exist', async function() {
-    await this.page.evaluate(() => {
-        if (document.body) {
-            document.body.remove();
-        }
-    });
+    // The next init runs from <head>, while the parser has not created <body>
+    this.lxNoBody = true;
 });
 
 Then('initialization should be deferred', async function() {
-    // Implementation specific - will be verified in implementation
-    assert.ok(true, 'Deferred initialization will be implemented');
+    const init = await this.page.evaluate(() => window.__lxInit);
+    assert.strictEqual(init.bodyAtInit, false, 'init() should run before <body> exists');
+    assert.strictEqual(init.readyState, 'loading');
+    assert.strictEqual(init.error, null, 'init() should not throw without <body>');
+    assert.strictEqual(init.liveRegionAtInit, false, 'Live region should wait for the DOM');
 });
 
 Then('should complete when DOMContentLoaded fires', async function() {
-    // Implementation specific
-    assert.ok(true, 'DOMContentLoaded handling will be implemented');
+    const state = await this.page.evaluate(() => ({
+        liveRegion: document.querySelectorAll('#lx-live-region').length,
+        scanned: document.getElementById('lx-deferred').getAttribute('data-lx-tracked')
+    }));
+    assert.strictEqual(state.liveRegion, 1, 'Live region should be created after DOMContentLoaded');
+    assert.strictEqual(state.scanned, 'true', 'Elements in <body> should be scanned after DOMContentLoaded');
 });
 
 // Privacy
@@ -390,12 +474,7 @@ Then('no telemetry data should be collected', async function() {
 });
 
 Then('no network requests should be made', async function() {
-    // This would require network monitoring - for now verify telemetry is off
-    assert.strictEqual(
-        this.loadxResult.config.telemetry,
-        false,
-        'Telemetry disabled means no network requests'
-    );
+    assert.deepStrictEqual(this.lxRequests, [], 'loadX should make no network requests');
 });
 
 // Performance
@@ -424,4 +503,17 @@ When('in loadX, the user scrolls down', async function() {
 Then('images should load as they enter viewport', async function() {
     // Intersection Observer implementation
     assert.ok(true, 'Viewport-based loading will be implemented');
+});
+
+// Repeated init()
+Then('only one ARIA live region should exist', async function() {
+    const count = await this.page.evaluate(() => document.querySelectorAll('#lx-live-region').length);
+    assert.strictEqual(count, 1, `Expected one live region, found ${count}`);
+});
+
+Then('no duplicate event listeners should be attached', async function() {
+    const { added, fetchRewrapped, xhrRewrapped } = this.reinitEffects;
+    assert.deepStrictEqual(added, [], `Second init() added document/window listeners: ${added.join(', ')}`);
+    assert.strictEqual(fetchRewrapped, false, 'Second init() should not wrap fetch again');
+    assert.strictEqual(xhrRewrapped, false, 'Second init() should not wrap XMLHttpRequest again');
 });
