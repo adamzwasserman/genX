@@ -621,7 +621,8 @@ Given('loadX is initialized on an empty page', async function() {
     await mountLoadX(this, '<main id="root"></main>');
 });
 
-When(/^a new element with ((?:[\w:-]+="[^"]*" )+)is added$/, async function(attrs) {
+// lx- attributes only, so bindX/dragX "a new element with ... is added" lines stay theirs.
+When(/^a new element with ((?:lx-[\w:-]+="[^"]*" )+)is added$/, async function(attrs) {
     await this.page.evaluate((a) => {
         document.getElementById('root').insertAdjacentHTML('beforeend',
             `<div id="lx-el" ${a}><p id="lx-original">Original content</p></div>`);

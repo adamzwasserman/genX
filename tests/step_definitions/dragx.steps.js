@@ -1,1895 +1,893 @@
+/**
+ * dragX BDD steps.
+ *
+ * Fixtures are appended to the page body (so Givens can be combined in any
+ * order) and DragX.init() is re-run after each one, as the readme says apps
+ * should after dynamic changes. Drags use real page.mouse input with short
+ * waits so dragX's throttled pointermove handler sees every position.
+ * Every dx:* event is recorded in window.__dxEvents with element ids.
+ */
 const { Given, When, Then } = require('@cucumber/cucumber');
 const { defineElement } = require('../support/element-fixtures');
 const assert = require('assert');
 const { expect } = require('@playwright/test');
+
+// Geometry shared by the fixtures (viewport pixels).
+const CARD = { left: 50, top: 50, size: 100 };
+const CARD_CENTER = { x: 100, y: 100 };
+const ZONE_CENTER = { x: 400, y: 400 };   // #dropzone: 300..500
+const OUTSIDE = { x: 700, y: 120 };
+const DOC_CSS = `
+.dx-dragging { opacity: 0.7; cursor: grabbing; }
+.dx-ghost { pointer-events: none; opacity: 0.8; }
+.dx-drag-over { border: 2px dashed #4a90e2; background: rgba(74, 144, 226, 0.1); }
+`;
+const MOVE_WAIT_MS = 40;                   // > dragX's 16.67ms throttle
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+async function loadDragX(world, config) {
+    await world.page.goto('about:blank');
+    await world.page.addScriptTag({ path: './src/genx-common.js' });
+    await world.page.addScriptTag({ path: './src/dragx.js' });
+    await world.page.waitForFunction(() => window.DragX !== undefined);
+    // The app stylesheet from the readme's "CSS Classes" section.
+    await world.page.addStyleTag({ content: DOC_CSS });
+    await world.page.evaluate((cfg) => {
+        const id = (el) => (el && el.id) || null;
+        window.__dxEvents = [];
+        ['dx:dragstart', 'dx:drop', 'dx:dragend'].forEach((name) => {
+            window.addEventListener(name, (e) => {
+                const d = e.detail || {};
+                window.__dxEvents.push({
+                    name,
+                    target: id(e.target),
+                    element: id(d.element),
+                    dropZone: id(d.dropZone),
+                    type: d.type,
+                    data: d.data,
+                    x: d.x,
+                    y: d.y,
+                    keyboard: !!d.keyboard,
+                    success: d.success,
+                    cancelled: d.cancelled
+                });
+            });
+        });
+        if (cfg) {
+            window.DragX.init(cfg);
+        }
+    }, config || null);
+}
+
+async function mount(world, html) {
+    await world.page.evaluate((h) => {
+        document.body.insertAdjacentHTML('beforeend', h);
+        window.DragX.init();
+    }, html);
+}
+
+function cardHtml(attrs, inner = 'Drag me', id = 'draggable') {
+    return `<div id="${id}" ${attrs} style="position:absolute;left:${CARD.left}px;top:${CARD.top}px;` +
+        `width:${CARD.size}px;height:${CARD.size}px;background:#36c;color:#fff;">${inner}</div>`;
+}
+
+function zoneHtml(attrs, id = 'dropzone', box = 'left:300px;top:300px;width:200px;height:200px') {
+    return `<div id="${id}" ${attrs} style="position:absolute;${box};background:#ddd;">Drop here</div>`;
+}
+
+async function mountCard(world, attrs) {
+    await mount(world, cardHtml(attrs));
+    world.element = world.page.locator('#draggable');
+}
+
+async function ensureCard(world, type = 'card') {
+    const exists = await world.page.evaluate(() => !!document.getElementById('draggable'));
+    if (!exists) {
+        await mountCard(world, `dx-draggable="${type}"`);
+    }
+}
+
+async function moveTo(world, p) {
+    await world.page.mouse.move(p.x, p.y, { steps: 4 });
+    await world.page.waitForTimeout(MOVE_WAIT_MS);
+}
+
+async function startDrag(world, from = CARD_CENTER) {
+    await world.page.mouse.move(from.x, from.y);
+    await world.page.waitForTimeout(MOVE_WAIT_MS);
+    await world.page.mouse.down();
+    await moveTo(world, { x: from.x + 20, y: from.y + 20 });
+}
+
+async function dragTo(world, target, from = CARD_CENTER) {
+    await startDrag(world, from);
+    await moveTo(world, target);
+}
+
+async function release(world) {
+    await world.page.mouse.up();
+    await world.page.waitForTimeout(MOVE_WAIT_MS);
+}
+
+async function dragState(world) {
+    return world.page.evaluate(() => {
+        const s = window.DragX.getState();
+        return {
+            phase: s.phase,
+            element: s.element ? (s.element.id || 'anonymous') : null,
+            zone: s.dropZone ? s.dropZone.name : null
+        };
+    });
+}
+
+async function events(world, name) {
+    const all = await world.page.evaluate(() => window.__dxEvents);
+    return name ? all.filter(e => e.name === name) : all;
+}
+
+async function lastEvent(world, name) {
+    const list = await events(world, name);
+    assert.ok(list.length > 0, `expected a ${name} event, got ${JSON.stringify(await events(world))}`);
+    return list[list.length - 1];
+}
+
+async function hasClass(world, selector, cls) {
+    return world.page.evaluate(([sel, c]) => {
+        const el = document.querySelector(sel);
+        if (!el) {
+            throw new Error(`${sel} not found`);
+        }
+        return el.classList.contains(c);
+    }, [selector, cls]);
+}
+
+async function rectOf(world, selector) {
+    return world.page.evaluate((sel) => {
+        const r = document.querySelector(sel).getBoundingClientRect();
+        return { left: r.left, top: r.top, width: r.width, height: r.height };
+    }, selector);
+}
+
+async function liveText(world) {
+    return world.page.evaluate(() => {
+        const r = document.getElementById('dx-aria-live') ||
+            document.querySelector('[aria-live]');
+        return r ? r.textContent : null;
+    });
+}
 
 // ============================================================================
 // BACKGROUND
 // ============================================================================
 
 Given('the dragX module is loaded', async function() {
-    await this.page.goto('about:blank');
-    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
-    await this.page.addScriptTag({ path: './src/dragx.js' });
+    await loadDragX(this);
+});
 
-    // Wait for DragX to be available
-    await this.page.waitForFunction(() => window.DragX !== undefined);
+Given('the dragX module is initialized with observe=true', async function() {
+    await loadDragX(this, { observe: true });
 });
 
 // Note: "the DOM is ready" step is defined in common.steps.js
 
-
 // ============================================================================
-// DRAGGABLE ELEMENTS
+// FIXTURES
 // ============================================================================
 
 defineElement('an element with dx-draggable={string}', async function(type) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="${type}" style="width: 100px; height: 100px; background: blue;">
-                Drag me
-            </div>
-        </body></html>
-    `);
-    // Re-initialize dragX after content change
-    await this.page.evaluate(() => window.DragX.init());
-});
-
-Given('an element with dx-draggable={string} and dx-data={string}', async function(type, data) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="${type}" dx-data='${data}' style="width: 100px; height: 100px; background: blue;">
-                Drag me
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
-});
-
-defineElement('an element with dx-draggable={string} dx-ghost={string}', async function(type, ghostType) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="${type}" dx-ghost="${ghostType}" style="width: 100px; height: 100px; background: blue;">
-                Drag me
-            </div>
-            <template id="custom" data-ghost-template>
-                <div style="background: red; width: 100px; height: 100px; opacity: 0.7;">Custom Ghost</div>
-            </template>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
-});
-
-defineElement('an element with dx-draggable={string} dx-mode={string}', async function(type, mode) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="${type}" dx-mode="${mode}" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
-                Drag me
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
-});
-
-defineElement('an element with dx-draggable={string} dx-effect={string}', async function(type, effect) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="${type}" dx-effect="${effect}" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
-                Drag me
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
+    await mountCard(this, `dx-draggable="${type}"`);
 });
 
 defineElement('an element with dx-draggable={string} dx-axis={string}', async function(type, axis) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="${type}" dx-axis="${axis}" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
-                Drag me
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
-});
-
-defineElement('an element with dx-draggable={string} dx-contain={string}', async function(type, contain) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="parent" style="width: 500px; height: 500px; background: gray; position: relative; border: 2px solid black;">
-                <div id="draggable" dx-draggable="${type}" dx-contain="${contain}" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
-                    Drag me
-                </div>
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
+    await mountCard(this, `dx-draggable="${type}" dx-axis="${axis}"`);
 });
 
 defineElement('an element with dx-draggable={string} dx-grid={string}', async function(type, grid) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="${type}" dx-grid="${grid}" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
-                Drag me
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
+    await mountCard(this, `dx-draggable="${type}" dx-grid="${grid}"`);
 });
 
-defineElement('an element with dx-draggable={string} dx-handle={string}', async function(type, handle) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="${type}" dx-handle="${handle}" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
-                <div class="drag-handle" style="width: 30px; height: 30px; background: darkblue; cursor: move;">Handle</div>
-                <div style="padding: 10px;">Content</div>
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
-});
-
-Given('a card with dx-draggable={string} dx-handle={string}', async function(type, handle) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="${type}" dx-handle="${handle}" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
-                <div class="drag-handle" style="width: 30px; height: 30px; background: darkblue; cursor: move;">Handle</div>
-                <div style="padding: 10px;">Content</div>
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
-});
-
-Given('a card with dx-draggable={string} dx-handle={string} with handles {string}', async function(type, handleSelector, handles) {
-    const handleArray = handles.split(',').map(h => h.trim());
-    let handleHtml = '';
-    handleArray.forEach((h, i) => {
-        handleHtml += `<div class="${h}" style="width: 30px; height: 20px; background: darkblue; margin: 5px 0; cursor: move;">H${i+1}</div>`;
+defineElement('an element with dx-draggable={string} dx-data={string}', async function(type, data) {
+    // A board zone with an app-style listener, as in the readme's dx:drop example.
+    await mount(this, cardHtml(`dx-draggable="${type}" dx-data='${data}'`) + zoneHtml('dx-drop-zone="board"'));
+    await this.page.evaluate(() => {
+        document.getElementById('dropzone').addEventListener('dx:drop', (e) => {
+            e.currentTarget.dataset.droppedId = String(e.detail.data.id);
+        });
     });
-
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="${type}" dx-handle="${handles}" style="width: 100px; height: 150px; background: blue; position: absolute; left: 50px; top: 50px;">
-                ${handleHtml}
-                <div style="padding: 10px;">Content</div>
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
+    this.element = this.page.locator('#draggable');
 });
 
-Given('{int} elements with dx-draggable={string}', async function(count, type) {
-    let html = '<html><body>';
-    for (let i = 0; i < count; i++) {
-        html += `
-            <div id="card-${i}" dx-draggable="${type}"
-                 style="width: 100px; height: 100px; background: blue; margin: 10px; display: inline-block; position: relative;">
-                Card ${i}
-            </div>
-        `;
-    }
-    html += '</body></html>';
-
-    await this.page.setContent(html);
-    await this.page.evaluate(() => window.DragX.init());
+Given('a draggable element', async function() {
+    await mountCard(this, 'dx-draggable="card"');
 });
 
-// ============================================================================
-// DROP ZONES
-// ============================================================================
+Given('a draggable element with dx-revert={string}', async function(revert) {
+    await mountCard(this, `dx-draggable="card" dx-revert="${revert}"`);
+});
 
 Given('a div with dx-drop-zone={string}', async function(zoneName) {
-    const existing = await this.page.content();
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="card" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
-                Drag me
-            </div>
-            <div id="dropzone" dx-drop-zone="${zoneName}" style="width: 200px; height: 200px; background: lightgray; position: absolute; left: 300px; top: 300px;">
-                Drop here
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
+    await mount(this, zoneHtml(`dx-drop-zone="${zoneName}"`));
 });
 
 Given('a div with dx-drop-zone={string} dx-accepts={string}', async function(zoneName, accepts) {
-    const existing = await this.page.content();
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="card" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
-                Drag me
-            </div>
-            <div id="dropzone" dx-drop-zone="${zoneName}" dx-accepts="${accepts}" style="width: 200px; height: 200px; background: lightgray; position: absolute; left: 300px; top: 300px;">
-                Drop here
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
+    await mount(this, zoneHtml(`dx-drop-zone="${zoneName}" dx-accepts="${accepts}"`));
 });
 
 Given('a drop zone that accepts cards', async function() {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="card" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
-                Drag me
-            </div>
-            <div id="dropzone" dx-drop-zone="board" dx-accepts="card" style="width: 200px; height: 200px; background: lightgray; position: absolute; left: 300px; top: 300px;">
-                Drop here
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
+    await mount(this, zoneHtml('dx-drop-zone="board" dx-accepts="card"'));
 });
 
-Given('a drop zone that does not accept the dragged type', async function() {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="image" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
-                Drag me
-            </div>
-            <div id="dropzone" dx-drop-zone="board" dx-accepts="card" style="width: 200px; height: 200px; background: lightgray; position: absolute; left: 300px; top: 300px;">
-                Drop here
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
+Given('a drop zone', async function() {
+    await mount(this, cardHtml('dx-draggable="card"') + zoneHtml('dx-drop-zone="board"'));
 });
 
-Given('a drop zone with dx-drop-zone={string} dx-sort={string}', async function(zoneName, sort) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="dropzone" dx-drop-zone="${zoneName}" dx-sort="${sort}" style="width: 300px; height: 400px; background: lightgray; position: relative;">
-                <div id="item-0" dx-draggable="item" style="width: 100px; height: 80px; background: green; margin: 10px; position: relative;">Item 1</div>
-                <div id="item-1" dx-draggable="item" style="width: 100px; height: 80px; background: green; margin: 10px; position: relative;">Item 2</div>
-                <div id="item-2" dx-draggable="item" style="width: 100px; height: 80px; background: green; margin: 10px; position: relative;">Item 3</div>
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
+Given('a drop zone without dx-accepts', async function() {
+    await mount(this, zoneHtml('dx-drop-zone="anything"'));
 });
 
-Given('a sortable drop zone', async function() {
-    await this.page.setContent(`
-        <html><body>
-            <div id="dropzone" dx-drop-zone="list" dx-sort="true" style="width: 300px; height: 400px; background: lightgray; position: relative;">
-                <div id="item-0" dx-draggable="item" style="width: 100px; height: 80px; background: green; margin: 10px; position: relative;">Item 1</div>
-                <div id="item-1" dx-draggable="item" style="width: 100px; height: 80px; background: green; margin: 10px; position: relative;">Item 2</div>
-                <div id="item-2" dx-draggable="item" style="width: 100px; height: 80px; background: green; margin: 10px; position: relative;">Item 3</div>
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
+Given('a screen reader user', async function() {
+    await mount(this, cardHtml('dx-draggable="card"') + zoneHtml('dx-drop-zone="board" dx-accepts="card"'));
+    this.element = this.page.locator('#draggable');
 });
 
-Given('a drop zone {string}', async function(zoneName) {
-    const id = zoneName.toLowerCase().replace(/"/g, '');
-    await this.page.setContent(`
-        <html><body>
-            <div id="${id}-zone" dx-drop-zone="${id}" style="width: 300px; height: 300px; background: lightgray; position: absolute; left: 50px; top: 50px; border: 2px solid gray;">
-                Drop zone: ${zoneName}
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
+Given('a card with dx-draggable={string} dx-handle={string}', async function(type, handle) {
+    // One 20px-tall handle strip per class in the selector list, then a body area.
+    const handles = handle.split(',').map(s => s.trim().replace(/^\./, ''));
+    const strips = handles.map(cls =>
+        `<div class="${cls}" style="height:20px;background:#024;">grip</div>`).join('');
+    await mountCard(this, `dx-draggable="${type}" dx-handle="${handle}"`);
+    await this.page.evaluate((html) => {
+        const card = document.getElementById('draggable');
+        card.innerHTML = html + '<div class="card-body">Card body</div>';
+    }, strips);
+    this.handleCount = handles.length;
 });
 
-Given('a nested drop zone {string} inside {string}', async function(innerZone, outerZone) {
-    const innerId = innerZone.toLowerCase().replace(/"/g, '');
-    const outerId = outerZone.toLowerCase().replace(/"/g, '');
-    await this.page.setContent(`
-        <html><body>
-            <div id="${outerId}-zone" dx-drop-zone="${outerId}" style="width: 400px; height: 400px; background: lightgray; position: absolute; left: 50px; top: 50px; border: 2px solid gray;">
-                Outer zone: ${outerZone}
-                <div id="${innerId}-zone" dx-drop-zone="${innerId}" style="width: 200px; height: 200px; background: white; position: absolute; left: 100px; top: 100px; border: 2px solid black;">
-                    Inner zone: ${innerZone}
-                </div>
-            </div>
-            <div id="draggable" dx-draggable="item" style="width: 100px; height: 100px; background: blue; position: absolute; left: 500px; top: 100px;">Drag me</div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
+Given('a .drag-handle element inside the card', async function() {
+    const count = await this.page.locator('#draggable .drag-handle').count();
+    assert.strictEqual(count, 1, 'the card should contain one .drag-handle');
+});
+
+Given('drop zones scattered across the page', async function() {
+    const boxes = [
+        ['zone-nw', 'left:20px;top:20px'], ['zone-ne', 'left:620px;top:20px'],
+        ['zone-sw', 'left:20px;top:420px'], ['zone-se', 'left:620px;top:420px']
+    ];
+    await mount(this, boxes.map(([id, pos]) =>
+        zoneHtml(`dx-drop-zone="${id}"`, id, `${pos};width:120px;height:120px`)).join(''));
+});
+
+Given('a drop zone {string}', async function(name) {
+    await mount(this, zoneHtml(`dx-drop-zone="${name}"`, `${name}-zone`,
+        'left:300px;top:300px;width:300px;height:300px'));
+});
+
+Given('a nested drop zone {string} inside {word}', async function(inner, outer) {
+    await this.page.evaluate(([i, o]) => {
+        document.getElementById(`${o}-zone`).insertAdjacentHTML('beforeend',
+            `<div id="${i}-zone" dx-drop-zone="${i}" style="position:absolute;left:50px;top:50px;width:100px;height:100px;background:#bbb;">${i}</div>`);
+        window.DragX.init();
+    }, [inner, outer]);
 });
 
 Given('nested drop zones', async function() {
-    await this.page.setContent(`
-        <html><body>
-            <div id="outer-zone" dx-drop-zone="outer" dx-accepts="item" style="width: 400px; height: 400px; background: lightgray; position: absolute; left: 50px; top: 50px; border: 2px solid gray;">
-                Outer zone
-                <div id="inner-zone" dx-drop-zone="inner" dx-accepts="item" style="width: 200px; height: 200px; background: white; position: absolute; left: 100px; top: 100px; border: 2px solid black;">
-                    Inner zone
-                </div>
-            </div>
-            <div id="draggable" dx-draggable="item" style="width: 100px; height: 100px; background: blue; position: absolute; left: 500px; top: 100px;">Drag me</div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
+    await mount(this, cardHtml('dx-draggable="card"') + zoneHtml('dx-drop-zone="outer"', 'outer-zone',
+        'left:300px;top:300px;width:300px;height:300px'));
+    await this.page.evaluate(() => {
+        const outer = document.getElementById('outer-zone');
+        outer.insertAdjacentHTML('beforeend',
+            '<div id="inner-zone" dx-drop-zone="inner" style="position:absolute;left:50px;top:50px;width:100px;height:100px;background:#bbb;">inner</div>');
+        outer.addEventListener('dx:drop', (e) => {
+            outer.dataset.handledDropOn = e.target.id; 
+        });
+        window.DragX.init();
+    });
 });
 
 Given('inner zone rejects the dragged type', async function() {
     await this.page.evaluate(() => {
-        const innerZone = document.getElementById('inner-zone');
-        if (innerZone) {
-            innerZone.setAttribute('dx-accepts', 'other');
-        }
+        document.getElementById('inner-zone').setAttribute('dx-accepts', 'image');
+        window.DragX.init();
     });
-});
-
-// ============================================================================
-// DRAG ACTIONS
-// ============================================================================
-
-async function startDraggingElement() {
-    // Simulate pointer down
-    await this.page.locator('#draggable').dispatchEvent('pointerdown', {
-        clientX: 100,
-        clientY: 100,
-        pointerType: 'mouse'
-    });
-
-    // Simulate pointer move to exceed threshold
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointermove', {
-            clientX: 110,
-            clientY: 110,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-}
-
-When('the user starts dragging the element', startDraggingElement);
-
-async function dragCardOverBoard() {
-    // Start drag
-    await this.page.locator('#draggable').dispatchEvent('pointerdown', {
-        clientX: 100,
-        clientY: 100,
-        pointerType: 'mouse'
-    });
-
-    // Move to exceed threshold
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointermove', {
-            clientX: 110,
-            clientY: 110,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-
-    // Move over drop zone
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointermove', {
-            clientX: 350,
-            clientY: 350,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-}
-
-When('the user drags the card over the board', dragCardOverBoard);
-
-When('the user drags the card to the board', async function() {
-    await dragCardOverBoard.call(this);
-});
-
-When('the user releases the card', async function() {
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointerup', {
-            clientX: 350,
-            clientY: 350,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-});
-
-When('the user drags the image to the board', async function() {
-    // Start drag on image element
-    await this.page.locator('#draggable').dispatchEvent('pointerdown', {
-        clientX: 100,
-        clientY: 100,
-        pointerType: 'mouse'
-    });
-
-    // Move over drop zone
-    await this.page.evaluate(() => {
-        let event = new PointerEvent('pointermove', {
-            clientX: 110,
-            clientY: 110,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-
-        event = new PointerEvent('pointermove', {
-            clientX: 350,
-            clientY: 350,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-});
-
-When('the user drags continuously', async function() {
-    // Start drag
-    await this.page.locator('#draggable').dispatchEvent('pointerdown', {
-        clientX: 100,
-        clientY: 100,
-        pointerType: 'mouse'
-    });
-
-    // Simulate continuous movement (10 moves)
-    for (let i = 0; i < 10; i++) {
-        await this.page.evaluate((index) => {
-            const event = new PointerEvent('pointermove', {
-                clientX: 110 + (index * 10),
-                clientY: 110 + (index * 10),
-                pointerType: 'mouse',
-                bubbles: true
-            });
-            document.dispatchEvent(event);
-        }, i);
-        await this.page.waitForTimeout(5);
-    }
-});
-
-When('the user drags one of the selected cards', async function() {
-    // Drag the first selected card
-    await this.page.locator('#card-0').dispatchEvent('pointerdown', {
-        clientX: 50,
-        clientY: 50,
-        pointerType: 'mouse'
-    });
-
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointermove', {
-            clientX: 60,
-            clientY: 60,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-
-        const moveEvent = new PointerEvent('pointermove', {
-            clientX: 200,
-            clientY: 200,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(moveEvent);
-    });
-});
-
-When('dropped on a zone', async function() {
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointerup', {
-            clientX: 350,
-            clientY: 350,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-});
-
-When('dropped on {string}', async function(target) {
-    const targetId = target.toLowerCase().replace(/"/g, '');
-    await this.page.evaluate((id) => {
-        const event = new PointerEvent('pointerup', {
-            clientX: 100,
-            clientY: 100,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    }, targetId);
-});
-
-When('dropped on a zone that rejects it', async function() {
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointerup', {
-            clientX: 350,
-            clientY: 350,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-});
-
-When('dragged outside any drop zone', async function() {
-    await this.page.locator('#draggable').dispatchEvent('pointerdown', {
-        clientX: 100,
-        clientY: 100,
-        pointerType: 'mouse'
-    });
-
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointermove', {
-            clientX: 110,
-            clientY: 110,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-
-        const moveEvent = new PointerEvent('pointermove', {
-            clientX: 600,
-            clientY: 600,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(moveEvent);
-    });
-});
-
-When('released', async function() {
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointerup', {
-            clientX: 600,
-            clientY: 600,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-});
-
-When('dragging near the edge', async function() {
-    const viewportSize = await this.page.viewportSize();
-    const nearEdgeX = viewportSize.width - 20;
-    const nearEdgeY = viewportSize.height - 20;
-
-    await this.page.locator('#draggable').dispatchEvent('pointerdown', {
-        clientX: 100,
-        clientY: 100,
-        pointerType: 'mouse'
-    });
-
-    await this.page.evaluate(({x, y}) => {
-        const event = new PointerEvent('pointermove', {
-            clientX: x,
-            clientY: y,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    }, {x: nearEdgeX, y: nearEdgeY});
-});
-
-When('the user drags the handle', async function() {
-    await this.page.locator('.drag-handle').dispatchEvent('pointerdown', {
-        clientX: 65,
-        clientY: 65,
-        pointerType: 'mouse'
-    });
-
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointermove', {
-            clientX: 75,
-            clientY: 75,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-
-        const moveEvent = new PointerEvent('pointermove', {
-            clientX: 150,
-            clientY: 150,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(moveEvent);
-    });
-});
-
-When('the user drags either handle', async function() {
-    const handles = await this.page.locator('.handle1').count() > 0
-        ? '.handle1'
-        : '.handle2';
-
-    await this.page.locator(handles).first().dispatchEvent('pointerdown', {
-        clientX: 65,
-        clientY: 65,
-        pointerType: 'mouse'
-    });
-
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointermove', {
-            clientX: 75,
-            clientY: 75,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-
-        const moveEvent = new PointerEvent('pointermove', {
-            clientX: 150,
-            clientY: 150,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(moveEvent);
-    });
-});
-
-When('the user clicks other areas of the card', async function() {
-    await this.page.locator('#draggable').click({ position: { x: 80, y: 80 } });
-});
-
-When('the user drags the element', async function() {
-    await this.page.locator('#draggable').dispatchEvent('pointerdown', {
-        clientX: 100,
-        clientY: 100,
-        pointerType: 'mouse'
-    });
-
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointermove', {
-            clientX: 110,
-            clientY: 110,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-
-        const moveEvent = new PointerEvent('pointermove', {
-            clientX: 200,
-            clientY: 200,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(moveEvent);
-    });
-});
-
-When('the item is dropped at coordinates {int} {int}', async function(x, y) {
-    await this.page.evaluate(({posX, posY}) => {
-        const event = new PointerEvent('pointerup', {
-            clientX: posX,
-            clientY: posY,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    }, {posX: x, posY: y});
-});
-
-When('a new item is dropped', async function() {
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointerup', {
-            clientX: 150,
-            clientY: 150,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-});
-
-When('an item is being dragged over it', async function() {
-    // Create a draggable item
-    await this.page.evaluate(() => {
-        const item = document.createElement('div');
-        item.id = 'dragged-item';
-        item.setAttribute('dx-draggable', 'item');
-        item.style.cssText = 'width: 100px; height: 80px; background: green; position: absolute; left: 150px; top: 150px;';
-        item.textContent = 'Dragged';
-        document.body.appendChild(item);
-    });
-
-    // Start drag
-    await this.page.locator('#dragged-item').dispatchEvent('pointerdown', {
-        clientX: 150,
-        clientY: 150,
-        pointerType: 'mouse'
-    });
-
-    // Move over drop zone
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointermove', {
-            clientX: 160,
-            clientY: 160,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-});
-
-When('dropped on inner', async function() {
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointerup', {
-            clientX: 200,
-            clientY: 200,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-});
-
-When('the user touches and moves slowly', async function() {
-    await this.page.locator('#draggable').dispatchEvent('pointerdown', {
-        clientX: 100,
-        clientY: 100,
-        pointerType: 'touch'
-    });
-
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointermove', {
-            clientX: 105,
-            clientY: 105,
-            pointerType: 'touch',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-});
-
-// ============================================================================
-// ASSERTIONS - DRAG FEEDBACK & VISUAL STATES
-// ============================================================================
-
-Then('the element should have visual drag feedback', async function() {
-    const isDragging = await this.page.evaluate(() => {
-        const element = document.getElementById('draggable');
-        return element.classList.contains('dx-dragging');
-    });
-
-    assert.strictEqual(isDragging, true, 'Element should have dx-dragging class');
-});
-
-Then('the cursor should change to indicate dragging', async function() {
-    // This is typically handled by CSS, so we just verify the state
-    const state = await this.page.evaluate(() => window.DragX.getState());
-    assert.ok(['dragging', 'hovering'].includes(state.phase), 'Should be in dragging state');
-});
-
-Then('the drop zone should highlight', async function() {
-    const hasHighlight = await this.page.evaluate(() => {
-        const dropzone = document.getElementById('dropzone');
-        return dropzone.classList.contains('dx-drag-over');
-    });
-
-    assert.strictEqual(hasHighlight, true, 'Drop zone should have dx-drag-over class');
-});
-
-Then('a drop indicator should be visible', async function() {
-    // Verified by the highlight class
-    const hasHighlight = await this.page.evaluate(() => {
-        const dropzone = document.getElementById('dropzone');
-        return dropzone.classList.contains('dx-drag-over');
-    });
-
-    assert.strictEqual(hasHighlight, true, 'Drop indicator should be visible');
-});
-
-Then('a {string} cursor should display', async function(cursorType) {
-    // Cursor display is CSS-based; verify the state doesn't allow drop
-    const isDraggedType = await this.page.evaluate(() => {
-        const element = document.getElementById('draggable');
-        const dropzone = document.getElementById('dropzone');
-        return element && dropzone; // Both should exist
-    });
-    assert.ok(isDraggedType, 'Elements should exist for cursor display');
-});
-
-// ============================================================================
-// ASSERTIONS - DROP OPERATIONS
-// ============================================================================
-
-Then('in dragX, a {string} event should be emitted', async function(eventName) {
-    // We'll need to set up event listeners before the action
-    // For now, we verify the state changed appropriately
-    const state = await this.page.evaluate(() => window.DragX.getState());
-
-    if (eventName === 'dx:drop') {
-        assert.strictEqual(state.phase, 'idle', 'Should be idle after drop');
-    } else if (eventName === 'dx:dragstart') {
-        assert.ok(['dragging', 'hovering'].includes(state.phase), 'Should be dragging after start');
-    } else if (eventName === 'dx:dragend') {
-        assert.strictEqual(state.phase, 'idle', 'Should be idle after dragend');
-    }
-});
-
-// Generic event assertion delegated to common.steps.js
-
-Then('event.detail should contain element info', async function() {
-    // Placeholder - would need event listener setup
-    assert.ok(true, 'Event listener setup in Given steps');
-});
-
-Then('event.detail should contain dragged element', async function() {
-    assert.ok(true, 'Drop event contains dragged element');
-});
-
-Then('event.detail should contain drop zone', async function() {
-    assert.ok(true, 'Drop event contains drop zone');
-});
-
-Then('event.detail should contain drag coordinates', async function() {
-    assert.ok(true, 'Drop event contains coordinates');
-});
-
-Then('event.detail should contain the data', async function() {
-    assert.ok(true, 'Drop event contains data');
-});
-
-Then('the data should be accessible as event.detail.data', async function() {
-    assert.ok(true, 'Data accessible in drop event');
-});
-
-Then('the card should be moved to the board', async function() {
-    // The actual move behavior is handled by the application
-    // We verify the drop event was triggered
-    const state = await this.page.evaluate(() => window.DragX.getState());
-    assert.strictEqual(state.phase, 'idle', 'Should be idle after successful drop');
-});
-
-Then('the drop should be allowed', async function() {
-    const hasHighlight = await this.page.evaluate(() => {
-        const dropzone = document.getElementById('dropzone');
-        return dropzone.classList.contains('dx-drag-over');
-    });
-
-    assert.strictEqual(hasHighlight, true, 'Drop should be allowed (zone highlighted)');
-});
-
-Then('the drop should be rejected', async function() {
-    const hasHighlight = await this.page.evaluate(() => {
-        const dropzone = document.getElementById('dropzone');
-        return dropzone.classList.contains('dx-drag-over');
-    });
-
-    assert.strictEqual(hasHighlight, false, 'Drop should be rejected (zone not highlighted)');
-});
-
-Then('the drop zone should not highlight', async function() {
-    const hasHighlight = await this.page.evaluate(() => {
-        const dropzone = document.getElementById('dropzone');
-        return dropzone.classList.contains('dx-drag-over');
-    });
-
-    assert.strictEqual(hasHighlight, false, 'Drop zone should not highlight');
-});
-
-Then('the drop zone should have class {string}', async function(className) {
-    const hasClass = await this.page.evaluate((cls) => {
-        const dropzone = document.getElementById('dropzone');
-        return dropzone && dropzone.classList.contains(cls);
-    }, className);
-
-    assert.strictEqual(hasClass, true, `Drop zone should have class ${className}`);
-});
-
-Then('the drop zone class should be removed', async function() {
-    const hasClass = await this.page.evaluate(() => {
-        const dropzone = document.getElementById('dropzone');
-        return dropzone && dropzone.classList.contains('dx-drag-over');
-    });
-
-    assert.strictEqual(hasClass, false, 'dx-drag-over class should be removed');
-});
-
-Then('only inner should highlight', async function() {
-    const innerHighlighted = await this.page.evaluate(() => {
-        const inner = document.getElementById('inner-zone');
-        return inner && inner.classList.contains('dx-drag-over');
-    });
-
-    const outerHighlighted = await this.page.evaluate(() => {
-        const outer = document.getElementById('outer-zone');
-        return outer && outer.classList.contains('dx-drag-over');
-    });
-
-    assert.strictEqual(innerHighlighted, true, 'Inner zone should highlight');
-    assert.strictEqual(outerHighlighted, false, 'Outer zone should not highlight');
-});
-
-Then('outer should not respond', async function() {
-    const outerHighlighted = await this.page.evaluate(() => {
-        const outer = document.getElementById('outer-zone');
-        return outer && outer.classList.contains('dx-drag-over');
-    });
-
-    assert.strictEqual(outerHighlighted, false, 'Outer zone should not respond');
-});
-
-Then('the drop should bubble to outer zone', async function() {
-    // After bubbling, state should show outer zone would handle it
-    assert.ok(true, 'Drop bubbled to parent');
-});
-
-Then('outer should handle the drop', async function() {
-    assert.ok(true, 'Outer zone handled the drop');
-});
-
-// ============================================================================
-// MULTI-SELECTION STEPS & ASSERTIONS
-// ============================================================================
-
-Given('{int} elements with dx-draggable={string} and dx-multi-select={string}', async function(count, type, multiSelect) {
-    let html = '<html><body>';
-    for (let i = 0; i < count; i++) {
-        html += `
-            <div id="card-${i}" dx-draggable="${type}" dx-multi-select="${multiSelect}"
-                 style="width: 100px; height: 100px; background: blue; margin: 10px; display: inline-block;">
-                Card ${i}
-            </div>
-        `;
-    }
-    html += '</body></html>';
-
-    await this.page.setContent(html);
-    await this.page.evaluate(() => window.DragX.init());
-});
-
-Given('{int} cards with {int} currently selected', async function(totalCards, selectedCards) {
-    let html = '<html><body>';
-    for (let i = 0; i < totalCards; i++) {
-        const selected = i < selectedCards ? 'class="dx-selected"' : '';
-        html += `
-            <div id="card-${i}" dx-draggable="card" dx-multi-select="true" ${selected}
-                 style="width: 100px; height: 100px; background: ${i < selectedCards ? 'orange' : 'blue'}; margin: 10px; display: inline-block;">
-                Card ${i}
-            </div>
-        `;
-    }
-    html += '</body></html>';
-
-    await this.page.setContent(html);
-    await this.page.evaluate(() => window.DragX.init());
-});
-
-Given('a card that is currently selected', async function() {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="card" dx-multi-select="true" class="dx-selected"
-                 style="width: 100px; height: 100px; background: orange; margin: 10px;">
-                Selected Card
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
-});
-
-When('the user Ctrl+clicks the first card', async function() {
-    await this.page.locator('#card-0').click({ modifiers: ['Control'] });
-});
-
-When('the user Ctrl+clicks the second card', async function() {
-    await this.page.locator('#card-1').click({ modifiers: ['Control'] });
-});
-
-Then('both cards should be selected', async function() {
-    const selected = await this.page.evaluate(() => {
-        return [
-            document.getElementById('card-0').classList.contains('dx-selected'),
-            document.getElementById('card-1').classList.contains('dx-selected')
-        ];
-    });
-
-    assert.ok(selected[0] && selected[1], 'Both cards should be selected');
-});
-
-Then('both should have selected visual state', async function() {
-    const states = await this.page.evaluate(() => {
-        return [
-            window.getComputedStyle(document.getElementById('card-0')).backgroundColor,
-            window.getComputedStyle(document.getElementById('card-1')).backgroundColor
-        ];
-    });
-
-    assert.ok(states.length === 2, 'Both cards should have visual state');
-});
-
-Then('all selected cards should move together', async function() {
-    const positions = await this.page.evaluate(() => {
-        const card0 = document.getElementById('card-0');
-        const card1 = document.getElementById('card-1');
-        if (!card0 || !card1) return null;
-        return {
-            card0: card0.getBoundingClientRect().left,
-            card1: card1.getBoundingClientRect().left
-        };
-    });
-
-    assert.ok(positions, 'Cards should have positions');
-});
-
-Then('a composite ghost image should be shown', async function() {
-    const hasCompositeGhost = await this.page.evaluate(() => {
-        const ghost = document.querySelector('.dx-ghost-composite');
-        return ghost !== null;
-    });
-
-    assert.ok(hasCompositeGhost || true, 'Composite ghost image expected'); // Allow both implementations
-});
-
-Then('the card should be deselected', async function() {
-    const isSelected = await this.page.evaluate(() => {
-        const card = document.getElementById('draggable');
-        return card && card.classList.contains('dx-selected');
-    });
-
-    assert.strictEqual(isSelected, false, 'Card should be deselected');
-});
-
-// ============================================================================
-// TOUCH SUPPORT STEPS & ASSERTIONS
-// ============================================================================
-
-Given('a draggable card being dragged via touch', async function() {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="card" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
-                Drag me
-            </div>
-            <div id="dropzone" dx-drop-zone="board" dx-accepts="card" style="width: 200px; height: 200px; background: lightgray; position: absolute; left: 300px; top: 300px;">
-                Drop here
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
-
-    // Start touch drag
-    await this.page.locator('#draggable').dispatchEvent('pointerdown', {
-        clientX: 100,
-        clientY: 100,
-        pointerType: 'touch'
-    });
-
-    await this.page.waitForTimeout(300);
-
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointermove', {
-            clientX: 110,
-            clientY: 110,
-            pointerType: 'touch',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-});
-
-When('the user touches and holds the element', async function() {
-    await this.page.locator('#draggable').dispatchEvent('pointerdown', {
-        clientX: 100,
-        clientY: 100,
-        pointerType: 'touch'
-    });
-});
-
-When('the user releases their finger over the drop zone', async function() {
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointerup', {
-            clientX: 350,
-            clientY: 350,
-            pointerType: 'touch',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-});
-
-Then('haptic feedback should trigger', async function() {
-    // Placeholder - haptic feedback is browser/device specific
-    assert.ok(true, 'Haptic feedback is device-specific');
-});
-
-Then('the drag should start after 300ms', async function() {
-    await this.page.waitForTimeout(300);
-
-    // Move to trigger drag
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointermove', {
-            clientX: 110,
-            clientY: 110,
-            pointerType: 'touch',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-
-    const state = await this.page.evaluate(() => window.DragX.getState());
-    assert.ok(['dragging', 'hovering'].includes(state.phase), 'Should be dragging');
-});
-
-When('the user moves their finger', async function() {
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointermove', {
-            clientX: 150,
-            clientY: 150,
-            pointerType: 'touch',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
-});
-
-Then('the element should follow the touch', async function() {
-    const state = await this.page.evaluate(() => window.DragX.getState());
-    assert.ok(state, 'State should be available');
-});
-
-Then('the drop should complete successfully', async function() {
-    const state = await this.page.evaluate(() => window.DragX.getState());
-    assert.strictEqual(state.phase, 'idle', 'Should be idle after successful drop');
-});
-
-Then('the container should scroll', async function() {
-    assert.ok(true, 'Container scrolled');
-});
-
-Then('no drag should start', async function() {
-    const state = await this.page.evaluate(() => window.DragX.getState());
-    assert.strictEqual(state.phase, 'idle', 'Drag should not have started');
-});
-
-Then('the page should auto-scroll', async function() {
-    assert.ok(true, 'Page auto-scrolled');
-});
-
-Then('scroll speed should increase near edges', async function() {
-    assert.ok(true, 'Edge-based scroll acceleration working');
-});
-
-// ============================================================================
-// KEYBOARD NAVIGATION STEPS & ASSERTIONS
-// ============================================================================
-
-Given('an element in keyboard drag mode', async function() {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="card" tabindex="0" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
-                Drag me
-            </div>
-            <div id="zone-1" dx-drop-zone="zone1" style="width: 200px; height: 200px; background: lightgray; position: absolute; left: 50px; top: 300px;">
-                Zone 1
-            </div>
-            <div id="zone-2" dx-drop-zone="zone2" style="width: 200px; height: 200px; background: lightgray; position: absolute; left: 300px; top: 300px;">
-                Zone 2
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
-    await this.page.locator('#draggable').focus();
-    await this.page.keyboard.press('Space');
-});
-
-When('the user tabs to the element', async function() {
-    await this.page.keyboard.press('Tab');
-});
-
-When('in dragX, the user presses Arrow Down', async function() {
-    await this.page.keyboard.press('ArrowDown');
-});
-
-When('the user presses Enter', async function() {
-    await this.page.keyboard.press('Enter');
-});
-
-When('the user presses Escape', async function() {
-    await this.page.keyboard.press('Escape');
-});
-
-Then('the element should receive keyboard focus', async function() {
-    const isFocused = await this.page.evaluate(() => {
-        return document.activeElement.id === 'draggable';
-    });
-
-    assert.ok(isFocused, 'Element should receive focus');
-});
-
-Then('a focus indicator should be visible', async function() {
-    const hasFocus = await this.page.evaluate(() => {
-        const el = document.activeElement;
-        return el && (el.id === 'draggable' || el.classList.contains('dx-focused'));
-    });
-
-    assert.ok(hasFocus, 'Focus indicator should be visible');
-});
-
-Then('drag mode should activate', async function() {
-    const inKeyboardDrag = await this.page.evaluate(() => {
-        return document.activeElement.id === 'draggable';
-    });
-
-    assert.ok(inKeyboardDrag, 'Keyboard drag mode should activate');
-});
-
-Then('available drop zones should highlight', async function() {
-    const zones = await this.page.evaluate(() => {
-        const z1 = document.getElementById('zone-1');
-        const z2 = document.getElementById('zone-2');
-        return [
-            z1 && z1.classList.contains('dx-keyboard-target'),
-            z2 && z2.classList.contains('dx-keyboard-target')
-        ];
-    });
-
-    assert.ok(zones.length > 0, 'Drop zones should have keyboard indicators');
-});
-
-Then('focus should move to the next drop zone', async function() {
-    const nextZoneFocused = await this.page.evaluate(() => {
-        const el = document.activeElement;
-        return el && (el.id === 'zone-1' || el.id === 'zone-2' || el.classList.contains('dx-keyboard-target'));
-    });
-
-    assert.ok(nextZoneFocused || true, 'Focus should move'); // Allow flexible implementation
-});
-
-Then('the drop should complete', async function() {
-    const state = await this.page.evaluate(() => window.DragX.getState());
-    assert.ok(state, 'Drop should complete');
-});
-
-Then('drag mode should cancel', async function() {
-    const isIdle = await this.page.evaluate(() => {
-        const state = window.DragX && window.DragX.getState ? window.DragX.getState() : null;
-        return !state || state.phase === 'idle';
-    });
-
-    assert.ok(isIdle || true, 'Drag mode should cancel');
-});
-
-Then('the element should return to original position', async function() {
-    const position = await this.page.evaluate(() => {
-        const el = document.getElementById('draggable');
-        if (!el) return null;
-        const rect = el.getBoundingClientRect();
-        return { x: rect.left, y: rect.top };
-    });
-
-    assert.ok(position, 'Element should have position');
 });
 
 Given('a focused draggable element', async function() {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="card" tabindex="0" style="width: 100px; height: 100px; background: blue;">
-                Drag me
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
-    await this.page.locator('#draggable').focus();
+    await mount(this, cardHtml('dx-draggable="card" dx-data=\'{"id":7}\'') +
+        zoneHtml('dx-drop-zone="zone1" dx-accepts="card"', 'zone-1', 'left:300px;top:50px;width:150px;height:150px') +
+        zoneHtml('dx-drop-zone="zone2" dx-accepts="card"', 'zone-2', 'left:300px;top:300px;width:150px;height:150px'));
+    await this.page.focus('#draggable');
+    this.element = this.page.locator('#draggable');
+});
+
+Given('an element in keyboard drag mode', async function() {
+    await mount(this, cardHtml('dx-draggable="card" dx-data=\'{"id":7}\'') +
+        zoneHtml('dx-drop-zone="zone1" dx-accepts="card"', 'zone-1', 'left:300px;top:50px;width:150px;height:150px') +
+        zoneHtml('dx-drop-zone="zone2" dx-accepts="card"', 'zone-2', 'left:300px;top:300px;width:150px;height:150px'));
+    this.element = this.page.locator('#draggable');
+    this.startRect = await rectOf(this, '#draggable');
+    await this.page.focus('#draggable');
+    await this.page.keyboard.press('Space');
+    assert.ok(await hasClass(this, '#draggable', 'dx-keyboard-dragging'), 'keyboard drag should be active');
+});
+
+Given('a draggable card being dragged via touch', async function() {
+    await mountCard(this, 'dx-draggable="card"');
+    const touch = async (type, x, y, onElement) => {
+        await this.page.evaluate(([t, px, py, on]) => {
+            const target = on ? document.getElementById('draggable') : document;
+            target.dispatchEvent(new PointerEvent(t, {
+                bubbles: true, cancelable: true, pointerId: 7, pointerType: 'touch',
+                isPrimary: true, clientX: px, clientY: py
+            }));
+        }, [type, x, y, onElement]);
+        await this.page.waitForTimeout(MOVE_WAIT_MS);
+    };
+    await touch('pointerdown', CARD_CENTER.x, CARD_CENTER.y, true);
+    await touch('pointermove', CARD_CENTER.x + 20, CARD_CENTER.y + 20, false);
+    await touch('pointermove', ZONE_CENTER.x, ZONE_CENTER.y, false);
+    assert.strictEqual((await dragState(this)).phase, 'dragging');
+    this.touch = touch;
+});
+
+Given('an event listener that calls preventDefault\\(\\)', async function() {
+    await this.page.evaluate(() => {
+        window.__dragstartPrevented = 0;
+        document.addEventListener('dx:dragstart', (e) => {
+            e.preventDefault();
+            window.__dragstartPrevented++;
+        });
+    });
+});
+
+defineElement('an element with dx-draggable=""', async function() {
+    this.consoleMessages = [];
+    await mountCard(this, 'dx-draggable=""');
+});
+
+// ============================================================================
+// POINTER ACTIONS
+// ============================================================================
+
+When('the user starts dragging the element', async function() {
+    await startDrag(this);
+});
+
+When('drag starts', async function() {
+    await startDrag(this);
+});
+
+When('drag begins', async function() {
+    await startDrag(this);
+});
+
+When('drag ends', async function() {
+    await release(this);
+});
+
+When('drag completes', async function() {
+    await startDrag(this);
+    await release(this);
+});
+
+When('the user drags the card over the board', async function() {
+    await dragTo(this, ZONE_CENTER);
+});
+
+When('the user drags the card to the board', async function() {
+    await dragTo(this, ZONE_CENTER);
+});
+
+When('the user drags the image to the board', async function() {
+    await dragTo(this, ZONE_CENTER);
+});
+
+When('the user releases the card', async function() {
+    await release(this);
+});
+
+When('a card is dragged over it', async function() {
+    await ensureCard(this);
+    await dragTo(this, ZONE_CENTER);
+});
+
+When('the card leaves the drop zone', async function() {
+    await moveTo(this, OUTSIDE);
+});
+
+When('the element is dropped', async function() {
+    await dragTo(this, ZONE_CENTER);
+    await release(this);
+});
+
+When('an element is dropped', async function() {
+    await dragTo(this, ZONE_CENTER);
+    await release(this);
+});
+
+When('dropped successfully', async function() {
+    await moveTo(this, ZONE_CENTER);
+    await release(this);
+});
+
+When('dropped on a zone that rejects it', async function() {
+    await mount(this, zoneHtml('dx-drop-zone="photos" dx-accepts="image"'));
+    await dragTo(this, ZONE_CENTER);
+    await release(this);
+});
+
+When('an item is dragged over inner', async function() {
+    await ensureCard(this, 'item');
+    await dragTo(this, ZONE_CENTER);   // inner-zone spans 350..450
+});
+
+When('dropped on inner', async function() {
+    await dragTo(this, ZONE_CENTER);
+    await release(this);
+});
+
+When('the user drags the element', async function() {
+    // Up-right diagonal so axis and grid constraints have something to remove.
+    await this.page.mouse.move(CARD_CENTER.x, CARD_CENTER.y);
+    await this.page.mouse.down();
+    await moveTo(this, { x: CARD_CENTER.x + 20, y: CARD_CENTER.y + 20 });
+    await moveTo(this, { x: 237, y: 223 });
+});
+
+When('the user drags the handle', async function() {
+    await startDrag(this, { x: CARD_CENTER.x, y: CARD.top + 10 });
+});
+
+When('the user drags from another area of the card', async function() {
+    await release(this);
+    this.dragstartsBefore = (await events(this, 'dx:dragstart')).length;
+    const body = await rectOf(this, '#draggable .card-body');
+    await startDrag(this, { x: body.left + body.width / 2, y: body.top + body.height / 2 });
+});
+
+When('the user drags either handle', async function() {
+    for (let i = 0; i < this.handleCount; i++) {
+        await startDrag(this, { x: CARD_CENTER.x, y: CARD.top + 10 + i * 20 });
+        this.lastHandleState = await dragState(this);
+        assert.strictEqual(this.lastHandleState.phase, 'dragging', `handle ${i + 1} should start a drag`);
+        await release(this);
+        // The free-form drop moves the card; put it back for the next handle.
+        await this.page.evaluate(() => {
+            document.getElementById('draggable').style.transform = ''; 
+        });
+    }
+});
+
+When('the user releases their finger over the drop zone', async function() {
+    await this.touch('pointerup', ZONE_CENTER.x, ZONE_CENTER.y, false);
+});
+
+When('the element is removed from DOM', async function() {
+    await this.page.evaluate(() => {
+        window.__removedDraggable = document.getElementById('draggable');
+        window.__removedDraggable.remove();
+    });
+});
+
+When('a new element with dx-draggable={string} is added', async function(type) {
+    await this.page.evaluate((t) => {
+        document.body.insertAdjacentHTML('beforeend',
+            `<div id="draggable" dx-draggable="${t}" style="position:absolute;left:50px;top:50px;width:100px;height:100px;">New</div>`);
+    }, type);
+});
+
+// ============================================================================
+// KEYBOARD AND INIT ACTIONS
+// ============================================================================
+
+When('the user tabs to the element', async function() {
+    await this.page.keyboard.press('Tab');
 });
 
 When('the user presses Space', async function() {
     await this.page.keyboard.press('Space');
 });
 
+When('in dragX, the user presses Tab', async function() {
+    await this.page.keyboard.press('Tab');
+});
+
+When('the user presses Enter', async function() {
+    await this.page.keyboard.press('Enter');
+});
+
+// Shared with tablex.feature.
+When('the user presses Escape', async function() {
+    await this.page.keyboard.press('Escape');
+});
+
+When('the module initializes', async function() {
+    await this.page.evaluate(() => window.DragX.init());
+});
+
+When('the dragX module initializes', async function() {
+    await this.page.evaluate(() => window.DragX.init());
+});
+
 // ============================================================================
-// VISUAL FEEDBACK STEPS & ASSERTIONS
+// ASSERTIONS: POINTER DRAG
 // ============================================================================
 
-Given('a custom ghost template', async function() {
-    await this.page.evaluate(() => {
-        if (!document.getElementById('custom')) {
-            const template = document.createElement('template');
-            template.id = 'custom';
-            template.setAttribute('data-ghost-template', '');
-            template.innerHTML = '<div style="background: red; width: 100px; height: 100px; opacity: 0.7;">Custom Ghost</div>';
-            document.body.appendChild(template);
-        }
+Then('the element should have visual drag feedback', async function() {
+    assert.ok(await hasClass(this, '#draggable', 'dx-dragging'), 'element should have dx-dragging');
+    assert.strictEqual((await dragState(this)).phase, 'dragging');
+    const ghosts = await this.page.locator('.dx-ghost').count();
+    assert.strictEqual(ghosts, 1, 'a ghost should follow the pointer');
+});
+
+Then('the cursor should change to indicate dragging', async function() {
+    // dragX adds .dx-dragging; the readme's stylesheet gives it cursor: grabbing.
+    const cursor = await this.page.evaluate(() => {
+        const el = document.elementFromPoint(120, 120);
+        return el && getComputedStyle(el).cursor;
     });
+    assert.strictEqual(cursor, 'grabbing');
+});
+
+Then('the drop zone should highlight', async function() {
+    assert.ok(await hasClass(this, '#dropzone', 'dx-drag-over'), 'zone should have dx-drag-over');
+});
+
+Then('a drop indicator should be visible', async function() {
+    const s = await dragState(this);
+    assert.strictEqual(s.phase, 'hovering');
+    assert.strictEqual(s.zone, 'board');
+    await expect(this.page.locator('#dropzone.dx-drag-over')).toBeVisible();
+});
+
+Then('in dragX, a {string} event should be emitted', async function(eventName) {
+    await lastEvent(this, eventName);
+});
+
+Then('the card should be moved to the board', async function() {
+    // The readme leaves the DOM move to the app; dragX reports which card went where.
+    const drop = await lastEvent(this, 'dx:drop');
+    assert.strictEqual(drop.element, 'draggable');
+    assert.strictEqual(drop.dropZone, 'dropzone');
+    assert.strictEqual(drop.type, 'card');
+    const end = await lastEvent(this, 'dx:dragend');
+    assert.strictEqual(end.success, true);
+});
+
+Then('the drop should be allowed', async function() {
+    const s = await dragState(this);
+    assert.strictEqual(s.phase, 'hovering');
+    assert.strictEqual(s.zone, 'board');
+    assert.ok(await hasClass(this, '#dropzone', 'dx-drag-over'));
+});
+
+Then('the drop should be rejected', async function() {
+    const s = await dragState(this);
+    assert.strictEqual(s.phase, 'dragging', 'no zone should be targeted');
+    assert.strictEqual(s.zone, null);
+    await release(this);
+    assert.strictEqual((await events(this, 'dx:drop')).length, 0, 'no dx:drop for a rejected type');
+});
+
+Then('the drop zone should not highlight', async function() {
+    assert.ok(!(await hasClass(this, '#dropzone', 'dx-drag-over')), 'zone should not have dx-drag-over');
+});
+
+Then('the drop zone should have class {string}', async function(className) {
+    assert.ok(await hasClass(this, '#dropzone', className), `zone should have ${className}`);
+});
+
+Then('the drop zone class should be removed', async function() {
+    assert.ok(!(await hasClass(this, '#dropzone', 'dx-drag-over')));
+    assert.strictEqual((await dragState(this)).zone, null);
+});
+
+Then('the drop should complete successfully', async function() {
+    const drop = await lastEvent(this, 'dx:drop');
+    assert.strictEqual(drop.dropZone, 'dropzone');
+    assert.strictEqual(drop.element, 'draggable');
+    assert.strictEqual((await dragState(this)).phase, 'idle');
 });
 
 Then('a ghost image should appear', async function() {
-    const ghostExists = await this.page.evaluate(() => {
-        const ghost = document.querySelector('.dx-ghost');
-        return ghost !== null;
-    });
-
-    assert.strictEqual(ghostExists, true, 'Ghost image should exist');
-});
-
-Then('the custom ghost should be used', async function() {
-    const customGhost = await this.page.evaluate(() => {
-        const ghost = document.querySelector('.dx-ghost');
-        if (!ghost) return false;
-        const style = window.getComputedStyle(ghost);
-        return style.backgroundColor.includes('red') || ghost.textContent.includes('Custom');
-    });
-
-    assert.ok(customGhost || true, 'Custom ghost should be used');
+    await expect(this.page.locator('.dx-ghost')).toHaveCount(1);
 });
 
 Then('it should follow the cursor', async function() {
-    // Ghost should be positioned at pointer coordinates
-    const ghostPosition = await this.page.evaluate(() => {
-        const ghost = document.querySelector('.dx-ghost');
-        if (!ghost) return null;
-        return {
-            left: parseInt(ghost.style.left),
-            top: parseInt(ghost.style.top)
-        };
-    });
-
-    assert.ok(ghostPosition, 'Ghost should have position');
+    const before = await rectOf(this, '.dx-ghost');
+    await moveTo(this, { x: CARD_CENTER.x + 60, y: CARD_CENTER.y + 50 });
+    const after = await rectOf(this, '.dx-ghost');
+    assert.ok(Math.abs((after.left - before.left) - 40) <= 1, `ghost x moved ${after.left - before.left}, want 40`);
+    assert.ok(Math.abs((after.top - before.top) - 30) <= 1, `ghost y moved ${after.top - before.top}, want 30`);
 });
 
 Then('it should have reduced opacity', async function() {
-    const opacity = await this.page.evaluate(() => {
-        const ghost = document.querySelector('.dx-ghost');
-        return ghost ? window.getComputedStyle(ghost).opacity : null;
-    });
-
-    assert.ok(opacity && parseFloat(opacity) <= 1, 'Ghost should have reduced opacity');
-});
-
-Then('movement should be smooth', async function() {
-    // Verify no jerky movements detected
-    assert.ok(true, 'Smooth movement verified');
-});
-
-Then('no jank should occur', async function() {
-    assert.ok(true, 'No jank detected');
-});
-
-Then('it should animate to final position', async function() {
-    assert.ok(true, 'Animation to final position performed');
-});
-
-Then('use easing function', async function() {
-    assert.ok(true, 'Easing function applied');
-});
-
-Then('use bounce easing', async function() {
-    assert.ok(true, 'Bounce easing applied');
-});
-
-// ============================================================================
-// DRAG STATES & BEHAVIORS
-// ============================================================================
-
-Given('a draggable element', async function() {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="card" style="width: 100px; height: 100px; background: blue;">
-                Drag me
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
-});
-
-When('drag starts', async function() {
-    await startDraggingElement.call(this);
-});
-
-Then('in dragX, the element should have class {string}', async function(className) {
-    const hasClass = await this.page.evaluate((cls) => {
-        const element = document.getElementById('draggable');
-        return element.classList.contains(cls);
-    }, className);
-
-    assert.strictEqual(hasClass, true, `Element should have class ${className}`);
-});
-
-When('drag ends', async function() {
-    await this.page.evaluate(() => {
-        const event = new PointerEvent('pointerup', {
-            clientX: 150,
-            clientY: 150,
-            pointerType: 'mouse',
-            bubbles: true
-        });
-        document.dispatchEvent(event);
-    });
+    const opacity = await this.page.evaluate(() =>
+        parseFloat(getComputedStyle(document.querySelector('.dx-ghost')).opacity));
+    assert.ok(opacity > 0 && opacity < 1, `ghost opacity ${opacity} should be between 0 and 1`);
 });
 
 Then('the dragging class should be removed', async function() {
-    const hasClass = await this.page.evaluate(() => {
-        const element = document.getElementById('draggable');
-        return element.classList.contains('dx-dragging');
-    });
-
-    assert.strictEqual(hasClass, false, 'dx-dragging class should be removed');
+    assert.ok(!(await hasClass(this, '#draggable', 'dx-dragging')));
+    assert.strictEqual((await dragState(this)).phase, 'idle');
+    await expect(this.page.locator('.dx-ghost')).toHaveCount(0);
 });
 
-Then('the original should remain in place', async function() {
-    const stillExists = await this.page.evaluate(() => {
-        const el = document.getElementById('draggable');
-        return el && el.style.visibility !== 'hidden';
-    });
-
-    assert.ok(stillExists, 'Original should remain visible');
+Then('the entire card should drag', async function() {
+    const s = await dragState(this);
+    assert.strictEqual(s.phase, 'dragging');
+    assert.strictEqual(s.element, 'draggable', 'the card, not the handle, is the dragged element');
+    assert.ok(await hasClass(this, '#draggable', 'dx-dragging'));
 });
 
-Then('a copy should be dragged', async function() {
-    const hasCopy = await this.page.evaluate(() => {
-        const original = document.getElementById('draggable');
-        const ghost = document.querySelector('.dx-ghost');
-        return original && ghost;
-    });
-
-    assert.ok(hasCopy, 'Copy should exist for dragging');
+Then('no drag should occur', async function() {
+    assert.strictEqual((await dragState(this)).phase, 'idle');
+    assert.ok(!(await hasClass(this, '#draggable', 'dx-dragging')));
+    assert.strictEqual((await events(this, 'dx:dragstart')).length, this.dragstartsBefore);
+    await expect(this.page.locator('.dx-ghost')).toHaveCount(0);
 });
 
-Then('the original should be hidden', async function() {
-    const isHidden = await this.page.evaluate(() => {
-        const el = document.getElementById('draggable');
-        return el && (el.style.visibility === 'hidden' || el.style.display === 'none');
-    });
-
-    assert.ok(isHidden || true, 'Original may be hidden or in drag layer');
-});
-
-Then('the original should be moved to new location', async function() {
-    assert.ok(true, 'Original element moved to new location');
-});
-
-Then('the element should be copied', async function() {
-    const copies = await this.page.evaluate(() => {
-        return document.querySelectorAll('[dx-draggable="card"]').length;
-    });
-
-    assert.ok(copies >= 1, 'Element should be copied');
-});
-
-Then('both original and copy should exist', async function() {
-    const copies = await this.page.evaluate(() => {
-        return document.querySelectorAll('[dx-draggable="card"]').length;
-    });
-
-    assert.ok(copies >= 2 || copies === 1, 'Copy operation completed');
-});
-
-Then('the element should be moved', async function() {
-    assert.ok(true, 'Element moved');
-});
-
-Then('only one dragX instance should exist', async function() {
-    const count = await this.page.evaluate(() => {
-        return document.querySelectorAll('[dx-draggable="card"]').length;
-    });
-
-    assert.ok(count === 1, 'Only one instance should exist');
-});
-
-Then('a reference should be created', async function() {
-    assert.ok(true, 'Reference created');
-});
-
-Then('original should remain unchanged', async function() {
-    const unchanged = await this.page.evaluate(() => {
-        const el = document.getElementById('draggable');
-        return el && el.parentElement;
-    });
-
-    assert.ok(unchanged, 'Original unchanged');
+Then('the card should drag', async function() {
+    const starts = await events(this, 'dx:dragstart');
+    assert.strictEqual(starts.length, this.handleCount, 'each handle should start one drag');
+    assert.ok(starts.every(e => e.element === 'draggable'));
 });
 
 Then('it should only move horizontally', async function() {
-    const position = await this.page.evaluate(() => {
-        const el = document.getElementById('draggable');
-        if (!el) return null;
-        return {
-            left: el.getBoundingClientRect().left,
-            top: el.getBoundingClientRect().top
-        };
-    });
-
-    assert.ok(position, 'Horizontal movement verified');
+    const ghost = await rectOf(this, '.dx-ghost');
+    assert.strictEqual(Math.round(ghost.left), 237, 'ghost follows the pointer horizontally');
+    assert.strictEqual(Math.round(ghost.top), CARD_CENTER.y, 'ghost stays on the starting row');
 });
 
 Then('vertical movement should be ignored', async function() {
-    assert.ok(true, 'Vertical movement ignored');
+    await release(this);
+    const transform = await this.page.evaluate(() => document.getElementById('draggable').style.transform);
+    assert.strictEqual(transform, 'translate(137px, 0px)');
 });
 
-Then('it should not leave the parent boundaries', async function() {
-    const withinBounds = await this.page.evaluate(() => {
-        const el = document.getElementById('draggable');
-        const parent = document.getElementById('parent');
-        if (!el || !parent) return true;
-        const elRect = el.getBoundingClientRect();
-        const parentRect = parent.getBoundingClientRect();
-        return elRect.left >= parentRect.left && elRect.right <= parentRect.right;
-    });
-
-    assert.ok(withinBounds, 'Should remain within parent');
+Then('it should snap to {int}px grid increments', async function(grid) {
+    const ghost = await rectOf(this, '.dx-ghost');
+    const dx = Math.round(ghost.left) - CARD_CENTER.x;
+    const dy = Math.round(ghost.top) - CARD_CENTER.y;
+    assert.strictEqual(dx % grid, 0, `ghost x offset ${dx} should be a multiple of ${grid}`);
+    assert.strictEqual(dy % grid, 0, `ghost y offset ${dy} should be a multiple of ${grid}`);
+    assert.deepStrictEqual([dx, dy], [140, 120]);   // pointer moved 137, 123
+    await release(this);
+    const transform = await this.page.evaluate(() => document.getElementById('draggable').style.transform);
+    assert.strictEqual(transform, 'translate(140px, 120px)');
 });
 
-Then('it should snap to {int}px grid increments', async function(gridSize) {
-    assert.ok(true, `Snapped to ${gridSize}px grid`);
+Then('the drop event should contain the data', async function() {
+    const drop = await lastEvent(this, 'dx:drop');
+    assert.deepStrictEqual(drop.data, { id: 123 });
 });
 
-Then('items should automatically reorder', async function() {
-    const itemCount = await this.page.evaluate(() => {
-        return document.querySelectorAll('[dx-draggable="item"]').length;
-    });
-
-    assert.ok(itemCount > 0, 'Items reordered');
+Then('the data should be accessible as event.detail.data', async function() {
+    const seen = await this.page.evaluate(() => document.getElementById('dropzone').dataset.droppedId);
+    assert.strictEqual(seen, '123');
 });
 
-Then('positions should be calculated based on drop coordinates', async function() {
-    assert.ok(true, 'Positions calculated');
-});
-
-Then('a placeholder should show the drop position', async function() {
-    const hasPlaceholder = await this.page.evaluate(() => {
-        return document.querySelector('.dx-placeholder') !== null || true;
-    });
-
-    assert.ok(hasPlaceholder, 'Placeholder shown');
-});
-
-Then('other items should shift to make space', async function() {
-    assert.ok(true, 'Items shifted');
-});
-
-Then('the reactive data should update', async function() {
-    assert.ok(true, 'Reactive data updated');
-});
-
-Then('item.position should be x:{int} y:{int}', async function(x, y) {
-    assert.ok(true, `Position updated to {x:${x}, y:${y}}`);
-});
-
-Then('all data formats should be available', async function() {
-    assert.ok(true, 'Data formats available');
-});
-
-Then('consumers can choose appropriate format', async function() {
-    assert.ok(true, 'Format selection available');
-});
-
-Then('the animation should take {int}ms', async function(duration) {
-    assert.ok(true, `Animation duration: ${duration}ms`);
+Then('the element should snap back to origin', async function() {
+    const r = await rectOf(this, '#draggable');
+    assert.deepStrictEqual([r.left, r.top], [CARD.left, CARD.top]);
+    const transform = await this.page.evaluate(() => document.getElementById('draggable').style.transform);
+    assert.ok(transform === '' || transform === 'none', `unexpected transform ${transform}`);
+    assert.strictEqual((await events(this, 'dx:drop')).length, 0);
+    const end = await lastEvent(this, 'dx:dragend');
+    assert.strictEqual(end.success, false);
 });
 
 // ============================================================================
-// PERFORMANCE STEPS & ASSERTIONS
+// ASSERTIONS: EVENTS
 // ============================================================================
 
-Given('{int} drop zones on the page', async function(count) {
-    let html = '<html><body>';
-    html += `<div id="draggable" dx-draggable="card" style="width: 50px; height: 50px; background: blue; position: absolute; left: 10px; top: 10px;">Drag</div>`;
-
-    for (let i = 0; i < count; i++) {
-        const x = (i % 10) * 100;
-        const y = Math.floor(i / 10) * 100;
-        html += `
-            <div class="dropzone" dx-drop-zone="zone-${i}" dx-accepts="card"
-                 style="width: 80px; height: 80px; background: lightgray; position: absolute; left: ${x}px; top: ${y + 100}px; border: 1px solid black;">
-                ${i}
-            </div>
-        `;
-    }
-    html += '</body></html>';
-
-    await this.page.setContent(html);
-    await this.page.evaluate(() => window.DragX.init());
+Then('event.detail should contain element info', async function() {
+    const start = await lastEvent(this, 'dx:dragstart');
+    assert.strictEqual(start.element, 'draggable');
+    assert.strictEqual(start.type, 'card');
+    assert.strictEqual(typeof start.x, 'number');
+    assert.strictEqual(typeof start.y, 'number');
 });
 
-Given('{int} draggable elements', async function(count) {
-    let html = '<html><body>';
-    for (let i = 0; i < count; i++) {
-        const x = (i % 20) * 50;
-        const y = Math.floor(i / 20) * 50;
-        html += `<div class="draggable" dx-draggable="card" style="width: 40px; height: 40px; background: blue; position: absolute; left: ${x}px; top: ${y}px;">D${i}</div>`;
-    }
-    html += '</body></html>';
-
-    await this.page.setContent(html);
-    const startTime = Date.now();
-    await this.page.evaluate(() => window.DragX.init());
-    const duration = Date.now() - startTime;
-    this.initDuration = duration;
+Then('event.detail should contain dragged element', async function() {
+    assert.strictEqual((await lastEvent(this, 'dx:drop')).element, 'draggable');
 });
 
-Given('{int} drop zones', async function(count) {
-    let html = '<html><body>';
-    for (let i = 0; i < count; i++) {
-        const x = (i % 10) * 100;
-        const y = Math.floor(i / 10) * 100;
-        html += `<div class="zone" dx-drop-zone="z${i}" style="width: 80px; height: 80px; background: lightgray; position: absolute; left: ${x}px; top: ${y}px; border: 1px solid black;">Z${i}</div>`;
-    }
-    html += '</body></html>';
-
-    await this.page.setContent(html);
-    await this.page.evaluate(() => window.DragX.init());
+Then('event.detail should contain drop zone', async function() {
+    assert.strictEqual((await lastEvent(this, 'dx:drop')).dropZone, 'dropzone');
 });
 
-Given('drop zones scattered across the page', async function() {
-    await this.page.setContent(`
-        <html><body style="width: 2000px; height: 2000px;">
-            <div id="z1" dx-drop-zone="zone1" style="width: 100px; height: 100px; background: lightgray; position: absolute; left: 100px; top: 100px;"></div>
-            <div id="z2" dx-drop-zone="zone2" style="width: 100px; height: 100px; background: lightgray; position: absolute; left: 500px; top: 200px;"></div>
-            <div id="z3" dx-drop-zone="zone3" style="width: 100px; height: 100px; background: lightgray; position: absolute; left: 1000px; top: 500px;"></div>
-            <div id="z4" dx-drop-zone="zone4" style="width: 100px; height: 100px; background: lightgray; position: absolute; left: 1500px; top: 1000px;"></div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
-});
-
-Then('a quad-tree index should be built', async function() {
-    assert.ok(true, 'Quad-tree index built');
-});
-
-Then('zones should be partitioned by location', async function() {
-    const zoneCount = await this.page.evaluate(() => {
-        return document.querySelectorAll('[dx-drop-zone]').length;
-    });
-
-    assert.ok(zoneCount > 0, 'Zones partitioned');
-});
-
-When('the user drags an element', async function() {
-    await startDraggingElement.call(this);
-});
-
-When('checking drop validity during drag', async function() {
-    const startTime = Date.now();
-    await this.page.evaluate(() => {
-        const draggable = document.getElementById('draggable');
-        if (draggable) {
-            const zones = document.querySelectorAll('[dx-drop-zone]');
-            zones.forEach(zone => {
-                zone.getBoundingClientRect();
-            });
-        }
-    });
-    this.queryTime = Date.now() - startTime;
-});
-
-Then('drop zone detection should use spatial indexing', async function() {
-    // Verify drop zones are registered
-    const zoneCount = await this.page.evaluate(() => {
-        return document.querySelectorAll('[dx-drop-zone]').length;
-    });
-
-    assert.ok(zoneCount > 0, 'Drop zones should be registered');
-});
-
-Then('hover detection should complete in less than 1ms', async function() {
-    // This is a performance target - actual measurement would need benchmarking
-    assert.ok(true, 'Hover detection optimized');
-});
-
-Then('spatial index should be used', async function() {
-    assert.ok(true, 'Spatial index used for queries');
-});
-
-Then('query should complete in less than 1ms', async function() {
-    assert.ok(this.queryTime < 10, 'Query completed efficiently');
-});
-
-Then('dragX initialization should complete in less than 500ms', async function() {
-    assert.ok(this.initDuration < 500, `Init completed in ${this.initDuration}ms`);
-});
-
-Then('memory usage should be reasonable', async function() {
-    const memUsage = await this.page.evaluate(() => {
-        return performance && performance.memory ? performance.memory.usedJSHeapSize : 0;
-    });
-
-    assert.ok(true, 'Memory usage acceptable');
-});
-
-Then('frame rate should stay above 60 FPS', async function() {
-    assert.ok(true, 'Frame rate maintained above 60 FPS');
-});
-
-Then('drag updates should complete in less than 16ms', async function() {
-    assert.ok(true, 'Drag updates < 16ms');
-});
-
-// ============================================================================
-// MUTATION OBSERVER & DYNAMIC ELEMENTS
-// ============================================================================
-
-Given('the dragX module is initialized with observe=true', async function() {
-    await this.page.goto('about:blank');
-    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
-    await this.page.addScriptTag({ path: './src/dragx.js' });
-
-    // Wait for DragX to be available
-    await this.page.waitForFunction(() => window.DragX !== undefined);
-
-    // Initialize with observation enabled
-    await this.page.evaluate(() => window.DragX.init({ observe: true }));
-});
-
-When('a new element with dx-draggable={string} is added', async function(type) {
-    await this.page.evaluate((draggableType) => {
-        const el = document.createElement('div');
-        el.id = 'new-draggable';
-        el.setAttribute('dx-draggable', draggableType);
-        el.style.cssText = 'width: 100px; height: 100px; background: purple; margin: 10px;';
-        el.textContent = 'New Element';
-        document.body.appendChild(el);
-    }, type);
-
-    // Wait for MutationObserver to detect the change
-    await this.page.waitForTimeout(100);
-});
-
-Then('the element should become draggable automatically', async function() {
-    const isDraggable = await this.page.evaluate(() => {
-        const el = document.getElementById('new-draggable');
-        return el && el.getAttribute('dx-draggable') !== null;
-    });
-
-    assert.ok(isDraggable, 'New element should be draggable');
-});
-
-When('the element is removed from DOM', async function() {
-    await this.page.evaluate(() => {
-        const el = document.getElementById('draggable');
-        if (el) el.remove();
-    });
-
-    await this.page.waitForTimeout(100);
-});
-
-Then('event listeners should be cleaned up', async function() {
-    assert.ok(true, 'Event listeners cleaned up');
-});
-
-Then('dragX memory should be released', async function() {
-    assert.ok(true, 'Memory released');
-});
-
-defineElement('an element with dx-draggable={string} dx-data={string}', async function(type, data) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="${type}" dx-data='${data}' style="width: 100px; height: 100px; background: blue;">
-                Drag me
-            </div>
-            <div id="dropzone" dx-drop-zone="board" style="width: 200px; height: 200px; background: lightgray; position: absolute; left: 300px; top: 300px;">
-                Drop here
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
-});
-
-Given('an element with multiple data attributes', async function() {
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="card"
-                 dx-data='{"id":123, "name":"test"}'
-                 data-custom="custom-value"
-                 style="width: 100px; height: 100px; background: blue;">
-                Drag me
-            </div>
-            <div id="dropzone" dx-drop-zone="board" style="width: 200px; height: 200px; background: lightgray; position: absolute; left: 300px; top: 300px;">
-                Drop here
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
-});
-
-
-
-Given('an event listener that calls preventDefault', async function() {
-    await this.page.evaluate(() => {
-        document.addEventListener('dx:dragstart', (e) => {
-            e.preventDefault();
-            window.dragPrevented = true;
-        }, true);
-    });
+Then('event.detail should contain drag coordinates', async function() {
+    const drop = await lastEvent(this, 'dx:drop');
+    assert.deepStrictEqual([drop.x, drop.y], [ZONE_CENTER.x, ZONE_CENTER.y]);
 });
 
 Then('the drag should be cancelled', async function() {
-    const prevented = await this.page.evaluate(() => window.dragPrevented);
-    assert.ok(prevented, 'Drag should be cancelled by preventDefault');
-});
-
-Then('a dragX validation error should be logged', async function() {
-    assert.ok(true, 'Validation error logged');
+    assert.ok(await this.page.evaluate(() => window.__dragstartPrevented) >= 1, 'listener should run');
+    await moveTo(this, ZONE_CENTER);
+    assert.strictEqual((await dragState(this)).phase, 'idle');
+    assert.ok(!(await hasClass(this, '#draggable', 'dx-dragging')));
+    await expect(this.page.locator('.dx-ghost')).toHaveCount(0);
+    expect(await this.element.getAttribute('aria-grabbed')).toBe('false');
 });
 
 // ============================================================================
-// ACCESSIBILITY STEPS & ASSERTIONS
+// ASSERTIONS: KEYBOARD AND ACCESSIBILITY
 // ============================================================================
+
+Then('the element should receive keyboard focus', async function() {
+    expect(await this.page.evaluate(() => document.activeElement && document.activeElement.id)).toBe('draggable');
+});
+
+Then('a focus indicator should be visible', async function() {
+    expect(await this.page.evaluate(() => document.getElementById('draggable').matches(':focus-visible'))).toBe(true);
+});
+
+Then('drag mode should activate', async function() {
+    assert.ok(await hasClass(this, '#draggable', 'dx-keyboard-dragging'));
+    expect(await this.element.getAttribute('aria-grabbed')).toBe('true');
+});
+
+Then('available drop zones should highlight', async function() {
+    assert.ok(await hasClass(this, '#zone-1', 'dx-keyboard-drop-zone'));
+    assert.ok(await hasClass(this, '#zone-2', 'dx-keyboard-drop-zone'));
+});
+
+Then('focus should move to the next drop zone', async function() {
+    assert.ok(await hasClass(this, '#zone-1', 'dx-keyboard-hover'), 'Tab should target the first zone');
+    assert.ok(!(await hasClass(this, '#zone-2', 'dx-keyboard-hover')));
+    expect(await liveText(this)).toContain('zone1');
+});
+
+Then('the drop should complete', async function() {
+    const drop = await lastEvent(this, 'dx:drop');
+    assert.strictEqual(drop.keyboard, true);
+    assert.strictEqual(drop.dropZone, 'zone-1');
+    assert.deepStrictEqual(drop.data, { id: 7 });
+    assert.ok(!(await hasClass(this, '#draggable', 'dx-keyboard-dragging')));
+    expect(await this.element.getAttribute('aria-grabbed')).toBe('false');
+    expect(await liveText(this)).toContain('Dropped');
+});
+
+Then('drag mode should cancel', async function() {
+    assert.ok(!(await hasClass(this, '#draggable', 'dx-keyboard-dragging')));
+    assert.ok(!(await hasClass(this, '#zone-1', 'dx-keyboard-drop-zone')));
+    expect(await this.element.getAttribute('aria-grabbed')).toBe('false');
+    expect(await liveText(this)).toContain('cancelled');
+    assert.strictEqual((await events(this, 'dx:drop')).length, 0);
+});
+
+Then('the element should return to original position', async function() {
+    const r = await rectOf(this, '#draggable');
+    assert.deepStrictEqual([r.left, r.top], [this.startRect.left, this.startRect.top]);
+    const transform = await this.page.evaluate(() => document.getElementById('draggable').style.transform);
+    assert.ok(transform === '' || transform === 'none', `unexpected transform ${transform}`);
+});
 
 Then('the element should have aria-grabbed={string}', async function(value) {
-    const ariaGrabbed = await this.page.evaluate((val) => {
-        const el = document.getElementById('draggable');
-        return el ? el.getAttribute('aria-grabbed') === val : false;
-    }, value);
-
-    assert.ok(ariaGrabbed, `aria-grabbed should be ${value}`);
+    expect(await this.element.getAttribute('aria-grabbed')).toBe(value);
 });
 
 Then('aria-grabbed should change to {string}', async function(value) {
-    const ariaGrabbed = await this.page.evaluate((val) => {
-        const el = document.getElementById('draggable');
-        return el ? el.getAttribute('aria-grabbed') === val : false;
-    }, value);
-
-    assert.ok(ariaGrabbed || true, `aria-grabbed changed`);
+    expect(await this.element.getAttribute('aria-grabbed')).toBe(value);
 });
 
-Given('a screen reader user', async function() {
-    // Setup screen reader mode context
-    await this.page.evaluate(() => {
-        document.body.setAttribute('role', 'application');
-    });
-});
-
-Then('an announcement should be made: {string}', async function(announcement) {
-    const announcementMade = await this.page.evaluate((text) => {
-        const liveRegion = document.querySelector('[aria-live]');
-        return liveRegion && liveRegion.textContent.includes(text);
-    }, announcement);
-
-    assert.ok(announcementMade || true, `Announcement: ${announcement}`);
+Then('an announcement should be made: {string}', async function(text) {
+    await expect.poll(() => liveText(this)).toContain(text);
 });
 
 Then('aria-describedby should reference instructions', async function() {
-    const hasDescription = await this.page.evaluate(() => {
-        const el = document.getElementById('draggable');
-        return el && el.getAttribute('aria-describedby');
+    const ok = await this.page.evaluate(() => {
+        const id = document.getElementById('draggable').getAttribute('aria-describedby');
+        return !!id && !!document.getElementById(id);
     });
-
-    assert.ok(hasDescription || true, 'aria-describedby should reference instructions');
+    assert.ok(ok, 'aria-describedby should point at an element in the page');
 });
 
 Then('instructions should explain keyboard controls', async function() {
-    const hasInstructions = await this.page.evaluate(() => {
-        const instructions = document.querySelector('[role="tooltip"], [aria-describedby]');
-        return instructions !== null;
+    const text = await this.page.evaluate(() => {
+        const id = document.getElementById('draggable').getAttribute('aria-describedby');
+        return document.getElementById(id).textContent;
     });
-
-    assert.ok(hasInstructions || true, 'Keyboard instructions provided');
+    for (const key of ['Space', 'arrow', 'Enter', 'Escape']) {
+        assert.ok(text.includes(key), `instructions should mention ${key}: "${text}"`);
+    }
 });
 
 // ============================================================================
-// ERROR HANDLING & VALIDATION
+// ASSERTIONS: SPATIAL INDEX, OBSERVER, CLEANUP, ERRORS, NESTING
 // ============================================================================
 
-When('the module initializes', async function() {
-    // Already initialized
-    await this.page.evaluate(() => window.DragX.init());
+Then('a quad-tree index should be built', async function() {
+    const metrics = await this.page.evaluate(() => window.DragX.getPerformanceMetrics());
+    assert.strictEqual(metrics.memoryUsage.dropZoneCount, 4);
+});
+
+Then('zones should be partitioned by location', async function() {
+    const result = await this.page.evaluate(() => {
+        const { buildQuadTree, queryQuadTreePoint } = window.DragX._internal;
+        const zones = [...document.querySelectorAll('[dx-drop-zone]')].map((el) => {
+            const r = el.getBoundingClientRect();
+            return { id: el.id, rect: { x: r.left, y: r.top, width: r.width, height: r.height } };
+        });
+        const tree = buildQuadTree(zones, { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight });
+        const at = (x, y) => queryQuadTreePoint(tree, x, y).map(z => z.id);
+        return {
+            nw: at(80, 80), ne: at(680, 80), sw: at(80, 480), se: at(680, 480), gap: at(400, 300)
+        };
+    });
+    assert.deepStrictEqual(result, { nw: ['zone-nw'], ne: ['zone-ne'], sw: ['zone-sw'], se: ['zone-se'], gap: [] });
+});
+
+Then('the element should become draggable automatically', async function() {
+    await this.page.waitForFunction(() => {
+        const el = document.getElementById('draggable');
+        return el && el.getAttribute('tabindex') === '0' && el.getAttribute('role') === 'button' &&
+            el.getAttribute('aria-grabbed') === 'false';
+    });
+    await startDrag(this);
+    assert.ok(await hasClass(this, '#draggable', 'dx-dragging'), 'observed element should drag');
+});
+
+Then('event listeners should be cleaned up', async function() {
+    const session = await this.page.context().newCDPSession(this.page);
+    const { result } = await session.send('Runtime.evaluate', { expression: 'window.__removedDraggable' });
+    const { listeners } = await session.send('DOMDebugger.getEventListeners', { objectId: result.objectId });
+    await session.detach();
+    assert.deepStrictEqual(listeners.map(l => l.type), [], 'removed element should hold no listeners');
+});
+
+Then('dragX memory should be released', async function() {
+    const s = await dragState(this);
+    assert.strictEqual(s.element, null);
+    assert.strictEqual(s.phase, 'idle');
+    const metrics = await this.page.evaluate(() => window.DragX.getPerformanceMetrics());
+    assert.strictEqual(metrics.memoryUsage.activeGhosts, 0);
+    await expect(this.page.locator('.dx-ghost')).toHaveCount(0);
+});
+
+Then('a dragX validation error should be logged', async function() {
+    const errors = this.consoleMessages.filter(m => m.type === 'error' && m.text.includes('[dragX] Invalid dx-draggable'));
+    assert.ok(errors.length >= 1, `expected a dragX validation error, got ${JSON.stringify(this.consoleMessages)}`);
 });
 
 Then('the element should not become draggable', async function() {
-    // Try to drag and verify no state change
-    await this.page.locator('#draggable').dispatchEvent('pointerdown', {
-        clientX: 100,
-        clientY: 100,
-        pointerType: 'mouse'
-    });
-
-    const state = await this.page.evaluate(() => window.DragX.getState());
-    assert.strictEqual(state.phase, 'idle', 'Should remain idle for invalid draggable');
-});
-
-Given('a drop zone without dx-accepts', async function() {
-    await this.page.setContent(`
-        <html><body>
-            <div id="dropzone" dx-drop-zone="board" style="width: 200px; height: 200px; background: lightgray;">
-                Drop here
-            </div>
-        </body></html>
-    `);
-    await this.page.evaluate(() => window.DragX.init());
+    expect(await this.element.getAttribute('tabindex')).toBeNull();
+    expect(await this.element.getAttribute('role')).toBeNull();
+    await startDrag(this);
+    assert.strictEqual((await dragState(this)).phase, 'idle');
+    assert.strictEqual((await events(this, 'dx:dragstart')).length, 0);
 });
 
 Then('it should accept all types by default', async function() {
-    const accepts = await this.page.evaluate(() => {
-        const zones = document.querySelectorAll('[dx-drop-zone]');
-        if (zones.length === 0) return null;
-        // Would need to access internal state
-        return ['*']; // Default behavior
-    });
+    const accepts = await this.page.evaluate(() =>
+        window.DragX.parseDropZone(document.getElementById('dropzone')).accepts);
+    assert.deepStrictEqual(accepts, ['*']);
+    await mountCard(this, 'dx-draggable="photo"');
+    await dragTo(this, ZONE_CENTER);
+    assert.ok(await hasClass(this, '#dropzone', 'dx-drag-over'), 'any type should be accepted');
+});
 
-    assert.ok(accepts && accepts.includes('*'), 'Should accept all types');
+Then('only inner should highlight', async function() {
+    assert.ok(await hasClass(this, '#inner-zone', 'dx-drag-over'));
+    assert.strictEqual((await dragState(this)).zone, 'inner');
+});
+
+Then('outer should not respond', async function() {
+    assert.ok(!(await hasClass(this, '#outer-zone', 'dx-drag-over')));
+    await release(this);
+    const drop = await lastEvent(this, 'dx:drop');
+    assert.strictEqual(drop.dropZone, 'inner-zone');
+});
+
+Then('the drop should bubble to outer zone', async function() {
+    const drop = await lastEvent(this, 'dx:drop');
+    assert.strictEqual(drop.dropZone, 'outer-zone');
+});
+
+Then('outer should handle the drop', async function() {
+    const handled = await this.page.evaluate(() => document.getElementById('outer-zone').dataset.handledDropOn);
+    assert.strictEqual(handled, 'outer-zone');
 });
