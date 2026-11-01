@@ -318,6 +318,8 @@ Feature: bindX React Framework Adapter
     And no tearing should occur
 
   # Server-Side Rendering (SSR)
+  # wip: needs a Next.js app and server runtime (not a dependency of genX)
+  @wip
   Scenario: Render with useBindX on server (Next.js)
     Given Next.js with SSR
     When component with useBindX renders on server
@@ -336,6 +338,8 @@ Feature: bindX React Framework Adapter
     Then watchers should cleanup
     And no memory leaks between requests
 
+  # wip: needs a Next.js app and server runtime (not a dependency of genX)
+  @wip
   Scenario: Use useBindX in getServerSideProps
     Given Next.js page with getServerSideProps
     When fetching data on server
@@ -407,12 +411,16 @@ Feature: bindX React Framework Adapter
     And assertions should work
 
   # React DevTools
+  # wip: needs the React DevTools browser extension
+  @wip
   Scenario: Inspect bindX state in React DevTools
     Given component using useBindX
     When opened in React DevTools
     Then state should be visible
     And can be inspected and modified
 
+  # wip: needs the React DevTools browser extension
+  @wip
   Scenario: Display custom hook name in DevTools
     Given custom hook with useBindX
     When viewing in DevTools
@@ -420,24 +428,32 @@ Feature: bindX React Framework Adapter
     And state should be inspectable
 
   # Next.js Integration
+  # wip: needs a Next.js app (not a dependency of genX)
+  @wip
   Scenario: Use useBindX in Next.js pages
     Given Next.js application
     When using useBindX in pages
     Then should work in pages router
     And should work in app router
 
+  # wip: needs a Next.js app (not a dependency of genX)
+  @wip
   Scenario: Use useBindX with Next.js App Router
     Given Next.js 13+ with App Router
     When using useBindX in client components
     Then should work correctly
     And server components should not use it
 
+  # wip: needs a Next.js app (not a dependency of genX)
+  @wip
   Scenario: Share bindX state across Next.js routes
     Given bindX state in layout
     When navigating between routes
     Then state should persist
     And can be accessed by all routes
 
+  # wip: needs a Next.js app (not a dependency of genX)
+  @wip
   Scenario: Use useBindX with Next.js API routes
     Given API route fetching data
     When initializing useBindX state with fetched data
@@ -445,12 +461,16 @@ Feature: bindX React Framework Adapter
     And data should be available
 
   # React Native Compatibility
+  # wip: needs a React Native runtime
+  @wip
   Scenario: Use useBindX in React Native
     Given React Native application
     When using useBindX
     Then should work identically
     And no web-specific dependencies
 
+  # wip: needs React Native and React Navigation
+  @wip
   Scenario: Use useBindX with React Native navigation
     Given React Navigation installed
     When using useBindX across screens
@@ -483,6 +503,8 @@ Feature: bindX React Framework Adapter
     And rolls back on error
 
   # Comparison Scenarios
+  # perf: timing threshold (0.5 ms); runs only in the perf profile
+  @perf
   Scenario: Compare useBindX vs useState
     Given same functionality implemented both ways
     When measuring performance
@@ -495,12 +517,16 @@ Feature: bindX React Framework Adapter
     Then functionality should be equivalent
     And migration should be straightforward
 
+  # wip: subjective comparison with Redux, which is not a dependency
+  @wip
   Scenario: Migrate from Redux to useBindX
     Given component connected to Redux
     When replacing with useBindX
     Then should be simpler
     And less boilerplate required
 
+  # wip: subjective comparison with MobX, which is not a dependency
+  @wip
   Scenario: Compare useBindX vs MobX
     Given same functionality in both
     When comparing API and performance
