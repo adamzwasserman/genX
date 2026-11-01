@@ -1314,6 +1314,7 @@
      * Form state storage (WeakMap for memory safety)
      */
     const formStates = new WeakMap();
+    const formsWithHandlers = new WeakSet();
     const fieldValidations = new WeakMap();
 
     /**
@@ -1457,7 +1458,12 @@
             const validationAttr = field.getAttribute('bx-validate');
             const path = field.getAttribute('bx-model') || field.getAttribute('name');
 
+            // An empty bx-validate has no rules: nothing to check or mark
+            if (!validationAttr || !validationAttr.trim()) {
+                return;
+            }
             if (!path) {
+                console.warn(`bindX: <${field.tagName.toLowerCase()}> has bx-validate but no bx-model or name; skipped.`, field);
                 return;
             }
 
@@ -2090,6 +2096,13 @@
      * @param {string} prefix - Attribute prefix
      */
     const setupFormHandlers = (form, data, prefix = 'bx-') => {
+        // A rescan (init after scan, or the DOM observer) must not add a
+        // second set of listeners: submit would fire events and handlers twice
+        if (formsWithHandlers.has(form)) {
+            return;
+        }
+        formsWithHandlers.add(form);
+
         // Calculate initial validation state WITHOUT visual feedback (pure function)
         const { valid } = calculateFormValidation(form, data);
 
