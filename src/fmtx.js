@@ -13,8 +13,14 @@
     const parseNumber = v => {
         const n = parseFloat(v); return isNaN(n) ? null : n;
     };
+    // A bare YYYY-MM-DD is a calendar date. new Date() reads it as UTC midnight,
+    // which shows the previous day west of UTC, so build it in local time.
+    const toDate = v => {
+        const m = typeof v === 'string' && v.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        return m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(v);
+    };
     const parseDate = v => {
-        const d = new Date(v); return isNaN(d.getTime()) ? null : d;
+        const d = toDate(v); return isNaN(d.getTime()) ? null : d;
     };
 
     // Input type converter - handles fx-type attribute
@@ -43,7 +49,7 @@
         case 'date':        // JavaScript Date (ISO or parseable string)
         case 'iso':         // ISO 8601 string
         case 'iso8601':
-            return new Date(str);
+            return toDate(str);
         case 'unix':        // Unix timestamp (seconds)
         case 'timestamp':
         case 'epoch':       // Alias for unix timestamp
@@ -184,7 +190,11 @@
         case 'number':
             return num.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: rest.thousands !== false });
         case 'currency':
-            return new Intl.NumberFormat(locale, { style: 'currency', currency: rest.currency || 'USD', minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: rest.thousands !== false }).format(num);
+        {
+            // Without fx-decimals, use the currency's own minor units (JPY 0, USD 2).
+            const digits = opts.decimals === undefined ? {} : { minimumFractionDigits: decimals, maximumFractionDigits: decimals };
+            return new Intl.NumberFormat(locale, { style: 'currency', currency: rest.currency || 'USD', ...digits, useGrouping: rest.thousands !== false }).format(num);
+        }
         case 'percent': {
             // If input type is 'percentage', value is already 0-100, don't multiply
             // If input type is 'decimal' or not specified, multiply by 100

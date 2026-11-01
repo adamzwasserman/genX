@@ -816,3 +816,30 @@ describe('FormatX dynamic scan (regression)', () => {
         expect(span.textContent).toBe('$915.17B');
     });
 });
+
+// Regression: a bare YYYY-MM-DD showed the previous day west of UTC, and
+// currency forced two decimals on zero-decimal currencies such as JPY.
+describe('FormatX calendar dates and currency minor units (regression)', () => {
+    let format;
+
+    beforeAll(() => {
+        jest.isolateModules(() => {
+            ({ format } = require('../../src/fmtx.js'));
+        });
+    });
+
+    test('date-only ISO string keeps its calendar day', () => {
+        expect(format('date', '2024-03-15', { dateFormat: 'long' })).toBe('March 15, 2024');
+        expect(format('date', '2024-03-15', { dateFormat: 'short' })).toBe('3/15/2024');
+    });
+
+    test('currency uses the currency minor units when decimals are omitted', () => {
+        expect(format('currency', '99.99', { currency: 'JPY' })).toMatch(/^[¥￥]100$/);
+        expect(format('currency', '25', { currency: 'USD' })).toBe('$25.00');
+    });
+
+    test('currency honours explicit decimals', () => {
+        expect(format('currency', '99.99', { currency: 'JPY', decimals: 2 })).toMatch(/^[¥￥]99\.99$/);
+        expect(format('currency', '25', { currency: 'USD', decimals: 0 })).toBe('$25');
+    });
+});
