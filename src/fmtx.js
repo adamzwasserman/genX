@@ -569,13 +569,19 @@
         }
         return raw;
     };
+    // Elements fmtX formats: the format attribute, or for the default prefix also JSON
+    // notation on its own (fx-opts) and class notation (class="fmt-currency-USD-2").
+    const formatSelector = pref => (pref === 'fx-'
+        ? '[fx-format], [fx-opts], [class^="fmt-"], [class*=" fmt-"]'
+        : `[${pref}format]`);
     const scanElements = (root = document, pref = 'fx-') => {
+        const sel = formatSelector(pref);
         // Handle leaf case: root itself may carry the format attribute
         // (when caller passes a single span rather than a container).
-        if (root.nodeType === 1 && root.matches?.(`[${pref}format]`)) {
+        if (root.nodeType === 1 && root.matches?.(sel)) {
             formatElement(root, pref);
         }
-        root.querySelectorAll?.(`[${pref}format]`)?.forEach(el => formatElement(el, pref));
+        root.querySelectorAll?.(sel)?.forEach(el => formatElement(el, pref));
     };
 
     // Observer - uses domx-bridge for centralized observation
@@ -587,10 +593,10 @@
                 if (m.type === 'childList') {
                     m.addedNodes.forEach(n => {
                         if (n.nodeType === 1) {
-                            if (n.matches?.(`[${pref}format]`)) {
+                            if (n.matches?.(formatSelector(pref))) {
                                 formatElement(n,pref);
                             }
-                            if (n.querySelectorAll?.(`[${pref}format]`).length) {
+                            if (n.querySelectorAll?.(formatSelector(pref)).length) {
                                 scan = true;
                             }
                         }

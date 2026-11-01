@@ -40,6 +40,9 @@ export function parse(element, prefix, baseConfig = {}) {
         ...Object.fromEntries(
             Array.from(element.attributes)
                 .filter(a => a.name.startsWith(prefix + '-') && !a.name.endsWith('-opts') && !a.name.endsWith('-raw'))
+                // A compact value (fx-format="currency:USD:2") was already split by the colon
+                // parser, which runs first; keep its result instead of the raw string.
+                .filter(a => !(a.value.includes(':') && a.name.substring(prefix.length + 1) in baseConfig))
                 .map(a => [kebabToCamel(a.name.substring(prefix.length + 1)), a.value])
         )
     };

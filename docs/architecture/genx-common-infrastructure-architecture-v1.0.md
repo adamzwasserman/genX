@@ -609,6 +609,33 @@ navigator.sendBeacon('https://analytics.genx.software/beacon', JSON.stringify(an
 
 ---
 
+## 5. Configuration Cache
+
+During bootstrap the bootloader parses every genX element once, in all four notations, and keeps the result in a parse cache. Modules read their settings from that cache instead of parsing attributes again.
+
+**Reading a configuration:**
+
+```javascript
+const config = window.genx.getConfig(element);
+if (config === null) {
+    // Not a cached genX element: skip it, or fall back to attributes in standalone mode.
+    return;
+}
+```
+
+**Rules for module code:**
+
+- Call `window.genx.getConfig(element)` first for any element the bootloader scanned.
+- Never use `getAttribute()` to parse genX attributes the cache already holds.
+- `getConfig()` returns `null` for an element that was not cached (no genX attributes, added after bootstrap and not rescanned, or `undefined`). Treat `null` as "no configuration" and handle it without throwing.
+- The lookup is a WeakMap read, so expect O(1) lookup performance. Repeated calls return the same object; do not mutate it.
+- The cache is filled once per element. Changing an attribute later does not update it in V1. Call `window.genx.rescan(root)` for new elements.
+- Without the bootloader (`window.genx` absent), modules fall back to reading attributes.
+
+**Known exception:** fmtX takes its base settings from the cache but re-reads a few attributes that interactive pages change at run time (`fx-type`, `fx-decimals`, `fx-currency`, the format options, and `fx-raw`).
+
+**Testing:** unit tests mock the cache with `window.genx = { getConfig: jest.fn() }`, supply configs through `mockReturnValue`, and assert `expect(window.genx.getConfig).toHaveBeenCalledWith(element)`. See `tests/unit/tablex-config-cache.test.js`.
+
 ## 6. Code Organization Standards
 
 ### 6.1 File Size and Structure

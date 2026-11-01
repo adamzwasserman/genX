@@ -1739,6 +1739,7 @@
 
         // Export internals for testing
         _internals: {
+            getTableConfig,
             comparators,
             detectDataType,
             sortRows,

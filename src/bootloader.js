@@ -29,7 +29,7 @@
     };
 
     const MODULE_ENTRY_ATTRS = {
-        'fx': ['fx-format'],
+        'fx': ['fx-format', 'fx-opts'],   // fx-opts alone can carry the whole config (JSON notation)
         'ax': ['ax-enhance'],
         'bx': ['bx-model', 'bx-bind', 'bx-if', 'bx-show', 'bx-for', 'bx-form'],
         'dx': ['dx-draggable', 'dx-drop-zone'],
@@ -284,6 +284,22 @@
         return api;
     };
 
+    // Modules that use another module at init time. fmtX formats fx-format="smart" through
+    // SmartX, so when both are needed SmartX must load first, or those elements fall back
+    // to their raw value. A dependency that fails to load does not block the module.
+    const LOAD_BEFORE = { fx: ['sx'] };
+
+    /** Init the given prefixes in parallel, each after the dependencies also being loaded. */
+    const initAll = (prefixes) => {
+        const wanted = new Set(prefixes);
+        return Promise.all(Array.from(wanted).map(prefix => {
+            const deps = (LOAD_BEFORE[prefix] || []).filter(d => wanted.has(d));
+            return Promise.all(deps.map(d => load(d).catch(() => null)))
+                .then(() => init(prefix))
+                .catch(err => console.error(`genX: Failed to init ${prefix}`, err));
+        }));
+    };
+
     // --- Rescan: I/O wrapper around pure functions ---
 
     const rescan = async (rootOrElements = document) => {
@@ -361,11 +377,7 @@
                 const [parsedCount, t4] = time('parseElements', () => parseElements(elements, parsers));
 
                 const initStart = performance.now();
-                await Promise.all(
-                    Array.from(needed).map(prefix =>
-                        init(prefix).catch(err => console.error(`genX: Failed to init ${prefix}`, err))
-                    )
-                );
+                await initAll(needed);
                 const t5 = { initModules: performance.now() - initStart };
 
                 // Phase 6: format content added later (HTMX swaps, fetch renders). The
@@ -376,8 +388,7 @@
                         const added = addedGenxElements(mutations || []);
                         if (added.length === 0) return;
                         const fresh = Array.from(neededPrefixes(added)).filter(p => !loaded.has(p));
-                        Promise.all(fresh.map(p => init(p).catch(err =>
-                            console.error(`genX: Failed to init ${p}`, err))))
+                        initAll(fresh)
                             .then(() => rescan(added))
                             .catch(err => console.error('genX: rescan of added content failed', err));
                     }, { childList: true });
