@@ -2,11 +2,15 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 3000;
+// Port 0 asks the OS for a free port, so each parallel cucumber worker (and any
+// other process on the machine) gets its own. Read it with baseUrl() once started.
+const PORT = Number(process.env.GENX_TEST_PORT) || 0;
+let boundPort = null;
 const ROOT_DIR = path.join(__dirname, '..', '..'); // Serve from project root
 
 const server = http.createServer((req, res) => {
-    let filePath = path.join(ROOT_DIR, req.url === '/' ? 'index.html' : req.url);
+    const urlPath = decodeURIComponent(req.url.split(/[?#]/)[0]);
+    let filePath = path.join(ROOT_DIR, urlPath === '/' ? 'index.html' : urlPath);
 
     // Prevent directory traversal
     if (!filePath.startsWith(ROOT_DIR)) {
@@ -53,21 +57,28 @@ function startServer() {
         const onError = (err) => {
             reject(new Error(
                 `Test server could not bind port ${PORT}: ${err.code || err.message}. ` +
-                `Free the port (lsof -ti :${PORT} | xargs kill) or run with --parallel 0 ` +
-                `(each parallel worker starts its own server on this hardcoded port).`
+                `Unset GENX_TEST_PORT to let the OS pick a free port.`
             ));
         };
         server.once('error', onError);
-        server.listen(PORT, () => {
+        server.listen(PORT, '127.0.0.1', () => {
             server.removeListener('error', onError);
-            console.log(`Test server running on http://localhost:${PORT}`);
+            boundPort = server.address().port;
+            console.log(`Test server running on ${baseUrl()}`);
             resolve();
         });
     });
 }
 
+/** Origin of this worker's test server, e.g. http://localhost:54321. */
+function baseUrl() {
+    if (boundPort === null) throw new Error('Test server is not running; startServer() first');
+    return `http://localhost:${boundPort}`;
+}
+
 function stopServer() {
     return new Promise((resolve) => {
+        boundPort = null;
         server.close(() => {
             console.log('Test server stopped');
             resolve();
@@ -75,4 +86,4 @@ function stopServer() {
     });
 }
 
-module.exports = { startServer, stopServer };
+module.exports = { startServer, stopServer, baseUrl };

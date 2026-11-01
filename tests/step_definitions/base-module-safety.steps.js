@@ -6,6 +6,7 @@
 const { Given, When, Then, Before, After } = require('@cucumber/cucumber');
 const { chromium } = require('@playwright/test');
 const { expect } = require('@playwright/test');
+const { baseUrl } = require('../fixtures/server');
 
 // Shared context for all base tests
 let browser, context, page;
@@ -92,7 +93,7 @@ Given('the {string} module is loaded', async function(moduleName) {
     throw new Error(`Unknown module: ${moduleName}`);
   }
 
-  await page.goto(`http://localhost:3000/tests/browser/fixtures/test-base.html`);
+  await page.goto(`${baseUrl()}/tests/browser/fixtures/test-base.html`);
 
   // Load the module
   await page.addScriptTag({

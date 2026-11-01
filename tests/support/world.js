@@ -1,5 +1,6 @@
 const { setWorldConstructor, World } = require('@cucumber/cucumber');
 const { chromium } = require('@playwright/test');
+const { baseUrl } = require('../fixtures/server');
 
 // Shared browser instance reused across scenarios to speed up and stabilize tests.
 let _sharedBrowser = null;
@@ -59,7 +60,7 @@ class GenXWorld extends World {
 
     async loadGenX() {
         // Navigate to the test fixture page that loads genX modules
-        await this.page.goto('http://localhost:3000/fixtures/navx.html');
+        await this.page.goto(`${baseUrl()}/tests/fixtures/navx.html`);
         // Wait for page to load
         await this.page.waitForLoadState('load');
     }

@@ -1,6 +1,7 @@
 const { Given, Then, Before, After } = require('@cucumber/cucumber');
 const { chromium } = require('playwright');
 const assert = require('assert');
+const { baseUrl } = require('../fixtures/server');
 
 let browser;
 let page;
@@ -35,7 +36,9 @@ After({ tags: '@demo' }, async function() {
 });
 
 Given('I navigate to the local demo page', async function() {
-    await page.goto('http://localhost:7890/site/genx-demo-local.html', {
+    // site/genx-demo-local.html was folded into site/genx-demo.html (a8f9f6f), which loads
+    // src/ and dist/modules itself when served from localhost.
+    await page.goto(`${baseUrl()}/site/genx-demo.html`, {
         waitUntil: 'networkidle',
         timeout: 30000
     });
