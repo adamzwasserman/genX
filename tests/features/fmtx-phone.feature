@@ -148,6 +148,8 @@ Feature: FormatX Phone Number Formatting
     Then the element should display "(555) 123-4567"
 
   # Performance test with multiple phone numbers
+  # perf: wall-clock threshold (50ms)
+  @perf
   Scenario: Format 100 phone numbers efficiently
     Given 100 elements with fx-format="phone" fx-phone-format="us"
     When all fmtX elements are processed

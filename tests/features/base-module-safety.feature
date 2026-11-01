@@ -55,7 +55,8 @@ Feature: Base Module Safety Requirements
       | accx   | label text |
 
   # Performance Requirements
-  @performance
+  # perf: wall-clock (100ms) and heap-size (5MB) thresholds
+  @performance @perf
   Scenario Outline: Module processes 1000 elements under 100ms
     Given the "<module>" module is loaded
     And the test environment is clean
@@ -69,7 +70,8 @@ Feature: Base Module Safety Requirements
       | fmtx   |
       | accx   |
 
-  @performance
+  # perf: frame-time threshold (16ms)
+  @performance @perf
   Scenario Outline: Module maintains 60 FPS during processing
     Given the "<module>" module is loaded
     And the test environment is clean
@@ -83,7 +85,8 @@ Feature: Base Module Safety Requirements
       | fmtx   |
       | accx   |
 
-  @performance
+  # perf: depends on add timing (< 10ms apart) against the module's batching window
+  @performance @perf
   Scenario Outline: Rapid DOM mutations are debounced
     Given the "<module>" module is loaded
     And the test environment is clean
@@ -114,7 +117,8 @@ Feature: Base Module Safety Requirements
       | fmtx   |
       | accx   |
 
-  @memory-safety
+  # perf: heap-size threshold (2MB)
+  @memory-safety @perf
   Scenario Outline: No memory leaks with repeated add/remove cycles
     Given the "<module>" module is loaded
     And the test environment is clean
@@ -196,7 +200,9 @@ Feature: Base Module Safety Requirements
       | fmtx   | {"broken": json'}   |
       | accx   | invalid-role        |
 
-  @error-handling
+  # wip: accX does not follow element references (aria-labelledby, aria-controls), so
+  # there is no reference walk to detect a cycle in; needs a reference resolver first
+  @error-handling @wip
   Scenario Outline: Module handles circular references safely
     Given the "<module>" module is loaded
     And the test environment is clean
