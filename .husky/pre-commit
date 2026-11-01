@@ -48,17 +48,17 @@ npm run test:bdd:base
 # Run module-specific BDD tests based on what changed
 if [ "$FMTX_CHANGED" = true ]; then
   echo "Running fmtx-specific BDD tests..."
-  npx cucumber-js --require tests/support/**/*.js --require tests/step_definitions/**/*.js tests/features/fmtx.feature
+  npx cucumber-js --require tests/support/**/*.js --require tests/step_definitions/**/*.js --tags "not @wip and not @perf" tests/features/fmtx.feature
 fi
 
 if [ "$ACCX_CHANGED" = true ]; then
   echo "Running accx-specific BDD tests..."
-  npx cucumber-js --require tests/support/**/*.js --require tests/step_definitions/**/*.js tests/features/accx.feature
+  npx cucumber-js --require tests/support/**/*.js --require tests/step_definitions/**/*.js --tags "not @wip and not @perf" tests/features/accx.feature
 fi
 
 if [ "$BOOTLOADER_CHANGED" = true ]; then
   echo "Running bootloader-specific BDD tests..."
-  npx cucumber-js --require tests/support/**/*.js --require tests/step_definitions/**/*.js tests/features/bootloader.feature
+  npx cucumber-js --require tests/support/**/*.js --require tests/step_definitions/**/*.js --tags "not @wip and not @perf" tests/features/bootloader.feature
 fi
 
 echo "All pre-commit checks passed!"

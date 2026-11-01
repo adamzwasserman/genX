@@ -12,7 +12,28 @@ module.exports = {
             'json:tests/reports/cucumber-report.json'
         ],
         publishQuiet: true,
+        // @wip: spec for behavior not built yet. @perf: timing check.
+        // Neither runs in the default suite; see docs/testing/getting-started.md.
+        tags: 'not @wip and not @perf',
         parallel: 2,
+        timeout: 30000
+    },
+
+    // Run the scenarios the default profile skips: --profile wip, --profile perf
+    wip: {
+        requireModule: ['@babel/register'],
+        require: ['tests/support/**/*.js', 'tests/step_definitions/**/*.js'],
+        paths: ['tests/features/**/*.feature'],
+        tags: '@wip',
+        format: ['progress-bar'],
+        timeout: 30000
+    },
+    perf: {
+        requireModule: ['@babel/register'],
+        require: ['tests/support/**/*.js', 'tests/step_definitions/**/*.js'],
+        paths: ['tests/features/**/*.feature'],
+        tags: '@perf',
+        format: ['progress-bar'],
         timeout: 30000
     },
 

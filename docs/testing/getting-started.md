@@ -250,6 +250,24 @@ npx cucumber-js --tags @critical
 npx cucumber-js --tags "@mutation-safety and @critical"
 ```
 
+### @wip and @perf scenarios
+
+`@wip` marks a spec for behavior that is not built yet, or a spec that
+has no step definitions yet. A comment on the tag line says which. `@perf`
+marks a timing check. `npm run test`, `npm run test:bdd` and the git hooks
+skip both, through `tags: 'not @wip and not @perf'` in
+`config/cucumber.js`.
+
+To run them, use their profiles. A `--tags` option on the command line
+is joined to the default filter with "and", so it cannot bring them back.
+
+```bash
+npx cucumber-js --config config/cucumber.js --profile wip
+npx cucumber-js --config config/cucumber.js --profile perf
+```
+
+When a `@wip` behavior ships, write or finish its steps and remove the tag.
+
 ### Debugging
 
 ```bash
