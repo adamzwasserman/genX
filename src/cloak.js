@@ -16,6 +16,11 @@
  * bootloader, and its watchdog survives the bootloader never running. If genX does not
  * finish, elements reveal their (correct) raw value rather than staying blank.
  *
+ * genx:ready does not reveal blindly. Content can arrive between the bootloader's scan
+ * and genx:ready (an HTMX swap replayed after a reload, for example), so at ready the
+ * cloak hands every still-cloaked element to genx.rescan() and lets each one reveal on
+ * its done-marker. Anything still not done after cloakTimeoutMs reveals raw.
+ *
  * Principles applied:
  * - Configuration as Parameters: config resolved once at the boundary (init).
  * - No Implicit Defaults (Rule 14): absence of cloakTimeoutMs is a named case resolved
@@ -96,6 +101,13 @@
         doc.querySelectorAll(selector).forEach(revealElement);
     };
 
+    /** Force-reveal those of `elements` that are still cloaked (skips finished ones). */
+    const revealPending = (elements, selector) => {
+        for (const el of elements) {
+            if (el.matches && el.matches(selector)) revealElement(el);
+        }
+    };
+
     // --- Lifecycle (the single boundary that wires pure logic to DOM + time) ---
 
     /**
@@ -110,6 +122,10 @@
      * @returns {?{reveal: function, selector: string, observer: MutationObserver}} null when
      *   disabled; otherwise a handle: reveal() one-shot force-lifts the whole cloak, selector
      *   is the still-cloaked predicate, observer is the live fail-open watchdog.
+     *
+     * On genx:ready, elements still cloaked are formatted through win.genx.rescan (the same
+     * path as a manual rescan) and reveal on their done-marker; any not done within
+     * timeoutMs reveal raw. Without a rescan function, ready reveals at once, as before.
      */
     const init = (win, doc) => {
         const cfg = resolveCloakConfig(win.genxConfig);
@@ -133,11 +149,32 @@
         // now carries its done-marker) is NOT stamped with a redundant failsafe escape.
         const armReveal = (elements) => {
             if (elements.length === 0) return;
-            win.setTimeout(() => {
-                for (const el of elements) {
-                    if (el.matches && el.matches(selector)) revealElement(el);
-                }
-            }, cfg.timeoutMs);
+            win.setTimeout(() => revealPending(elements, selector), cfg.timeoutMs);
+        };
+
+        // genX is ready: format what is still cloaked before revealing it. An element can
+        // arrive after the bootloader's scan but before ready (a swap replayed on reload),
+        // so ready alone does not mean it was formatted. Hand those to genx.rescan and let
+        // each reveal on its done-marker; the timer reveals any that never get one, and a
+        // failed rescan reveals them at once. With no rescan to call, reveal at once.
+        const formatThenReveal = () => {
+            if (revealed) return;
+            revealed = true;
+            const pending = Array.from(doc.querySelectorAll(selector));
+            if (pending.length === 0) return;
+            const rescan = win.genx && win.genx.rescan;
+            if (typeof rescan !== 'function') {
+                revealPending(pending, selector);
+                return;
+            }
+            armReveal(pending);
+            let run;
+            try {
+                run = Promise.resolve(rescan.call(win.genx, pending));
+            } catch (err) {
+                run = Promise.reject(err);
+            }
+            run.catch(() => revealPending(pending, selector));
         };
 
         // The watchdog: the one signal that survives a dead bootloader. It watches for
@@ -155,8 +192,8 @@
         // runs at all, the whole cloak lifts by timeoutMs regardless of the observer.
         win.setTimeout(revealEverything, cfg.timeoutMs);
 
-        // Fast paths: reveal sooner than the ceiling, whichever comes first.
-        win.addEventListener('genx:ready', revealEverything, { once: true });
+        // Fast paths, sooner than the ceiling: ready formats then reveals; error reveals.
+        win.addEventListener('genx:ready', formatThenReveal, { once: true });
         win.addEventListener('genx:error', revealEverything, { once: true });
 
         return { reveal: revealEverything, selector, observer };
@@ -167,7 +204,7 @@
     const api = {
         version: '1.0.0',
         resolveCloakConfig, cloakSelector, buildCloakCss, collectCloakable,
-        installCloakStyle, revealElement, revealAll, init
+        installCloakStyle, revealElement, revealAll, revealPending, init
     };
 
     if (typeof window !== 'undefined') {

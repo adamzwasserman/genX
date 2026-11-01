@@ -62,3 +62,47 @@ describe('load: guards an unknown module prefix', () => {
         await expect(bootloader.load()).rejects.toThrow(/unknown module prefix/i);
     });
 });
+
+describe('load: a module script that never answers times out', () => {
+    // jsdom never fetches script src, so an appended module script neither loads nor
+    // errors: the stalled-network case. genxConfig is read when the bootloader runs.
+    const freshBootloader = (genxConfig) => {
+        let api;
+        window.genxConfig = genxConfig;
+        jest.isolateModules(() => { api = require('../../src/bootloader.js'); });
+        delete window.genxConfig;
+        return api;
+    };
+
+    test('rejects after genxConfig.moduleTimeout and marks the module failed', async () => {
+        const api = freshBootloader({ moduleTimeout: 50 });
+        await expect(api.load('fx')).rejects.toThrow(/genX: module fx did not load .* within 50 ms/);
+        expect(api.failed()).toEqual(['fx']);
+        expect(api.isLoaded('fx')).toBe(false);
+        await expect(api.load('fx')).rejects.toThrow(/within 50 ms/);   // not retried
+    });
+
+    test('a second caller waiting on the same load is released too', async () => {
+        const api = freshBootloader({ moduleTimeout: 50 });
+        const first = api.load('ax');
+        const second = api.load('ax');
+        await expect(first).rejects.toThrow(/module ax/);
+        await expect(second).rejects.toThrow(/module ax/);
+    });
+
+    test('defaults to 10 seconds when moduleTimeout is not set', async () => {
+        jest.useFakeTimers();
+        try {
+            const api = freshBootloader({});
+            const result = api.load('tx');
+            const settled = jest.fn();
+            result.catch(settled);
+            await jest.advanceTimersByTimeAsync(9999);
+            expect(settled).not.toHaveBeenCalled();
+            await jest.advanceTimersByTimeAsync(1);
+            await expect(result).rejects.toThrow(/within 10000 ms/);
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+});

@@ -153,6 +153,13 @@ The bootloader is tiny (~1KB). Modules only load when you use them:
 <!-- Not using dx- attributes? dragX never loads -->
 ```
 
+If a module's file never arrives, genX waits 10 seconds for it, then logs a `genX:` error, marks that module failed and carries on: the other modules still load, `genx:ready` still fires (its `detail.failed` lists the failed prefixes) and new content is still watched. To wait a different length of time, set `moduleTimeout` in milliseconds before the bootloader script:
+
+```html
+<script>window.genxConfig = { moduleTimeout: 5000 };</script>
+<script src="https://cdn.genx.software/v1/bootloader.min.js" defer></script>
+```
+
 ### 3. Automatic Processing
 
 genX processes elements:
@@ -782,6 +789,9 @@ If you only need one formatted value, genX might be overkill:
 1. MutationObserver is supported (all modern browsers)
 2. Elements are being added to the DOM, not just created
 3. No JavaScript errors blocking execution
+4. `genxConfig.observe` is not set to `false` (that turns off watching for new content)
+
+The observer ships inside `bootloader.min.js`; no extra script is needed. If the page also loads [domx](https://github.com/adamzwasserman/domx), genX shares its observer instead of starting its own.
 
 ```javascript
 // This works — element is added to DOM
@@ -835,6 +845,7 @@ container.appendChild(span);
 | `genX is not defined` | Script didn't load | Check script URL and network tab |
 | `Invalid date` | Bad date format | Use ISO format: `2024-03-15` |
 | `NaN` | Invalid number | Ensure numeric values are clean |
+| `genX: module fx did not load from … within 10000 ms` | A module file stalled on the network | Check the network tab; raise `genxConfig.moduleTimeout` on slow links |
 
 ---
 

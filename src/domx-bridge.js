@@ -104,7 +104,8 @@
 
         const domx = window.domx;
         if (!domx || typeof domx.on !== 'function') {
-            console.warn('[domx-bridge] domx not available, using fallback observer');
+            // No domx on the page: the bridge ships inside bootloader.min.js, so this is
+            // the normal standalone path, not an error. Use one native observer instead.
             createFallbackObserver();
             return;
         }

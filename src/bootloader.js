@@ -55,11 +55,16 @@
     const modules = { ...defaultModules, ...config.modulePaths };
     const CDN_BASE = config.cdn || 'https://cdn.genx.software/v1';
     const PARSER_URLS = { ...defaultParserUrls, ...config.parserPaths };
+    // A module script that never answers would otherwise hold genx:ready (and the observer)
+    // forever. Each load races this many ms; genxConfig.moduleTimeout overrides it.
+    const DEFAULT_MODULE_TIMEOUT_MS = 10000;
+    const MODULE_TIMEOUT_MS = config.moduleTimeout > 0 ? config.moduleTimeout : DEFAULT_MODULE_TIMEOUT_MS;
 
     // --- Minimal State ---
 
     const loaded = new Set();
     const pending = new Set();
+    const failed = new Map();        // prefix → Error: load failed or timed out; not retried
     const factories = {};
     const moduleApis = {};           // prefix → api returned by factory.init/autoInit (exposes scan/destroy/etc)
     const parserCache = {};          // loaded parser modules
@@ -101,6 +106,35 @@
             if (el.getAttribute('fx-format') === 'smart') needed.add('sx');
         }
         return { needed, elements };
+    };
+
+    /**
+     * genX elements among the nodes that mutations added: each added element that matches
+     * the selector, plus its matching descendants. Text-node additions (a module rewriting
+     * a value) are ignored, so formatting never re-triggers itself. Pure.
+     */
+    const addedGenxElements = (mutations, selector = buildSelector()) => {
+        const found = new Set();
+        for (const m of mutations) {
+            if (m.type !== 'childList' || !m.addedNodes) continue;
+            for (const node of m.addedNodes) {
+                if (node.nodeType !== 1) continue;
+                if (node.matches(selector)) found.add(node);
+                node.querySelectorAll(selector).forEach(el => found.add(el));
+            }
+        }
+        return Array.from(found);
+    };
+
+    /** Prefixes the given elements need. Pure: elements in, Set out. */
+    const neededPrefixes = (elements) => {
+        const needed = new Set();
+        for (const el of elements) {
+            const prefix = detectPrefix(el);
+            if (prefix) needed.add(prefix);
+            if (el.getAttribute('fx-format') === 'smart') needed.add('sx');
+        }
+        return needed;
     };
 
     /** Detect notation styles in elements. Pure: elements in, string[] out. */
@@ -183,9 +217,12 @@
     /** Load a module script. Promise-cache replaces setInterval polling. */
     const load = async (prefix) => {
         if (loaded.has(prefix)) return factories[prefix];
+        if (failed.has(prefix)) throw failed.get(prefix);
         if (pending.has(prefix)) {
-            return new Promise(resolve => {
-                const check = () => loaded.has(prefix) ? resolve(factories[prefix]) : setTimeout(check, 10);
+            return new Promise((resolve, reject) => {
+                const check = () => loaded.has(prefix) ? resolve(factories[prefix])
+                    : failed.has(prefix) ? reject(failed.get(prefix))
+                    : setTimeout(check, 10);
                 check();
             });
         }
@@ -204,21 +241,29 @@
         }
 
         await new Promise((resolve, reject) => {
+            // Settle once: whichever of load, error or timeout comes first wins.
+            const fail = (err) => {
+                clearTimeout(timer);
+                script.onload = script.onerror = null;
+                pending.delete(prefix);
+                failed.set(prefix, err);
+                reject(err);
+            };
+            const timer = setTimeout(() => fail(new Error(
+                `genX: module ${prefix} did not load from ${url} within ${MODULE_TIMEOUT_MS} ms`)), MODULE_TIMEOUT_MS);
             script.onload = () => {
                 const factoryName = prefix + 'XFactory';
-                if (window[factoryName]) {
-                    factories[prefix] = window[factoryName];
-                    loaded.add(prefix);
-                    pending.delete(prefix);
-                    resolve();
-                } else {
-                    reject(new Error(`Module ${prefix} did not expose factory ${factoryName}`));
+                if (!window[factoryName]) {
+                    fail(new Error(`Module ${prefix} did not expose factory ${factoryName}`));
+                    return;
                 }
-            };
-            script.onerror = () => {
+                clearTimeout(timer);
+                factories[prefix] = window[factoryName];
+                loaded.add(prefix);
                 pending.delete(prefix);
-                reject(new Error(`Failed to load module ${prefix} from ${url}`));
+                resolve();
             };
+            script.onerror = () => fail(new Error(`Failed to load module ${prefix} from ${url}`));
             document.head.appendChild(script);
         });
 
@@ -323,13 +368,18 @@
                 );
                 const t5 = { initModules: performance.now() - initStart };
 
-                // Phase 6: domx-bridge delegation
+                // Phase 6: format content added later (HTMX swaps, fetch renders). The
+                // bridge ships inside bootloader.min.js. Only added genX elements count;
+                // modules they need are loaded first, then rescan formats them.
                 if (config.observe !== false && window.domxBridge) {
-                    window.domxBridge.subscribe('bootloader', () => {
-                        rescan(document).then(() => {
-                            const { needed: newMods } = scan();
-                            for (const p of newMods) { if (!loaded.has(p)) init(p); }
-                        });
+                    window.domxBridge.subscribe('bootloader', (mutations) => {
+                        const added = addedGenxElements(mutations || []);
+                        if (added.length === 0) return;
+                        const fresh = Array.from(neededPrefixes(added)).filter(p => !loaded.has(p));
+                        Promise.all(fresh.map(p => init(p).catch(err =>
+                            console.error(`genX: Failed to init ${p}`, err))))
+                            .then(() => rescan(added))
+                            .catch(err => console.error('genX: rescan of added content failed', err));
                     }, { childList: true });
                 }
 
@@ -351,6 +401,7 @@
                 window.dispatchEvent(new CustomEvent('genx:ready', {
                     detail: {
                         loaded: Array.from(loaded),
+                        failed: Array.from(failed.keys()),
                         elements: { total: elements.length, parsed: parsedCount },
                         styles, timing: { total, phases }
                     }
@@ -373,6 +424,7 @@
         scan, load, init, rescan,
         loaded: () => Array.from(loaded),
         isLoaded: (prefix) => loaded.has(prefix),
+        failed: () => Array.from(failed.keys()),
         getFactory: (prefix) => factories[prefix],
         getConfig: (el) => parseMap.get(el) || null,
         detectNotationStyles, loadParsers, parseElements,

@@ -6,6 +6,7 @@
  *   - buildCloakCss:      the persistent cloak rule (visibility, not display)
  *   - cloakSelector:      which elements count as still-cloaked
  *   - collectCloakable:   pure extraction of cloakable elements from inserted nodes
+ *   - revealPending:      force-reveal only the given elements that are still cloaked
  *
  * DOM/timing/lifecycle behaviour lives in tests/features/genx-cloak.feature (Playwright).
  */
@@ -112,5 +113,27 @@ describe('collectCloakable — pure extraction from inserted nodes', () => {
         const textNode = document.createTextNode('871580000000');
         const out = cloak.collectCloakable([done, plain, textNode], cloak.cloakSelector(DEFAULT_MARKERS));
         expect(out).toEqual([]);
+    });
+});
+
+describe('revealPending — reveal only what is still cloaked', () => {
+    // FP: formatted elements keep their done-marker reveal; only raw ones are stamped
+    test('stamps genx-uncloak on still-cloaked elements and skips finished ones', () => {
+        const raw = document.createElement('span');
+        raw.setAttribute('fx-format', 'currency');
+        const done = document.createElement('span');
+        done.setAttribute('fx-format', 'currency');
+        done.setAttribute('fx-raw', '871580000000');
+        cloak.revealPending([raw, done], cloak.cloakSelector(DEFAULT_MARKERS));
+        expect(raw.hasAttribute('genx-uncloak')).toBe(true);
+        expect(done.hasAttribute('genx-uncloak')).toBe(false);
+    });
+
+    // FP: text nodes and plain elements are left alone
+    test('ignores nodes that are not cloakable', () => {
+        const plain = document.createElement('span');
+        const text = document.createTextNode('x');
+        cloak.revealPending([plain, text], cloak.cloakSelector(DEFAULT_MARKERS));
+        expect(plain.hasAttribute('genx-uncloak')).toBe(false);
     });
 });

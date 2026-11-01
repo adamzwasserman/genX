@@ -44,10 +44,10 @@
         };
         // Load the cloak SYNCHRONOUSLY (no defer), before the deferred bootloader, so it
         // installs before first paint and its fail-open watchdog survives a dead bootloader.
-        const cloakSrc = isLocal ? '/src/cloak.js' : 'https://cdn.genx.software/v1/cloak.f16ec521.min.js';
+        const cloakSrc = isLocal ? '/src/cloak.js' : 'https://cdn.genx.software/v1/cloak.00520d51.min.js';
         document.write('<script src="' + cloakSrc + '"><\/script>');
         // Dynamically load bootloader from local (source) or CDN (minified)
-        const bootloaderSrc = isLocal ? '/src/bootloader.js' : 'https://cdn.genx.software/v1/bootloader.bed84796.min.js';
+        const bootloaderSrc = isLocal ? '/src/bootloader.js' : 'https://cdn.genx.software/v1/bootloader.2517f926.min.js';
         document.write('<script src="' + bootloaderSrc + '" defer><\/script>');
     </script>
     <style>

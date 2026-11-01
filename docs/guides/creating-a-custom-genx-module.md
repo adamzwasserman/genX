@@ -178,6 +178,8 @@ Our `timeagoX` module already stamps `ta-done` on each element after it processe
 
 Now a `<time ta-since="…">` is hidden (its layout reserved, not collapsed) until your module stamps `ta-done`, so the raw ISO date never flashes. And it still **fails open**: if your module never runs, the cloak's timeout reveals the raw value rather than leaving a blank. Your module got FOUC protection for free, just by stamping one attribute.
 
+The cloak also covers content that arrives late. When genX signals ready, anything still hidden is handed to `genx.rescan()`, which runs your module's `scan()`, and each element shows once it gains its done-marker. A swap that lands just before ready (an htmx request replayed on reload, say) is formatted before it appears, never shown raw. Anything still not done after `cloakTimeoutMs` (default 1500) is revealed raw.
+
 ## Checklist
 
 - **Prefix is unique.** Avoid the built-ins (`fx`, `ax`, `bx`, `dx`, `lx`, `tx`, `nx`, `sx`, `ux`). Pick a two-or-three letter prefix that's yours.
