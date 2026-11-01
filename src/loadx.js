@@ -340,13 +340,21 @@
         }
 
         // Return frozen API
-        return Object.freeze({
+        const api = Object.freeze({
             config: mergedConfig,
             registry: strategyRegistry,
             applyLoading: (el, opts) => applyLoadingState(el, opts, mergedConfig),
             removeLoading: (el) => removeLoadingState(el),
             disconnect: disconnectMutationObserver
         });
+
+        // window.loadX.apply() reads the active config from here
+        if (typeof window !== 'undefined') {
+            window.loadX = window.loadX || {};
+            window.loadX.config = api;
+        }
+
+        return api;
     };
 
     // ============================================================================
@@ -1520,6 +1528,11 @@
         }
         if (label) {
             label.textContent = Math.round(percentage) + '%';
+        }
+
+        const bar = el.querySelector('[role="progressbar"]');
+        if (bar) {
+            bar.setAttribute('aria-valuenow', String(value));
         }
     };
 
