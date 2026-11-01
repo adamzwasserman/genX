@@ -42,6 +42,8 @@ Before(async function() {
 Given('the genX common module is loaded', async function() {
   await this.page.goto('about:blank');
   await this.page.addScriptTag({ path: './src/genx-common.js' });
+  // Re-added by the element step, whose setContent replaces the document
+  this.polymorphicScripts = ['./src/genx-common.js'];
 });
 
 Given('the polymorphic test state is clean', async function() {
@@ -83,14 +85,19 @@ Given(/^an element with ((?:[\w:.-]+=(?:"[^"]*"|'[^']*')(?: |$))+)$/, async func
   const pairs = parseAttributes(attrText);
   const fixture = findElement(pairs);
   if (fixture) {
-    return fixture.fn.apply(this, fixture.args);
+    await fixture.fn.apply(this, fixture.args);
+  } else {
+    const attrs = pairs.map(p => `${p.name}="${p.value.replace(/"/g, '&quot;')}"`).join(' ');
+    const html = `<!DOCTYPE html><html><body><span id="test-element" ${attrs}></span></body></html>`;
+    await this.page.setContent(html);
+    this.element = this.page.locator('#test-element');
+    this.lastAttribute = pairs[0].name;
+    this.lastValue = pairs[0].value;
   }
-  const attrs = pairs.map(p => `${p.name}="${p.value.replace(/"/g, '&quot;')}"`).join(' ');
-  const html = `<!DOCTYPE html><html><body><span id="test-element" ${attrs}></span></body></html>`;
-  await this.page.setContent(html);
-  this.element = this.page.locator('#test-element');
-  this.lastAttribute = pairs[0].name;
-  this.lastValue = pairs[0].value;
+  // Both paths replace the document; restore the scripts the Background loaded
+  for (const path of this.polymorphicScripts || []) {
+    await this.page.addScriptTag({ path });
+  }
 });
 
 // ============================================================================
@@ -560,4 +567,80 @@ Then('the scan should identify all 4 notation styles', async function() {
     return { verbose: hasVerbose, colon: hasColon, json: hasJson, class: hasClass };
   });
   assert.ok(true, 'Notation styles identified');
+});
+
+// ============================================================================
+// NOTATION PARSER STEPS (genxCommon.notation.parseNotation)
+// ============================================================================
+
+// Documented colon cardinality orders (site/docs.html, "Cardinality Orders by Module")
+const DOCUMENTED_CARDINALITY = {
+  fmtX: { prefix: 'fx', order: ['format', 'currency', 'decimals', 'symbol'] },
+  bindX: { prefix: 'bx', order: ['bind', 'debounce', 'throttle'] },
+  accX: { prefix: 'ax', order: ['label', 'icon', 'value', 'role'] },
+  dragX: { prefix: 'dx', order: ['type', 'id', 'style', 'group'] },
+  loadX: { prefix: 'lx', order: ['strategy', 'duration', 'mode'] },
+  navX: { prefix: 'nx', order: ['type', 'label', 'href', 'target'] }
+};
+
+When('the notation parser processes the element with prefix {string}', async function(prefix) {
+  this.notationPrefix = prefix;
+  this.parsedConfig = await this.element.evaluate(
+    (el, pre) => window.genxCommon.notation.parseNotation(el, pre), prefix);
+});
+
+When('the notation parser processes the element {int} times', async function(count) {
+  this.parseTimings = await this.element.evaluate((el, n) => {
+    const times = [];
+    for (let i = 0; i < n; i++) {
+      const t0 = performance.now();
+      window.genxCommon.notation.parseNotation(el, 'fx');
+      times.push(performance.now() - t0);
+    }
+    return times;
+  }, count);
+});
+
+Then('the config should be:', function(docString) {
+  assert.deepStrictEqual(this.parsedConfig, JSON.parse(docString));
+});
+
+Then('the config should be empty', function() {
+  assert.deepStrictEqual(this.parsedConfig, {});
+});
+
+Then('the parser should log a warning', function() {
+  const warnings = this.consoleMessages.filter(m => m.type === 'warning');
+  assert.ok(warnings.some(m => m.text.includes(`${this.notationPrefix}-config JSON`)),
+    `expected a JSON parse warning, got: ${JSON.stringify(this.consoleMessages)}`);
+});
+
+Then('the class {string} should be preserved', async function(className) {
+  const classes = await this.element.evaluate(el => Array.from(el.classList));
+  assert.ok(classes.includes(className), `class list was ${classes.join(' ')}`);
+});
+
+Then('the config should match the cardinality order for {string}', async function(moduleName) {
+  const spec = DOCUMENTED_CARDINALITY[moduleName];
+  assert.ok(spec, `no documented cardinality for ${moduleName}`);
+  assert.strictEqual(this.notationPrefix, spec.prefix);
+  const notation = await this.element.getAttribute(`${spec.prefix}-${spec.order[0]}`);
+  assert.ok(notation && notation.includes(':'), `${spec.prefix}-${spec.order[0]} has no colon notation`);
+  const expected = {};
+  notation.split(':').forEach((part, i) => {
+    if (part && spec.order[i]) {
+      expected[spec.order[i]] = part;
+    }
+  });
+  assert.deepStrictEqual(this.parsedConfig, expected);
+});
+
+Then('each parse should take less than {int}ms', function(ms) {
+  assert.ok(this.parseTimings.length > 0);
+  assert.ok(Math.max(...this.parseTimings) < ms);
+});
+
+Then('the average parse time should be less than {float}ms', function(ms) {
+  const avg = this.parseTimings.reduce((a, b) => a + b, 0) / this.parseTimings.length;
+  assert.ok(avg < ms);
 });

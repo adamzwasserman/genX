@@ -138,7 +138,7 @@ Feature: Polymorphic Notation Parsing
       """
 
   Scenario: Parse CSS class notation for accX
-    Given an element with class="acc-label-icon-Home"
+    Given an element with class="acc-icon-Home"
     When the notation parser processes the element with prefix "ax"
     Then the config should be:
       """
@@ -226,6 +226,8 @@ Feature: Polymorphic Notation Parsing
     And the class "btn-primary" should be preserved
 
   # Performance
+  # perf: wall-clock thresholds (1ms max, 0.5ms average)
+  @perf
   Scenario: Parse notation in under 1ms
     Given an element with fx-format="currency" fx-currency="USD" fx-decimals="2"
     When the notation parser processes the element 100 times
@@ -234,15 +236,15 @@ Feature: Polymorphic Notation Parsing
 
   # Module-Specific Cardinality Orders
   Scenario Outline: Parse colon notation with module-specific cardinality
-    Given an element with <prefix>-format="<notation>"
+    Given an element with <attribute>="<notation>"
     When the notation parser processes the element with prefix "<prefix>"
     Then the config should match the cardinality order for "<module>"
 
     Examples:
-      | module | prefix | notation              | expected_config                                  |
-      | fmtX   | fx     | currency:USD:2        | {"format":"currency","currency":"USD","decimals":"2"} |
-      | bindX  | bx     | username:300          | {"bind":"username","debounce":"300"}            |
-      | accX   | ax     | label:icon:Home       | {"label":"label","icon":"icon","value":"Home"}  |
-      | dragX  | dx     | card:123:ghost        | {"type":"card","id":"123","style":"ghost"}      |
-      | loadX  | lx     | spinner:blue          | {"type":"spinner","color":"blue"}               |
-      | navX   | nx     | breadcrumb:home:/ | {"type":"breadcrumb","label":"home","href":"/"} |
+      | module | prefix | attribute   | notation              | expected_config                                  |
+      | fmtX   | fx     | fx-format   | currency:USD:2        | {"format":"currency","currency":"USD","decimals":"2"} |
+      | bindX  | bx     | bx-bind     | username:300          | {"bind":"username","debounce":"300"}            |
+      | accX   | ax     | ax-label    | label:icon:Home       | {"label":"label","icon":"icon","value":"Home"}  |
+      | dragX  | dx     | dx-type     | card:123:ghost        | {"type":"card","id":"123","style":"ghost"}      |
+      | loadX  | lx     | lx-strategy | spinner:blue          | {"strategy":"spinner","duration":"blue"}        |
+      | navX   | nx     | nx-type     | breadcrumb:home:/ | {"type":"breadcrumb","label":"home","href":"/"} |
