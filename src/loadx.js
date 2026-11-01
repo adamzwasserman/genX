@@ -107,7 +107,8 @@
         return el.hasAttribute('lx-strategy') ||
                el.hasAttribute('lx-loading') ||
                el.hasAttribute('data-lx-strategy') ||
-               (el.className && el.className.includes('lx-'));
+               (typeof el.className === 'string' &&
+                (el.className.includes('lx-') || el.className.includes('lx:')));
     };
 
     /**
@@ -129,7 +130,7 @@
                         }
 
                         // Check descendants
-                        const descendants = node.querySelectorAll('[class*="lx-"], [lx-strategy], [lx-loading], [data-lx-strategy]');
+                        const descendants = node.querySelectorAll('[class*="lx-"], [class*="lx:"], [lx-strategy], [lx-loading], [data-lx-strategy]');
                         descendants.forEach(el => elementsToProcess.add(el));
                     }
                 });
@@ -167,12 +168,18 @@
             }
         }
 
+        // Mutations queued while the debounce timer runs; every batch is
+        // scanned, not only the last one.
+        let pendingMutations = [];
         const callback = (mutations) => {
             // Debounce scanning for performance
+            pendingMutations.push(...mutations);
             clearTimeout(scanDebounceTimer);
 
             scanDebounceTimer = setTimeout(() => {
-                scanForNewElements(mutations, config);
+                const batch = pendingMutations;
+                pendingMutations = [];
+                scanForNewElements(batch, config);
             }, SCAN_DEBOUNCE_MS);
         };
 
@@ -304,10 +311,16 @@
             }
         }
 
-        // Scan DOM for lx-* attributes
-        if (document.body) {
-            const elements = document.querySelectorAll('[class*="lx-"], [lx-strategy], [lx-loading]');
+        // Scan DOM for lx-* attributes (deferred like the live region when
+        // init runs before <body> exists)
+        const scanDocument = () => {
+            const elements = document.querySelectorAll('[class*="lx-"], [class*="lx:"], [lx-strategy], [lx-loading], [data-lx-strategy]');
             elements.forEach(el => processElement(el, mergedConfig));
+        };
+        if (document.body) {
+            scanDocument();
+        } else if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', scanDocument);
         }
 
         // Setup async detection if any detector is enabled
@@ -435,11 +448,15 @@
             }
         }
 
+        // v2.0: legacy class syntax (lx-spinner, lx:spinner:500) warns, or throws
+        // when modernSyntax is on. Runs before parsing so strict mode fails fast.
+        const legacy = parseClassSyntax(typeof el.className === 'string' ? el.className : '', config);
+
         // Fallback to polymorphic notation parsing (legacy standalone mode)
         // Use polymorphic parser from genx-common (supports Verbose, Colon, JSON, CSS Class)
         const result = window.genxCommon
             ? window.genxCommon.notation.parseNotation(el, 'lx')
-            : {};  // Fallback if genx-common not loaded
+            : {...legacy};  // Fallback if genx-common not loaded
 
         // Normalize strategy name
         if (result.strategy) {
@@ -461,6 +478,8 @@
      * @param {Object} config - Configuration object
      * @returns {Object} - Parsed configuration
      */
+    const LEGACY_CLASS_STRATEGIES = new Set(['spinner', 'skeleton', 'progress', 'fade']);
+
     const parseClassSyntax = (className, config = {}) => {
         if (!className) {
             return {};
@@ -513,8 +532,9 @@
                 return result;
             }
 
-            // Standard class syntax: lx-spinner
-            if (cls.startsWith('lx-')) {
+            // Standard class syntax: lx-spinner (strategy names only; state
+            // classes loadX adds itself, like lx-loading, are not legacy syntax)
+            if (cls.startsWith('lx-') && LEGACY_CLASS_STRATEGIES.has(cls.substring(3))) {
                 // v2.0: Deprecation handling
                 if (config.modernSyntax) {
                     throw new Error(
@@ -604,27 +624,45 @@
      * Setup automatic async operation detection
      * @param {Object} config - Configuration object
      */
+    // Each detector is installed once per page. Repeated init() calls update
+    // the config the installed detectors read instead of wrapping fetch/XHR or
+    // adding document listeners again.
+    const installedDetectors = new Set();
+    let detectionConfig = null;
+    const liveDetectionConfig = new Proxy({}, {
+        get: (_, key) => (detectionConfig ? detectionConfig[key] : undefined),
+        has: (_, key) => !!detectionConfig && key in detectionConfig
+    });
+
+    const installDetector = (name, install) => {
+        if (!installedDetectors.has(name)) {
+            installedDetectors.add(name);
+            install(liveDetectionConfig);
+        }
+    };
+
     const setupAsyncDetection = (config) => {
         const autoDetect = config.autoDetect;
+        detectionConfig = config;
 
         // Monitor fetch API (if enabled)
         if (autoDetect.fetch && typeof window.fetch !== 'undefined') {
-            monitorFetch(config);
+            installDetector('fetch', monitorFetch);
         }
 
         // Monitor XMLHttpRequest (if enabled)
         if (autoDetect.xhr && typeof window.XMLHttpRequest !== 'undefined') {
-            monitorXHR(config);
+            installDetector('xhr', monitorXHR);
         }
 
         // Monitor HTMX if available (if enabled)
         if (autoDetect.htmx && (typeof window.htmx !== 'undefined' || typeof htmx !== 'undefined')) {
-            monitorHTMX(config);
+            installDetector('htmx', monitorHTMX);
         }
 
         // Monitor form submissions (if enabled)
         if (autoDetect.forms) {
-            monitorFormSubmissions(config);
+            installDetector('forms', monitorFormSubmissions);
         }
     };
 

@@ -96,6 +96,10 @@ describe('loadX - HTMX Integration', () => {
         global.document = mockDocument;
         global.htmx = mockWindow.htmx;  // Make htmx available globally
 
+        // Load a fresh copy of loadX for each test. Jest keeps its own module
+        // registry, so deleting require.cache alone does not re-run the module,
+        // and loadX installs each detector only once per module instance.
+        jest.resetModules();
         require('../../src/loadx.js');
 
         // Create real DOM element using JSDOM's document
