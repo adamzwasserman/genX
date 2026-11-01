@@ -10,14 +10,7 @@ const assert = require('assert');
 // SETUP STEPS
 // ============================================================================
 
-Given('I have reactive data \\{ {word}: {int}, {word}: {int} }', async function(key1, val1, key2, val2) {
-    await this.page.evaluate(([k1, v1, k2, v2]) => {
-        window._testData = { [k1]: v1, [k2]: v2 };
-        if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
-        }
-    }, [key1, val1, key2, val2]);
-});
+// {float} also matches integers, so one step covers 'I have reactive data { a: 2, b: 3 }'.
 
 Given('computed property {word} = arrow function with data.{word} plus data.{word}', async function(computedName, prop1, prop2) {
     await this.page.evaluate(([name, p1, p2]) => {
@@ -112,15 +105,6 @@ When('I set data.{word} = {float}', async function(key, value) {
     await this.page.waitForTimeout(50);
 });
 
-When('I set data.{word} = {int}', async function(key, value) {
-    await this.page.evaluate(([k, v]) => {
-        if (window._reactive) {
-            window._reactive[k] = v;
-        }
-    }, [key, value]);
-    await this.page.waitForTimeout(50);
-});
-
 When('I read {word} {int} times without data changes', async function(computedName, count) {
     this.readResults = await this.page.evaluate(([name, c]) => {
         const results = [];
@@ -153,13 +137,6 @@ Then('{word} should equal {int}', async function(computedName, expected) {
 
 Then('{word} should automatically recompute to {int}', async function(computedName, expected) {
     await this.page.waitForTimeout(50); // Wait for reactivity
-    const result = await this.page.evaluate((name) => {
-        return window._computed[name]();
-    }, computedName);
-    assert.strictEqual(result, expected);
-});
-
-Then('{word} should equal {int}', async function(computedName, expected) {
     const result = await this.page.evaluate((name) => {
         return window._computed[name]();
     }, computedName);

@@ -19,7 +19,7 @@ Feature: Binding Registry
     Given I have 100 bound elements
     When I remove all elements from DOM
     Then WeakMap should allow garbage collection
-    And no memory leaks should occur
+    And no binding registry memory leaks should occur
 
   Scenario: Query bindings by path
     Given I have bindings for "user.name", "user.age", "settings.theme"

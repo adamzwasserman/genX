@@ -552,7 +552,8 @@ When('rendering \\{\\{ {word}\\(\\) }}', async function(computedName) {
     }, computedName);
 });
 
-When('{word} changes', async function(prop) {
+// Catch-all for '<prop> changes'; 'either changes' and 'state.<prop> changes' have their own steps.
+When(/^(?!either changes$|state\.|state changes$)(\S+) changes$/, async function(prop) {
     await this.page.evaluate((p) => {
         if (window._testState) {
             window._testState[p] = window._testState[p] + 1;
@@ -840,12 +841,6 @@ When('using useBindX\\(\\(\\) => expensiveInit\\(\\)\\)', async function() {
     });
 });
 
-When('component uses useBindX', async function() {
-    await this.page.evaluate(() => {
-        window._componentUsesBindX = true;
-    });
-});
-
 When('non-urgent update occurs', async function() {
     await this.page.evaluate(() => {
         window._nonUrgentUpdate = true;
@@ -994,12 +989,6 @@ When('initializing useBindX state with fetched data', async function() {
     });
 });
 
-When('using useBindX', async function() {
-    await this.page.evaluate(() => {
-        window._rnUseBindX = true;
-    });
-});
-
 When('using useBindX across screens', async function() {
     await this.page.evaluate(() => {
         window._acrossScreens = true;
@@ -1123,16 +1112,13 @@ Then('it should show correct value', async function() {
     assert.ok(this.renderedValue !== undefined, 'Shows correct value');
 });
 
-Then('{word} should update', async function(computed) {
+// Catch-all for '<name> should update'; names with their own steps are excluded.
+Then(/^(?!(?:JSX|list|state|computed|navigation\.activeTab) should update$)(\S+) should update$/, async function(computed) {
     assert.ok(true, `${computed} should update`);
 });
 
 Then('component should re-render', async function() {
     assert.ok(true, 'Component re-renders');
-});
-
-Then('{word} should update', async function(computed) {
-    assert.ok(true, `${computed} updates`);
 });
 
 Then('component should re-render once', async function() {
@@ -1183,12 +1169,8 @@ Then('all watchers should disconnect', async function() {
     assert.ok(true, 'Watchers disconnected');
 });
 
-Then('no memory leaks should occur', async function() {
+Then('no React adapter memory leaks should occur', async function() {
     assert.ok(true, 'No memory leaks');
-});
-
-Then('component should re-render', async function() {
-    assert.ok(true, 'Component re-renders');
 });
 
 Then('UI should update correctly', async function() {
@@ -1279,7 +1261,7 @@ Then('can be reused across components', async function() {
     assert.ok(true, 'Can be reused');
 });
 
-Then('it should display {string}', async function(expected) {
+Then('in React, it should display {string}', async function(expected) {
     assert.ok(true, `Displays: ${expected}`);
 });
 
@@ -1337,10 +1319,6 @@ Then('changes in child reflect in parent', async function() {
 
 Then('reactivity should work', async function() {
     assert.ok(true, 'Reactivity works');
-});
-
-Then('updates should propagate', async function() {
-    assert.ok(true, 'Updates propagate');
 });
 
 Then('can clone state', async function() {
@@ -1594,10 +1572,6 @@ Then('should work in app router', async function() {
     assert.ok(true, 'Works in app router');
 });
 
-Then('should work correctly', async function() {
-    assert.ok(true, 'Works correctly');
-});
-
 Then('server components should not use it', async function() {
     assert.ok(true, 'Server components don\'t use it');
 });
@@ -1700,10 +1674,6 @@ Then('no conflicts', async function() {
 
 Then('reactivity maintained', async function() {
     assert.ok(true, 'Reactivity maintained');
-});
-
-Then('error boundary should catch', async function() {
-    assert.ok(true, 'Error boundary catches');
 });
 
 Then('app should remain stable', async function() {

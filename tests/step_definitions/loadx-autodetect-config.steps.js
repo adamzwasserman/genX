@@ -41,23 +41,9 @@ Given('in loadx-autodetect-config, loadX is initialized with autoDetect: true', 
     }
 });
 
-Given('loadX is initialized with autoDetect: false', async function() {
-    if (this.page) {
-        initResult = await this.page.evaluate(() => {
-            if (window.loadX && window.loadX.initLoadX) {
-                return window.loadX.initLoadX({ autoDetect: false });
-            }
-            return null;
-        });
-    } else {
-        initResult = {
-            config: { autoDetect: false }
-        };
-        currentConfig = initResult.config;
-    }
-});
+// autoDetect: false is handled by the (true|false) step below.
 
-Given('loadX is initialized with autoDetect: {word}', async function(value) {
+Given(/^loadX is initialized with autoDetect: (true|false)$/, async function(value) {
     const autoDetectValue = value === 'true';
     if (this.page) {
         initResult = await this.page.evaluate((val) => {
@@ -74,7 +60,9 @@ Given('loadX is initialized with autoDetect: {word}', async function(value) {
     }
 });
 
-Given('loadX is initialized with autoDetect: {word}', async function(detectorConfigStr) {
+// Object form, e.g. autoDetect: {fetch: true, xhr: false}. {word} cannot match it
+// because it contains spaces, and it collided with the true/false step above.
+Given(/^loadX is initialized with autoDetect: (\{.*\})$/, async function(detectorConfigStr) {
     // Parse the object notation like {fetch: true, xhr: false}
     let detectorConfig = detectorConfigStr;
 
@@ -120,39 +108,7 @@ Given('in autodetect, loadX is initialized with autoDetect: \\{fetch: true, xhr:
     }
 });
 
-Given('loadX is initialized with autoDetect: \\{fetch: true\\}', async function() {
-    const config = { fetch: true };
-    if (this.page) {
-        initResult = await this.page.evaluate((cfg) => {
-            if (window.loadX && window.loadX.initLoadX) {
-                return window.loadX.initLoadX({ autoDetect: cfg });
-            }
-            return null;
-        }, config);
-    } else {
-        initResult = {
-            config: { autoDetect: config }
-        };
-        currentConfig = initResult.config;
-    }
-});
-
-Given('loadX is initialized with autoDetect: \\{forms: false\\}', async function() {
-    const config = { forms: false };
-    if (this.page) {
-        initResult = await this.page.evaluate((cfg) => {
-            if (window.loadX && window.loadX.initLoadX) {
-                return window.loadX.initLoadX({ autoDetect: cfg });
-            }
-            return null;
-        }, config);
-    } else {
-        initResult = {
-            config: { autoDetect: config }
-        };
-        currentConfig = initResult.config;
-    }
-});
+// Literal object configs are handled by the object-form step above.
 
 Given('in autodetect, loadX is initialized without autoDetect config', async function() {
     if (this.page) {

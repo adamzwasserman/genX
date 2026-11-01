@@ -412,7 +412,7 @@ Feature: tableX - Declarative Table Enhancements
     And 10,000 rows
     When the table renders
     Then only visible rows should be in DOM
-    When scrolling
+    When in tableX, scrolling
     Then rows should be dynamically added/removed
 
   Scenario: Efficient sorting

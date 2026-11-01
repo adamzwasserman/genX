@@ -303,7 +303,7 @@ Feature: bindX Form Utilities
     And no custom error message
     And reactive data with empty value
     When the form is validated
-    Then the error message should contain "required"
+    Then the bindX error message should contain "required"
 
   # ========================================
   # INTEGRATION WITH BX-MODEL

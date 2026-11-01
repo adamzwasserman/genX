@@ -98,7 +98,7 @@ Feature: bindX Reactive Engine
     And I register a callback for property "x" that increments "x"
     When I change property "x" to 2
     Then a cycle detection error should be thrown
-    And the error message should contain "Maximum update depth exceeded"
+    And the bindX error message should contain "Maximum update depth exceeded"
 
   Scenario: Allow legitimate multiple updates within threshold
     Given I have a reactive object with properties "counter" set to 0 and "target" set to 5

@@ -41,7 +41,7 @@ Feature: One-Way Data Binding
     Given I have a span with bx-bind="temp"
     When I destroy the binding
     Then the binding should be removed from registry
-    And no memory leaks should occur
+    And no one-way binding memory leaks should occur
 
   Scenario: Empty value handling
     Given I have a span with bx-bind="value"

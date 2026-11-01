@@ -81,7 +81,7 @@ Feature: bindX React Framework Adapter
     Given component with useBindX watchers
     When component unmounts
     Then all watchers should disconnect
-    And no memory leaks should occur
+    And no React adapter memory leaks should occur
 
   Scenario: Update state during component lifecycle
     Given component with useBindX state
@@ -95,7 +95,7 @@ Feature: bindX React Framework Adapter
     When component uses useBindX
     Then effects should handle double-invocation
     And cleanup should work correctly
-    And no memory leaks should occur
+    And no React adapter memory leaks should occur
 
   Scenario: State initialization in StrictMode
     Given StrictMode enabled
@@ -163,7 +163,7 @@ Feature: bindX React Framework Adapter
   Scenario: Render bindX state in JSX
     Given useBindX state { message: 'Hello' }
     When JSX renders {state.message}
-    Then it should display 'Hello'
+    Then in React, it should display 'Hello'
     When state.message changes
     Then JSX should update
 

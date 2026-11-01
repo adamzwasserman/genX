@@ -1,4 +1,5 @@
 const { Given, When, Then } = require('@cucumber/cucumber');
+const { defineElement } = require('../support/element-fixtures');
 const { expect } = require('chai');
 const { JSDOM } = require('jsdom');
 const fixtures = require('../fixtures/loadx-fixtures');
@@ -63,7 +64,7 @@ Given('in loadx-attribute-processing, an element with class={string}', function(
 });
 
 // JSON configuration
-Given('an element with lx-config={string}', function(configStr) {
+defineElement('an element with lx-config={string}', function(configStr) {
     const html = `<div lx-config='${configStr}'>Loading</div>`;
     createDOM(html);
     currentElement = document.querySelector('[lx-config]');
@@ -79,7 +80,7 @@ Given('an element with lx-strategy={string} and class={string}', function(strate
 });
 
 // Data attribute
-Given('an element with data-lx-strategy={string}', function(strategy) {
+defineElement('an element with data-lx-strategy={string}', function(strategy) {
     const html = `<div data-lx-strategy="${strategy}">Content</div>`;
     createDOM(html);
     currentElement = document.querySelector('[data-lx-strategy]');

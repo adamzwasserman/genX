@@ -98,7 +98,7 @@ Feature: dragX - Declarative Drag-and-Drop
 
   Scenario: Keyboard navigation during drag
     Given an element in keyboard drag mode
-    When the user presses Arrow Down
+    When in dragX, the user presses Arrow Down
     Then focus should move to the next drop zone
     When the user presses Enter
     Then the drop should complete
@@ -128,7 +128,7 @@ Feature: dragX - Declarative Drag-and-Drop
     When a card is dragged over it
     Then the drop zone should have class "dx-drag-over"
     When the card leaves the drop zone
-    Then the class should be removed
+    Then the drop zone class should be removed
 
   Scenario: Invalid drop indicator
     Given a drop zone that does not accept the dragged type
@@ -142,7 +142,7 @@ Feature: dragX - Declarative Drag-and-Drop
     When drag starts
     Then the element should have class "dx-dragging"
     When drag ends
-    Then the class should be removed
+    Then the dragging class should be removed
 
   Scenario: Clone drag behavior
     Given an element with dx-draggable="card" dx-mode="clone"
@@ -168,7 +168,7 @@ Feature: dragX - Declarative Drag-and-Drop
     Given a draggable with dx-effect="move"
     When dropped on a zone
     Then the element should be moved
-    And only one instance should exist
+    And only one dragX instance should exist
 
   Scenario: Drop effect link
     Given a draggable with dx-effect="link"
@@ -281,7 +281,7 @@ Feature: dragX - Declarative Drag-and-Drop
     Then a "dx:drop" event should be emitted
     And event.detail should contain dragged element
     And event.detail should contain drop zone
-    And event.detail should contain coordinates
+    And event.detail should contain drag coordinates
 
   Scenario: Cancellable drag start
     Given a draggable element
@@ -319,7 +319,7 @@ Feature: dragX - Declarative Drag-and-Drop
   Scenario: Handle 1000 draggable items
     Given 1000 draggable elements
     When the page loads
-    Then initialization should complete in less than 500ms
+    Then dragX initialization should complete in less than 500ms
     And memory usage should be reasonable
 
   Scenario: Efficient drop zone queries
@@ -338,13 +338,13 @@ Feature: dragX - Declarative Drag-and-Drop
     Given a draggable element
     When the element is removed from DOM
     Then event listeners should be cleaned up
-    And memory should be released
+    And dragX memory should be released
 
   # Error Handling
   Scenario: Invalid draggable type
     Given an element with dx-draggable=""
     When the module initializes
-    Then a validation error should be logged
+    Then a dragX validation error should be logged
     And the element should not become draggable
 
   Scenario: Missing drop zone acceptance

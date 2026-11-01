@@ -4,6 +4,7 @@
  */
 
 const { Given, When, Then } = require('@cucumber/cucumber');
+const { defineElement } = require('../support/element-fixtures');
 const { expect } = require('@playwright/test');
 
 // ============================================================================
@@ -93,7 +94,7 @@ Then('a {word} loading indicator should appear', async function(strategyType) {
 // ASYNC DETECTION - FETCH
 // ============================================================================
 
-Given('an element with lx-detect={string}', async function(detectMode) {
+defineElement('an element with lx-detect={string}', async function(detectMode) {
     await this.page.setContent(`
         <html><body>
             <div id="test-element" lx-detect="${detectMode}">
@@ -245,7 +246,7 @@ Then('loading should stop', async function() {
 // MINIMUM DURATION
 // ============================================================================
 
-Given('an element with lx-min-duration={string}', async function(duration) {
+defineElement('an element with lx-min-duration={string}', async function(duration) {
     await this.page.setContent(`
         <html><body>
             <div id="test-element" lx-loading="true" lx-min-duration="${duration}">
@@ -280,7 +281,7 @@ Then('loading should display for at least {int}ms', async function(minDuration) 
 // DELAY THRESHOLD
 // ============================================================================
 
-Given('an element with lx-delay={string}', async function(delay) {
+defineElement('an element with lx-delay={string}', async function(delay) {
     await this.page.setContent(`
         <html><body>
             <div id="test-element" lx-loading="true" lx-delay="${delay}">
@@ -394,7 +395,7 @@ Then('loading states should not interfere', async function() {
 // SCOPED LOADING - Multiple Operations
 // ============================================================================
 
-Given('an element with lx-scope={string}', async function(scope) {
+defineElement('an element with lx-scope={string}', async function(scope) {
     await this.page.setContent(`
         <html><body>
             <div id="scope-container" lx-scope="${scope}">
@@ -624,7 +625,7 @@ Then('the loading indicator should appear', async function() {
 // CUSTOM SPINNERS
 // ============================================================================
 
-Given('an element with lx-loading={string} lx-icon={string}', async function(loading, icon) {
+defineElement('an element with lx-loading={string} lx-icon={string}', async function(loading, icon) {
     await this.page.setContent(`
         <html><body>
             <div id="custom-icon" lx-loading="${loading}" lx-icon="${icon}">
@@ -648,7 +649,7 @@ Then('the custom icon should be used as the spinner', async function() {
     expect(hasSVG).toBe(true);
 });
 
-Given('an element with lx-loading={string} lx-size={string}', async function(loading, size) {
+defineElement('an element with lx-loading={string} lx-size={string}', async function(loading, size) {
     await this.page.setContent(`
         <html><body>
             <div id="sized-spinner" lx-loading="${loading}" lx-size="${size}" class="lx-spinner-${size}">
@@ -671,7 +672,7 @@ Then('the spinner should be large size', async function() {
 // SHIMMER EFFECTS
 // ============================================================================
 
-Given('an element with lx-skeleton={string} lx-shimmer={string}', async function(skeleton, shimmer) {
+defineElement('an element with lx-skeleton={string} lx-shimmer={string}', async function(skeleton, shimmer) {
     await this.page.setContent(`
         <html><body>
             <div id="shimmer" lx-skeleton="${skeleton}" lx-shimmer="${shimmer}" style="
@@ -811,7 +812,7 @@ When('loading becomes false', async function() {
 // RESPONSIVE LOADING
 // ============================================================================
 
-Given('an element with lx-type={string} lx-mobile-type={string}', async function(type, mobileType) {
+defineElement('an element with lx-type={string} lx-mobile-type={string}', async function(type, mobileType) {
     await this.page.setContent(`
         <html><body>
             <div id="responsive" lx-type="${type}" lx-mobile-type="${mobileType}">
@@ -821,7 +822,7 @@ Given('an element with lx-type={string} lx-mobile-type={string}', async function
     `);
 });
 
-When('viewed on mobile', async function() {
+When('in loadX, viewed on mobile', async function() {
     await this.page.setViewportSize({ width: 375, height: 667 });
 });
 
@@ -851,7 +852,7 @@ Then('circular spinner should display', async function() {
 // TIMEOUT HANDLING
 // ============================================================================
 
-Given('an element with lx-loading={string} lx-timeout={string}', async function(loading, timeout) {
+defineElement('an element with lx-loading={string} lx-timeout={string}', async function(loading, timeout) {
     await this.page.setContent(`
         <html><body>
             <div id="timeout-test" lx-loading="${loading}" lx-timeout="${timeout}">

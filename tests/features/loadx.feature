@@ -274,7 +274,7 @@ Feature: loadX - Declarative Loading States
   # Responsive Loading
   Scenario: Different spinners for mobile/desktop
     Given an element with lx-type="spinner" lx-mobile-type="dots"
-    When viewed on mobile
+    When in loadX, viewed on mobile
     Then dots spinner should display
     When viewed on desktop
     Then circular spinner should display

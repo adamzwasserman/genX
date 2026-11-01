@@ -165,7 +165,7 @@ Then('WeakMap should allow garbage collection', async function() {
     assert.ok(true, 'WeakMap allows GC');
 });
 
-Then('no memory leaks should occur', async function() {
+Then('no binding registry memory leaks should occur', async function() {
     assert.ok(true, 'No memory leaks');
 });
 

@@ -28,29 +28,13 @@ Given('a div with attributes:', async function(dataTable) {
     await this.page.setContent(html);
 });
 
-Given('an input with bx-model={string}', async function(model) {
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>
-            <input id="test-input" bx-model="${model}" />
-        </body></html>
-    `);
-});
+// 'an input with bx-model' and 'a textarea with bx-model' live in bindx.steps.js.
 
 Given('a span with bx-bind={string}', async function(binding) {
     await this.page.setContent(`
         <!DOCTYPE html>
         <html><body>
             <span id="test-span" bx-bind="${binding}"></span>
-        </body></html>
-    `);
-});
-
-Given('a textarea with bx-model={string}', async function(model) {
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>
-            <textarea id="test-textarea" bx-model="${model}"></textarea>
         </body></html>
     `);
 });
@@ -99,14 +83,6 @@ When('the container is scanned', async function() {
             window.bindx.scan(document.body);
         }
     });
-});
-
-Then('the input should have a two-way binding to {string}', async function(path) {
-    const hasBinding = await this.page.evaluate((p) => {
-        const input = document.getElementById('test-input');
-        return input?.getAttribute('bx-model') === p || input?.hasAttribute('bx-model');
-    }, path);
-    assert.ok(hasBinding, `Should have two-way binding to ${path}`);
 });
 
 Then('the binding should have debounce={int}', async function(debounce) {

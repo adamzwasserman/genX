@@ -136,7 +136,7 @@ Feature: bindX Vue Framework Adapter
   Scenario: Use bindX state in template expressions
     Given bindX state { message: 'Hello' }
     When template uses {{ state.message }}
-    Then it should display 'Hello'
+    Then in Vue, it should display 'Hello'
     When state.message changes
     Then template should update
 

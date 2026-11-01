@@ -157,7 +157,7 @@ Feature: FormatX Phone Number Formatting
       <span fx-format="phone" fx-phone-format="us-dash" fx-raw="5551234567">5551234567</span>
       """
     Then the element should automatically be formatted
-    And it should display "555-123-4567"
+    And in fmtX, the new element should display "555-123-4567"
 
   # Multiple phone formats on same page
   Scenario: Support multiple phone formats simultaneously

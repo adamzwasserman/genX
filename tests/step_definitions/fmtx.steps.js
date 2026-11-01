@@ -1,4 +1,5 @@
 const { Given, When, Then } = require('@cucumber/cucumber');
+const { defineElement } = require('../support/element-fixtures');
 const assert = require('assert');
 
 // Background
@@ -40,7 +41,7 @@ Then('in fmtX, the element should display {string}', async function(expected) {
 });
 
 // Different locales
-Given('an element with fx-format={string} fx-currency={string} fx-locale={string}', async function(format, currency, locale) {
+defineElement('an element with fx-format={string} fx-currency={string} fx-locale={string}', async function(format, currency, locale) {
     await this.page.setContent(`
         <html><body>
             <span id="test" fx-format="${format}" fx-currency="${currency}" fx-locale="${locale}">1234.56</span>
@@ -56,7 +57,7 @@ Given('the fx-raw value is {string}', async function(value) {
 });
 
 // Scenario Outline support
-Given('an element with fx-format={string} fx-currency={string}', async function(format, currency) {
+defineElement('an element with fx-format={string} fx-currency={string}', async function(format, currency) {
     await this.page.setContent(`
         <html><body>
             <span id="test" fx-format="${format}" fx-currency="${currency}" fx-raw="99.99">99.99</span>
@@ -64,7 +65,7 @@ Given('an element with fx-format={string} fx-currency={string}', async function(
     `);
 });
 
-Given('an element with fx-format={string} fx-date-format={string}', async function(format, dateFormat) {
+defineElement('an element with fx-format={string} fx-date-format={string}', async function(format, dateFormat) {
     await this.page.setContent(`
         <html><body>
             <span id="test" fx-format="${format}" fx-date-format="${dateFormat}" fx-raw="2024-03-15">2024-03-15</span>
@@ -72,7 +73,7 @@ Given('an element with fx-format={string} fx-date-format={string}', async functi
     `);
 });
 
-Given('an element with fx-format={string}', async function(format) {
+defineElement('an element with fx-format={string}', async function(format) {
     await this.page.setContent(`
         <html><body>
             <span id="test" fx-format="${format}">placeholder</span>
@@ -80,7 +81,7 @@ Given('an element with fx-format={string}', async function(format) {
     `);
 });
 
-Given('an element with fx-format={string} fx-raw={string}', async function(format, raw) {
+defineElement('an element with fx-format={string} fx-raw={string}', async function(format, raw) {
     await this.page.setContent(`
         <html><body>
             <span id="test" fx-format="${format}" fx-raw="${raw}">${raw}</span>
@@ -89,7 +90,7 @@ Given('an element with fx-format={string} fx-raw={string}', async function(forma
 });
 
 // Phone formatting
-Given('an element with fx-format={string} fx-phone-format={string}', async function(format, phoneFormat) {
+defineElement('an element with fx-format={string} fx-phone-format={string}', async function(format, phoneFormat) {
     await this.page.setContent(`
         <html><body>
             <span id="test" fx-format="${format}" fx-phone-format="${phoneFormat}">5551234567</span>
@@ -98,7 +99,7 @@ Given('an element with fx-format={string} fx-phone-format={string}', async funct
 });
 
 // Text truncation
-Given('an element with fx-format={string} fx-length={string}', async function(format, length) {
+defineElement('an element with fx-format={string} fx-length={string}', async function(format, length) {
     await this.page.setContent(`
         <html><body>
             <span id="test" fx-format="${format}" fx-length="${length}" fx-raw="This is a very long text">This is a very long text</span>
@@ -107,7 +108,7 @@ Given('an element with fx-format={string} fx-length={string}', async function(fo
 });
 
 // Duration formatting
-Given('an element with fx-format={string} fx-duration-format={string}', async function(format, durationFormat) {
+defineElement('an element with fx-format={string} fx-duration-format={string}', async function(format, durationFormat) {
     await this.page.setContent(`
         <html><body>
             <span id="test" fx-format="${format}" fx-duration-format="${durationFormat}">93784</span>
@@ -127,6 +128,14 @@ When('a new element is added to the DOM:', async function(docString) {
         document.body.insertAdjacentHTML('beforeend', html);
     }, docString);
     await this.page.waitForTimeout(200); // Wait for MutationObserver
+});
+
+Then('in fmtX, the new element should display {string}', async function(expected) {
+    const actual = await this.page.evaluate(() => {
+        const spans = document.querySelectorAll('span[fx-format]');
+        return spans.length ? spans[spans.length - 1].textContent : null;
+    });
+    assert.strictEqual(actual, expected, `Expected "${expected}", got "${actual}"`);
 });
 
 Then('the element should automatically be formatted', async function() {

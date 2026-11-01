@@ -3,6 +3,7 @@
  */
 
 const { Given, When, Then } = require('@cucumber/cucumber');
+const { defineElement } = require('../support/element-fixtures');
 const assert = require('assert');
 
 // Background steps
@@ -85,7 +86,7 @@ Given('the user prefers reduced motion', function() {
     };
 });
 
-Given('an element with lx-strategy="spinner"', function() {
+defineElement('an element with lx-strategy="spinner"', function() {
     this.element = document.createElement('div');
     this.element.setAttribute('lx-strategy', 'spinner');
     this.element.textContent = 'Original Content';

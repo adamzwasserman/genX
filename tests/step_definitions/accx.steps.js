@@ -1,4 +1,5 @@
 const { Given, When, Then } = require('@cucumber/cucumber');
+const { defineElement } = require('../support/element-fixtures');
 const assert = require('assert');
 
 // Background
@@ -8,7 +9,7 @@ Given('the accX module is loaded', async function() {
 });
 
 // Screen reader only text
-Given('an element with ax-enhance={string} ax-sr-text={string}', async function(enhance, srText) {
+defineElement('an element with ax-enhance={string} ax-sr-text={string}', async function(enhance, srText) {
     await this.page.setContent(`
         <html><body>
             <span id="test" ax-enhance="${enhance}" ax-sr-text="${srText}">$25.00</span>
@@ -51,7 +52,7 @@ Then('the span should be visually hidden but screen reader accessible', async fu
 });
 
 // ARIA Labels
-Given('an element with ax-enhance={string} ax-type={string} ax-full={string}', async function(enhance, type, full) {
+defineElement('an element with ax-enhance={string} ax-type={string} ax-full={string}', async function(enhance, type, full) {
     await this.page.setContent(`
         <html><body>
             <span id="test" ax-enhance="${enhance}" ax-type="${type}" ax-full="${full}">API</span>
@@ -59,7 +60,7 @@ Given('an element with ax-enhance={string} ax-type={string} ax-full={string}', a
     `);
 });
 
-Given('an element with ax-enhance={string} ax-type={string} ax-meaning={string}', async function(enhance, type, meaning) {
+defineElement('an element with ax-enhance={string} ax-type={string} ax-meaning={string}', async function(enhance, type, meaning) {
     await this.page.setContent(`
         <html><body>
             <span id="test" ax-enhance="${enhance}" ax-type="${type}" ax-meaning="${meaning}"></span>
@@ -67,7 +68,7 @@ Given('an element with ax-enhance={string} ax-type={string} ax-meaning={string}'
     `);
 });
 
-Given('an element with ax-enhance={string} ax-type={string}', async function(enhance, type) {
+defineElement('an element with ax-enhance={string} ax-type={string}', async function(enhance, type) {
     await this.page.setContent(`
         <html><body>
             <span id="test" ax-enhance="${enhance}" ax-type="${type}">$25.00</span>
@@ -96,7 +97,7 @@ Then('the element should have aria-label matching {string}', async function(patt
 });
 
 // Live Regions
-Given('an element with ax-enhance={string} ax-priority={string} ax-status={string}', async function(enhance, priority, status) {
+defineElement('an element with ax-enhance={string} ax-priority={string} ax-status={string}', async function(enhance, priority, status) {
     await this.page.setContent(`
         <html><body>
             <div id="test" ax-enhance="${enhance}" ax-priority="${priority}" ax-status="${status}">Status</div>
@@ -104,7 +105,7 @@ Given('an element with ax-enhance={string} ax-priority={string} ax-status={strin
     `);
 });
 
-Given('an element with ax-enhance={string} ax-priority={string} ax-alert={string}', async function(enhance, priority, alert) {
+defineElement('an element with ax-enhance={string} ax-priority={string} ax-alert={string}', async function(enhance, priority, alert) {
     await this.page.setContent(`
         <html><body>
             <div id="test" ax-enhance="${enhance}" ax-priority="${priority}" ax-alert="${alert}"></div>
@@ -198,7 +199,7 @@ Then('a character counter should be added', async function() {
     assert.ok(counter > 0, 'Character counter should be added');
 });
 
-Then('it should display {string}', async function(expected) {
+Then('in accX, it should display {string}', async function(expected) {
     const counterText = await this.page.locator('.ax-char-count').textContent();
     assert.ok(counterText.includes(expected) || counterText === expected);
 });
@@ -375,7 +376,7 @@ When('all accX elements are processed', async function() {
     this.operationTime = this.duration;
 });
 
-Then('it should maintain 60 FPS', async function() {
+Then('in accX, it should maintain 60 FPS', async function() {
     // 60 FPS = 16.67ms per frame
     assert.ok(this.duration < 16, `Should maintain 60 FPS, took ${this.duration}ms`);
 });
@@ -445,7 +446,7 @@ Then('child nodes should be moved via appendChild', async function() {
 });
 
 // Error Handling
-Given('an element with ax-enhance={string}', async function(enhanceType) {
+defineElement('an element with ax-enhance={string}', async function(enhanceType) {
     this.enhanceType = enhanceType;
     await this.page.setContent(`
         <html><body>

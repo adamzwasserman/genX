@@ -4,6 +4,7 @@
  */
 
 const { Given, When, Then } = require('@cucumber/cucumber');
+const { defineElement } = require('../support/element-fixtures');
 const { expect } = require('@playwright/test');
 
 // Helper function to add navX scripts to HTML content
@@ -146,7 +147,7 @@ Then('other links should not have the active class', async function() {
 // BREADCRUMBS
 // ============================================================================
 
-Given('an element with nx-breadcrumb={string}', async function(mode) {
+defineElement('an element with nx-breadcrumb={string}', async function(mode) {
     await this.page.setContent(`
         <html><body>
             <div id="breadcrumb" nx-breadcrumb="${mode}"></div>
@@ -486,7 +487,7 @@ Then('in navX, it should have class {string}', async function(className) {
 // PAGINATION
 // ============================================================================
 
-Given('an element with nx-pagination={string}', async function(enabled) {
+defineElement('an element with nx-pagination={string}', async function(enabled) {
     await this.page.setContent(`
         <html><body>
             <div id="pagination" nx-pagination="${enabled}"></div>

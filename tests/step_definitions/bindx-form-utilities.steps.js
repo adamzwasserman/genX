@@ -10,7 +10,8 @@ const assert = require('assert');
 // VALIDATION SETUP
 // ============================================================================
 
-Given('a reactive data object with {word}={string}', async function(key, value) {
+// Flat keys only; dotted paths go to the nested step in bindx-polymorphic-syntax.steps.js.
+Given(/^a reactive data object with ([A-Za-z_$][\w$]*)="([^"]*)"$/, async function(key, value) {
     await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
@@ -30,7 +31,9 @@ Given('a form with required {word} field', async function(fieldName) {
     `);
 });
 
-Given('a form with {word} validation', async function(validationType) {
+// URL and phone forms have their own steps below with their own fields.
+Given('a form with email validation', async function() {
+    const validationType = 'email';
     await this.page.setContent(`
         <!DOCTYPE html>
         <html><body>
@@ -387,7 +390,7 @@ Then('the error message should be {string}', async function(message) {
     assert.ok(true, `Error message: ${message}`);
 });
 
-Then('the error message should contain {string}', async function(text) {
+Then('the bindX error message should contain {string}', async function(text) {
     assert.ok(true, `Error contains: ${text}`);
 });
 
@@ -399,9 +402,7 @@ Then('the field should be skipped', async function() {
     assert.ok(true, 'Field skipped');
 });
 
-Then('no error should occur', async function() {
-    assert.ok(true, 'No errors');
-});
+// 'no error should occur' lives in loadx-dynamic-content.steps.js.
 
 Then('no form handlers should be set up', async function() {
     assert.ok(true, 'No handlers set up');

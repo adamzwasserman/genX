@@ -320,7 +320,7 @@ Then('only visible rows should be in DOM', async function() {
     return 'pending';
 });
 
-When('scrolling', async function() {
+When('in tableX, scrolling', async function() {
     await this.page.evaluate(() => window.scrollBy(0, 500));
 });
 

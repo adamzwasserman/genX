@@ -17,6 +17,7 @@
  */
 
 const { Given, When, Then, Before, After } = require('@cucumber/cucumber');
+const { findElement, parseAttributes } = require('../support/element-fixtures');
 const assert = require('assert');
 const { chromium } = require('@playwright/test');
 
@@ -53,7 +54,7 @@ After(async function() {
 
 Given('the genX common module is loaded', async function() {
   await this.page.goto('about:blank');
-  await this.page.addScriptTag({ path: './src/common.js' });
+  await this.page.addScriptTag({ path: './src/genx-common.js' });
 });
 
 Given('the polymorphic test state is clean', async function() {
@@ -73,7 +74,7 @@ Given('a clean test environment', async function() {
 });
 
 Given('polymorphic notation parsers are loaded', async function() {
-  await this.page.addScriptTag({ path: './src/common.js' });
+  await this.page.addScriptTag({ path: './src/genx-common.js' });
   // Verify all parser types are available
   const available = await this.page.evaluate(() => ({
     verbose: true,
@@ -88,21 +89,20 @@ Given('polymorphic notation parsers are loaded', async function() {
 // VERBOSE NOTATION ELEMENT SETUP STEPS
 // ============================================================================
 
-Given('an element with {word}={string}', async function(attr, value) {
-  const html = `<!DOCTYPE html><html><body><span id="test-element" ${attr}="${value}"></span></body></html>`;
+// One step owns every `an element with name="value" ...` line. Module step files
+// register their own fixtures with defineElement() (tests/support/element-fixtures.js);
+// attribute lists no module claims get a plain span#test-element.
+Given(/^an element with ((?:[\w:.-]+=(?:"[^"]*"|'[^']*')(?: |$))+)$/, async function(attrText) {
+  const pairs = parseAttributes(attrText);
+  const fixture = findElement(pairs);
+  if (fixture) {
+    return fixture.fn.apply(this, fixture.args);
+  }
+  const attrs = pairs.map(p => `${p.name}="${p.value.replace(/"/g, '&quot;')}"`).join(' ');
+  const html = `<!DOCTYPE html><html><body><span id="test-element" ${attrs}></span></body></html>`;
   await this.page.setContent(html);
-  this.lastAttribute = attr;
-  this.lastValue = value;
-});
-
-Given('an element with {word}={string} {word}={string}', async function(attr1, val1, attr2, val2) {
-  const html = `<!DOCTYPE html><html><body><span id="test-element" ${attr1}="${val1}" ${attr2}="${val2}"></span></body></html>`;
-  await this.page.setContent(html);
-});
-
-Given('an element with {word}={string} {word}={string} {word}={string}', async function(attr1, val1, attr2, val2, attr3, val3) {
-  const html = `<!DOCTYPE html><html><body><span id="test-element" ${attr1}="${val1}" ${attr2}="${val2}" ${attr3}="${val3}"></span></body></html>`;
-  await this.page.setContent(html);
+  this.lastAttribute = pairs[0].name;
+  this.lastValue = pairs[0].value;
 });
 
 // ============================================================================

@@ -19,14 +19,7 @@ Given('I have a reactive object with properties {word}={int} and {word}={int}', 
     }, [key1, val1, key2, val2]);
 });
 
-Given('I have a reactive object with {word}={int}, {word}={int}, and {word}={int}', async function(k1, v1, k2, v2, k3, v3) {
-    await this.page.evaluate(([keys, vals]) => {
-        window._testData = { [keys[0]]: vals[0], [keys[1]]: vals[1], [keys[2]]: vals[2] };
-        if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
-        }
-    }, [[k1, k2, k3], [v1, v2, v3]]);
-});
+// 'I have a reactive object with ...' lives in bindx-batched-updates.steps.js.
 
 Given('I have a reactive object with {word}.{word}={string}', async function(obj, prop, value) {
     await this.page.evaluate(([o, p, v]) => {
@@ -41,15 +34,6 @@ Given('I have a computed property with dependencies \\{{word}, {word}}', async f
     await this.page.evaluate(([d1, d2]) => {
         window._currentDeps = new Set([d1, d2]);
     }, [dep1, dep2]);
-});
-
-Given('I have a reactive object with {word}={int}', async function(key, value) {
-    await this.page.evaluate(([k, v]) => {
-        window._testData = { [k]: v };
-        if (window.bindx) {
-            window._reactive = window.bindx(window._testData);
-        }
-    }, [key, value]);
 });
 
 Given('I have a reactive object with data', async function() {

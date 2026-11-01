@@ -6,6 +6,7 @@
  */
 
 const { Given, When, Then } = require('@cucumber/cucumber');
+const { defineElement } = require('../support/element-fixtures');
 const { expect } = require('@playwright/test');
 
 // ============================================================================
@@ -201,7 +202,7 @@ Then('the data object {word}.{word} should be value {word}', async function(obj,
 // ONE-WAY BINDING (bx-bind)
 // ============================================================================
 
-Given('an element with bx-bind:text={string}', async function(binding) {
+defineElement('an element with bx-bind:text={string}', async function(binding) {
     await this.page.setContent(`
         <html><body>
             <span id="test-element" bx-bind:text="${binding}"></span>
@@ -219,7 +220,7 @@ Given('an img with bx-bind:src={string}', async function(binding) {
     this.element = await this.page.$('#test-img');
 });
 
-Given('an element with bx-bind:class={string}', async function(binding) {
+defineElement('an element with bx-bind:class={string}', async function(binding) {
     await this.page.setContent(`
         <html><body>
             <div id="test-element" bx-bind:class="${binding}"></div>
@@ -228,7 +229,7 @@ Given('an element with bx-bind:class={string}', async function(binding) {
     this.element = await this.page.$('#test-element');
 });
 
-Given('an element with bx-bind:style.color={string}', async function(binding) {
+defineElement('an element with bx-bind:style.color={string}', async function(binding) {
     await this.page.setContent(`
         <html><body>
             <div id="test-element" bx-bind:style.color="${binding}"></div>
@@ -294,7 +295,7 @@ Then('the element style color should automatically update to {string}', async fu
 // COMPUTED PROPERTIES (bx-compute)
 // ============================================================================
 
-Given('an element with bx-compute={string}', async function(computedName) {
+defineElement('an element with bx-compute={string}', async function(computedName) {
     this.computedName = computedName;
 });
 
@@ -350,7 +351,7 @@ Given('the computed function returns {word} ? {string} : {string}', async functi
 // COLLECTION BINDING (bx-each)
 // ============================================================================
 
-Given('an element with bx-each={string}', async function(eachExpression) {
+defineElement('an element with bx-each={string}', async function(eachExpression) {
     this.eachExpression = eachExpression;
 });
 

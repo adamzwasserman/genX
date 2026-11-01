@@ -104,16 +104,6 @@ Given('data containing {string}', async function(maliciousContent) {
     }, maliciousContent);
 });
 
-Given('I have a span with bx-bind={string}', async function(path) {
-    const html = `
-        <!DOCTYPE html>
-        <html><body>
-            <span id="test-span" bx-bind="${path}"></span>
-        </body></html>
-    `;
-    await this.page.setContent(html);
-});
-
 Given('data \\{ {word}: {string} }', async function(key, value) {
     await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v === '""' ? '' : v };
@@ -123,7 +113,8 @@ Given('data \\{ {word}: {string} }', async function(key, value) {
     }, [key, value]);
 });
 
-Given('data \\{ {word}: {word} }', async function(key, value) {
+// Unquoted values only; quoted values go to 'data { {word}: {string} }'.
+Given(/^data \{ (\w+): ([^"'\s]+) \}$/, async function(key, value) {
     const parsedValue = value === 'true' ? true : value === 'false' ? false : value;
     await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
@@ -146,14 +137,7 @@ Given('data \\{ }', async function() {
 // ACTION STEPS
 // ============================================================================
 
-When('I set data.{word} = {int}', async function(key, value) {
-    await this.page.evaluate(([k, v]) => {
-        if (window._reactive) {
-            window._reactive[k] = v;
-        }
-    }, [key, value]);
-    await this.page.waitForTimeout(50); // Allow reactivity to propagate
-});
+// 'I set data.{word} = {float}' (bindx-computed-properties.steps.js) covers integers too.
 
 When('I change data.{word} to {int}', async function(key, value) {
     await this.page.evaluate(([k, v]) => {
@@ -202,12 +186,7 @@ Then('the div should display the nested value', async function() {
     assert.ok(text && text.length > 0, 'Div should display nested value');
 });
 
-Then('the input value should be {string}', async function(expected) {
-    const value = await this.page.evaluate(() => {
-        return document.getElementById('test-input')?.value;
-    });
-    assert.strictEqual(value, expected);
-});
+// 'the input value should be {string}' lives in bindx-two-way-binding.steps.js.
 
 Then('But user typing should not update data', async function() {
     // Simulate typing in readonly field
@@ -259,7 +238,7 @@ Then('the binding should be removed from registry', async function() {
     assert.strictEqual(inRegistry, false);
 });
 
-Then('no memory leaks should occur', async function() {
+Then('no one-way binding memory leaks should occur', async function() {
     // Basic check - element should be removable
     const removed = await this.page.evaluate(() => {
         const element = document.getElementById('test-span');
@@ -281,13 +260,6 @@ Then('not show {string} or {string}', async function(val1, val2) {
         return document.getElementById('test-span')?.textContent;
     });
     assert.ok(text !== val1 && text !== val2, `Should not show ${val1} or ${val2}`);
-});
-
-Then('the span should display {string}', async function(expected) {
-    const text = await this.page.evaluate(() => {
-        return document.getElementById('test-span')?.textContent;
-    });
-    assert.strictEqual(text, expected);
 });
 
 Then('not throw an error', async function() {

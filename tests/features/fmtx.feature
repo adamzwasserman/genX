@@ -243,7 +243,7 @@ Feature: FormatX (fmtX) - Text Formatting Module
       <span fx-format="currency" fx-raw="99.99">99.99</span>
       """
     Then the element should automatically be formatted
-    And it should display "$99.99"
+    And in fmtX, the new element should display "$99.99"
 
   # Error Handling
   Scenario: Invalid number format

@@ -85,9 +85,9 @@ Feature: AccessX (accX) - Accessibility Enhancement Module
     Given a textarea with ax-enhance="field" ax-show-count="true" maxlength="200"
     When the element is processed
     Then a character counter should be added
-    And it should display "0/200 characters"
+    And in accX, it should display "0/200 characters"
     When the user types "Hello"
-    Then it should display "5/200 characters"
+    Then in accX, it should display "5/200 characters"
 
   # Navigation Enhancement
   Scenario: Navigation with aria-label
@@ -255,7 +255,7 @@ Feature: AccessX (accX) - Accessibility Enhancement Module
     Given 1000 elements with various ax- attributes
     When all accX elements are processed
     Then the operation should complete in less than 16ms
-    And it should maintain 60 FPS
+    And in accX, it should maintain 60 FPS
 
   # Security - XSS Protection
   Scenario: Table enhancement never uses innerHTML

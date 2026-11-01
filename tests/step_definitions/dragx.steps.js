@@ -1,4 +1,5 @@
 const { Given, When, Then } = require('@cucumber/cucumber');
+const { defineElement } = require('../support/element-fixtures');
 const assert = require('assert');
 const { expect } = require('@playwright/test');
 
@@ -21,7 +22,7 @@ Given('the dragX module is loaded', async function() {
 // DRAGGABLE ELEMENTS
 // ============================================================================
 
-Given('an element with dx-draggable={string}', async function(type) {
+defineElement('an element with dx-draggable={string}', async function(type) {
     await this.page.setContent(`
         <html><body>
             <div id="draggable" dx-draggable="${type}" style="width: 100px; height: 100px; background: blue;">
@@ -44,7 +45,7 @@ Given('an element with dx-draggable={string} and dx-data={string}', async functi
     await this.page.evaluate(() => window.DragX.init());
 });
 
-Given('an element with dx-draggable={string} dx-ghost={string}', async function(type, ghostType) {
+defineElement('an element with dx-draggable={string} dx-ghost={string}', async function(type, ghostType) {
     await this.page.setContent(`
         <html><body>
             <div id="draggable" dx-draggable="${type}" dx-ghost="${ghostType}" style="width: 100px; height: 100px; background: blue;">
@@ -58,7 +59,7 @@ Given('an element with dx-draggable={string} dx-ghost={string}', async function(
     await this.page.evaluate(() => window.DragX.init());
 });
 
-Given('an element with dx-draggable={string} dx-mode={string}', async function(type, mode) {
+defineElement('an element with dx-draggable={string} dx-mode={string}', async function(type, mode) {
     await this.page.setContent(`
         <html><body>
             <div id="draggable" dx-draggable="${type}" dx-mode="${mode}" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
@@ -69,7 +70,7 @@ Given('an element with dx-draggable={string} dx-mode={string}', async function(t
     await this.page.evaluate(() => window.DragX.init());
 });
 
-Given('an element with dx-draggable={string} dx-effect={string}', async function(type, effect) {
+defineElement('an element with dx-draggable={string} dx-effect={string}', async function(type, effect) {
     await this.page.setContent(`
         <html><body>
             <div id="draggable" dx-draggable="${type}" dx-effect="${effect}" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
@@ -80,7 +81,7 @@ Given('an element with dx-draggable={string} dx-effect={string}', async function
     await this.page.evaluate(() => window.DragX.init());
 });
 
-Given('an element with dx-draggable={string} dx-axis={string}', async function(type, axis) {
+defineElement('an element with dx-draggable={string} dx-axis={string}', async function(type, axis) {
     await this.page.setContent(`
         <html><body>
             <div id="draggable" dx-draggable="${type}" dx-axis="${axis}" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
@@ -91,7 +92,7 @@ Given('an element with dx-draggable={string} dx-axis={string}', async function(t
     await this.page.evaluate(() => window.DragX.init());
 });
 
-Given('an element with dx-draggable={string} dx-contain={string}', async function(type, contain) {
+defineElement('an element with dx-draggable={string} dx-contain={string}', async function(type, contain) {
     await this.page.setContent(`
         <html><body>
             <div id="parent" style="width: 500px; height: 500px; background: gray; position: relative; border: 2px solid black;">
@@ -104,7 +105,7 @@ Given('an element with dx-draggable={string} dx-contain={string}', async functio
     await this.page.evaluate(() => window.DragX.init());
 });
 
-Given('an element with dx-draggable={string} dx-grid={string}', async function(type, grid) {
+defineElement('an element with dx-draggable={string} dx-grid={string}', async function(type, grid) {
     await this.page.setContent(`
         <html><body>
             <div id="draggable" dx-draggable="${type}" dx-grid="${grid}" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
@@ -115,7 +116,7 @@ Given('an element with dx-draggable={string} dx-grid={string}', async function(t
     await this.page.evaluate(() => window.DragX.init());
 });
 
-Given('an element with dx-draggable={string} dx-handle={string}', async function(type, handle) {
+defineElement('an element with dx-draggable={string} dx-handle={string}', async function(type, handle) {
     await this.page.setContent(`
         <html><body>
             <div id="draggable" dx-draggable="${type}" dx-handle="${handle}" style="width: 100px; height: 100px; background: blue; position: absolute; left: 50px; top: 50px;">
@@ -318,7 +319,7 @@ Given('inner zone rejects the dragged type', async function() {
 // DRAG ACTIONS
 // ============================================================================
 
-When('the user starts dragging the element', async function() {
+async function startDraggingElement() {
     // Simulate pointer down
     await this.page.locator('#draggable').dispatchEvent('pointerdown', {
         clientX: 100,
@@ -336,9 +337,11 @@ When('the user starts dragging the element', async function() {
         });
         document.dispatchEvent(event);
     });
-});
+}
 
-When('the user drags the card over the board', async function() {
+When('the user starts dragging the element', startDraggingElement);
+
+async function dragCardOverBoard() {
     // Start drag
     await this.page.locator('#draggable').dispatchEvent('pointerdown', {
         clientX: 100,
@@ -367,10 +370,12 @@ When('the user drags the card over the board', async function() {
         });
         document.dispatchEvent(event);
     });
-});
+}
+
+When('the user drags the card over the board', dragCardOverBoard);
 
 When('the user drags the card to the board', async function() {
-    await this.step('the user drags the card over the board');
+    await dragCardOverBoard.call(this);
 });
 
 When('the user releases the card', async function() {
@@ -411,10 +416,6 @@ When('the user drags the image to the board', async function() {
         });
         document.dispatchEvent(event);
     });
-});
-
-When('the user drags the element', async function() {
-    await this.step('the user starts dragging the element');
 });
 
 When('the user drags continuously', async function() {
@@ -815,7 +816,7 @@ Then('event.detail should contain drop zone', async function() {
     assert.ok(true, 'Drop event contains drop zone');
 });
 
-Then('event.detail should contain coordinates', async function() {
+Then('event.detail should contain drag coordinates', async function() {
     assert.ok(true, 'Drop event contains coordinates');
 });
 
@@ -870,7 +871,7 @@ Then('the drop zone should have class {string}', async function(className) {
     assert.strictEqual(hasClass, true, `Drop zone should have class ${className}`);
 });
 
-Then('the class should be removed', async function() {
+Then('the drop zone class should be removed', async function() {
     const hasClass = await this.page.evaluate(() => {
         const dropzone = document.getElementById('dropzone');
         return dropzone && dropzone.classList.contains('dx-drag-over');
@@ -1060,12 +1061,6 @@ Given('a draggable card being dragged via touch', async function() {
     });
 });
 
-Given('a drop zone that accepts cards', async function() {
-    // Already have the setup from above
-    const exists = await this.page.locator('#dropzone').isVisible();
-    assert.ok(exists, 'Drop zone should exist');
-});
-
 When('the user touches and holds the element', async function() {
     await this.page.locator('#draggable').dispatchEvent('pointerdown', {
         clientX: 100,
@@ -1175,7 +1170,7 @@ When('the user tabs to the element', async function() {
     await this.page.keyboard.press('Tab');
 });
 
-When('the user presses Arrow Down', async function() {
+When('in dragX, the user presses Arrow Down', async function() {
     await this.page.keyboard.press('ArrowDown');
 });
 
@@ -1371,7 +1366,7 @@ Given('a draggable element', async function() {
 });
 
 When('drag starts', async function() {
-    await this.step('the user starts dragging the element');
+    await startDraggingElement.call(this);
 });
 
 Then('in dragX, the element should have class {string}', async function(className) {
@@ -1395,7 +1390,7 @@ When('drag ends', async function() {
     });
 });
 
-Then('the class should be removed', async function() {
+Then('the dragging class should be removed', async function() {
     const hasClass = await this.page.evaluate(() => {
         const element = document.getElementById('draggable');
         return element.classList.contains('dx-dragging');
@@ -1456,7 +1451,7 @@ Then('the element should be moved', async function() {
     assert.ok(true, 'Element moved');
 });
 
-Then('only one instance should exist', async function() {
+Then('only one dragX instance should exist', async function() {
     const count = await this.page.evaluate(() => {
         return document.querySelectorAll('[dx-draggable="card"]').length;
     });
@@ -1633,7 +1628,7 @@ Then('zones should be partitioned by location', async function() {
 });
 
 When('the user drags an element', async function() {
-    await this.step('the user starts dragging the element');
+    await startDraggingElement.call(this);
 });
 
 When('checking drop validity during drag', async function() {
@@ -1672,7 +1667,7 @@ Then('query should complete in less than 1ms', async function() {
     assert.ok(this.queryTime < 10, 'Query completed efficiently');
 });
 
-Then('initialization should complete in less than 500ms', async function() {
+Then('dragX initialization should complete in less than 500ms', async function() {
     assert.ok(this.initDuration < 500, `Init completed in ${this.initDuration}ms`);
 });
 
@@ -1743,11 +1738,11 @@ Then('event listeners should be cleaned up', async function() {
     assert.ok(true, 'Event listeners cleaned up');
 });
 
-Then('memory should be released', async function() {
+Then('dragX memory should be released', async function() {
     assert.ok(true, 'Memory released');
 });
 
-Given('an element with dx-draggable={string} dx-data={string}', async function(type, data) {
+defineElement('an element with dx-draggable={string} dx-data={string}', async function(type, data) {
     await this.page.setContent(`
         <html><body>
             <div id="draggable" dx-draggable="${type}" dx-data='${data}' style="width: 100px; height: 100px; background: blue;">
@@ -1794,7 +1789,7 @@ Then('the drag should be cancelled', async function() {
     assert.ok(prevented, 'Drag should be cancelled by preventDefault');
 });
 
-Then('a validation error should be logged', async function() {
+Then('a dragX validation error should be logged', async function() {
     assert.ok(true, 'Validation error logged');
 });
 
@@ -1860,18 +1855,6 @@ Then('instructions should explain keyboard controls', async function() {
 
 When('the module initializes', async function() {
     // Already initialized
-    await this.page.evaluate(() => window.DragX.init());
-});
-
-Given('an element with dx-draggable={string}', async function(type) {
-    const actualType = type === '' ? '' : type;
-    await this.page.setContent(`
-        <html><body>
-            <div id="draggable" dx-draggable="${actualType}" style="width: 100px; height: 100px; background: blue;">
-                Drag me
-            </div>
-        </body></html>
-    `);
     await this.page.evaluate(() => window.DragX.init());
 });
 
