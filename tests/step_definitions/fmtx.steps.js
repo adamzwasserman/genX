@@ -216,6 +216,10 @@ When('all fmtX elements are processed', async function() {
 
 // Unformat
 Given('the element has been formatted to {string}', async function(formatted) {
+    // Setup step: format the element, then confirm the starting text.
+    await this.page.evaluate(() => {
+        window.FormatX.formatElement(document.getElementById('test'));
+    });
     const actual = await this.page.locator('#test').textContent();
     assert.strictEqual(actual, formatted);
 });
