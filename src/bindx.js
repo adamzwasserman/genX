@@ -74,13 +74,17 @@
                 }
             }
 
-            // And parent path subscribers (a change inside 'items' is a change to 'items')
+            // And parent path watchers (a change inside 'items' is a change to 'items').
+            // Only watch() callbacks are deep; computeds and bindings that read
+            // 'items' on the way to 'items.0' are not invalidated by 'items.1'.
             const parts = path.split('.');
             for (let i = parts.length - 1; i > 0; i--) {
                 const parentSubscribers = pathSubscribers.get(parts.slice(0, i).join('.'));
                 if (parentSubscribers) {
                     for (const callback of [...parentSubscribers]) {
-                        callback(path);
+                        if (callback.deep) {
+                            callback(path);
+                        }
                     }
                 }
             }
@@ -995,6 +999,7 @@
             }
         };
 
+        wrapper.deep = true;
         subscribers.add(wrapper);
 
         // Return unwatch function
@@ -1135,6 +1140,14 @@
 
             // Subscribe to dependencies for cache invalidation
             for (const dep of dependencies) {
+                // A computed read inside this one: register as its dependent,
+                // so invalidating it invalidates this computed too
+                const depState = typeof dep === 'function' ? computedCache.get(dep) : null;
+                if (depState) {
+                    depState.dependents.add(getter);
+                    state.unsubscribers.push(() => depState.dependents.delete(getter));
+                    continue;
+                }
                 const unsubscribe = subscribeToPath(dep, () => {
                     invalidateComputed(state);
                 });
@@ -2352,7 +2365,8 @@
                 generateBindingId,
                 parseBindingAttribute,
                 createModelBinding,
-                createOneWayBinding
+                createOneWayBinding,
+                getBatchQueue       // Documented: bindX.getBatchQueue().flush()
             };
         }
 
