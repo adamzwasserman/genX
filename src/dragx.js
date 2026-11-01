@@ -187,7 +187,10 @@
      * @returns {number|null} Snap grid size or null
      */
     const parseSnapAttribute = (element) => {
-        const snapAttr = element.getAttribute('dx-snap');
+        // dx-grid="20" is accepted as an alias; dx-snap wins when both are set.
+        const snapAttr = element.hasAttribute('dx-snap')
+            ? element.getAttribute('dx-snap')
+            : element.getAttribute('dx-grid');
         if (snapAttr === null) return null;
         if (snapAttr === '' || snapAttr === 'true') return 10; // default 10px grid
         const snap = parseInt(snapAttr, 10);
@@ -347,15 +350,44 @@
      */
     const throttle = (fn, ms = 16.67) => {
         let lastCall = 0;
+        let pendingArgs = null;
+        let timer = null;
 
-        return (...args) => {
+        const run = () => {
+            timer = null;
+            if (pendingArgs) {
+                const args = pendingArgs;
+                pendingArgs = null;
+                lastCall = Date.now();
+                fn(...args);
+            }
+        };
+
+        const throttled = (...args) => {
             const now = Date.now();
 
             if (now - lastCall >= ms) {
                 lastCall = now;
+                pendingArgs = null;
                 return fn(...args);
             }
+
+            // Keep the latest event so the final position is never lost
+            pendingArgs = args;
+            if (!timer) {
+                timer = setTimeout(run, Math.max(0, ms - (now - lastCall)));
+            }
         };
+
+        // Run a pending trailing call immediately (e.g. before pointerup)
+        throttled.flush = () => {
+            if (timer) {
+                clearTimeout(timer);
+            }
+            run();
+        };
+
+        return throttled;
     };
 
     // ============================================================================
@@ -447,6 +479,14 @@
         try {
             const config = parseDraggable(draggableEl);
 
+            // dx-handle: only the matching handle element(s) start a drag
+            if (config.handle && event.target && event.target.closest) {
+                const handle = event.target.closest(config.handle);
+                if (!handle || !draggableEl.contains(handle)) {
+                    return state;
+                }
+            }
+
             return {
                 ...state,
                 phase: DragPhase.PENDING,
@@ -481,8 +521,8 @@
                 // Track metric
                 performanceMetrics.dragCount++;
 
-                // Emit drag start event
-                emitDragEvent('dx:dragstart', state.element, {
+                // Emit drag start event (cancelable via preventDefault)
+                const allowed = emitDragEvent('dx:dragstart', state.element, {
                     element: state.element,
                     type: state.type,
                     data: state.data,
@@ -490,8 +530,15 @@
                     y: event.y
                 });
 
-                // Add dragging class
+                if (!allowed) {
+                    performanceMetrics.cancelCount++;
+                    return createInitialState();
+                }
+
+                // Add dragging class and ARIA state
                 state.element.classList.add('dx-dragging');
+                state.element.setAttribute('aria-grabbed', 'true');
+                announceToScreenReader(`Grabbed ${state.type}`);
 
                 // Create ghost image if needed
                 const ghost = createGhostImage(state.element, event.x, event.y, state.config);
@@ -586,6 +633,8 @@
                 x: event.x,
                 y: event.y
             });
+
+            announceToScreenReader(`Dropped ${state.type} on ${state.dropZone.name}`);
 
             // Cleanup
             cleanup(state);
@@ -916,7 +965,7 @@
      * @returns {HTMLElement} Live region element
      */
     const createAriaLiveRegion = () => {
-        if (ariaLiveRegion) {
+        if (ariaLiveRegion && ariaLiveRegion.isConnected) {
             return ariaLiveRegion;
         }
 
@@ -952,31 +1001,79 @@
     };
 
     /**
+     * Id of the hidden element that explains keyboard controls.
+     */
+    const KEYBOARD_INSTRUCTIONS_ID = 'dx-keyboard-instructions';
+
+    /**
+     * Get (or create) the hidden keyboard instructions element.
+     *
+     * @returns {HTMLElement} Instructions element
+     */
+    const getKeyboardInstructions = () => {
+        let el = document.getElementById(KEYBOARD_INSTRUCTIONS_ID);
+        if (!el) {
+            el = document.createElement('div');
+            el.id = KEYBOARD_INSTRUCTIONS_ID;
+            el.hidden = true;
+            el.textContent = 'Press Space to grab. Use arrow keys to move, ' +
+                'Tab to cycle drop zones, Enter to drop, Escape to cancel.';
+            document.body.appendChild(el);
+        }
+        return el;
+    };
+
+    /**
+     * Add keyboard and ARIA attributes to one draggable element.
+     *
+     * @param {HTMLElement} el - Draggable element
+     */
+    const setupDraggableAccessibility = (el) => {
+        if (el.hasAttribute('dx-draggable') && !el.getAttribute('dx-draggable').trim()) {
+            console.error(
+                '[dragX] Invalid dx-draggable: a type is required ' +
+                `(e.g. dx-draggable="card") on ${el.tagName}#${el.id || 'unknown'}.`
+            );
+            return;
+        }
+        if (!el.hasAttribute('tabindex')) {
+            el.setAttribute('tabindex', '0');
+        }
+        if (!el.hasAttribute('role')) {
+            el.setAttribute('role', 'button');
+        }
+        if (!el.hasAttribute('aria-grabbed')) {
+            el.setAttribute('aria-grabbed', 'false');
+        }
+        if (!el.hasAttribute('aria-describedby')) {
+            el.setAttribute('aria-describedby', getKeyboardInstructions().id);
+        }
+    };
+
+    /**
+     * Add ARIA attributes to one drop zone element.
+     *
+     * @param {HTMLElement} el - Drop zone element
+     */
+    const setupDropZoneAccessibility = (el) => {
+        if (!el.hasAttribute('role')) {
+            el.setAttribute('role', 'region');
+        }
+        if (!el.hasAttribute('aria-dropeffect')) {
+            el.setAttribute('aria-dropeffect', 'move');
+        }
+    };
+
+    /**
      * Initialize keyboard accessibility for draggable elements.
      */
-    const initKeyboardAccessibility = () => {
-        // Add tabindex and ARIA attributes to draggables
-        document.querySelectorAll('[dx-draggable], [dx-drag], [class*="drag-"]').forEach(el => {
-            if (!el.hasAttribute('tabindex')) {
-                el.setAttribute('tabindex', '0');
-            }
-            if (!el.hasAttribute('role')) {
-                el.setAttribute('role', 'button');
-            }
-            if (!el.hasAttribute('aria-grabbed')) {
-                el.setAttribute('aria-grabbed', 'false');
+    const initKeyboardAccessibility = (root = document) => {
+        root.querySelectorAll('[dx-draggable], [dx-drag], [class*="drag-"]').forEach(el => {
+            if (isDraggableElement(el)) {
+                setupDraggableAccessibility(el);
             }
         });
-
-        // Add ARIA attributes to drop zones
-        document.querySelectorAll('[dx-drop-zone]').forEach(el => {
-            if (!el.hasAttribute('role')) {
-                el.setAttribute('role', 'region');
-            }
-            if (!el.hasAttribute('aria-dropeffect')) {
-                el.setAttribute('aria-dropeffect', 'move');
-            }
-        });
+        root.querySelectorAll('[dx-drop-zone]').forEach(setupDropZoneAccessibility);
     };
 
     /**
@@ -990,6 +1087,10 @@
             active: true,
             element,
             position: {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            },
+            startPosition: {
                 x: rect.left + rect.width / 2,
                 y: rect.top + rect.height / 2
             },
@@ -1050,9 +1151,11 @@
             });
         }
 
-        // Visual feedback - move element slightly
+        // Visual feedback - move element by the total keyboard offset
+        const offsetX = keyboardDragState.position.x - keyboardDragState.startPosition.x;
+        const offsetY = keyboardDragState.position.y - keyboardDragState.startPosition.y;
         keyboardDragState.element.style.transform =
-            `translate(${dx}px, ${dy}px)`;
+            `translate(${offsetX}px, ${offsetY}px)`;
     };
 
     /**
@@ -1087,19 +1190,36 @@
             return;
         }
 
-        const dropZone = findDropZoneAt(
-            keyboardDragState.position.x,
-            keyboardDragState.position.y,
-            keyboardDragState.element.getAttribute('dx-draggable')
-        );
+        const element = keyboardDragState.element;
+        let config = null;
+        try {
+            config = parseDraggable(element);
+        } catch (e) {
+            config = null;
+        }
+        const type = config ? config.type : element.getAttribute('dx-draggable');
+
+        // A zone chosen with Tab wins; otherwise use the arrow-key position
+        const tabbedZone = keyboardDragState.dropZoneIndex >= 0
+            ? dropZones[keyboardDragState.dropZoneIndex]
+            : null;
+        const accepts = (zone) => zone &&
+            (zone.accepts.includes('*') || zone.accepts.includes(type));
+        const dropZone = accepts(tabbedZone)
+            ? tabbedZone
+            : findDropZoneAt(
+                keyboardDragState.position.x,
+                keyboardDragState.position.y,
+                type
+            );
 
         if (dropZone) {
             // Emit drop event
             emitDragEvent('dx:drop', dropZone.element, {
-                element: keyboardDragState.element,
+                element,
                 dropZone: dropZone.element,
-                type: keyboardDragState.element.getAttribute('dx-draggable'),
-                data: {},
+                type,
+                data: config ? config.data : {},
                 x: keyboardDragState.position.x,
                 y: keyboardDragState.position.y,
                 keyboard: true
@@ -1114,13 +1234,25 @@
             );
         }
 
-        cancelKeyboardDrag();
+        endKeyboardDrag();
     };
 
     /**
      * Cancel keyboard drag.
      */
     const cancelKeyboardDrag = () => {
+        if (!keyboardDragState.active) {
+            return;
+        }
+
+        endKeyboardDrag();
+        announceToScreenReader('Drag cancelled');
+    };
+
+    /**
+     * Leave keyboard drag mode and restore the element.
+     */
+    const endKeyboardDrag = () => {
         if (!keyboardDragState.active) {
             return;
         }
@@ -1135,8 +1267,6 @@
             zone.element.classList.remove('dx-keyboard-drop-zone');
             zone.element.classList.remove('dx-keyboard-hover');
         });
-
-        announceToScreenReader('Drag cancelled');
 
         keyboardDragState = {
             active: false,
@@ -1316,6 +1446,27 @@
     // ============================================================================
 
     /**
+     * Class names that modify a draggable rather than declare one.
+     */
+    const MODIFIER_CLASSES = ['drag-ghost', 'drag-handle'];
+
+    /**
+     * Check whether an element declares a draggable (any syntax).
+     *
+     * @param {HTMLElement} el - Element
+     * @returns {boolean} True if draggable
+     */
+    const isDraggableElement = (el) => {
+        if (!el || el.nodeType !== 1) {
+            return false;
+        }
+        return el.hasAttribute('dx-draggable') ||
+            el.hasAttribute('dx-drag') ||
+            Array.from(el.classList).some(cls =>
+                cls.startsWith('drag-') && !MODIFIER_CLASSES.includes(cls));
+    };
+
+    /**
      * Find draggable ancestor element.
      *
      * @param {HTMLElement} target - Event target
@@ -1324,9 +1475,7 @@
     const findDraggableAncestor = (target) => {
         let current = target;
         while (current && current !== document.body) {
-            if (current.hasAttribute('dx-draggable') ||
-                current.hasAttribute('dx-drag') ||
-                Array.from(current.classList).some(cls => cls.startsWith('drag-'))) {
+            if (isDraggableElement(current)) {
                 return current;
             }
             current = current.parentElement;
@@ -1403,6 +1552,7 @@
     const findDropZoneAt = (x, y, type) => {
         // Always use linear search with live bounding rects for accuracy
         // The spatial index uses cached rects which become stale when page scrolls/resizes
+        let best = null;
         for (const zone of dropZones) {
             const rect = zone.element.getBoundingClientRect();
 
@@ -1410,12 +1560,20 @@
                 y >= rect.top && y <= rect.bottom) {
 
                 // Check if zone accepts this type
-                if (zone.accepts.includes('*') || zone.accepts.includes(type)) {
-                    return zone;
+                if (!(zone.accepts.includes('*') || zone.accepts.includes(type))) {
+                    continue;
+                }
+
+                // Prefer higher dx-priority, then the innermost nested zone
+                if (!best ||
+                    (zone.priority || 0) > (best.priority || 0) ||
+                    ((zone.priority || 0) === (best.priority || 0) &&
+                        best.element.contains(zone.element))) {
+                    best = zone;
                 }
             }
         }
-        return null;
+        return best;
     };
 
     /**
@@ -1427,6 +1585,9 @@
         // Remove dragging class
         if (state.element) {
             state.element.classList.remove('dx-dragging');
+            if (state.element.hasAttribute('aria-grabbed')) {
+                state.element.setAttribute('aria-grabbed', 'false');
+            }
         }
 
         // Remove ghost (with canvas cleanup if applicable)
@@ -1480,7 +1641,7 @@
             bubbles: true,
             cancelable: true
         });
-        target.dispatchEvent(event);
+        return target.dispatchEvent(event);
     };
 
     // ============================================================================
@@ -1488,33 +1649,20 @@
     // ============================================================================
 
     /**
-     * Initialize dragX module.
+     * Read live bounding rects into the drop zone registry and rebuild
+     * the spatial index.
      */
-    const init = () => {
-        // Register drop zones
-        const dropZoneElements = document.querySelectorAll('[dx-drop-zone]');
-        dropZones = Array.from(dropZoneElements)
-            .map(el => {
-                const zone = parseDropZone(el);
-                if (!zone) {
-                    return null;
-                }
-                // Add bounding rect to zone for spatial indexing
-                // Note: zone is frozen, so create new object with rect
-                const rect = el.getBoundingClientRect();
-                return {
-                    ...zone,
-                    rect: {
-                        x: rect.left,
-                        y: rect.top,
-                        width: rect.width,
-                        height: rect.height
-                    }
-                };
-            })
-            .filter(zone => zone !== null);
+    const refreshZoneRects = () => {
+        dropZones.forEach(zone => {
+            const rect = zone.element.getBoundingClientRect();
+            zone.rect = {
+                x: rect.left,
+                y: rect.top,
+                width: rect.width,
+                height: rect.height
+            };
+        });
 
-        // Build spatial index if we have drop zones
         if (dropZones.length > 0) {
             const viewport = {
                 x: 0,
@@ -1523,126 +1671,172 @@
                 height: window.innerHeight
             };
             spatialIndex = buildQuadTree(dropZones, viewport);
+        } else {
+            spatialIndex = null;
+        }
+    };
+
+    /**
+     * Register every drop zone in the document.
+     */
+    const registerDropZones = () => {
+        dropZones = Array.from(document.querySelectorAll('[dx-drop-zone]'))
+            .map(el => {
+                const zone = parseDropZone(el);
+                // zone is frozen, so copy it to attach a mutable rect
+                return zone ? {...zone, rect: null} : null;
+            })
+            .filter(zone => zone !== null);
+        refreshZoneRects();
+    };
+
+    // Global listeners. Stable references make init() safe to call again:
+    // addEventListener ignores a listener that is already registered.
+    let resizeTimeout;
+    const onResize = () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(refreshZoneRects, 250); // Debounce resize events
+    };
+
+    const onPointerDown = (e) => {
+        dragState = transitionState(dragState, 'start', normalizePointerEvent(e));
+    };
+
+    const onPointerMove = throttle((e) => {
+        if (isDragging(dragState)) {
+            e.preventDefault();
+            dragState = transitionState(dragState, 'move', normalizePointerEvent(e));
+        }
+    });
+
+    const onPointerUp = (e) => {
+        // Apply the latest throttled move first so the drop uses the final position
+        onPointerMove.flush();
+        if (dragState.phase === DragPhase.DRAGGING || dragState.phase === DragPhase.HOVERING) {
+            dragState = transitionState(dragState, 'move', normalizePointerEvent(e));
+        }
+        if (isDragging(dragState)) {
+            dragState = transitionState(dragState, 'end', normalizePointerEvent(e));
+        }
+    };
+
+    const onPointerCancel = (e) => {
+        if (isDragging(dragState)) {
+            dragState = transitionState(dragState, 'cancel', normalizePointerEvent(e));
+        }
+    };
+
+    const onKeyDown = (e) => {
+        // Cancel pointer drag with Escape
+        if (e.key === 'Escape' && isDragging(dragState)) {
+            dragState = transitionState(dragState, 'cancel', {});
+            return;
         }
 
-        // Rebuild spatial index on window resize
-        let resizeTimeout;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                if (dropZones.length > 0) {
-                    // Update zone rects
-                    dropZones.forEach(zone => {
-                        const rect = zone.element.getBoundingClientRect();
-                        zone.rect = {
-                            x: rect.left,
-                            y: rect.top,
-                            width: rect.width,
-                            height: rect.height
-                        };
-                    });
+        // Cancel keyboard drag with Escape
+        if (e.key === 'Escape' && keyboardDragState.active) {
+            e.preventDefault();
+            cancelKeyboardDrag();
+            return;
+        }
 
-                    // Rebuild spatial index
-                    const viewport = {
-                        x: 0,
-                        y: 0,
-                        width: window.innerWidth,
-                        height: window.innerHeight
-                    };
-                    spatialIndex = buildQuadTree(dropZones, viewport);
-                }
-            }, 250); // Debounce resize events
-        });
-
-        // Attach global pointer event listeners
-        document.addEventListener('pointerdown', (e) => {
-            dragState = transitionState(dragState, 'start', normalizePointerEvent(e));
-        });
-
-        document.addEventListener('pointermove', throttle((e) => {
-            if (isDragging(dragState)) {
+        // Start keyboard drag with Space on focused draggable
+        if (e.key === ' ' && document.activeElement) {
+            const draggable = findDraggableAncestor(document.activeElement);
+            if (draggable && !keyboardDragState.active) {
                 e.preventDefault();
-                dragState = transitionState(dragState, 'move', normalizePointerEvent(e));
-            }
-        }));
-
-        document.addEventListener('pointerup', (e) => {
-            if (isDragging(dragState)) {
-                dragState = transitionState(dragState, 'end', normalizePointerEvent(e));
-            }
-        });
-
-        document.addEventListener('pointercancel', (e) => {
-            if (isDragging(dragState)) {
-                dragState = transitionState(dragState, 'cancel', normalizePointerEvent(e));
-            }
-        });
-
-        // Keyboard support for drag operations
-        document.addEventListener('keydown', (e) => {
-            // Cancel pointer drag with Escape
-            if (e.key === 'Escape' && isDragging(dragState)) {
-                dragState = transitionState(dragState, 'cancel', {});
+                startKeyboardDrag(draggable);
                 return;
             }
+        }
 
-            // Cancel keyboard drag with Escape
-            if (e.key === 'Escape' && keyboardDragState.active) {
+        // Arrow key navigation during keyboard drag
+        if (keyboardDragState.active) {
+            const MOVE_DISTANCE = 10; // pixels per keypress
+
+            switch (e.key) {
+            case 'ArrowUp':
                 e.preventDefault();
-                cancelKeyboardDrag();
+                moveKeyboardDrag(0, -MOVE_DISTANCE);
+                break;
+            case 'ArrowDown':
+                e.preventDefault();
+                moveKeyboardDrag(0, MOVE_DISTANCE);
+                break;
+            case 'ArrowLeft':
+                e.preventDefault();
+                moveKeyboardDrag(-MOVE_DISTANCE, 0);
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                moveKeyboardDrag(MOVE_DISTANCE, 0);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                dropKeyboardDrag();
+                break;
+            case 'Tab':
+                e.preventDefault();
+                cycleToNextDropZone();
+                break;
+            }
+        }
+    };
+
+    /**
+     * MutationObserver for init({observe: true}).
+     */
+    let domObserver = null;
+    let observerRefreshQueued = false;
+
+    const startObserving = () => {
+        if (domObserver || typeof MutationObserver === 'undefined') {
+            return;
+        }
+        domObserver = new MutationObserver((mutations) => {
+            const touchesDrag = mutations.some(m =>
+                Array.from(m.addedNodes).concat(Array.from(m.removedNodes))
+                    .some(n => n.nodeType === 1));
+            if (!touchesDrag || observerRefreshQueued) {
                 return;
             }
-
-            // Start keyboard drag with Space on focused draggable
-            if (e.key === ' ' && document.activeElement) {
-                const draggable = findDraggableAncestor(document.activeElement);
-                if (draggable && !keyboardDragState.active) {
-                    e.preventDefault();
-                    startKeyboardDrag(draggable);
-                    return;
-                }
-            }
-
-            // Arrow key navigation during keyboard drag
-            if (keyboardDragState.active) {
-                const MOVE_DISTANCE = 10; // pixels per keypress
-
-                switch (e.key) {
-                case 'ArrowUp':
-                    e.preventDefault();
-                    moveKeyboardDrag(0, -MOVE_DISTANCE);
-                    break;
-                case 'ArrowDown':
-                    e.preventDefault();
-                    moveKeyboardDrag(0, MOVE_DISTANCE);
-                    break;
-                case 'ArrowLeft':
-                    e.preventDefault();
-                    moveKeyboardDrag(-MOVE_DISTANCE, 0);
-                    break;
-                case 'ArrowRight':
-                    e.preventDefault();
-                    moveKeyboardDrag(MOVE_DISTANCE, 0);
-                    break;
-                case 'Enter':
-                    e.preventDefault();
-                    dropKeyboardDrag();
-                    break;
-                case 'Tab':
-                    e.preventDefault();
-                    cycleToNextDropZone();
-                    break;
-                }
-            }
+            observerRefreshQueued = true;
+            Promise.resolve().then(() => {
+                observerRefreshQueued = false;
+                registerDropZones();
+                initKeyboardAccessibility();
+            });
         });
+        domObserver.observe(document.body, {childList: true, subtree: true});
+    };
 
-        // Initialize keyboard accessibility
+    /**
+     * Initialize dragX module. Safe to call again after DOM changes.
+     *
+     * @param {Object} config - Options
+     * @param {boolean} config.observe - Watch the DOM and register added
+     *   draggables and drop zones automatically
+     */
+    const init = (config = {}) => {
+        registerDropZones();
+
+        window.addEventListener('resize', onResize);
+        document.addEventListener('pointerdown', onPointerDown);
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp);
+        document.addEventListener('pointercancel', onPointerCancel);
+        document.addEventListener('keydown', onKeyDown);
+
         initKeyboardAccessibility();
+
+        if (config && config.observe) {
+            startObserving();
+        }
     };
 
     // Auto-initialize on DOMContentLoaded
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', () => init());
     } else {
         init();
     }
