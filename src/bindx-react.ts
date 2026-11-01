@@ -220,8 +220,8 @@
  * }
  */
 
-import { useEffect, useRef, useState, useMemo, useCallback, createContext, useContext } from 'react';
-import type { DependencyList } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback, createContext, useContext, createElement } from 'react';
+import type { ComponentType, DependencyList } from 'react';
 
 // Import bindX core (would be from actual bindX module)
 declare const bindX: {
@@ -285,6 +285,7 @@ export function useBindX<T extends object>(initialState: T | (() => T)): T {
 
   // Create reactive state once and maintain identity
   const stateRef = useRef<T | null>(null);
+  const reactiveRef = useRef<T | null>(null);
 
   if (stateRef.current === null) {
     const initial = typeof initialState === 'function' ? (initialState as () => T)() : initialState;
@@ -303,7 +304,12 @@ export function useBindX<T extends object>(initialState: T | (() => T)): T {
         return result;
       }
     });
+    reactiveRef.current = reactive;
   }
+
+  // The proxy above sees top-level writes; this sees nested ones (state.user.name = ...,
+  // state.items.push(...)) so they re-render too
+  useEffect(() => bindX.watch(() => reactiveRef.current, forceRender, { deep: true }), [forceRender]);
 
   return stateRef.current;
 }
@@ -738,6 +744,10 @@ export function createGlobalStore<T extends object>(initialState: T): () => T {
       });
     }
 
+    // Re-render on every change to the shared state, including ones made through
+    // another component's proxy or nested writes
+    useEffect(() => bindX.watch(() => globalState, forceRender, { deep: true }), [forceRender]);
+
     return proxyRef.current;
   };
 }
@@ -769,12 +779,13 @@ export function createGlobalStore<T extends object>(initialState: T): () => T {
  * const CounterWithState = withBindX(Counter, { count: 0, increment: function() { this.count++; } });
  */
 export function withBindX<P extends object, S extends object>(
-  Component: React.ComponentType<P & S>,
+  Component: ComponentType<P & S>,
   initialState: S | (() => S)
-): React.ComponentType<P> {
+): ComponentType<P> {
   return function WithBindXComponent(props: P) {
     const state = useBindX(initialState);
-    return <Component {...props} {...state} />;
+    // createElement, not JSX: this file is .ts and must compile without a JSX transform
+    return createElement(Component, { ...props, ...state } as P & S);
   };
 }
 
