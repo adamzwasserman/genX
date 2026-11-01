@@ -28,8 +28,8 @@ After(function() {
 Given('in loadx-autodetect-config, loadX is initialized with autoDetect: true', async function() {
     if (this.page) {
         initResult = await this.page.evaluate(() => {
-            if (window.loadX && window.loadX.initLoadX) {
-                return window.loadX.initLoadX({ autoDetect: true });
+            if (window.loadX && window.loadX.init) {
+                return window.loadX.init({ autoDetect: true });
             }
             return null;
         });
@@ -47,8 +47,8 @@ Given(/^loadX is initialized with autoDetect: (true|false)$/, async function(val
     const autoDetectValue = value === 'true';
     if (this.page) {
         initResult = await this.page.evaluate((val) => {
-            if (window.loadX && window.loadX.initLoadX) {
-                return window.loadX.initLoadX({ autoDetect: val });
+            if (window.loadX && window.loadX.init) {
+                return window.loadX.init({ autoDetect: val });
             }
             return null;
         }, autoDetectValue);
@@ -77,8 +77,8 @@ Given(/^loadX is initialized with autoDetect: (\{.*\})$/, async function(detecto
 
     if (this.page) {
         initResult = await this.page.evaluate((config) => {
-            if (window.loadX && window.loadX.initLoadX) {
-                return window.loadX.initLoadX({ autoDetect: config });
+            if (window.loadX && window.loadX.init) {
+                return window.loadX.init({ autoDetect: config });
             }
             return null;
         }, detectorConfig);
@@ -95,8 +95,8 @@ Given('in autodetect, loadX is initialized with autoDetect: \\{fetch: true, xhr:
     const config = { fetch: true, xhr: false, htmx: true, forms: false };
     if (this.page) {
         initResult = await this.page.evaluate((cfg) => {
-            if (window.loadX && window.loadX.initLoadX) {
-                return window.loadX.initLoadX({ autoDetect: cfg });
+            if (window.loadX && window.loadX.init) {
+                return window.loadX.init({ autoDetect: cfg });
             }
             return null;
         }, config);
@@ -113,8 +113,8 @@ Given('in autodetect, loadX is initialized with autoDetect: \\{fetch: true, xhr:
 Given('in autodetect, loadX is initialized without autoDetect config', async function() {
     if (this.page) {
         initResult = await this.page.evaluate(() => {
-            if (window.loadX && window.loadX.initLoadX) {
-                return window.loadX.initLoadX({});
+            if (window.loadX && window.loadX.init) {
+                return window.loadX.init({});
             }
             return null;
         });

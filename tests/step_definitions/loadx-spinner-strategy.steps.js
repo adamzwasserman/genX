@@ -86,11 +86,16 @@ Given('the user prefers reduced motion', function() {
     };
 });
 
-defineElement('an element with lx-strategy="spinner"', function() {
-    this.element = document.createElement('div');
-    this.element.setAttribute('lx-strategy', 'spinner');
-    this.element.textContent = 'Original Content';
-    document.body.appendChild(this.element);
+// Builds the element in the page; loading loadX is left to later steps
+defineElement('an element with lx-strategy="spinner"', async function() {
+    await this.page.evaluate(() => {
+        const el = document.createElement('div');
+        el.id = 'lx-spinner-element';
+        el.setAttribute('lx-strategy', 'spinner');
+        el.textContent = 'Original Content';
+        document.body.appendChild(el);
+    });
+    this.element = this.page.locator('#lx-spinner-element');
 });
 
 Given('an element with active spinner loading state', function() {

@@ -20,8 +20,8 @@ When('loadX is initialized without configuration', async function() {
     await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/loadx.js' });
     this.loadxResult = await this.page.evaluate(() => {
-        if (window.loadX && window.loadX.initLoadX) {
-            return window.loadX.initLoadX();
+        if (window.loadX && window.loadX.init) {
+            return window.loadX.init();
         }
         return null;
     });
@@ -41,8 +41,8 @@ When('loadX is initialized with:', async function(dataTable) {
     });
 
     this.loadxResult = await this.page.evaluate((cfg) => {
-        if (window.loadX && window.loadX.initLoadX) {
-            return window.loadX.initLoadX(cfg);
+        if (window.loadX && window.loadX.init) {
+            return window.loadX.init(cfg);
         }
         return null;
     }, config);
@@ -54,8 +54,8 @@ When('loadX is initialized with autoDetect={word}', async function(autoDetect) {
     const config = { autoDetect: autoDetect === 'true' };
 
     this.loadxResult = await this.page.evaluate((cfg) => {
-        if (window.loadX && window.loadX.initLoadX) {
-            return window.loadX.initLoadX(cfg);
+        if (window.loadX && window.loadX.init) {
+            return window.loadX.init(cfg);
         }
         return null;
     }, config);
@@ -64,7 +64,7 @@ When('loadX is initialized with autoDetect={word}', async function(autoDetect) {
 When('an attempt is made to modify the configuration', async function() {
     this.modificationError = await this.page.evaluate(() => {
         try {
-            const result = window.loadX.initLoadX({ minDisplayMs: 300 });
+            const result = window.loadX.init({ minDisplayMs: 300 });
             result.config.minDisplayMs = 999;
             return null;
         } catch (e) {
@@ -77,8 +77,8 @@ When('loadX is initialized', async function() {
     await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
     await this.page.addScriptTag({ path: './src/loadx.js' });
     this.loadxResult = await this.page.evaluate(() => {
-        if (window.loadX && window.loadX.initLoadX) {
-            return window.loadX.initLoadX();
+        if (window.loadX && window.loadX.init) {
+            return window.loadX.init();
         }
         return null;
     });
@@ -86,8 +86,8 @@ When('loadX is initialized', async function() {
 
 When('loadX is initialized again', async function() {
     await this.page.evaluate(() => {
-        if (window.loadX && window.loadX.initLoadX) {
-            return window.loadX.initLoadX();
+        if (window.loadX && window.loadX.init) {
+            return window.loadX.init();
         }
         return null;
     });
@@ -105,15 +105,18 @@ When('loadX is initialized with invalid configuration', async function() {
     });
 
     this.loadxResult = await this.page.evaluate((invalidCfg) => {
-        if (window.loadX && window.loadX.initLoadX) {
-            return window.loadX.initLoadX(invalidCfg);
+        if (window.loadX && window.loadX.init) {
+            return window.loadX.init(invalidCfg);
         }
         return null;
     }, fixtures.invalidConfig);
 });
 
-Then('in initialization, loadX should be initialized', async function() {
-    assert.ok(this.loadxResult, 'loadX result should exist');
+// init() stores its API on window.loadX.config
+Then('loadX should be initialized', async function() {
+    const initialized = await this.page.evaluate(() =>
+        !!(window.loadX && window.loadX.config && window.loadX.config.config));
+    assert.ok(initialized, 'loadX should be initialized');
 });
 
 Then('the default configuration should be applied', async function() {
@@ -128,13 +131,17 @@ Then('minDisplayMs should be {int}', async function(expected) {
     );
 });
 
+// init() turns a boolean autoDetect into one flag per detector
 Then('autoDetect should be {word}', async function(expected) {
     const expectedBool = expected === 'true';
-    assert.strictEqual(
-        this.loadxResult.config.autoDetect,
-        expectedBool,
-        `Expected autoDetect to be ${expectedBool}, got ${this.loadxResult.config.autoDetect}`
-    );
+    const autoDetect = this.loadxResult.config.autoDetect;
+    for (const detector of ['fetch', 'xhr', 'htmx', 'forms']) {
+        assert.strictEqual(
+            autoDetect[detector],
+            expectedBool,
+            `Expected autoDetect.${detector} to be ${expectedBool}, got ${autoDetect[detector]}`
+        );
+    }
 });
 
 Then('telemetry should be {word}', async function(expected) {
@@ -148,7 +155,7 @@ Then('telemetry should be {word}', async function(expected) {
 
 Then('the configuration should remain unchanged', async function() {
     const actualValue = await this.page.evaluate(() => {
-        const result = window.loadX.initLoadX({ minDisplayMs: 300 });
+        const result = window.loadX.init({ minDisplayMs: 300 });
         return result.config.minDisplayMs;
     });
     assert.strictEqual(actualValue, 300, 'Configuration should not have been modified');
@@ -274,12 +281,10 @@ Then('XMLHttpRequest should be monitored', async function() {
 });
 
 Then('async detection should not be enabled', async function() {
-    // Verify autoDetect was set to false
-    assert.strictEqual(
-        this.loadxResult.config.autoDetect,
-        false,
-        'Async detection should be disabled'
-    );
+    const autoDetect = this.loadxResult.config.autoDetect;
+    for (const detector of ['fetch', 'xhr', 'htmx', 'forms']) {
+        assert.strictEqual(autoDetect[detector], false, `autoDetect.${detector} should be disabled`);
+    }
 });
 
 // API Exposure
@@ -297,23 +302,18 @@ Then('window.loadX.initLoadX should be a function', async function() {
     assert.ok(isFunction, 'window.loadX.initLoadX should be a function');
 });
 
-Then('the API should expose applyLoading method', async function() {
-    assert.ok(
-        this.loadxResult.applyLoading,
-        'API should expose applyLoading method'
-    );
-});
-
-Then('the API should expose removeLoading method', async function() {
-    assert.ok(
-        this.loadxResult.removeLoading,
-        'API should expose removeLoading method'
-    );
-});
+// Functions don't survive page.evaluate, so check them in the page
+for (const method of ['applyLoading', 'removeLoading']) {
+    Then(`the API should expose ${method} method`, async function() {
+        const exposed = await this.page.evaluate((name) =>
+            !!(window.loadX && window.loadX.config && typeof window.loadX.config[name] === 'function'), method);
+        assert.ok(exposed, `API should expose ${method} method`);
+    });
+}
 
 Then('the returned configuration should be frozen', async function() {
     const isFrozen = await this.page.evaluate(() => {
-        const result = window.loadX.initLoadX();
+        const result = window.loadX.init();
         return Object.isFrozen(result.config);
     });
     assert.ok(isFrozen, 'Configuration object should be frozen');
@@ -321,7 +321,7 @@ Then('the returned configuration should be frozen', async function() {
 
 Then('the configuration cannot be modified', async function() {
     const cannotModify = await this.page.evaluate(() => {
-        const result = window.loadX.initLoadX({ minDisplayMs: 500 });
+        const result = window.loadX.init({ minDisplayMs: 500 });
         const originalValue = result.config.minDisplayMs;
         try {
             result.config.minDisplayMs = 999;
@@ -340,7 +340,7 @@ Then('a strategy registry should be created', async function() {
 
 Then('the registry should be empty initially', async function() {
     const isEmpty = await this.page.evaluate(() => {
-        const result = window.loadX.initLoadX();
+        const result = window.loadX.init();
         return result.registry.size === 0;
     });
     assert.ok(isEmpty, 'Registry should be empty initially');

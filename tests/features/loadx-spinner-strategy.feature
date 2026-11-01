@@ -1,3 +1,5 @@
+# @wip: these steps build fixtures in Node, where there is no DOM; they need a port to the browser page
+@wip
 Feature: loadX Spinner Loading Strategy
   As a web developer
   I want to display spinner loading indicators

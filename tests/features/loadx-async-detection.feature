@@ -1,3 +1,5 @@
+# @wip: these steps build fixtures in Node, where there is no DOM; they need a port to the browser page
+@wip
 Feature: Async Operation Detection
   As loadX
   I want to detect async operations automatically

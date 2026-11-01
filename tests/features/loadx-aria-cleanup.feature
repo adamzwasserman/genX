@@ -25,7 +25,7 @@ Feature: loadX ARIA Live Region Management
   Scenario: Urgent loading uses assertive
     Given an element with lx-strategy="spinner" and lx-urgent="true"
     When I apply loading state
-    Then ARIA live region should use aria-live="assertive"
+    Then in ARIA cleanup, ARIA live region should use aria-live="assertive"
     And should announce urgently
 
   @accessibility

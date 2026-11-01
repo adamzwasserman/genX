@@ -26,7 +26,8 @@ Feature: loadX Dynamic Content Detection
     Then no error should occur
     And memory should not leak
 
-  @mutation @performance
+  # @perf: asserts a wall-clock time limit
+  @mutation @performance @perf
   Scenario: Large DOM additions
     Given loadX is initialized
     When I add 100 elements at once

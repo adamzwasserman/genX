@@ -7,8 +7,7 @@ const {
     hasLoadingState,
     getProgressValue,
     cleanupApi,
-    initializeLoadX,
-    isLoadXInitialized
+    initializeLoadX
 } = require('../fixtures/loadx-api-fixtures');
 
 let warningCapture;
@@ -25,8 +24,8 @@ After(async function() {
                 const testElements = document.querySelectorAll('[id^="api-test-"]');
                 testElements.forEach(el => el.remove());
 
-                if (window.loadX && window.loadX.disconnect) {
-                    window.loadX.disconnect();
+                if (window.loadX && window.loadX.config) {
+                    window.loadX.config.disconnect();
                 }
             });
         } catch (e) {
@@ -53,10 +52,11 @@ Given('in loadx-api-cleanup, loadX is initialized', async function() {
     }
 });
 
-Given('loadX is not initialized', function() {
-    if (window.loadX) {
-        delete window.loadX;
-    }
+// loadX is loaded in the page, but init() has not been called
+Given('loadX is not initialized', async function() {
+    await this.page.goto('about:blank');
+    await this.page.addScriptTag({ path: './src/genx-common.js' });
+    await this.page.addScriptTag({ path: './src/loadx.js' });
 });
 
 Given('an element with id {string}', async function(elementId) {
@@ -99,8 +99,8 @@ Given('an element with progress strategy', async function() {
             const el = document.createElement('div');
             const id = 'api-test-progress-' + Date.now();
             el.id = id;
-            el.innerHTML = '<div role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>';
             document.body.appendChild(el);
+            window.loadX.apply(el, { strategy: 'progress', value: 0, max: 100 });
             return id;
         });
     } else {
@@ -184,12 +184,14 @@ When('I call window.loadX.applyLoadingState', async function() {
     }
 });
 
-Then('window.loadX.{word} should exist', function(methodName) {
-    expect(hasMethod(methodName)).to.be.true;
+Then('window.loadX.{word} should exist', async function(methodName) {
+    const exists = await this.page.evaluate(hasMethod, methodName);
+    expect(exists).to.be.true;
 });
 
-Then('window.loadX.{word} should not exist', function(methodName) {
-    expect(hasMethod(methodName)).to.be.false;
+Then('window.loadX.{word} should not exist', async function(methodName) {
+    const exists = await this.page.evaluate(hasMethod, methodName);
+    expect(exists).to.be.false;
 });
 
 Then('a deprecation warning should be logged', function() {
@@ -205,22 +207,14 @@ Then('the method should still work', function() {
     expect(true).to.be.true;
 });
 
-Then('in API cleanup, loadX should be initialized', async function() {
-    if (this.page) {
-        const initialized = await this.page.evaluate(() => {
-            return typeof window.loadX !== 'undefined' &&
-                   (window.loadX.config || window.loadX._initialized);
-        });
-        expect(initialized).to.be.true;
-    } else {
-        expect(isLoadXInitialized()).to.be.true;
-    }
-});
-
 Then('the config should be applied', async function() {
     if (this.page) {
         const hasConfig = await this.page.evaluate(() => {
-            return window.loadX.config && window.loadX.config.autoDetect === false;
+            // init() keeps its API on window.loadX.config; autoDetect: false
+            // turns every detector off
+            const cfg = window.loadX.config && window.loadX.config.config;
+            return !!cfg && cfg.minDisplayMs === 100 &&
+                Object.values(cfg.autoDetect).every(v => v === false);
         });
         expect(hasConfig).to.be.true;
     } else {

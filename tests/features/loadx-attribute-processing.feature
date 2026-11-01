@@ -1,3 +1,5 @@
+# @wip: these steps build fixtures in Node, where there is no DOM; they need a port to the browser page
+@wip
 Feature: Polymorphic Attribute Processing
   As a developer
   I want to use multiple syntax styles for loadX

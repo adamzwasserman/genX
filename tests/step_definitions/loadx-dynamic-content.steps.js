@@ -23,8 +23,8 @@ After(async function() {
                 const dynamicElements = document.querySelectorAll('[id^="dynamic-"]');
                 dynamicElements.forEach(el => el.remove());
 
-                if (window.loadX && window.loadX.disconnect) {
-                    window.loadX.disconnect();
+                if (window.loadX && window.loadX.config) {
+                    window.loadX.config.disconnect();
                 }
             });
         } catch (e) {
@@ -37,32 +37,39 @@ After(async function() {
 Given('in loadx-dynamic-content, loadX is initialized', async function() {
     if (this.page) {
         await this.page.evaluate(() => {
-            if (window.loadX && window.loadX.disconnect) {
-                window.loadX.disconnect();
+            // init() keeps its API, with disconnect(), on window.loadX.config
+            if (window.loadX && window.loadX.config) {
+                window.loadX.config.disconnect();
             }
-            window.loadX = window.initLoadX({ autoDetect: true });
+            window.loadX.init({ autoDetect: true });
         });
     } else {
-        if (window.loadX && window.loadX.disconnect) {
-            window.loadX.disconnect();
+        if (window.loadX && window.loadX.config) {
+            window.loadX.config.disconnect();
         }
-        window.loadX = window.initLoadX({ autoDetect: true });
+        window.loadX.init({ autoDetect: true });
     }
 });
 
 Given('loadX is initialized with debouncing', async function() {
     if (this.page) {
+        const loaded = await this.page.evaluate(() => !!(window.loadX && window.loadX.init));
+        if (!loaded) {
+            await this.page.addScriptTag({ path: './src/genx-common.js' });
+            await this.page.addScriptTag({ path: './src/loadx.js' });
+        }
         await this.page.evaluate(() => {
-            if (window.loadX && window.loadX.disconnect) {
-                window.loadX.disconnect();
+            // init() keeps its API, with disconnect(), on window.loadX.config
+            if (window.loadX && window.loadX.config) {
+                window.loadX.config.disconnect();
             }
-            window.loadX = window.initLoadX({ autoDetect: true });
+            window.loadX.init({ autoDetect: true });
         });
     } else {
-        if (window.loadX && window.loadX.disconnect) {
-            window.loadX.disconnect();
+        if (window.loadX && window.loadX.config) {
+            window.loadX.config.disconnect();
         }
-        window.loadX = window.initLoadX({ autoDetect: true });
+        window.loadX.init({ autoDetect: true });
     }
     this.scanCountBefore = 0;
 });

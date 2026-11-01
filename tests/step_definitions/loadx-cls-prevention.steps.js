@@ -61,7 +61,7 @@ When('I apply loading state to the element with strategy {string}', async functi
     await this.page.evaluate((strat) => {
         const el = document.getElementById('test-btn');
         if (el && window.loadX) {
-            const api = window.loadX.initLoadX({ preventCLS: true });
+            const api = window.loadX.init({ preventCLS: true });
             api.applyLoading(el, { strategy: strat });
         }
     }, strategy);
@@ -71,7 +71,7 @@ When('I remove loading state from the element', async function() {
     await this.page.evaluate(() => {
         const el = document.getElementById('test-btn');
         if (el && window.loadX) {
-            const api = window.loadX.initLoadX();
+            const api = window.loadX.init();
             api.removeLoading(el);
         }
     });
@@ -81,7 +81,7 @@ When('I apply loading state to {string} with strategy {string}', async function(
     await this.page.evaluate(({id, strat}) => {
         const el = document.getElementById(id);
         if (el && window.loadX) {
-            const api = window.loadX.initLoadX({ preventCLS: true });
+            const api = window.loadX.init({ preventCLS: true });
             api.applyLoading(el, { strategy: strat });
         }
     }, {id: elementId, strat: strategy});
@@ -91,7 +91,7 @@ When('I apply {string} strategy to {string}', async function(strategy, elementId
     await this.page.evaluate(({id, strat}) => {
         const el = document.getElementById(id);
         if (el && window.loadX) {
-            const api = window.loadX.initLoadX({ preventCLS: true });
+            const api = window.loadX.init({ preventCLS: true });
             api.applyLoading(el, { strategy: strat });
         }
     }, {id: elementId, strat: strategy});
@@ -100,7 +100,7 @@ When('I apply {string} strategy to {string}', async function(strategy, elementId
 When('I call the disconnect API', async function() {
     await this.page.evaluate(() => {
         if (window.loadX) {
-            const api = window.loadX.initLoadX();
+            const api = window.loadX.init();
             api.disconnect();
         }
     });
@@ -114,7 +114,7 @@ When('I simulate a long-running SPA scenario:', async function(docString) {
     await this.page.evaluate(() => {
         if (!window.loadX) return;
 
-        const api = window.loadX.initLoadX({ preventCLS: true });
+        const api = window.loadX.init({ preventCLS: true });
 
         // Step 1: Add 10 elements
         const elements = [];
@@ -163,7 +163,7 @@ When('I measure performance while applying loading to all elements', async funct
     this.performanceMetrics = await this.page.evaluate(() => {
         if (!window.loadX) return null;
 
-        const api = window.loadX.initLoadX({ preventCLS: true });
+        const api = window.loadX.init({ preventCLS: true });
         const startTime = performance.now();
         const timings = [];
 
@@ -392,7 +392,7 @@ Then('removing loading should restore to the updated dimensions', async function
     await this.page.evaluate(() => {
         const el = document.getElementById('dynamic-btn');
         if (el && window.loadX) {
-            const api = window.loadX.initLoadX();
+            const api = window.loadX.init();
             api.removeLoading(el);
         }
     });
