@@ -11,7 +11,7 @@ Feature: Binding Registry
 
   Scenario: Multiple bindings per element
     Given I have an element with multiple bx- attributes
-    When I register bx-model and bx-class bindings
+    When I register bx-model and bx-bind:class bindings
     Then both bindings should be in the registry
     And they should not conflict
 

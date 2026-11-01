@@ -9,6 +9,7 @@ Feature: Batched Updates
     Then only ONE batch update should be scheduled
     And it should happen on next requestAnimationFrame
 
+  @perf
   Scenario: Batch size limited to 16ms window
     Given I have 100 reactive properties
     When I update all 100 properties synchronously
