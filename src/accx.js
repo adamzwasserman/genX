@@ -12,6 +12,23 @@
     const generateId = () => genxGenerateId ? genxGenerateId('ax') : `ax-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // A11y enhancement functions
+    // Visually hidden but still read by screen readers
+    const ensureSrStyles = () => {
+        if (!document.getElementById('ax-sr-styles')) {
+            const style = document.createElement('style');
+            style.id = 'ax-sr-styles';
+            style.textContent = '.ax-sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }';
+            document.head.appendChild(style);
+        }
+    };
+
+    // A date-only ISO string ("2024-03-15") names a calendar day, so read it as
+    // local midnight; new Date() would read it as UTC and can land a day early.
+    const parseDate = (text) => {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text || '');
+        return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(text);
+    };
+
     const enhance = {
         // Screen reader annotations
         srOnly: (el, opts) => {
@@ -24,13 +41,7 @@
             span.textContent = text;
             span.setAttribute('aria-hidden', 'false');
             el.appendChild(span);
-            // Add CSS if not exists
-            if (!document.getElementById('ax-sr-styles')) {
-                const style = document.createElement('style');
-                style.id = 'ax-sr-styles';
-                style.textContent = '.ax-sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }';
-                document.head.appendChild(style);
-            }
+            ensureSrStyles();
         },
 
         // Automatic ARIA labels
@@ -58,7 +69,7 @@
                 break;
             }
             case 'date': {
-                const date = new Date(context);
+                const date = parseDate(context);
                 if (!isNaN(date)) {
                     const formatted = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                     el.setAttribute('aria-label', formatted);
@@ -131,6 +142,7 @@
                         errorEl.textContent = errorMsg;
                         el.parentNode.insertBefore(errorEl, el.nextSibling);
                     }
+                    el.setAttribute('aria-errormessage', errorId);
                     describedBy.push(errorId);
                 }
             }
@@ -165,8 +177,7 @@
                 }
 
                 const updateCount = () => {
-                    const remaining = maxLength - el.value.length;
-                    countEl.textContent = `${remaining} characters remaining`;
+                    countEl.textContent = `${el.value.length}/${maxLength} characters`;
                 };
 
                 updateCount();
@@ -282,7 +293,8 @@
             // Sortable columns
             el.querySelectorAll('th[ax-sortable]').forEach(th => {
                 th.setAttribute('aria-sort', 'none');
-                th.setAttribute('role', 'button');
+                // Keep header semantics; aria-sort is only valid on column headers
+                th.setAttribute('role', 'columnheader');
                 th.setAttribute('tabindex', '0');
 
                 const toggleSort = () => {
@@ -336,6 +348,7 @@
                 desc.id = descId;
                 desc.className = 'ax-sr-only';
                 desc.textContent = longDesc;
+                ensureSrStyles();
                 el.parentNode.insertBefore(desc, el.nextSibling);
                 el.setAttribute('aria-describedby', descId);
             }
@@ -666,22 +679,22 @@
 
         // Announce changes
         announce: (el, opts) => {
-            const message = opts.message || el.textContent;
+            const message = opts.message || el?.textContent || '';
             const priority = opts.priority || 'polite';
 
-            let announcer = document.getElementById('ax-announcer');
-            if (!announcer) {
-                announcer = document.createElement('div');
-                announcer.id = 'ax-announcer';
-                announcer.className = 'ax-sr-only';
-                announcer.setAttribute('aria-live', priority);
-                announcer.setAttribute('aria-atomic', 'true');
-                document.body.appendChild(announcer);
-            }
+            // A temporary live region per message: insert it empty, fill it a
+            // moment later so screen readers notice the change, then remove it.
+            ensureSrStyles();
+            const announcer = document.createElement('div');
+            announcer.className = 'ax-sr-only ax-announcer';
+            announcer.setAttribute('aria-live', priority);
+            announcer.setAttribute('aria-atomic', 'true');
+            document.body.appendChild(announcer);
 
-            // Clear and announce (force screen reader to announce)
-            announcer.textContent = '';
-            setTimeout(() => announcer.textContent = message, 100);
+            setTimeout(() => {
+                announcer.textContent = message;
+                setTimeout(() => announcer.remove(), 1000);
+            }, 100);
         },
 
         // Input field enhancements (alias for field)
@@ -895,7 +908,9 @@
                 }
             },
             stop: () => {
-                if (unsub) { unsub(); unsub = null; }
+                if (unsub) {
+                    unsub(); unsub = null;
+                }
             }
         };
     };
