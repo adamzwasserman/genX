@@ -372,7 +372,13 @@ const CLASS_PREFIX_MAP = {
     'nx': 'nx',
     'navx': 'nx',
     'tx': 'tx',
-    'tablex': 'tx'
+    'tablex': 'tx',
+    // Documented designer-friendly class prefixes (class="fmt-currency-EUR-2").
+    // drag-/load-/nav-/table- are documented too but collide with common CSS
+    // framework classes (nav-link, table-striped), so they are not mapped yet.
+    'fmt': 'fx',
+    'acc': 'ax',
+    'bind': 'bx'
 };
 
 /**
@@ -438,23 +444,18 @@ const parseClassNotation = (element, prefix) => {
         return config;
     }
 
-    // Find the CSS class prefix that maps to this module prefix
-    let classPrefix = null;
-    for (const [cssPrefix, attrPrefix] of Object.entries(CLASS_PREFIX_MAP)) {
-        if (attrPrefix === prefix) {
-            classPrefix = cssPrefix;
-            break;
-        }
-    }
+    // Every CSS class prefix that maps to this module prefix (fx, fmtx, fmt, ...)
+    const classPrefixes = Object.keys(CLASS_PREFIX_MAP).filter(cssPrefix => CLASS_PREFIX_MAP[cssPrefix] === prefix);
 
-    if (!classPrefix) {
+    if (classPrefixes.length === 0) {
         return config;
     }
 
     // Find class matching pattern: prefix-param1-param2-param3 or prefix:param1:param2:param3
     const classes = classList.split(/\s+/);
-    const dashRegex = new RegExp(`^${classPrefix}-(.+)$`);
-    const colonRegex = new RegExp(`^${classPrefix}:(.+)$`);
+    const alternatives = classPrefixes.join('|');
+    const dashRegex = new RegExp(`^(?:${alternatives})-(.+)$`);
+    const colonRegex = new RegExp(`^(?:${alternatives}):(.+)$`);
     const cardinalityOrder = CARDINALITY_ORDERS[prefix] || [];
 
     for (const cls of classes) {
