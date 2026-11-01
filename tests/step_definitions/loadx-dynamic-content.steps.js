@@ -137,7 +137,9 @@ When('I remove it before scan completes', async function() {
     if (this.page) {
         await this.page.evaluate((id) => {
             const el = document.getElementById(id);
-            if (el) el.remove();
+            if (el) {
+                el.remove();
+            }
         }, this.elementId);
     } else {
         if (this.tempElement && this.tempElement.parentNode) {
@@ -230,8 +232,9 @@ Then('scan count should be less than {int}', function(maxScans) {
 });
 
 Then('no error should occur', function() {
-    // If we reach here without throwing, no error occurred
-    expect(true).to.be.true;
+    // Steps that catch an error keep it in this.lastError
+    expect(this.lastError || null).to.equal(null);
+    expect(this.pageErrors || []).to.deep.equal([]);
 });
 
 Then('memory should not leak', async function() {
