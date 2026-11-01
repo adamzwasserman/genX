@@ -875,6 +875,10 @@
                     return true;
                 }
 
+                // Writing past the end of an array grows it without a separate
+                // 'length' write, so remember the length to report that change
+                const oldLength = Array.isArray(target) ? target.length : undefined;
+
                 const result = Reflect.set(target, property, value, receiver);
 
                 if (result) {
@@ -895,6 +899,15 @@
 
                     // Notify bindings (Phase 2)
                     notifyBindings(changePath, value);
+
+                    if (oldLength !== undefined && property !== 'length' && target.length !== oldLength) {
+                        const lengthPath = path ? `${path}.length` : 'length';
+                        if (onChange) {
+                            onChange(lengthPath, target.length);
+                        }
+                        notifyPathSubscribers(lengthPath);
+                        notifyBindings(lengthPath, target.length);
+                    }
                 }
 
                 return result;
@@ -977,6 +990,11 @@
      * @returns {Function} Unwatch function
      */
     const watch = (target, property, callback) => {
+        // Getter form, used by the framework adapters:
+        // watch(() => state.count, (newValue, oldValue) => {}, { immediate, deep })
+        if (typeof target === 'function') {
+            return watchGetter(target, property, callback);
+        }
         if (typeof callback !== 'function') {
             throw new TypeError('Callback must be a function');
         }
@@ -1008,6 +1026,99 @@
             if (subscribers.size === 0) {
                 pathSubscribers.delete(fullPath);
             }
+        };
+    };
+
+    /**
+     * Watch the value a getter returns. Re-runs the getter when any reactive
+     * path it read changes and calls back with (newValue, oldValue) when the
+     * value differs (or, with deep, when anything inside it changed).
+     * @param {Function} getter - Function reading reactive state
+     * @param {Function} callback - Called with (newValue, oldValue)
+     * @param {Object} [options] - { immediate, deep }
+     * @returns {Function} Unwatch function
+     */
+    const watchGetter = (getter, callback, options = {}) => {
+        if (typeof callback !== 'function') {
+            throw new TypeError('Callback must be a function');
+        }
+        const deep = !!(options && options.deep);
+        let active = true;
+        let unsubscribers = [];
+        let computeds = [];
+        const snapshot = (value) => {
+            if (!deep || value === null || typeof value !== 'object') {
+                return value;
+            }
+            try {
+                return JSON.stringify(value);
+            } catch (e) {
+                return value;
+            }
+        };
+        // Paths a computed read, followed through computeds it read in turn
+        const collect = (deps, paths, seen) => {
+            for (const dep of deps) {
+                if (typeof dep === 'string') {
+                    paths.add(dep);
+                } else if (typeof dep === 'function' && !seen.has(dep)) {
+                    const depState = computedCache.get(dep);
+                    if (depState) {
+                        seen.add(dep);
+                        computeds.push(depState);
+                        collect(depState.dependencies, paths, seen);
+                    }
+                }
+            }
+        };
+        const run = () => {
+            unsubscribers.forEach(unsub => unsub());
+            unsubscribers = [];
+            computeds = [];
+            // With deep, serializing inside tracking reads (and so tracks) every nested path
+            const { result, dependencies } = withTracking(() => {
+                const current = getter();
+                return { current, snap: snapshot(current) };
+            });
+            const paths = new Set();
+            collect(dependencies, paths, new Set());
+            for (const path of paths) {
+                const subscriber = () => onChange();
+                subscriber.deep = deep;
+                unsubscribers.push(subscribeToPath(path, subscriber));
+            }
+            return result;
+        };
+        let { current: value, snap: lastSnapshot } = run();
+        const notify = (newValue, oldValue) => {
+            // A throwing callback must not break the write that triggered it
+            try {
+                callback(newValue, oldValue);
+            } catch (error) {
+                console.error('bindX: watcher callback threw', error);
+            }
+        };
+        const onChange = () => {
+            if (!active) {
+                return;
+            }
+            // Read through fresh computeds even if their own invalidation runs later
+            computeds.forEach(state => invalidateComputed(state));
+            const oldValue = value;
+            const next = run();
+            value = next.current;
+            if (!Object.is(next.snap, lastSnapshot) || (deep && next.snap === value && typeof value === 'object')) {
+                lastSnapshot = next.snap;
+                notify(value, oldValue);
+            }
+        };
+        if (options && options.immediate) {
+            notify(value, undefined);
+        }
+        return () => {
+            active = false;
+            unsubscribers.forEach(unsub => unsub());
+            unsubscribers = [];
         };
     };
 
