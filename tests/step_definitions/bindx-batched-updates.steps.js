@@ -7,13 +7,13 @@ const { Given, When, Then } = require('@cucumber/cucumber');
 const assert = require('assert');
 
 Given('I have a reactive object with {word}={int}, {word}={int}, and {word}={int}', async function(k1, v1, k2, v2, k3, v3) {
-    await this.page.evaluate((keys, vals) => {
+    await this.page.evaluate(([keys, vals]) => {
         window._testData = { [keys[0]]: vals[0], [keys[1]]: vals[1], [keys[2]]: vals[2] };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
             window._batchCount = 0;
         }
-    }, [k1, k2, k3], [v1, v2, v3]);
+    }, [[k1, k2, k3], [v1, v2, v3]]);
 });
 
 Given('I have {int} reactive properties', async function(count) {
@@ -38,12 +38,12 @@ Given('I have batched updates pending', async function() {
 });
 
 Given('I have a reactive object with {word}={int}', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, key, value);
+    }, [key, value]);
 });
 
 Given('I have a batch queue with pending updates', async function() {
@@ -74,14 +74,14 @@ Given('I have pending updates in the queue', async function() {
 
 When('I synchronously set {word}={int}, {word}={int}, {word}={int}', async function(k1, v1, k2, v2, k3, v3) {
     this.startTime = Date.now();
-    await this.page.evaluate((keys, vals) => {
+    await this.page.evaluate(([keys, vals]) => {
         window._updateCount = 0;
         if (window._reactive) {
             window._reactive[keys[0]] = vals[0];
             window._reactive[keys[1]] = vals[1];
             window._reactive[keys[2]] = vals[2];
         }
-    }, [k1, k2, k3], [v1, v2, v3]);
+    }, [[k1, k2, k3], [v1, v2, v3]]);
 });
 
 When('I update all {int} properties synchronously', async function(count) {
@@ -103,11 +103,11 @@ When('I call flushBatchQueue\\(\\)', async function() {
 });
 
 When('I set {word}={int}', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         if (window._reactive) {
             window._reactive[k] = v;
         }
-    }, key, value);
+    }, [key, value]);
 });
 
 When('before the frame completes', async function() {

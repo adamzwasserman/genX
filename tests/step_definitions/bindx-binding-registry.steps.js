@@ -34,13 +34,13 @@ Given('I have {int} bound elements', async function(count) {
 });
 
 Given('I have bindings for {string}, {string}, {string}', async function(path1, path2, path3) {
-    await this.page.evaluate((p1, p2, p3) => {
+    await this.page.evaluate(([p1, p2, p3]) => {
         window._bindings = {
             [p1]: { path: p1 },
             [p2]: { path: p2 },
             [p3]: { path: p3 }
         };
-    }, path1, path2, path3);
+    }, [path1, path2, path3]);
 });
 
 Given('I have a registered binding', async function() {

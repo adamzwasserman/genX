@@ -56,12 +56,12 @@ Given('a textarea with bx-model={string}', async function(model) {
 });
 
 Given('a reactive data object with {word}.{word}.{word}={string}', async function(obj1, obj2, prop, value) {
-    await this.page.evaluate((o1, o2, p, v) => {
+    await this.page.evaluate(([o1, o2, p, v]) => {
         window._testData = { [o1]: { [o2]: { [p]: v } } };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, obj1, obj2, prop, value);
+    }, [obj1, obj2, prop, value]);
 });
 
 Given('an input {string} with bx-model={string} bx-debounce={string}', async function(id, model, debounce) {
@@ -85,12 +85,12 @@ Given('an input {string} with bx-model={string} bx-opts={string}', async functio
 });
 
 Given('a reactive data object with {word}={string}, {word}={string}, {word}={string}', async function(k1, v1, k2, v2, k3, v3) {
-    await this.page.evaluate((keys, vals) => {
+    await this.page.evaluate(([keys, vals]) => {
         window._testData = { [keys[0]]: vals[0], [keys[1]]: vals[1], [keys[2]]: vals[2] };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, [k1, k2, k3], [v1, v2, v3]);
+    }, [[k1, k2, k3], [v1, v2, v3]]);
 });
 
 When('the container is scanned', async function() {

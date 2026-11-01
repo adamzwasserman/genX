@@ -40,12 +40,12 @@ Given('I have a span with bx-bind={string}', async function(path) {
 });
 
 Given('reactive data \\{ {word}: {int} }', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, key, value);
+    }, [key, value]);
 });
 
 Given('I have a div with bx-bind={string}', async function(path) {
@@ -78,12 +78,12 @@ Given('I have an input with bx-bind={string} readonly', async function(path) {
 });
 
 Given('reactive data \\{ {word}: {string} }', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, key, value);
+    }, [key, value]);
 });
 
 Given('I have {int} spans with bx-bind={string}', async function(count, path) {
@@ -115,22 +115,22 @@ Given('I have a span with bx-bind={string}', async function(path) {
 });
 
 Given('data \\{ {word}: {string} }', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v === '""' ? '' : v };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, key, value);
+    }, [key, value]);
 });
 
 Given('data \\{ {word}: {word} }', async function(key, value) {
     const parsedValue = value === 'true' ? true : value === 'false' ? false : value;
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, key, parsedValue);
+    }, [key, parsedValue]);
 });
 
 Given('data \\{ }', async function() {
@@ -147,20 +147,20 @@ Given('data \\{ }', async function() {
 // ============================================================================
 
 When('I set data.{word} = {int}', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         if (window._reactive) {
             window._reactive[k] = v;
         }
-    }, key, value);
+    }, [key, value]);
     await this.page.waitForTimeout(50); // Allow reactivity to propagate
 });
 
 When('I change data.{word} to {int}', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         if (window._reactive) {
             window._reactive[k] = v;
         }
-    }, key, value);
+    }, [key, value]);
     await this.page.waitForTimeout(50);
 });
 

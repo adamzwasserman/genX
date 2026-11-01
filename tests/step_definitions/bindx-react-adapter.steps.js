@@ -55,15 +55,15 @@ Given('component with useBindX state', async function() {
 });
 
 Given('useBindX state \\{ {word}: {int} }', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         window._testState = { [k]: v };
-    }, key, value);
+    }, [key, value]);
 });
 
 Given('useBindX state \\{ {word}: {string}, {word}: {string} }', async function(k1, v1, k2, v2) {
-    await this.page.evaluate((keys, vals) => {
+    await this.page.evaluate(([keys, vals]) => {
         window._testState = { [keys[0]]: vals[0], [keys[1]]: vals[1] };
-    }, [k1, k2], [v1, v2]);
+    }, [[k1, k2], [v1, v2]]);
 });
 
 Given('computed {word}', async function(computedName) {
@@ -525,9 +525,9 @@ Given('@genx/bindx-react in bundle', async function() {
 // ============================================================================
 
 When('I call useBindX\\(\\{ {word}: {int} }\\)', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         window._testState = { [k]: v };
-    }, key, value);
+    }, [key, value]);
 });
 
 When('multiple properties change in same function', async function() {

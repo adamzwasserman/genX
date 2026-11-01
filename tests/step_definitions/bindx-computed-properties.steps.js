@@ -11,72 +11,72 @@ const assert = require('assert');
 // ============================================================================
 
 Given('I have reactive data \\{ {word}: {int}, {word}: {int} }', async function(key1, val1, key2, val2) {
-    await this.page.evaluate((k1, v1, k2, v2) => {
+    await this.page.evaluate(([k1, v1, k2, v2]) => {
         window._testData = { [k1]: v1, [k2]: v2 };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, key1, val1, key2, val2);
+    }, [key1, val1, key2, val2]);
 });
 
 Given('computed property {word} = arrow function with data.{word} plus data.{word}', async function(computedName, prop1, prop2) {
-    await this.page.evaluate((name, p1, p2) => {
+    await this.page.evaluate(([name, p1, p2]) => {
         if (!window._computed) window._computed = {};
         window._computed[name] = () => window._reactive[p1] + window._reactive[p2];
-    }, computedName, prop1, prop2);
+    }, [computedName, prop1, prop2]);
 });
 
 Given('I have reactive data \\{ {word}: {int}, {word}: {float} }', async function(key1, val1, key2, val2) {
-    await this.page.evaluate((k1, v1, k2, v2) => {
+    await this.page.evaluate(([k1, v1, k2, v2]) => {
         window._testData = { [k1]: v1, [k2]: v2 };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, key1, val1, key2, val2);
+    }, [key1, val1, key2, val2]);
 });
 
 Given('computed property {word} = arrow function with data.{word} times {int} plus data.{word}', async function(computedName, prop1, multiplier, prop2) {
-    await this.page.evaluate((name, p1, mult, p2) => {
+    await this.page.evaluate(([name, p1, mult, p2]) => {
         if (!window._computed) window._computed = {};
         window._computed[name] = () => window._reactive[p1] * (mult + window._reactive[p2]);
-    }, computedName, prop1, multiplier, prop2);
+    }, [computedName, prop1, multiplier, prop2]);
 });
 
 Given('I have reactive data \\{ {word}: {int} }', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, key, value);
+    }, [key, value]);
 });
 
 Given('computed property {word} = arrow function with data.{word} times data.{word}', async function(computedName, prop) {
-    await this.page.evaluate((name, p) => {
+    await this.page.evaluate(([name, p]) => {
         if (!window._computed) window._computed = {};
         window._computed[name] = () => window._reactive[p] * window._reactive[p];
-    }, computedName, prop);
+    }, [computedName, prop]);
 });
 
 Given('computed property {word} = arrow function with squared times data.{word}', async function(computedName, prop) {
-    await this.page.evaluate((name, p) => {
+    await this.page.evaluate(([name, p]) => {
         if (!window._computed) window._computed = {};
         window._computed[name] = () => window._computed.squared() * window._reactive[p];
-    }, computedName, prop);
+    }, [computedName, prop]);
 });
 
 Given('I have computed property {word} = arrow function with data.{word} plus {int}', async function(computedA, propB, increment) {
-    await this.page.evaluate((name, p, inc) => {
+    await this.page.evaluate(([name, p, inc]) => {
         if (!window._computed) window._computed = {};
         window._computed[name] = () => window._reactive[p] + inc;
-    }, computedA, propB, increment);
+    }, [computedA, propB, increment]);
 });
 
 Given('computed property {word} = arrow function with data.{word} plus {int}', async function(computedB, propA, increment) {
-    await this.page.evaluate((name, p, inc) => {
+    await this.page.evaluate(([name, p, inc]) => {
         if (!window._computed) window._computed = {};
         window._computed[name] = () => window._reactive[p] + inc;
-    }, computedB, propA, increment);
+    }, [computedB, propA, increment]);
 });
 
 Given('I have computed property {word} = arrow function calling heavyComputation', async function(computedName) {
@@ -104,31 +104,31 @@ Given('{word} has been computed and cached', async function(computedName) {
 // ============================================================================
 
 When('I set data.{word} = {float}', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         if (window._reactive) {
             window._reactive[k] = v;
         }
-    }, key, value);
+    }, [key, value]);
     await this.page.waitForTimeout(50);
 });
 
 When('I set data.{word} = {int}', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         if (window._reactive) {
             window._reactive[k] = v;
         }
-    }, key, value);
+    }, [key, value]);
     await this.page.waitForTimeout(50);
 });
 
 When('I read {word} {int} times without data changes', async function(computedName, count) {
-    this.readResults = await this.page.evaluate((name, c) => {
+    this.readResults = await this.page.evaluate(([name, c]) => {
         const results = [];
         for (let i = 0; i < c; i++) {
             results.push(window._computed[name]());
         }
         return results;
-    }, computedName, count);
+    }, [computedName, count]);
 });
 
 When('I change data.{word}', async function(key) {

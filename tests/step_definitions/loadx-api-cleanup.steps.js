@@ -144,10 +144,10 @@ When('I call window.loadX.remove with the element', async function() {
 
 When('I call window.loadX.update with element and value {int}', async function(value) {
     if (this.page) {
-        await this.page.evaluate((id, val) => {
+        await this.page.evaluate(([id, val]) => {
             const el = document.getElementById(id);
             window.loadX.update(el, val);
-        }, this.elementId, value);
+        }, [this.elementId, value]);
     } else {
         window.loadX.update(this.testElement, value);
     }

@@ -11,45 +11,45 @@ const assert = require('assert');
 // ============================================================================
 
 Given('I have a reactive object with properties {word}={int} and {word}={int}', async function(key1, val1, key2, val2) {
-    await this.page.evaluate((k1, v1, k2, v2) => {
+    await this.page.evaluate(([k1, v1, k2, v2]) => {
         window._testData = { [k1]: v1, [k2]: v2 };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, key1, val1, key2, val2);
+    }, [key1, val1, key2, val2]);
 });
 
 Given('I have a reactive object with {word}={int}, {word}={int}, and {word}={int}', async function(k1, v1, k2, v2, k3, v3) {
-    await this.page.evaluate((keys, vals) => {
+    await this.page.evaluate(([keys, vals]) => {
         window._testData = { [keys[0]]: vals[0], [keys[1]]: vals[1], [keys[2]]: vals[2] };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, [k1, k2, k3], [v1, v2, v3]);
+    }, [[k1, k2, k3], [v1, v2, v3]]);
 });
 
 Given('I have a reactive object with {word}.{word}={string}', async function(obj, prop, value) {
-    await this.page.evaluate((o, p, v) => {
+    await this.page.evaluate(([o, p, v]) => {
         window._testData = { [o]: { [p]: v } };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, obj, prop, value);
+    }, [obj, prop, value]);
 });
 
 Given('I have a computed property with dependencies \\{{word}, {word}}', async function(dep1, dep2) {
-    await this.page.evaluate((d1, d2) => {
+    await this.page.evaluate(([d1, d2]) => {
         window._currentDeps = new Set([d1, d2]);
-    }, dep1, dep2);
+    }, [dep1, dep2]);
 });
 
 Given('I have a reactive object with {word}={int}', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, key, value);
+    }, [key, value]);
 });
 
 Given('I have a reactive object with data', async function() {
@@ -95,7 +95,7 @@ When('I execute a computed function that reads both properties', async function(
 
 When('I execute computed{int} that reads {word} and {word}', async function(computedNum, prop1, prop2) {
     const depsKey = `computed${computedNum}Deps`;
-    this[depsKey] = await this.page.evaluate((p1, p2) => {
+    this[depsKey] = await this.page.evaluate(([p1, p2]) => {
         window._trackedDeps = new Set();
         if (window._reactive) {
             const val1 = window._reactive[p1];
@@ -104,18 +104,18 @@ When('I execute computed{int} that reads {word} and {word}', async function(comp
             window._trackedDeps.add(p2);
         }
         return Array.from(window._trackedDeps);
-    }, prop1, prop2);
+    }, [prop1, prop2]);
 });
 
 When('I execute a computation that reads {word}.{word}', async function(obj, prop) {
-    this.trackedDeps = await this.page.evaluate((o, p) => {
+    this.trackedDeps = await this.page.evaluate(([o, p]) => {
         window._trackedDeps = new Set();
         if (window._reactive && window._reactive[o]) {
             const val = window._reactive[o][p];
             window._trackedDeps.add(`${o}.${p}`);
         }
         return Array.from(window._trackedDeps);
-    }, obj, prop);
+    }, [obj, prop]);
 });
 
 When('I recompute and now it only reads \\{{word}}', async function(dep) {
@@ -134,10 +134,10 @@ When('I read {word} outside of a tracked computation', async function(prop) {
 });
 
 When('I execute computed{int} that calls computed{int} internally', async function(outer, inner) {
-    await this.page.evaluate((o, i) => {
+    await this.page.evaluate(([o, i]) => {
         window._outerComputedDeps = new Set();
         window._innerComputedDeps = new Set();
-    }, outer, inner);
+    }, [outer, inner]);
 });
 
 When('I execute a computation that reads items[0]', async function() {

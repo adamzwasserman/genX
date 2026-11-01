@@ -11,12 +11,12 @@ const assert = require('assert');
 // ============================================================================
 
 Given('a reactive data object with {word}={string}', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, key, value);
+    }, [key, value]);
 });
 
 Given('a form with required {word} field', async function(fieldName) {
@@ -54,12 +54,12 @@ Given('a form with {word} field validated min={int} max={int}', async function(f
 });
 
 Given('a reactive data object with {word}={int}', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, key, value);
+    }, [key, value]);
 });
 
 Given('a form with {word} field validated min={int}', async function(fieldName, min) {

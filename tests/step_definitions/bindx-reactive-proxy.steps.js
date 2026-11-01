@@ -7,21 +7,21 @@ const { Given, When, Then } = require('@cucumber/cucumber');
 const assert = require('assert');
 
 Given('I have a plain object with {word} {int} and {word} {string}', async function(key1, val1, key2, val2) {
-    await this.page.evaluate((k1, v1, k2, v2) => {
+    await this.page.evaluate(([k1, v1, k2, v2]) => {
         window._plainObject = { [k1]: v1, [k2]: v2 };
-    }, key1, val1, key2, val2);
+    }, [key1, val1, key2, val2]);
 });
 
 Given('I have a nested object with user {word} {string} and {word} {int}', async function(prop1, val1, prop2, val2) {
-    await this.page.evaluate((p1, v1, p2, v2) => {
+    await this.page.evaluate(([p1, v1, p2, v2]) => {
         window._plainObject = { user: { [p1]: v1, [p2]: v2 } };
-    }, prop1, val1, prop2, val2);
+    }, [prop1, val1, prop2, val2]);
 });
 
 Given('I have a nested object with user {word} {string}', async function(prop, value) {
-    await this.page.evaluate((p, v) => {
+    await this.page.evaluate(([p, v]) => {
         window._plainObject = { user: { [p]: v } };
-    }, prop, value);
+    }, [prop, value]);
 });
 
 Given('I have an object with circular reference to itself', async function() {
@@ -41,12 +41,12 @@ Given('I have a reactive object', async function() {
 });
 
 Given('I have a reactive object with {word} {int}', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         window._testData = { [k]: v };
         if (window.bindx) {
             window._reactive = window.bindx(window._testData);
         }
-    }, key, value);
+    }, [key, value]);
 });
 
 Given('I have a plain object', async function() {
@@ -96,12 +96,12 @@ When('I set a property to a new value', async function() {
 });
 
 When('I set {word} to {int} again', async function(key, value) {
-    await this.page.evaluate((k, v) => {
+    await this.page.evaluate(([k, v]) => {
         window._notificationCount = 0;
         if (window._reactive) {
             window._reactive[k] = v; // Same value
         }
-    }, key, value);
+    }, [key, value]);
 });
 
 Then('property reads should be tracked', async function() {
