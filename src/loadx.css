@@ -233,6 +233,10 @@
     height: 200px;
 }
 
+.lx-skeleton.lx-skeleton-no-animate {
+    animation: none;
+}
+
 @keyframes lx-shimmer {
     0% {
         background-position: -200% 0;

@@ -139,7 +139,9 @@
             // Check attribute changes
             if (mutation.type === 'attributes') {
                 const target = mutation.target;
-                if (hasLoadXAttributes(target)) {
+                if (mutation.attributeName === 'lx-loading' && target.hasAttribute('data-lx-tracked')) {
+                    syncForcedLoading(target, config);
+                } else if (hasLoadXAttributes(target)) {
                     elementsToProcess.add(target);
                 }
             }
@@ -412,10 +414,30 @@
             // Store parsed config on element for later use
             el._lxConfig = parsed;
 
+            syncForcedLoading(el, config);
+
             return true;
         }
 
         return false;
+    };
+
+    /**
+     * lx-loading="true" forces the loading state on; changing it to "false"
+     * removes a state it forced. A bare lx-loading marker (used by the
+     * fetch/XHR/form detectors) does not force anything.
+     * @param {HTMLElement} el - Tracked element
+     * @param {Object} config - Configuration object
+     */
+    const syncForcedLoading = (el, config) => {
+        const value = el.getAttribute('lx-loading');
+        if (value === 'true' && !forcedElements.has(el) && el.getAttribute('aria-busy') !== 'true') {
+            forcedElements.add(el);
+            applyLoadingState(el, el._lxConfig || {}, config);
+        } else if (value !== 'true' && forcedElements.has(el)) {
+            forcedElements.delete(el);
+            removeLoadingState(el);
+        }
     };
 
     /**
@@ -932,8 +954,10 @@
             originalDimensions.set(el, {
                 width: rect.width,
                 height: rect.height,
-                minWidth: computedStyle.minWidth,
-                minHeight: computedStyle.minHeight,
+                // inline values, so removal puts back exactly what the author set
+                // (computed values would pin min-width:auto to 0px)
+                minWidth: el.style.minWidth,
+                minHeight: el.style.minHeight,
                 boxSizing: computedStyle.boxSizing
             });
 
@@ -1050,6 +1074,49 @@
     // ============================================================================
 
     /**
+     * Lock an element's rendered size while a strategy replaces its content,
+     * remembering the inline values the author set so removal restores them
+     * @param {HTMLElement} el - Target element
+     * @param {boolean} lockWidth - Also lock the width (spinner, skeleton)
+     */
+    const lockSize = (el, lockWidth) => {
+        const saved = sizeLocks.get(el) || { width: el.style.width, minHeight: el.style.minHeight };
+        const width = el.offsetWidth;
+        const height = el.offsetHeight;
+        if (lockWidth && width > 0) {
+            el.style.width = width + 'px';
+        }
+        if (height > 0) {
+            el.style.minHeight = height + 'px';
+        }
+        saved.lockedWidth = el.style.width;
+        saved.lockedMinHeight = el.style.minHeight;
+        sizeLocks.set(el, saved);
+    };
+
+    /**
+     * Put back the inline width and min-height saved by lockSize, unless
+     * the page changed them while loading
+     * @param {HTMLElement} el - Target element
+     */
+    const unlockSize = (el) => {
+        const saved = sizeLocks.get(el);
+        if (!saved) {
+            el.style.width = '';
+            el.style.minHeight = '';
+            return;
+        }
+        // A size the page set during loading wins over the one saved before it
+        if (el.style.width === saved.lockedWidth) {
+            el.style.width = saved.width;
+        }
+        if (el.style.minHeight === saved.lockedMinHeight) {
+            el.style.minHeight = saved.minHeight;
+        }
+        sizeLocks.delete(el);
+    };
+
+    /**
      * Apply spinner loading strategy to element
      * @param {HTMLElement} el - Target element
      * @param {Object} opts - Spinner options
@@ -1065,24 +1132,21 @@
         el.setAttribute('data-lx-strategy', 'spinner');
 
         // Get spinner configuration
-        const spinnerType = opts.spinnerType || el.getAttribute('lx-spinner-type') || 'circle';
-        const spinnerSize = opts.spinnerSize || el.getAttribute('lx-spinner-size') || 'medium';
-        const spinnerColor = opts.spinnerColor || el.getAttribute('lx-spinner-color') || '';
+        // Documented attributes/options are lx-variant, lx-size, lx-color
+        // (variant/size/color); lx-spinner-* and spinner* remain accepted.
+        const spinnerType = opts.variant || opts.spinnerType || el.getAttribute('lx-variant') ||
+            el.getAttribute('lx-spinner-type') || 'circle';
+        const spinnerSize = opts.size || opts.spinnerSize || el.getAttribute('lx-size') ||
+            el.getAttribute('lx-spinner-size') || 'medium';
+        const spinnerColor = opts.color || opts.spinnerColor || el.getAttribute('lx-color') ||
+            el.getAttribute('lx-spinner-color') || '';
 
         // Check for reduced motion preference
         const prefersReducedMotion = window.matchMedia &&
             window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         // Preserve original dimensions to prevent CLS
-        const originalWidth = el.offsetWidth;
-        const originalHeight = el.offsetHeight;
-
-        if (originalWidth > 0) {
-            el.style.width = originalWidth + 'px';
-        }
-        if (originalHeight > 0) {
-            el.style.minHeight = originalHeight + 'px';
-        }
+        lockSize(el, true);
 
         // Create spinner element
         let spinnerHTML;
@@ -1126,7 +1190,7 @@
 
         // Restore original content
         const originalContent = el.getAttribute('data-lx-original-content');
-        if (originalContent) {
+        if (originalContent !== null) { // empty content is still content to restore
             el.innerHTML = originalContent;
         }
 
@@ -1138,8 +1202,7 @@
         el.classList.remove('lx-loading');
 
         // Restore original dimensions
-        el.style.width = '';
-        el.style.minHeight = '';
+        unlockSize(el);
     };
 
     /**
@@ -1216,6 +1279,8 @@
     // Track mutation observer and debounce timer
     let mutationObserver = null;
     let scanDebounceTimer = null;
+    // Elements whose loading state was forced on by lx-loading="true"
+    const forcedElements = new WeakSet();
     const SCAN_DEBOUNCE_MS = 50; // 50ms debounce
 
     // v2.0: Track active loading states (WeakMap for automatic cleanup)
@@ -1226,6 +1291,8 @@
 
     // v2.0: Track original dimensions for CLS restoration (WeakMap for automatic cleanup)
     const originalDimensions = new WeakMap();
+    // Inline sizes saved while a strategy locks an element's size
+    const sizeLocks = new WeakMap();
 
     // v2.0: Track all active observers for bulk cleanup (Set for iteration)
     const activeObservers = new Set();
@@ -1298,15 +1365,7 @@
         const animate = opts.animate !== false && el.getAttribute('lx-animate') !== 'false';
 
         // Preserve original dimensions to prevent CLS
-        const originalWidth = el.offsetWidth;
-        const originalHeight = el.offsetHeight;
-
-        if (originalWidth > 0) {
-            el.style.width = originalWidth + 'px';
-        }
-        if (originalHeight > 0) {
-            el.style.minHeight = originalHeight + 'px';
-        }
+        lockSize(el, true);
 
         // Analyze content structure and generate skeleton
         const skeletonHTML = generateSkeletonFromContent(el, rows, animate);
@@ -1327,7 +1386,7 @@
 
         // Restore original content
         const originalContent = el.getAttribute('data-lx-original-content');
-        if (originalContent) {
+        if (originalContent !== null) { // empty content is still content to restore
             el.innerHTML = originalContent;
         }
 
@@ -1339,8 +1398,7 @@
         el.classList.remove('lx-loading', 'lx-loading-skeleton');
 
         // Restore original dimensions
-        el.style.width = '';
-        el.style.minHeight = '';
+        unlockSize(el);
     };
 
     /**
@@ -1472,10 +1530,7 @@
         const progressHTML = createProgressBar(mode, value, max);
 
         // Preserve original dimensions
-        const originalHeight = el.offsetHeight;
-        if (originalHeight > 0) {
-            el.style.minHeight = originalHeight + 'px';
-        }
+        lockSize(el, false);
 
         // Apply progress bar
         el.innerHTML = progressHTML;
@@ -1499,7 +1554,7 @@
 
         // Restore original content
         const originalContent = el.getAttribute('data-lx-original-content');
-        if (originalContent) {
+        if (originalContent !== null) { // empty content is still content to restore
             el.innerHTML = originalContent;
         }
 
@@ -1515,7 +1570,7 @@
         delete el._lxProgressMax;
 
         // Restore dimensions
-        el.style.minHeight = '';
+        unlockSize(el);
     };
 
     /**
@@ -1623,7 +1678,7 @@
 
         // Restore original content
         const originalContent = el.getAttribute('data-lx-original-content');
-        if (originalContent) {
+        if (originalContent !== null) { // empty content is still content to restore
             el.innerHTML = originalContent;
         }
 
