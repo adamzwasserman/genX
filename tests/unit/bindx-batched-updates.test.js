@@ -59,7 +59,7 @@ describe('Feature: Batched Updates', () => {
     });
 
     describe('Scenario: Batch size limited to 16ms window', () => {
-        it('should process 100 updates within 16ms', async () => {
+        perfIt('should process 100 updates within 16ms', async () => {
             if (!createBatchQueue) {
                 pending('createBatchQueue not implemented yet');
                 return;
@@ -220,7 +220,7 @@ describe('Feature: Batched Updates', () => {
     });
 
     describe('Performance: Batch overhead', () => {
-        it('should add minimal overhead per schedule call', () => {
+        perfIt('should add minimal overhead per schedule call', () => {
             if (!createBatchQueue) {
                 pending('createBatchQueue not implemented yet');
                 return;

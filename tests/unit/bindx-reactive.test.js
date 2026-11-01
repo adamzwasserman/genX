@@ -180,7 +180,7 @@ describe('Feature: Reactive Proxy Wrapper', () => {
     });
 
     describe('Performance: Proxy creation', () => {
-        it('should create proxy in less than 0.1ms', () => {
+        perfIt('should create proxy in less than 0.1ms', () => {
             const timer = createTimer();
             const data = testData.simple;
 

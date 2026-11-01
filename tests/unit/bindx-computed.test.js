@@ -189,7 +189,7 @@ describe('Computed Properties', () => {
     });
 
     describe('Performance', () => {
-        it('should compute in less than 1ms for simple operations', () => {
+        perfIt('should compute in less than 1ms for simple operations', () => {
             const data = bindx({ a: 1, b: 2, c: 3 });
             const sum = computed(() => data.a + data.b + data.c);
 
@@ -200,7 +200,7 @@ describe('Computed Properties', () => {
             expect(duration).toBeLessThan(1);
         });
 
-        it('should handle 100 computed properties efficiently', () => {
+        perfIt('should handle 100 computed properties efficiently', () => {
             const data = bindx({ values: Array(100).fill(0).map((_, i) => i) });
             const computeds = Array(100).fill(0).map((_, i) =>
                 computed(() => data.values[i] * 2)

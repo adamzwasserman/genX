@@ -168,7 +168,7 @@ describe('Feature: Dependency Tracking', () => {
     });
 
     describe('Performance: Dependency tracking', () => {
-        it('should add minimal overhead to property access', () => {
+        perfIt('should add minimal overhead to property access', () => {
             const data = bindx({ value: 42 });
             const iterations = 10000;
 

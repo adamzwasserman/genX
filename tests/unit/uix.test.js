@@ -1157,7 +1157,7 @@ describe('UIX Module', () => {
     // PERFORMANCE
     // ============================================
     describe('Performance', () => {
-        test('enhances 1000 elements efficiently', () => {
+        perfTest('enhances 1000 elements efficiently', () => {
             const container = document.createElement('div');
             for (let i = 0; i < 1000; i++) {
                 const btn = document.createElement('button');

@@ -641,7 +641,7 @@ describe('FormatX Module', () => {
     });
 
     describe('Performance', () => {
-        test('should format 1000 elements efficiently', () => {
+        perfTest('should format 1000 elements efficiently', () => {
             const elements = [];
             const startTime = Date.now();
 

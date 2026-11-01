@@ -285,7 +285,7 @@ describe('tableX - Column Sorting', () => {
     describe('Performance', () => {
         const { sortRows } = tableX._internals;
 
-        it('sorts 100 rows in <10ms', () => {
+        perfIt('sorts 100 rows in <10ms', () => {
             const rows = Array.from({length: 100}, (_, i) =>
                 createRow([`Name${i}`, String(Math.random() * 100)])
             );
@@ -297,7 +297,7 @@ describe('tableX - Column Sorting', () => {
             expect(elapsed).toBeLessThan(10);
         });
 
-        it('sorts 1000 rows in <100ms (CI tolerance)', () => {
+        perfIt('sorts 1000 rows in <100ms (CI tolerance)', () => {
             const rows = Array.from({length: 1000}, (_, i) =>
                 createRow([`Name${i}`, String(Math.random() * 1000)])
             );
@@ -441,7 +441,7 @@ describe('tableX - Column Sorting', () => {
         });
 
         describe('Filter Performance', () => {
-            it('filters 1000 rows in <16ms', () => {
+            perfIt('filters 1000 rows in <16ms', () => {
                 const largeTable = document.createElement('table');
                 const tbody = document.createElement('tbody');
 

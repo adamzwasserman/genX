@@ -441,7 +441,7 @@ describe('AccessX Module', () => {
     });
 
     describe('Performance', () => {
-        test('should enhance 1000 elements efficiently', () => {
+        perfTest('should enhance 1000 elements efficiently', () => {
             const elements = [];
             const startTime = Date.now();
 

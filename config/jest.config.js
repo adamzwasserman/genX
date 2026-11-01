@@ -2,6 +2,9 @@ module.exports = {
     testEnvironment: 'jsdom',
     roots: ['<rootDir>/../tests/unit', '<rootDir>/../tests/integration'],
     testMatch: ['**/*.test.js', '**/*.spec.js'],
+    // Defines perfIt / perfTest for timing-threshold tests
+    setupFilesAfterEnv: ['<rootDir>/jest.perf-setup.js'],
+
     collectCoverageFrom: [
         '../src/**/*.js',
         '!../src/**/*.test.js',

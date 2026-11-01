@@ -241,7 +241,7 @@ describe('navX Core Module', () => {
 
   describe('Performance', () => {
 
-    it('should initialize in less than 10ms', () => {
+    perfIt('should initialize in less than 10ms', () => {
       document.body.innerHTML = '<nav nx-nav="main"></nav>';
 
       const start = performance.now();
@@ -251,7 +251,7 @@ describe('navX Core Module', () => {
       expect(duration).toBeLessThan(10);
     });
 
-    it('should scan 100 elements in less than 10ms', () => {
+    perfIt('should scan 100 elements in less than 10ms', () => {
       // Create 100 nav elements
       let html = '';
       for (let i = 0; i < 100; i++) {
@@ -267,7 +267,7 @@ describe('navX Core Module', () => {
       expect(duration).toBeLessThan(150);
     });
 
-    it('should enhance single element in less than 1ms', () => {
+    perfIt('should enhance single element in less than 1ms', () => {
       const nav = document.createElement('nav');
       nav.setAttribute('nx-nav', 'test');
       document.body.appendChild(nav);

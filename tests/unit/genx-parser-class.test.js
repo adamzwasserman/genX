@@ -90,7 +90,7 @@ describe('genx-parser-class', () => {
     expect(cfg.extra).toBeUndefined();
   });
 
-  it('micro-benchmark: parses many elements quickly (non-strict check)', () => {
+  perfIt('micro-benchmark: parses many elements quickly (non-strict check)', () => {
     const elements = [];
     for (let i = 0; i < 1000; i++) {
       const el = document.createElement('div');

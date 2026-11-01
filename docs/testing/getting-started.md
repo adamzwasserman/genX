@@ -268,6 +268,14 @@ npx cucumber-js --config config/cucumber.js --profile perf
 
 When a `@wip` behavior ships, write or finish its steps and remove the tag.
 
+Jest timing checks work the same way. A test that asserts a time limit
+uses `perfIt` or `perfTest` instead of `it` or `test`, and is skipped
+unless `GENX_PERF=1` is set. `config/jest.perf-setup.js` defines both.
+
+```bash
+GENX_PERF=1 npx jest --config config/jest.config.js tests/unit
+```
+
 ### Debugging
 
 ```bash

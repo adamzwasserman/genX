@@ -411,7 +411,7 @@ describe('loadX - HTMX Integration', () => {
     });
 
     describe('Performance with HTMX', () => {
-        test('should not slow down HTMX requests', () => {
+        perfTest('should not slow down HTMX requests', () => {
             const startTime = Date.now();
 
             window.loadX.initLoadX({ autoDetect: true });

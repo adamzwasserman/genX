@@ -453,7 +453,7 @@ describe('genx-common: Utility Functions', () => {
 });
 
 describe('genx-common: Performance', () => {
-  it('should create errors quickly', () => {
+  perfIt('should create errors quickly', () => {
     const start = performance.now();
     for (let i = 0; i < 1000; i++) {
       new genxCommon.GenXError('TEST', 'Message', { i });
@@ -463,7 +463,7 @@ describe('genx-common: Performance', () => {
     expect(duration).toBeLessThan(100);
   });
 
-  it('should perform cache lookups quickly', () => {
+  perfIt('should perform cache lookups quickly', () => {
     const cache = genxCommon.createCache();
     for (let i = 0; i < 1000; i++) {
       cache.set(`key-${i}`, `value-${i}`);
@@ -477,7 +477,7 @@ describe('genx-common: Performance', () => {
     expect(duration).toBeLessThan(100);
   });
 
-  it('should process utility functions quickly', () => {
+  perfIt('should process utility functions quickly', () => {
     const start = performance.now();
     for (let i = 0; i < 1000; i++) {
       genxCommon.kebabToCamel('data-format-currency');

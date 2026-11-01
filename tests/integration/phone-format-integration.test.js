@@ -137,7 +137,7 @@ describe('Phone Format Integration Tests', () => {
     });
 
     describe('Performance', () => {
-        test('formats 1000 phone numbers efficiently', async () => {
+        perfTest('formats 1000 phone numbers efficiently', async () => {
             const startTime = Date.now();
 
             // Simulate formatting 1000 numbers

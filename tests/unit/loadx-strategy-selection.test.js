@@ -393,7 +393,7 @@ describe('loadX - Strategy Selection', () => {
     });
 
     describe('Performance', () => {
-        test('should select strategy quickly', () => {
+        perfTest('should select strategy quickly', () => {
             const startTime = Date.now();
 
             for (let i = 0; i < 1000; i++) {
