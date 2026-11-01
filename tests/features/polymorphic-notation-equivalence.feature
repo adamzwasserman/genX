@@ -328,12 +328,14 @@ Feature: Polymorphic Notation Equivalence Across genX Modules
   # PERFORMANCE AND RELIABILITY
   # ============================================================================
 
+  @perf # timing threshold; run with the perf suite only
   Scenario: Notation detection performance
     Given a page with mixed notation styles
     When bootloader detects which parsers to load
     Then detection should complete under 1ms
     And should load only needed parsers
 
+  @perf # timing threshold; run with the perf suite only
   Scenario: Parser caching performance
     Given 1000 elements with same configuration
     When parsed and cached in WeakMap

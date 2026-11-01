@@ -1,995 +1,659 @@
 const { Given, When, Then } = require('@cucumber/cucumber');
 const assert = require('assert');
-
-// Background steps
-Given('the bootloader is loaded and initialized', async function() {
-    await this.page.goto('about:blank');
-    await this.page.addScriptTag({ path: './src/bootloader.js' });
-
-    // Wait for bootstrap to complete
-    await this.page.waitForFunction(() => {
-        return window.genx && window.genx.getConfig && typeof window.genx.getConfig === 'function';
-    }, { timeout: 5000 });
-});
-
-Given('the parse cache is populated with element configurations', async function() {
-    // Cache is populated automatically during bootstrap
-    // Verify cache exists
-    const cacheExists = await this.page.evaluate(() => {
-        return window.genx && typeof window.genx.getConfig === 'function';
-    });
-    assert.ok(cacheExists, 'Parse cache should be initialized');
-});
-
-Given('window.genx.getConfig is available', async function() {
-    const hasGetConfig = await this.page.evaluate(() => {
-        return window.genx && typeof window.genx.getConfig === 'function';
-    });
-    assert.ok(hasGetConfig, 'window.genx.getConfig should be available');
-});
-
-// Element creation and caching steps
-Given('an element with {string} {string}', async function(attr1, val1) {
-    const html = `<div id="test-element" ${attr1}="${val1}"></div>`;
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>${html}<script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    // Wait for bootstrap
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-});
-
-Given('an element with {string} {string} {string} {string}', async function(attr1, val1, attr2, val2) {
-    const html = `<div id="test-element" ${attr1}="${val1}" ${attr2}="${val2}"></div>`;
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>${html}<script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-});
-
-Given('an element with {string} {string} {string} {string} {string} {string}', async function(attr1, val1, attr2, val2, attr3, val3) {
-    const html = `<div id="test-element" ${attr1}="${val1}" ${attr2}="${val2}" ${attr3}="${val3}"></div>`;
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>${html}<script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-});
-
-Given('in module-cache-integration, an element with class={string}', async function(className) {
-    const html = `<div id="test-element" class="${className}"></div>`;
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>${html}<script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-});
-
-Given('the element has been parsed and cached during bootstrap', async function() {
-    // Elements are automatically cached during bootstrap
-    // Verify by checking getConfig returns non-null
-    const cached = await this.page.evaluate(() => {
-        const element = document.getElementById('test-element');
-        return window.genx.getConfig(element) !== null;
-    });
-
-    // Store for later verification
-    this.elementWasCached = cached;
-});
-
-Given('the element has been cached during bootstrap', async function() {
-    await this.page.evaluate(() => {
-        const element = document.getElementById('test-element');
-        return window.genx.getConfig(element) !== null;
-    });
-});
-
-Given('the element has been cached with config {string}', async function(expectedConfig) {
-    const config = await this.page.evaluate(() => {
-        const element = document.getElementById('test-element');
-        return window.genx.getConfig(element);
-    });
-
-    assert.ok(config, 'Element should be cached');
-    this.cachedConfig = config;
-});
-
-Given('{int} elements with cached configurations', async function(count) {
-    const elements = Array.from({ length: count }, (_, i) =>
-        `<span id="el-${i}" fx-format="currency">100.00</span>`
-    ).join('');
-
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>${elements}<script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-    this.elementCount = count;
-});
-
-Given('{int} elements with fx-format attributes', async function(count) {
-    const elements = Array.from({ length: count }, (_, i) =>
-        `<span id="fx-el-${i}" fx-format="currency">100.00</span>`
-    ).join('');
-
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>${elements}<script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-    this.elementCount = count;
-});
-
-Given('{int} elements with bx-bind attributes', async function(count) {
-    const elements = Array.from({ length: count }, (_, i) =>
-        `<input id="bx-el-${i}" bx-bind="value:field${i}" />`
-    ).join('');
-
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>${elements}<script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-    this.elementCount = count;
-});
-
-Given('{int} elements with ax-label and ax-icon attributes', async function(count) {
-    const elements = Array.from({ length: count }, (_, i) =>
-        `<button id="ax-el-${i}" ax-label="Button ${i}" ax-icon="icon-${i}"></button>`
-    ).join('');
-
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>${elements}<script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-    this.elementCount = count;
-});
-
-Given('{int} elements with dx-draggable attributes', async function(count) {
-    const elements = Array.from({ length: count }, (_, i) =>
-        `<div id="dx-el-${i}" dx-draggable="true"></div>`
-    ).join('');
-
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>${elements}<script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-    this.elementCount = count;
-});
-
-Given('{int} elements with lx-src attributes', async function(count) {
-    const elements = Array.from({ length: count }, (_, i) =>
-        `<div id="lx-el-${i}" lx-src="/content${i}.html"></div>`
-    ).join('');
-
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>${elements}<script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-    this.elementCount = count;
-});
-
-Given('{int} elements with nx-route attributes', async function(count) {
-    const elements = Array.from({ length: count }, (_, i) =>
-        `<a id="nx-el-${i}" nx-route="/page${i}">Link ${i}</a>`
-    ).join('');
-
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>${elements}<script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-    this.elementCount = count;
-});
-
-Given('{int} elements with tx-sortable attributes', async function(count) {
-    const elements = Array.from({ length: count }, (_, i) =>
-        `<table id="tx-el-${i}" tx-sortable="true"><thead><tr><th>Header</th></tr></thead></table>`
-    ).join('');
-
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>${elements}<script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-    this.elementCount = count;
-});
-
-Given('all elements are cached during bootstrap', async function() {
-    // Bootstrap automatically caches all elements
-    const allCached = await this.page.evaluate((count) => {
-        const elements = document.querySelectorAll('[id^="el-"], [id^="fx-el-"], [id^="bx-el-"], [id^="ax-el-"], [id^="dx-el-"], [id^="lx-el-"], [id^="nx-el-"], [id^="tx-el-"]');
-        return Array.from(elements).every(el => window.genx.getConfig(el) !== null);
-    }, this.elementCount);
-
-    assert.ok(allCached, 'All elements should be cached');
-});
-
-Given('an element with no genX attributes', async function() {
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body><div id="test-element"></div><script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-});
-
-Given('in module-cache-integration, an element with fx-format={string}', async function(format) {
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body><div id="test-element" fx-format="${format}"></div><script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-});
-
-Given('the element has been cached', async function() {
-    const cached = await this.page.evaluate(() => {
-        const element = document.getElementById('test-element');
-        return window.genx.getConfig(element) !== null;
-    });
-
-    assert.ok(cached, 'Element should be cached');
-});
-
-Given('{int} elements with genX attributes', async function(count) {
-    const elements = Array.from({ length: count }, (_, i) =>
-        `<span id="el-${i}" fx-format="currency">100.00</span>`
-    ).join('');
-
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>${elements}<script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-    this.elementCount = count;
-});
-
-Given('an element that may or may not be cached', async function() {
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body><div id="test-element" fx-format="currency">100.00</div><script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-});
-
-Given('an element with fx-format={string} and class={string}', async function(format, className) {
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body><div id="test-element" fx-format="${format}" class="${className}"></div><script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-});
-
-Given('the element has been cached with merged config', async function() {
-    const config = await this.page.evaluate(() => {
-        const element = document.getElementById('test-element');
-        return window.genx.getConfig(element);
-    });
-
-    assert.ok(config && Object.keys(config).length > 0, 'Element should be cached with merged config');
-});
-
-Given('an element with invalid configuration values', async function() {
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body><div id="test-element" fx-format="invalid-format" fx-decimals="not-a-number"></div><script src="./src/bootloader.js"></script></body></html>
-    `);
-
-    await this.page.waitForFunction(() => window.genx, { timeout: 5000 });
-});
-
-Given('the element has been cached with the invalid config', async function() {
-    const config = await this.page.evaluate(() => {
-        const element = document.getElementById('test-element');
-        return window.genx.getConfig(element);
-    });
-
-    assert.ok(config, 'Element with invalid config should still be cached');
-    this.invalidConfig = config;
-});
-
-// Module processing steps
-When('a genX module processes the element', async function() {
-    this.getConfigCalled = await this.page.evaluate(() => {
-        const element = document.getElementById('test-element');
-
-        // Mock module processing
-        let getConfigCalled = false;
-        const originalGetConfig = window.genx.getConfig;
-
-        window.genx.getConfig = function(el) {
-            getConfigCalled = true;
-            return originalGetConfig.call(window.genx, el);
-        };
-
-        // Simulate module processing
-        const config = window.genx.getConfig(element);
-
-        window.genx.getConfig = originalGetConfig;
-
-        return { getConfigCalled, config };
-    });
-});
-
-When('a module calls getConfig\\({int}) for each element', async function(count) {
-    const startTime = Date.now();
-
-    this.lookupResult = await this.page.evaluate((count) => {
-        const times = [];
-
-        for (let i = 0; i < count; i++) {
-            const el = document.getElementById(`el-${i}`);
-            const start = performance.now();
-            const config = window.genx.getConfig(el);
-            const end = performance.now();
-            times.push(end - start);
+const fs = require('fs');
+const path = require('path');
+const { sourceFor } = require('../fixtures/genx-sources');
+
+/*
+ * Module cache integration runs the shipped bootloader (bootloader.js on the CDN, which
+ * bundles domx-bridge) on a real page. Each boot navigates to a fresh page on a test
+ * origin, so every scenario gets its own parse cache. CDN requests are answered from
+ * src/ through Playwright routing.
+ *
+ * An init script logs every window.genx.getConfig call, and every read of a genX
+ * attribute on an element after the cache has served that element. That is how the
+ * steps see whether modules use the cache or re-parse attributes.
+ */
+const CDN = 'https://cdn.genx.software/v1';
+const ORIGIN = 'https://genx.test';
+const ROOT = path.join(__dirname, '..', '..');
+const GENX_ATTR = /^(fx|bx|ax|dx|lx|nx|tx)-/;
+
+const SPY = () => {
+    window.__mc = { calls: [], attrReads: [], served: new WeakSet() };
+    const origGetAttribute = Element.prototype.getAttribute;
+    Element.prototype.getAttribute = function (name) {
+        if (window.__mc.served.has(this) && /^(fx|bx|ax|dx|lx|nx|tx)-/.test(String(name))) {
+            window.__mc.attrReads.push({ id: this.id, name: String(name) });
         }
-
-        return {
-            times,
-            avgTime: times.reduce((sum, t) => sum + t, 0) / times.length,
-            totalTime: times.reduce((sum, t) => sum + t, 0)
-        };
-    }, count);
-
-    this.performanceResult = this.lookupResult;
-});
-
-When('fmtX module calls window.genx.getConfig\\(element)', async function() {
-    this.moduleConfig = await this.page.evaluate(() => {
-        const element = document.getElementById('test-element');
-        return window.genx.getConfig(element);
-    });
-});
-
-When('fmtX initializes and processes all elements', async function() {
-    this.moduleProcessing = await this.page.evaluate(() => {
-        const elements = document.querySelectorAll('[id^="fx-el-"]');
-        let getConfigCallCount = 0;
-        let getAttributeCallCount = 0;
-
-        const results = Array.from(elements).map(el => {
-            // Module should call getConfig
-            const config = window.genx.getConfig(el);
-            getConfigCallCount++;
-
-            return config;
-        });
-
-        return {
-            getConfigCallCount,
-            getAttributeCallCount,
-            processedCount: results.length
-        };
-    });
-});
-
-When('bindX initializes and processes all elements', async function() {
-    this.moduleProcessing = await this.page.evaluate(() => {
-        const elements = document.querySelectorAll('[id^="bx-el-"]');
-        let getConfigCallCount = 0;
-
-        const results = Array.from(elements).map(el => {
-            const config = window.genx.getConfig(el);
-            getConfigCallCount++;
-            return config;
-        });
-
-        return {
-            getConfigCallCount,
-            processedCount: results.length
-        };
-    });
-});
-
-When('accX initializes and processes all elements', async function() {
-    this.moduleProcessing = await this.page.evaluate(() => {
-        const elements = document.querySelectorAll('[id^="ax-el-"]');
-        let getConfigCallCount = 0;
-
-        const results = Array.from(elements).map(el => {
-            const config = window.genx.getConfig(el);
-            getConfigCallCount++;
-            return config;
-        });
-
-        return {
-            getConfigCallCount,
-            processedCount: results.length
-        };
-    });
-});
-
-When('dragX initializes and processes all elements', async function() {
-    this.moduleProcessing = await this.page.evaluate(() => {
-        const elements = document.querySelectorAll('[id^="dx-el-"]');
-        let getConfigCallCount = 0;
-
-        const results = Array.from(elements).map(el => {
-            const config = window.genx.getConfig(el);
-            getConfigCallCount++;
-            return config;
-        });
-
-        return {
-            getConfigCallCount,
-            processedCount: results.length
-        };
-    });
-});
-
-When('loadX initializes and processes all elements', async function() {
-    this.moduleProcessing = await this.page.evaluate(() => {
-        const elements = document.querySelectorAll('[id^="lx-el-"]');
-        let getConfigCallCount = 0;
-
-        const results = Array.from(elements).map(el => {
-            const config = window.genx.getConfig(el);
-            getConfigCallCount++;
-            return config;
-        });
-
-        return {
-            getConfigCallCount,
-            processedCount: results.length
-        };
-    });
-});
-
-When('navX initializes and processes all elements', async function() {
-    this.moduleProcessing = await this.page.evaluate(() => {
-        const elements = document.querySelectorAll('[id^="nx-el-"]');
-        let getConfigCallCount = 0;
-
-        const results = Array.from(elements).map(el => {
-            const config = window.genx.getConfig(el);
-            getConfigCallCount++;
-            return config;
-        });
-
-        return {
-            getConfigCallCount,
-            processedCount: results.length
-        };
-    });
-});
-
-When('tableX initializes and processes all elements', async function() {
-    this.moduleProcessing = await this.page.evaluate(() => {
-        const elements = document.querySelectorAll('[id^="tx-el-"]');
-        let getConfigCallCount = 0;
-
-        const results = Array.from(elements).map(el => {
-            const config = window.genx.getConfig(el);
-            getConfigCallCount++;
-            return config;
-        });
-
-        return {
-            getConfigCallCount,
-            processedCount: results.length
-        };
-    });
-});
-
-When('a module calls window.genx.getConfig\\(element)', async function() {
-    this.getConfigResult = await this.page.evaluate(() => {
-        const element = document.getElementById('test-element');
-        return window.genx.getConfig(element);
-    });
-});
-
-When('a module calls window.genx.getConfig\\(undefined)', async function() {
-    this.getConfigResult = await this.page.evaluate(() => {
-        try {
-            return window.genx.getConfig(undefined);
-        } catch (error) {
-            return { error: error.message };
-        }
-    });
-});
-
-When('modules are updated to use getConfig\\()', async function() {
-    // This is a conceptual step for backward compatibility
-    this.backwardCompatible = true;
-});
-
-When('a module calls getConfig\\(element) twice', async function() {
-    this.dualCall = await this.page.evaluate(() => {
-        const element = document.getElementById('test-element');
-        const config1 = window.genx.getConfig(element);
-        const config2 = window.genx.getConfig(element);
-
-        return {
-            config1,
-            config2,
-            sameReference: config1 === config2
-        };
-    });
-});
-
-When('the element\'s fx-currency attribute is changed to {string}', async function(newValue) {
-    await this.page.evaluate((newValue) => {
-        const element = document.getElementById('test-element');
-        element.setAttribute('fx-currency', newValue);
-    }, newValue);
-});
-
-When('the element\'s textContent changes', async function() {
-    await this.page.evaluate(() => {
-        const element = document.getElementById('test-element');
-        element.textContent = 'Updated content';
-    });
-});
-
-When('measuring getConfig\\() performance', async function() {
-    this.getConfigPerformance = await this.page.evaluate(() => {
-        const elements = document.querySelectorAll('[id^="el-"]');
-        const times = [];
-
-        for (const el of elements) {
-            const start = performance.now();
-            window.genx.getConfig(el);
-            const end = performance.now();
-            times.push(end - start);
-        }
-
-        return {
-            times,
-            avgTime: times.reduce((sum, t) => sum + t, 0) / times.length,
-            totalTime: times.reduce((sum, t) => sum + t, 0)
-        };
-    });
-});
-
-When('comparing to getAttribute\\() + parsing performance', async function() {
-    this.getAttributePerformance = await this.page.evaluate(() => {
-        const elements = document.querySelectorAll('[id^="el-"]');
-        const times = [];
-
-        for (const el of elements) {
-            const start = performance.now();
-            // Simulate getAttribute + parsing
-            const format = el.getAttribute('fx-format');
-            const parsed = format ? { format } : {};
-            const end = performance.now();
-            times.push(end - start);
-        }
-
-        return {
-            times,
-            avgTime: times.reduce((sum, t) => sum + t, 0) / times.length,
-            totalTime: times.reduce((sum, t) => sum + t, 0)
-        };
-    });
-});
-
-When('a module processes the element', async function() {
-    this.moduleResult = await this.page.evaluate(() => {
-        const element = document.getElementById('test-element');
-        const config = window.genx.getConfig(element);
-
-        return {
-            config,
-            shouldSkip: config === null
-        };
-    });
-});
-
-When('another module also calls getConfig\\(element)', async function() {
-    this.anotherModuleConfig = await this.page.evaluate(() => {
-        const element = document.getElementById('test-element');
-        return window.genx.getConfig(element);
-    });
-});
-
-When('the MutationObserver detects new elements', async function() {
-    // MutationObserver is setup during bootstrap
-    // Add a new element to trigger it
-    await this.page.evaluate(() => {
-        const newElement = document.createElement('div');
-        newElement.id = 'new-element';
-        newElement.setAttribute('fx-format', 'number');
-        newElement.textContent = '12345';
-        document.body.appendChild(newElement);
-    });
-
-    // Wait a bit for MutationObserver to process
-    await this.page.waitForTimeout(200);
-});
-
-When('a module calls getConfig\\(element)', async function() {
-    this.getConfigResult = await this.page.evaluate(() => {
-        const element = document.getElementById('test-element') || document.getElementById('new-element');
-        return window.genx.getConfig(element);
-    });
-});
-
-When('comparing init times for {int} elements', async function(count) {
-    // Performance comparison data stored for assertion
-    this.performanceComparison = {
-        elementCount: count,
-        withCache: true
+        return origGetAttribute.call(this, name);
     };
+    window.__mcReady = new Promise(resolve =>
+        window.addEventListener('genx:ready', e => resolve(e.detail), { once: true }));
+    // Runs before the bootloader's own DOMContentLoaded bootstrap, after its script ran.
+    document.addEventListener('DOMContentLoaded', () => {
+        const api = window.genx;
+        if (!api || api.__mcWrapped) {
+            return;
+        }
+        const original = api.getConfig;
+        api.getConfig = function (el) {
+            const result = original.call(this, el);
+            window.__mc.calls.push({ id: el && el.id, hit: result !== null });
+            if (result && el) {
+                window.__mc.served.add(el);
+            }
+            return result;
+        };
+        api.__mcWrapped = true;
+    });
+};
+
+const setUp = async (world) => {
+    if (world.mc) {
+        return;
+    }
+    world.mc = { html: '', pages: 0, booted: false };
+    await world.page.addInitScript(SPY);
+    await world.page.route(url => url.href.startsWith(CDN + '/'), route => {
+        const body = sourceFor(new URL(route.request().url()).pathname.slice('/v1'.length));
+        if (body === null) {
+            return route.fulfill({ status: 404, body: 'Not Found' });
+        }
+        return route.fulfill({ status: 200, contentType: 'application/javascript', body });
+    });
+    await world.page.route(url => url.href.startsWith(ORIGIN + '/'), route =>
+        route.fulfill({ status: 200, contentType: 'text/html', body: world.mc.html }));
+};
+
+/** Boot the bootloader on a fresh page holding `body`; resolve when genx:ready fires. */
+const boot = async (world, body) => {
+    await setUp(world);
+    world.mc.html = `<!DOCTYPE html><html><head></head><body>${body}` +
+        `<script src="${CDN}/bootloader.js"></script></body></html>`;
+    world.mc.pages += 1;
+    await world.page.goto(`${ORIGIN}/page-${world.mc.pages}`);
+    world.mc.ready = await world.page.evaluate(() => window.__mcReady);
+    world.mc.booted = true;
+};
+
+/** Boot with whatever markup the element steps put on the current page. */
+const bootCurrent = async (world) => {
+    // Shared element steps name the element differently; the steps here use #test-element.
+    const body = await world.page.evaluate(() => {
+        if (!document.body) {
+            return '';
+        }
+        const el = document.getElementById('test-element') || document.body.querySelector('*');
+        if (el && el.tagName !== 'SCRIPT') {
+            el.id = 'test-element';
+        }
+        return document.body.innerHTML;
+    });
+    await boot(world, body);
+};
+
+const configOf = (world, id = 'test-element') =>
+    world.page.evaluate(i => window.genx.getConfig(document.getElementById(i)), id);
+
+const spyLog = (world) => world.page.evaluate(() => ({
+    calls: window.__mc.calls, attrReads: window.__mc.attrReads
+}));
+
+// "{format: "currency", currency: "USD", decimals: 2}" -> object
+const parseLoose = (text) => JSON.parse(text.replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":'));
+
+const readSrc = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+
+// ---------------------------------------------------------------- Background
+
+Given('the bootloader is loaded and initialized', async function () {
+    await boot(this, '');
 });
 
-// Assertion steps
-Then('it should call window.genx.getConfig\\(element)', async function() {
-    assert.ok(this.getConfigCalled && this.getConfigCalled.getConfigCalled, 'getConfig should have been called');
+Given('the parse cache is populated with element configurations', async function () {
+    // An empty page caches nothing; a page with one genX element caches it.
+    assert.strictEqual(this.mc.ready.elements.parsed, 0);
+    await boot(this, '<span id="probe" fx-format="currency">5</span>');
+    assert.deepStrictEqual(await configOf(this, 'probe'), { format: 'currency' });
 });
 
-Then('it should NOT call element.getAttribute\\() for configuration', async function() {
-    // This is verified by monitoring attribute access
-    // In real implementation, modules should only use getConfig
-    assert.ok(true, 'Module should not use getAttribute');
+Given('window.genx.getConfig is available', async function () {
+    const type = await this.page.evaluate(() => typeof window.genx.getConfig);
+    assert.strictEqual(type, 'function');
 });
 
-Then('it should receive the cached config object', async function() {
-    assert.ok(this.getConfigCalled && this.getConfigCalled.config, 'Module should receive cached config');
+// ---------------------------------------------------------------- Element setup
+
+Given(/^the element has been (?:parsed and )?cached(?: during bootstrap)?$/, async function () {
+    await bootCurrent(this);
+    assert.ok(await configOf(this), 'The element should be in the parse cache');
 });
 
-Then('the average lookup time should be less than {float}ms per call', async function(targetMs) {
-    assert.ok(this.lookupResult, 'Performance result should exist');
-    assert.ok(this.lookupResult.avgTime < targetMs,
-        `Average lookup time ${this.lookupResult.avgTime.toFixed(4)}ms should be < ${targetMs}ms`);
+Given('the element has been cached with config {}', async function (text) {
+    await bootCurrent(this);
+    assert.deepStrictEqual(await configOf(this), parseLoose(text));
 });
 
-Then('the total time for {int} lookups should be less than {float}ms', async function(count, targetMs) {
-    assert.ok(this.lookupResult, 'Performance result should exist');
-    assert.ok(this.lookupResult.totalTime < targetMs,
-        `Total time ${this.lookupResult.totalTime.toFixed(2)}ms should be < ${targetMs}ms`);
+Given('the element has been cached with merged config', async function () {
+    await bootCurrent(this);
+    this.mergedConfig = await configOf(this);
+    assert.deepStrictEqual(this.mergedConfig, { format: 'currency', currency: 'USD' });
 });
 
-Then('performance should be {int}x+ faster than attribute parsing', async function(speedupFactor) {
-    // This is validated by the performance measurements
-    // getConfig should be significantly faster than getAttribute + parsing
-    assert.ok(true, `Performance should be ${speedupFactor}x faster`);
+Given('an element with no genX attributes', async function () {
+    await boot(this, '<div id="test-element">Plain</div>');
 });
 
-Then('in cache integration, it should return {string}', async function(expectedConfigStr) {
-    const expected = JSON.parse(expectedConfigStr);
+Given('an element that may or may not be cached', async function () {
+    await boot(this, '<span id="test-element" fx-format="currency">25</span>');
+});
 
-    // Compare configs
-    for (const key in expected) {
-        assert.ok(this.moduleConfig && this.moduleConfig[key] !== undefined,
-            `Config should have ${key}`);
-        assert.strictEqual(String(this.moduleConfig[key]), String(expected[key]),
-            `Config ${key} should match`);
+Given('an element with fx-format={string} and class={string}', async function (format, cls) {
+    await this.page.setContent(`<span id="test-element" fx-format="${format}" class="${cls}">25</span>`);
+});
+
+Given('an element with invalid configuration values', async function () {
+    await this.page.setContent(
+        '<span id="test-element" fx-format="invalid-format" fx-decimals="not-a-number">42</span>');
+});
+
+Given('the element has been cached with the invalid config', async function () {
+    await bootCurrent(this);
+    assert.deepStrictEqual(await configOf(this), { format: 'invalid-format', decimals: 'not-a-number' });
+});
+
+// N elements for one module, all on one page.
+const MARKUP = {
+    'cached configurations': i => `<span id="el-${i}" fx-format="currency">100</span>`,
+    'genX attributes': i => `<span id="el-${i}" fx-format="currency">100</span>`,
+    'fx-format attributes': i => `<span id="el-${i}" fx-format="currency">100</span>`,
+    'bx-bind attributes': i => `<span id="el-${i}" bx-bind="field${i}"></span>`,
+    'ax-label and ax-icon attributes':
+        i => `<button id="el-${i}" ax-enhance="button" ax-label="Button ${i}" ax-icon="icon-${i}"></button>`,
+    'dx-draggable attributes': i => `<div id="el-${i}" dx-draggable="card">Card ${i}</div>`,
+    'lx-src attributes': i => `<div id="el-${i}" lx-strategy="spinner" lx-src="/content${i}.html"></div>`,
+    'nx-route attributes': i => `<a id="el-${i}" nx-route="/page${i}" href="/page${i}">Link ${i}</a>`,
+    // Sorting needs no settings; pagination and filtering read theirs through the cache.
+    'tx-sortable attributes': i =>
+        `<table id="el-${i}" tx-sortable="true" tx-paginate="true" tx-per-page="5" tx-filterable="true"><thead><tr><th>H</th></tr></thead>` +
+        `<tbody><tr><td>${i}</td></tr></tbody></table>`
+};
+
+Given(/^(\d+) elements with (cached configurations|genX attributes|fx-format attributes|bx-bind attributes|ax-label and ax-icon attributes|dx-draggable attributes|lx-src attributes|nx-route attributes|tx-sortable attributes)$/,
+    async function (count, kind) {
+        const n = Number(count);
+        const body = Array.from({ length: n }, (_, i) => MARKUP[kind](i)).join('');
+        await boot(this, body);
+        this.elementIds = Array.from({ length: n }, (_, i) => `el-${i}`);
+    });
+
+Given(/^all elements are cached(?: during bootstrap)?$/, async function () {
+    // What the modules asked for during bootstrap, before this step adds its own lookups.
+    this.bootSpy = await spyLog(this);
+    const missing = await this.page.evaluate(ids =>
+        ids.filter(id => window.genx.getConfig(document.getElementById(id)) === null), this.elementIds);
+    assert.deepStrictEqual(missing, [], 'Every element should be in the parse cache');
+});
+
+// ---------------------------------------------------------------- Module processing
+
+When('a genX module processes the element', async function () {
+    // fmtX already processed the element during bootstrap; read what it did.
+    this.spy = await spyLog(this);
+});
+
+When('fmtX module calls window.genx.getConfig\\(element)', async function () {
+    this.moduleConfig = await configOf(this);
+});
+
+When('fmtX module calls getConfig\\(element)', async function () {
+    this.moduleConfig = await configOf(this);
+});
+
+When('another module also calls getConfig\\(element)', async function () {
+    this.anotherModuleConfig = await configOf(this);
+    this.sameReference = await this.page.evaluate(() => {
+        const el = document.getElementById('test-element');
+        return window.genx.getConfig(el) === window.genx.getConfig(el);
+    });
+});
+
+const PREFIX = { fmtX: 'fx', bindX: 'bx', accX: 'ax', dragX: 'dx', loadX: 'lx', navX: 'nx', tableX: 'tx' };
+
+When(/^(fmtX|bindX|accX|dragX|loadX|navX|tableX) initializes and processes all elements$/, async function (name) {
+    // The bootloader loaded and initialized the module during bootstrap, after the parse
+    // cache was filled; the spy recorded what the module asked for then.
+    this.moduleName = name;
+    assert.ok(this.mc.ready.loaded.includes(PREFIX[name]),
+        `${name} should have been loaded by the bootloader (loaded: ${this.mc.ready.loaded})`);
+    this.spy = this.bootSpy;
+    if (name === 'dragX') {
+        // dragX reads an element's settings when a drag starts: start one on each element.
+        await this.page.evaluate(async ids => {
+            window.__mc.calls = [];
+            for (const id of ids) {
+                const el = document.getElementById(id);
+                const r = el.getBoundingClientRect();
+                const opts = { bubbles: true, clientX: r.left + 2, clientY: r.top + 2, pointerId: 1, isPrimary: true, button: 0 };
+                el.dispatchEvent(new PointerEvent('pointerdown', opts));
+                document.dispatchEvent(new PointerEvent('pointerup', opts));
+                await new Promise(res => setTimeout(res, 0));
+            }
+        }, this.elementIds);
+        this.spy = await spyLog(this);
     }
 });
 
-Then('the lookup should be instant \\(O\\(1\\))', async function() {
-    // O(1) lookup is verified by consistent timing regardless of cache size
-    assert.ok(true, 'Lookup should be O(1)');
-});
-
-Then('the configuration should be identical to verbose notation', async function() {
-    // Different notations should produce identical configs
-    assert.ok(this.moduleConfig, 'Config should exist');
-    assert.ok(this.moduleConfig.format, 'Config should have format');
-});
-
-Then('numeric types should be preserved from JSON', async function() {
-    // JSON notation preserves numeric types
-    assert.ok(this.moduleConfig, 'Config should exist');
-    assert.ok(typeof this.moduleConfig.decimals === 'number' ||
-              this.moduleConfig.decimals === '2', 'Decimals should be numeric or string');
-});
-
-Then('class notation should produce identical config', async function() {
-    assert.ok(this.moduleConfig, 'Config should exist');
-    assert.ok(this.moduleConfig.format, 'Config should have format');
-});
-
-Then('it should call getConfig\\() for each element', async function() {
-    assert.ok(this.moduleProcessing, 'Module processing should have occurred');
-    assert.ok(this.moduleProcessing.getConfigCallCount > 0, 'getConfig should have been called');
-    assert.strictEqual(this.moduleProcessing.getConfigCallCount, this.moduleProcessing.processedCount,
-        'getConfig should be called for each element');
-});
-
-Then('it should NOT parse attributes directly', async function() {
-    // Verified by checking getAttribute was not called
-    const getAttributeCount = this.moduleProcessing.getAttributeCallCount || 0;
-    assert.strictEqual(getAttributeCount, 0, 'getAttribute should not be called');
-});
-
-Then('formatting should complete faster than before', async function() {
-    // Cache-based processing is faster
-    assert.ok(true, 'Formatting should be faster with cache');
-});
-
-Then('it should use cached debounce and validation settings', async function() {
-    assert.ok(this.moduleProcessing.getConfigCallCount > 0, 'Cached settings should be used');
-});
-
-Then('binding should be faster than attribute parsing', async function() {
-    assert.ok(true, 'Binding should be faster with cache');
-});
-
-Then('it should use cached label and icon configurations', async function() {
-    assert.ok(this.moduleProcessing.getConfigCallCount > 0, 'Cached configurations should be used');
-});
-
-Then('accessibility setup should be instant', async function() {
-    assert.ok(true, 'Setup should be instant with cache');
-});
-
-Then('it should use cached zone and handle configurations', async function() {
-    assert.ok(this.moduleProcessing.getConfigCallCount > 0, 'Cached configurations should be used');
-});
-
-Then('drag initialization should be faster', async function() {
-    assert.ok(true, 'Initialization should be faster with cache');
-});
-
-Then('it should use cached source and debounce settings', async function() {
-    assert.ok(this.moduleProcessing.getConfigCallCount > 0, 'Cached settings should be used');
-});
-
-Then('load setup should be instant', async function() {
-    assert.ok(true, 'Setup should be instant with cache');
-});
-
-Then('it should use cached route and pushState settings', async function() {
-    assert.ok(this.moduleProcessing.getConfigCallCount > 0, 'Cached settings should be used');
-});
-
-Then('navigation setup should be faster', async function() {
-    assert.ok(true, 'Setup should be faster with cache');
-});
-
-Then('it should use cached sortable, paginate, and filter settings', async function() {
-    assert.ok(this.moduleProcessing.getConfigCallCount > 0, 'Cached settings should be used');
-});
-
-Then('table initialization should be instant', async function() {
-    assert.ok(true, 'Initialization should be instant with cache');
-});
-
-Then('it should return null', async function() {
-    assert.strictEqual(this.getConfigResult, null, 'getConfig should return null');
-});
-
-Then('the module should skip processing that element', async function() {
-    // Module logic should check for null and skip
-    assert.ok(true, 'Module should skip null config');
-});
-
-Then('in module-cache-integration, no errors should occur', async function() {
-    // Check for errors
-    const errors = await this.page.evaluate(() => {
-        return window.__errors || [];
-    });
-    assert.strictEqual(errors.length, 0, 'No errors should occur');
-});
-
-Then('all existing functionality should work identically', async function() {
-    assert.ok(this.backwardCompatible, 'Functionality should be identical');
-});
-
-Then('no regressions should occur', async function() {
-    assert.ok(this.backwardCompatible, 'No regressions should occur');
-});
-
-Then('tests should remain green', async function() {
-    assert.ok(this.backwardCompatible, 'Tests should remain green');
-});
-
-Then('both calls should return the exact same object reference', async function() {
-    assert.ok(this.dualCall, 'Dual call result should exist');
-    assert.strictEqual(this.dualCall.sameReference, true,
-        'Both calls should return same object reference');
-});
-
-Then('object identity should be maintained', async function() {
-    assert.ok(this.dualCall.sameReference, 'Object identity should be maintained');
-});
-
-Then('no cloning or copying should occur', async function() {
-    // Verified by object reference check
-    assert.ok(this.dualCall.sameReference, 'No cloning should occur');
-});
-
-Then('getConfig\\(element) should still return {string}', async function(expectedConfigStr) {
-    const expected = JSON.parse(expectedConfigStr);
-    const currentConfig = await this.page.evaluate(() => {
-        const element = document.getElementById('test-element');
-        return window.genx.getConfig(element);
-    });
-
-    for (const key in expected) {
-        assert.strictEqual(String(currentConfig[key]), String(expected[key]),
-            `Config ${key} should match original`);
+When('a module calls window.genx.getConfig\\(element)', async function () {
+    if (!this.mc || !this.mc.booted) {
+        await bootCurrent(this);
     }
+    this.getConfigResult = await configOf(this);
 });
 
-Then('the cache should not automatically update', async function() {
-    // Cache doesn't auto-update on attribute changes (expected behavior)
-    assert.ok(true, 'Cache should not auto-update');
+When('a module calls window.genx.getConfig\\(undefined)', async function () {
+    this.getConfigResult = await this.page.evaluate(() => window.genx.getConfig(undefined));
 });
 
-Then('this is expected behavior \\(cache is set during bootstrap)', async function() {
-    assert.ok(true, 'This is expected behavior');
+When('a module calls getConfig\\(element) twice', async function () {
+    this.dualCall = await this.page.evaluate(() => {
+        const el = document.getElementById('test-element');
+        const a = window.genx.getConfig(el);
+        const b = window.genx.getConfig(el);
+        return { first: a, sameReference: a === b, frozen: Object.isFrozen(a) };
+    });
 });
 
-Then('getConfig should be {int}x+ faster', async function(speedupFactor) {
-    const getConfigTime = this.getConfigPerformance.avgTime;
-    const getAttributeTime = this.getAttributePerformance.avgTime;
-    const actualSpeedup = getAttributeTime / getConfigTime;
-
-    assert.ok(actualSpeedup >= speedupFactor,
-        `Speedup ${actualSpeedup.toFixed(1)}x should be >= ${speedupFactor}x`);
+When('the element\'s fx-currency attribute is changed to {string}', async function (value) {
+    await this.page.evaluate(v => document.getElementById('test-element').setAttribute('fx-currency', v), value);
+    this.changedCurrency = value;
 });
 
-Then('{int} getConfig calls should complete in <{float}ms', async function(count, targetMs) {
-    assert.ok(this.getConfigPerformance.totalTime < targetMs,
-        `Total time ${this.getConfigPerformance.totalTime.toFixed(2)}ms should be < ${targetMs}ms`);
+When('the element\'s textContent changes', async function () {
+    this.configBefore = await configOf(this);
+    await this.page.evaluate(() => {
+        const el = document.getElementById('test-element');
+        window.__configBefore = window.genx.getConfig(el);
+        el.textContent = '99';
+    });
 });
 
-Then('{int} getAttribute + parse calls would take >{float}ms', async function(count, targetMs) {
-    // This validates that the old way was slower
-    assert.ok(this.getAttributePerformance.totalTime > targetMs,
-        `getAttribute time ${this.getAttributePerformance.totalTime.toFixed(2)}ms should be > ${targetMs}ms`);
+When('a module processes the element', async function () {
+    this.spy = await spyLog(this);
+    this.getConfigResult = await configOf(this);
 });
 
-Then('it should call getConfig\\(element) first', async function() {
-    assert.ok(this.moduleResult, 'Module should call getConfig first');
+When('a module calls getConfig\\(element)', async function () {
+    this.getConfigResult = await this.page.evaluate(() =>
+        window.genx.getConfig(document.getElementById('test-element')));
 });
 
-Then('if getConfig returns null, skip the element', async function() {
-    if (this.moduleResult.config === null) {
-        assert.ok(this.moduleResult.shouldSkip, 'Element should be skipped');
-    }
+// ---------------------------------------------------------------- Results
+
+Then('it should call window.genx.getConfig\\(element)', async function () {
+    assert.ok(this.spy.calls.some(c => c.id === 'test-element'), 'fmtX should ask the cache for the element');
 });
 
-Then('if getConfig returns a config, use it', async function() {
-    if (this.moduleResult.config !== null) {
-        assert.ok(!this.moduleResult.shouldSkip, 'Element should be processed');
-    }
+Then('it should receive the cached config object', async function () {
+    assert.ok(this.spy.calls.some(c => c.id === 'test-element' && c.hit), 'The cache should answer');
 });
 
-Then('never call getAttribute\\() for configuration', async function() {
-    // Modules should only use getConfig
-    assert.ok(true, 'getAttribute should never be called for configuration');
+Then('in cache integration, it should return {}', async function (text) {
+    assert.deepStrictEqual(this.moduleConfig, parseLoose(text));
 });
 
-Then('both modules should receive the same config object', async function() {
-    assert.ok(this.moduleConfig, 'First module should have config');
-    assert.ok(this.anotherModuleConfig, 'Second module should have config');
-    // In practice, both should get the same reference
-    assert.ok(true, 'Both modules should receive same config');
+Then(/^it should return (\{.*\})$/, async function (text) {
+    assert.deepStrictEqual(this.moduleConfig, parseLoose(text));
 });
 
-Then('the cache should serve both modules efficiently', async function() {
-    assert.ok(true, 'Cache should serve both modules efficiently');
+Then('the configuration should be identical to verbose notation', async function () {
+    const verbose = await this.page.evaluate(() => {
+        const el = document.createElement('span');
+        el.setAttribute('fx-format', 'currency');
+        el.setAttribute('fx-currency', 'USD');
+        el.setAttribute('fx-decimals', '2');
+        document.body.appendChild(el);
+        return window.genx.rescan([el]).then(() => window.genx.getConfig(el));
+    });
+    assert.deepStrictEqual(this.moduleConfig, verbose);
 });
 
-Then('getConfig\\(element) should still return the original config', async function() {
-    const config = await this.page.evaluate(() => {
-        const element = document.getElementById('test-element');
-        return window.genx.getConfig(element);
+Then('numeric types should be preserved from JSON', async function () {
+    assert.strictEqual(typeof this.moduleConfig.decimals, 'number');
+});
+
+Then('class notation should produce identical config', async function () {
+    // The class parser coerces numeric segments (tests/unit/genx-parser-class.test.js), so
+    // decimals is 2 where verbose gives "2". The docs promise the same transformation.
+    const result = await this.page.evaluate(async () => {
+        const make = (attrs) => {
+            const el = document.createElement('span');
+            Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+            el.textContent = '1234.567';
+            document.body.appendChild(el);
+            return el;
+        };
+        const verbose = make({ 'fx-format': 'currency', 'fx-currency': 'USD', 'fx-decimals': '2' });
+        const cls = make({ class: 'fmt-currency-USD-2' });
+        await window.genx.rescan([verbose, cls]);
+        return { verbose: window.genx.getConfig(verbose), verboseText: verbose.textContent, clsText: cls.textContent };
+    });
+    assert.deepStrictEqual(this.moduleConfig, { ...result.verbose, decimals: Number(result.verbose.decimals) });
+    assert.strictEqual(result.clsText, result.verboseText);
+    assert.notStrictEqual(result.clsText, '1234.567', 'Both should be formatted');
+});
+
+Then('the lookup should be instant \\(O\\(1))', async function () {
+    // The mechanism: getConfig is one WeakMap read, the same object on every call.
+    // Timings live in the @perf scenarios.
+    const src = readSrc('src/bootloader.js');
+    assert.match(src, /const parseMap = new WeakMap\(\)/);
+    assert.match(src, /getConfig: \(el\) => parseMap\.get\(el\) \|\| null/);
+    const same = await this.page.evaluate(() => {
+        const el = document.getElementById('test-element');
+        return window.genx.getConfig(el) === window.genx.getConfig(el);
+    });
+    assert.strictEqual(same, true);
+});
+
+Then('it should call getConfig\\() for each element', async function () {
+    const asked = new Set(this.spy.calls.map(c => c.id));
+    const missed = this.elementIds.filter(id => !asked.has(id));
+    assert.deepStrictEqual(missed, [], `${this.moduleName} should ask the cache for every element`);
+});
+
+Then(/^it should use cached (debounce and validation settings|label and icon configurations|zone and handle configurations|source and debounce settings|route and pushState settings|sortable, paginate, and filter settings)$/,
+    async function (_settings) {
+        const misses = this.spy.calls.filter(c => this.elementIds.includes(c.id) && !c.hit);
+        assert.deepStrictEqual(misses, [], 'Every lookup should be answered from the cache');
     });
 
-    assert.ok(config, 'Config should still exist');
-});
-
-Then('the cache entry should remain valid', async function() {
-    assert.ok(this.getConfigResult, 'Cache entry should be valid');
-});
-
-Then('only attribute changes would invalidate \\(not implemented in V1)', async function() {
-    // V1 doesn't implement cache invalidation
-    assert.ok(true, 'Cache invalidation not implemented in V1');
-});
-
-Then('it should receive the cached config \\(even if invalid)', async function() {
-    assert.ok(this.getConfigResult || this.invalidConfig, 'Config should be returned');
-});
-
-Then('the module should validate the config values', async function() {
-    // Module responsibility to validate
-    assert.ok(true, 'Module should validate config');
-});
-
-Then('handle errors appropriately', async function() {
-    // Module should handle validation errors
-    assert.ok(true, 'Module should handle errors');
-});
-
-Then('its documentation should specify:', async function(docString) {
-    // Documentation requirements
-    assert.ok(true, 'Documentation should specify requirements');
-});
-
-Then('tests should mock window.genx.getConfig\\()', async function() {
-    // Test pattern requirement
-    assert.ok(true, 'Tests should mock getConfig');
-});
-
-Then('tests should verify getConfig is called, not getAttribute', async function() {
-    assert.ok(true, 'Tests should verify getConfig usage');
-});
-
-Then('tests should provide test config via mock getConfig', async function() {
-    assert.ok(true, 'Tests should provide config via mock');
-});
-
-Then('tests should assert cache usage', async function() {
-    assert.ok(true, 'Tests should assert cache usage');
-});
-
-Then('new elements should be scanned and parsed', async function() {
-    // MutationObserver triggers scan/parse
-    assert.ok(true, 'New elements should be scanned and parsed');
-});
-
-Then('new configs should be added to the cache', async function() {
-    // Check if new element was cached
-    const newElementCached = await this.page.evaluate(() => {
-        const newElement = document.getElementById('new-element');
-        return newElement && window.genx.getConfig(newElement) !== null;
+// The speed claims rest on one mechanism: the module reads its settings from the cache,
+// so it never falls back to parsing the attributes itself. Timings live in @perf.
+Then(/^(formatting should complete faster than before|binding should be faster than attribute parsing|accessibility setup should be instant|drag initialization should be faster|load setup should be instant|navigation setup should be faster|table initialization should be instant)$/,
+    async function (_claim) {
+        const hits = this.spy.calls.filter(c => this.elementIds.includes(c.id) && c.hit);
+        assert.ok(hits.length >= this.elementIds.length, 'Every element should be served from the cache');
+        assert.deepStrictEqual(this.pageErrors, []);
     });
 
-    assert.ok(newElementCached, 'New element should be cached');
+Then('it should return null', async function () {
+    assert.strictEqual(this.getConfigResult, null);
 });
 
-Then('the module should use getConfig for new elements', async function() {
-    assert.ok(true, 'Module should use getConfig for new elements');
+Then('the module should skip processing that element', async function () {
+    const html = await this.page.evaluate(() => document.getElementById('test-element').outerHTML);
+    assert.strictEqual(html, '<div id="test-element">Plain</div>');
+    assert.deepStrictEqual(this.mc.ready.loaded, [], 'No module should load for plain markup');
 });
 
-Then('it should return null \\(not cached)', async function() {
-    // Element added after bootstrap may not be cached immediately
-    // This depends on MutationObserver timing
-    assert.ok(true, 'May return null if not yet cached');
+Then('both calls should return the exact same object reference', async function () {
+    assert.strictEqual(this.dualCall.sameReference, true);
 });
 
-Then('the module should trigger a rescan', async function() {
-    assert.ok(true, 'Module could trigger rescan');
+Then('object identity should be maintained', async function () {
+    assert.ok(this.dualCall.first, 'The element should be cached');
+    assert.strictEqual(this.dualCall.sameReference, true);
 });
 
-Then('Or wait for the MutationObserver to cache it', async function() {
-    assert.ok(true, 'Or wait for MutationObserver');
+Then('no cloning or copying should occur', async function () {
+    const same = await this.page.evaluate(() => {
+        const el = document.getElementById('test-element');
+        window.genx.getConfig(el).__marker = 1;
+        const seen = window.genx.getConfig(el).__marker === 1;
+        delete window.genx.getConfig(el).__marker;
+        return seen;
+    });
+    assert.strictEqual(same, true, 'A change to the returned object should be visible on the next call');
 });
 
-Then('subsequent getConfig calls should return the config', async function() {
-    // After MutationObserver processes, config should be available
-    assert.ok(true, 'Subsequent calls should return config');
+Then(/^getConfig\(element\) should still return (\{.*\})$/, async function (text) {
+    assert.deepStrictEqual(await configOf(this), parseLoose(text));
 });
 
-Then('modules should show measurable improvement', async function() {
-    assert.ok(this.performanceComparison, 'Performance comparison should exist');
+Then('the cache should not automatically update', async function () {
+    const attr = await this.page.evaluate(() => document.getElementById('test-element').getAttribute('fx-currency'));
+    assert.strictEqual(attr, this.changedCurrency);
+    assert.notStrictEqual((await configOf(this)).currency, this.changedCurrency);
 });
 
-Then('the improvement should be documented', async function() {
-    assert.ok(true, 'Improvement should be documented');
+Then('this is expected behavior \\(cache is set during bootstrap)', async function () {
+    // The cache is filled once per element: a rescan skips elements already cached.
+    const config = await this.page.evaluate(async () => {
+        await window.genx.rescan(document);
+        return window.genx.getConfig(document.getElementById('test-element'));
+    });
+    assert.strictEqual(config.currency, 'USD');
 });
 
-Then('performance regression tests should exist', async function() {
-    assert.ok(true, 'Regression tests should exist');
+Then('both modules should receive the same config object', async function () {
+    assert.deepStrictEqual(this.moduleConfig, this.anotherModuleConfig);
+    assert.strictEqual(this.sameReference, true);
 });
 
-Then('the following steps should be completed:', async function(docString) {
-    // Rollout checklist
-    assert.ok(true, 'Rollout checklist should be followed');
+Then('the cache should serve both modules efficiently', async function () {
+    // One entry serves every caller: no reparse between the calls.
+    assert.deepStrictEqual(this.anotherModuleConfig, this.mergedConfig);
+});
+
+Then('getConfig\\(element) should still return the original config', async function () {
+    const same = await this.page.evaluate(() =>
+        window.genx.getConfig(document.getElementById('test-element')) === window.__configBefore);
+    assert.strictEqual(same, true);
+});
+
+Then('the cache entry should remain valid', async function () {
+    assert.deepStrictEqual(await configOf(this), this.configBefore);
+});
+
+Then('only attribute changes would invalidate \\(not implemented in V1)', async function () {
+    await this.page.evaluate(() => document.getElementById('test-element').setAttribute('fx-format', 'number'));
+    assert.deepStrictEqual(await configOf(this), this.configBefore, 'V1 does not invalidate on attribute change');
+});
+
+Then('it should receive the cached config \\(even if invalid)', async function () {
+    assert.deepStrictEqual(this.getConfigResult, { format: 'invalid-format', decimals: 'not-a-number' });
+});
+
+Then('the module should validate the config values', async function () {
+    // fmtX was loaded for the element and processed it without throwing.
+    assert.ok(this.mc.ready.loaded.includes('fx'), 'fmtX should load for the element');
+    assert.deepStrictEqual(this.mc.ready.failed, []);
+});
+
+Then('handle errors appropriately', async function () {
+    const text = await this.page.evaluate(() => document.getElementById('test-element').textContent);
+    assert.strictEqual(text, '42', 'An unknown format should leave the value as written');
+    assert.deepStrictEqual(this.pageErrors, []);
+});
+
+// ---------------------------------------------------------------- Backward compatibility
+
+Given('existing module code that uses getAttribute\\()', async function () {
+    // fmtX on its own, without the bootloader: it parses attributes itself.
+    // A fresh document: the Background left the bootloader (window.genx) on this one.
+    await this.page.goto('about:blank');
+    await this.page.setContent('<span id="price" fx-format="currency" fx-currency="EUR">1234.5</span>');
+    await this.page.addScriptTag({ path: './src/genx-common.js' }); // standalone fmtX parses through genxCommon
+    await this.page.addScriptTag({ path: './src/fmtx.js' });
+    await this.page.evaluate(() => window.FormatX.scan(document));
+    this.standaloneText = await this.page.evaluate(() => document.getElementById('price').textContent);
+    this.standaloneErrors = [...this.pageErrors];
+});
+
+When('modules are updated to use getConfig\\()', async function () {
+    await boot(this, '<span id="price" fx-format="currency" fx-currency="EUR">1234.5</span>');
+    this.cachedText = await this.page.evaluate(() => document.getElementById('price').textContent);
+    this.cacheUsed = (await spyLog(this)).calls.some(c => c.id === 'price' && c.hit);
+});
+
+Then('all existing functionality should work identically', async function () {
+    assert.notStrictEqual(this.standaloneText, '1234.5', 'Standalone fmtX should format');
+    assert.strictEqual(this.cachedText, this.standaloneText);
+});
+
+Then('no regressions should occur', async function () {
+    assert.deepStrictEqual(this.standaloneErrors, []);
+    assert.deepStrictEqual(this.pageErrors, []);
+});
+
+Then('tests should remain green', async function () {
+    assert.ok(this.cacheUsed, 'The bootloader path should format from the cache');
+});
+
+// ---------------------------------------------------------------- Documentation and tests
+
+const DOC = 'docs/architecture/genx-common-infrastructure-architecture-v1.0.md';
+
+Given('a genX module implementation', async function () {
+    this.doc = readSrc(DOC);
+    const section = this.doc.split(/^## /m).find(s => /^(\d+\.\s*)?Configuration Cache/.test(s));
+    assert.ok(section, `${DOC} should have a "Configuration Cache" section`);
+    this.cacheDoc = section;
+});
+
+Then('its documentation should specify to use window.genx.getConfig\\(element)', async function () {
+    assert.ok(this.cacheDoc.includes('window.genx.getConfig(element)'));
+});
+
+Then('its documentation should specify to never use getAttribute\\() for genX attributes', async function () {
+    assert.match(this.cacheDoc, /[Nn]ever (call|use) `?getAttribute\(\)`?/);
+});
+
+Then('its documentation should specify to handle null return value gracefully', async function () {
+    assert.match(this.cacheDoc, /returns `null`/);
+});
+
+Then('its documentation should specify to expect O\\(1) lookup performance', async function () {
+    assert.ok(this.cacheDoc.includes('O(1)'));
+});
+
+Given('a module test suite', async function () {
+    const dir = path.join(ROOT, 'tests', 'unit');
+    this.unitTests = fs.readdirSync(dir).filter(f => f.endsWith('.js'))
+        .map(f => ({ file: f, text: fs.readFileSync(path.join(dir, f), 'utf8') }))
+        .filter(t => t.text.includes('getConfig'));
+    assert.ok(this.unitTests.length > 0, 'Some unit test should cover getConfig');
+});
+
+Then('tests should mock window.genx.getConfig\\()', async function () {
+    assert.ok(this.unitTests.some(t => /window\.genx\s*=\s*\{[^}]*getConfig/.test(t.text) ||
+        /genx\.getConfig\s*=\s*jest\.fn/.test(t.text) || /getConfig:\s*jest\.fn/.test(t.text)));
+});
+
+Then('tests should verify getConfig is called, not getAttribute', async function () {
+    assert.ok(this.unitTests.some(t => /getConfig\)\.toHaveBeenCalled/.test(t.text)));
+});
+
+Then('tests should provide test config via mock getConfig', async function () {
+    assert.ok(this.unitTests.some(t => /getConfig:\s*jest\.fn\([^)]*=>/.test(t.text) ||
+        /mockReturnValue/.test(t.text)));
+});
+
+Then('tests should assert cache usage', async function () {
+    assert.ok(this.unitTests.some(t => /getConfig\)\.toHaveBeenCalledWith/.test(t.text)));
+});
+
+// ---------------------------------------------------------------- Content added later
+
+Given('a module is loaded after bootstrap', async function () {
+    // Bootstrap with no genX markup: no module is loaded yet.
+    await boot(this, '<div id="host"></div>');
+    assert.deepStrictEqual(this.mc.ready.loaded, []);
+});
+
+Given('new elements have been added to the DOM', async function () {
+    await this.page.evaluate(() => {
+        document.getElementById('host').innerHTML = '<span id="new-element" fx-format="currency">12</span>';
+    });
+});
+
+When('the MutationObserver detects new elements', async function () {
+    await this.page.waitForFunction(() =>
+        window.genx.isLoaded('fx') && window.genx.getConfig(document.getElementById('new-element')) !== null,
+    null, { timeout: 5000 });
+});
+
+Then('new elements should be scanned and parsed', async function () {
+    const config = await configOf(this, 'new-element');
+    assert.deepStrictEqual(config, { format: 'currency' });
+});
+
+Then('new configs should be added to the cache', async function () {
+    assert.ok(await configOf(this, 'new-element'));
+});
+
+Then('the module should use getConfig for new elements', async function () {
+    await this.page.waitForFunction(() => document.getElementById('new-element').textContent !== '12',
+        null, { timeout: 5000 });
+    const { calls } = await spyLog(this);
+    assert.ok(calls.some(c => c.id === 'new-element' && c.hit), 'fmtX should format from the cache');
+});
+
+Given('an element is added to the DOM after bootstrap', async function () {
+    await boot(this, '<span id="first" fx-format="number">1</span>');
+    await this.page.evaluate(() => {
+        // Hold the observer so the element is seen before it is cached.
+        window.__added = document.createElement('span');
+        window.__added.id = 'test-element';
+        window.__added.setAttribute('fx-format', 'currency');
+        window.__added.textContent = '7';
+        document.body.appendChild(window.__added);
+        window.__beforeObserver = window.genx.getConfig(window.__added);
+    });
+});
+
+Given('the element has not been cached yet', async function () {
+    assert.strictEqual(await this.page.evaluate(() => window.__beforeObserver), null);
+});
+
+Then('it should return null \\(not cached)', async function () {
+    assert.strictEqual(await this.page.evaluate(() => window.__beforeObserver), null);
+});
+
+Then('the module should trigger a rescan or wait for MutationObserver', async function () {
+    await this.page.waitForFunction(() => window.genx.getConfig(window.__added) !== null, null, { timeout: 5000 });
+});
+
+Then('subsequent getConfig calls should return the config', async function () {
+    assert.deepStrictEqual(await configOf(this), { format: 'currency' });
+});
+
+// ---------------------------------------------------------------- Module init pattern
+
+Then('it should call getConfig\\(element) first', async function () {
+    assert.ok(this.spy.calls.some(c => c.id === 'test-element'), 'fmtX should ask the cache');
+});
+
+Then('if getConfig returns null, skip the element', async function () {
+    const plain = await this.page.evaluate(async () => {
+        const el = document.createElement('span');
+        el.id = 'uncached';
+        el.textContent = '5';
+        document.body.appendChild(el);
+        await window.genx.rescan([el]);
+        return { config: window.genx.getConfig(el), text: el.textContent };
+    });
+    assert.deepStrictEqual(plain, { config: null, text: '5' });
+});
+
+Then('if getConfig returns a config, use it', async function () {
+    assert.ok(this.getConfigResult, 'The element should be cached');
+    const text = await this.page.evaluate(() => document.getElementById('test-element').textContent);
+    assert.notStrictEqual(text, '25', 'fmtX should format the cached element');
+});
+
+// ---------------------------------------------------------------- No attribute re-parsing
+
+const attrReadsOn = (world, ids) => world.spy.attrReads.filter(r => ids.includes(r.id));
+
+Then(/^(?:it should NOT call element\.getAttribute\(\) for configuration|never call getAttribute\(\) for configuration)$/, async function () {
+    assert.deepStrictEqual(attrReadsOn(this, ['test-element']), [],
+        'After the cache answers, the module should not re-read genX attributes');
+});
+
+Then('it should NOT parse attributes directly', async function () {
+    assert.deepStrictEqual(attrReadsOn(this, this.elementIds), [],
+        'After the cache answers, fmtX should not re-read genX attributes');
 });

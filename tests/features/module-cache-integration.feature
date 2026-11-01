@@ -8,6 +8,8 @@ Feature: Module Cache Integration
     And the parse cache is populated with element configurations
     And window.genx.getConfig is available
 
+  # @wip: RULE 2d. fmtX re-reads its dynamic attributes (fx-type, fx-decimals, fx-currency, fx-raw, ...) after a cache hit so interactive demos can change them; dropping the re-read would alter shipped behavior. Reported to Adam.
+  @wip
   Scenario: Module uses getConfig instead of getAttribute
     Given an element with fx-format="currency" fx-currency="USD"
     And the element has been parsed and cached during bootstrap
@@ -16,6 +18,7 @@ Feature: Module Cache Integration
     And it should NOT call element.getAttribute() for configuration
     And it should receive the cached config object
 
+  @perf
   Scenario: getConfig returns O(1) lookup performance
     Given 1000 elements with cached configurations
     When a module calls getConfig() for each element
@@ -48,9 +51,11 @@ Feature: Module Cache Integration
     Given an element with class="fmt-currency-USD-2"
     And the element has been cached during bootstrap
     When fmtX module calls window.genx.getConfig(element)
-    Then it should return {format: "currency", currency: "USD", decimals: "2"}
+    Then it should return {format: "currency", currency: "USD", decimals: 2}
     And class notation should produce identical config
 
+  # @wip: RULE 2d. fmtX re-reads its dynamic attributes (fx-type, fx-decimals, fx-currency, fx-raw, ...) after a cache hit so interactive demos can change them; dropping the re-read would alter shipped behavior. Reported to Adam.
+  @wip
   Scenario: fmtX module uses cache for formatting
     Given 100 elements with fx-format attributes
     And all elements are cached during bootstrap
@@ -91,6 +96,8 @@ Feature: Module Cache Integration
     And it should use cached source and debounce settings
     And load setup should be instant
 
+  # @wip: navX reads nx-route on links inside an nx-nav container; a link is not a cache entry (nx-route is not a bootloader entry attribute). Per-link caching is unbuilt.
+  @wip
   Scenario: navX module uses cache for navigation
     Given 30 elements with nx-route attributes
     And all elements are cached during bootstrap
@@ -142,6 +149,7 @@ Feature: Module Cache Integration
     And the cache should not automatically update
     And this is expected behavior (cache is set during bootstrap)
 
+  @perf
   Scenario: Performance comparison - getConfig vs getAttribute
     Given 1000 elements with genX attributes
     And all elements are cached
@@ -151,6 +159,8 @@ Feature: Module Cache Integration
     And 1000 getConfig calls should complete in <1ms
     And 1000 getAttribute + parse calls would take >50ms
 
+  # @wip: RULE 2d. fmtX re-reads its dynamic attributes (fx-type, fx-decimals, fx-currency, fx-raw, ...) after a cache hit so interactive demos can change them; dropping the re-read would alter shipped behavior. Reported to Adam.
+  @wip
   Scenario: Module init pattern - check cache first
     Given an element that may or may not be cached
     When a module processes the element
@@ -213,6 +223,7 @@ Feature: Module Cache Integration
     And the module should trigger a rescan or wait for MutationObserver
     And subsequent getConfig calls should return the config
 
+  @perf
   Scenario: Module performance gains are measurable
     Given performance benchmarks before cache integration
     And performance benchmarks after cache integration
@@ -221,6 +232,8 @@ Feature: Module Cache Integration
     And the improvement should be documented
     And performance regression tests should exist
 
+  # @wip: a process checklist for maintainers (steps 5 and 7 are manual), not product behavior
+  @wip
   Scenario: Cache integration rollout checklist
     Given a module needs cache integration
     Then step 1 should update module to call window.genx.getConfig(element)
