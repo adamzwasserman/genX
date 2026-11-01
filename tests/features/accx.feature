@@ -86,7 +86,7 @@ Feature: AccessX (accX) - Accessibility Enhancement Module
     When the element is processed
     Then a character counter should be added
     And in accX, it should display "0/200 characters"
-    When the user types "Hello"
+    When in accX, the user types "Hello"
     Then in accX, it should display "5/200 characters"
 
   # Navigation Enhancement
@@ -99,7 +99,7 @@ Feature: AccessX (accX) - Accessibility Enhancement Module
   Scenario: Current page link
     Given a nav with ax-enhance="nav" ax-current="true"
     And a link href="/about"
-    And the current URL is "/about"
+    And in accX, the current URL is "/about"
     When the element is processed
     Then the link should have aria-current="page"
 
@@ -213,16 +213,16 @@ Feature: AccessX (accX) - Accessibility Enhancement Module
     Given the accX module is initialized
     When AccessX.announce("Changes saved", "polite") is called
     Then a temporary live region should be created
-    And it should have aria-live="polite"
-    And it should contain "Changes saved"
+    And in accX, it should have aria-live="polite"
+    And in accX, it should contain "Changes saved"
     And it should be removed after announcement
 
   Scenario: Assertive announcement
     Given the accX module is initialized
     When AccessX.announce("Error occurred", "assertive") is called
     Then a temporary live region should be created
-    And it should have aria-live="assertive"
-    And it should contain "Error occurred"
+    And in accX, it should have aria-live="assertive"
+    And in accX, it should contain "Error occurred"
 
   # Validation
   Scenario: Validate image missing alt text
@@ -248,9 +248,10 @@ Feature: AccessX (accX) - Accessibility Enhancement Module
       """
     Then the MutationObserver should detect it
     And the button should be automatically enhanced
-    And it should have aria-pressed="false"
+    And in accX, it should have aria-pressed="false"
 
   # Performance
+  @perf
   Scenario: Process 1000 accessible elements under 16ms
     Given 1000 elements with various ax- attributes
     When all accX elements are processed

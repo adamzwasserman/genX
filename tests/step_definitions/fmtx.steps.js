@@ -29,6 +29,12 @@ Given('an element with attributes:', async function(dataTable) {
 });
 
 When('the element is processed', async function() {
+    // Modules whose fixtures process differently register a hook (accX loads
+    // its script so it scans the page itself).
+    if (this.processElement) {
+        await this.processElement();
+        return;
+    }
     await this.page.evaluate(() => {
         const el = document.getElementById('test');
         if (window.FormatX) {
