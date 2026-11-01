@@ -127,6 +127,12 @@ When('{int}ms passes', async function(milliseconds) {
     await this.page.waitForTimeout(milliseconds);
 });
 
+Then('it should not throw an error', async function() {
+    // Uncaught errors from the page, including ones inside observers and timers
+    expect(this.pageErrors).toEqual([]);
+    expect(this.page.isClosed()).toBe(false);
+});
+
 Then('the operation should complete in less than {int}ms', async function(milliseconds) {
     expect(this.operationTime).toBeDefined();
     expect(this.operationTime).toBeLessThan(milliseconds);

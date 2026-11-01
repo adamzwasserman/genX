@@ -4,12 +4,11 @@
  */
 
 const { Given, When, Then, Before, After } = require('@cucumber/cucumber');
-const { chromium } = require('@playwright/test');
 const { expect } = require('@playwright/test');
 const { baseUrl } = require('../fixtures/server');
 
 // Shared context for all base tests
-let browser, context, page;
+let page; // the world's page for the current scenario
 let mutationCount = 0;
 let mutationObserver = null;
 let performanceMarks = {};
@@ -42,10 +41,10 @@ const MODULE_CONFIG = {
   }
 };
 
+// The world (tests/support/world.js) opens and closes the page; this hook
+// used to launch a second browser per scenario for every feature.
 Before(async function() {
-  browser = await chromium.launch({ headless: true });
-  context = await browser.newContext();
-  page = await context.newPage();
+  page = this.page;
 
   // Set up console monitoring
   this.consoleErrors = [];
@@ -62,23 +61,19 @@ Before(async function() {
   // Set up performance monitoring
   this.performanceMetrics = {};
 
-  this.page = page;
   this.moduleConfig = null;
 });
 
 After(async function() {
-  if (mutationObserver) {
+  if (mutationObserver && page && !page.isClosed()) {
     await page.evaluate(() => {
       if (window._testObserver) {
         window._testObserver.disconnect();
         window._testObserver = null;
       }
-    });
+    }).catch(() => {});
   }
-
-  if (page) await page.close();
-  if (context) await context.close();
-  if (browser) await browser.close();
+  page = null;
 
   mutationCount = 0;
   mutationObserver = null;

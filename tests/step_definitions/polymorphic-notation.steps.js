@@ -16,36 +16,23 @@
  * - dragX (dragging): basic, handle, complex
  */
 
-const { Given, When, Then, Before, After } = require('@cucumber/cucumber');
+const { Given, When, Then, Before } = require('@cucumber/cucumber');
 const { findElement, parseAttributes } = require('../support/element-fixtures');
 const assert = require('assert');
-const { chromium } = require('@playwright/test');
 
-// Browser context
-let browser;
-let context;
+// The scenario's page (set from the world in Before)
 let page;
 
+// The world (tests/support/world.js) opens the page for every scenario and
+// records console messages into this.consoleMessages; this hook only resets
+// the notation state. It used to launch a second browser per scenario and
+// replace this.page, which leaked the world's page and hid its listeners.
 Before(async function() {
-  browser = await chromium.launch({ headless: true });
-  context = await browser.newContext();
-  page = await context.newPage();
-  this.page = page;
+  page = this.page;
   this.consoleMessages = [];
   this.performanceMetrics = {};
   this.notationResults = [];
   this.elementStates = {};
-
-  // Monitor console messages
-  page.on('console', (msg) => {
-    this.consoleMessages.push({ type: msg.type(), text: msg.text() });
-  });
-});
-
-After(async function() {
-  if (page) await page.close();
-  if (context) await context.close();
-  if (browser) await browser.close();
 });
 
 // ============================================================================

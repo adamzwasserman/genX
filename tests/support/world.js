@@ -39,6 +39,12 @@ class GenXWorld extends World {
         this.browser = await GenXWorld.openSharedBrowser();
         this.context = await this.browser.newContext();
         this.page = await this.context.newPage();
+        // Uncaught page errors (including ones thrown inside MutationObserver
+        // callbacks) and console output, for steps that assert on them.
+        this.pageErrors = [];
+        this.consoleMessages = [];
+        this.page.on('pageerror', error => this.pageErrors.push(error.message));
+        this.page.on('console', msg => this.consoleMessages.push({ type: msg.type(), text: msg.text() }));
     }
 
     // Close only the per-scenario page/context; do NOT close the shared browser here.
