@@ -83,8 +83,9 @@ Feature: bindX Two-Way Data Binding (bx-model)
 
   # Performance
 
+  @perf
   Scenario: Handle many bound inputs efficiently
     Given I have 50 text inputs all with unique bx-model attributes
     When I update all inputs simultaneously
     Then all data properties should update correctly
-    And the total time should be less than 500 milliseconds
+    And in bindx-two-way-binding, the total time should be less than 500 milliseconds

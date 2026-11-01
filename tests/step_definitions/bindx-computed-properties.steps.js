@@ -1,95 +1,73 @@
 /**
  * Step definitions for bindX Computed Properties
  * Covers: bindx-computed-properties.feature
+ *
+ * Each "computed property NAME = () => EXPR" line becomes a real
+ * bindX.computed() on the fixture page. EXPR reads `data`, a view of the
+ * reactive data in which computed names resolve to their computed values, so
+ * "data.squared" reads the squared computed. window._evals counts how often
+ * each computed function actually runs.
  */
 
 const { Given, When, Then } = require('@cucumber/cucumber');
 const assert = require('assert');
+const { mountBindx, render, setData } = require('../support/bindx-fixture');
+
+const useData = async (world, data) => {
+    await mountBindx(world);
+    await world.page.evaluate(d => { window._testData = d; }, data);
+    await render(world);
+};
 
 // ============================================================================
 // SETUP STEPS
 // ============================================================================
 
 // {float} also matches integers, so one step covers 'I have reactive data { a: 2, b: 3 }'.
-
-Given('computed property {word} = arrow function with data.{word} plus data.{word}', async function(computedName, prop1, prop2) {
-    await this.page.evaluate(([name, p1, p2]) => {
-        if (!window._computed) window._computed = {};
-        window._computed[name] = () => window._reactive[p1] + window._reactive[p2];
-    }, [computedName, prop1, prop2]);
-});
-
 Given('I have reactive data \\{ {word}: {int}, {word}: {float} }', async function(key1, val1, key2, val2) {
-    await this.page.evaluate(([k1, v1, k2, v2]) => {
-        window._testData = { [k1]: v1, [k2]: v2 };
-        if (window.bindx) {
-            window._reactive = window.bindX.bindx(window._testData);
-        }
-    }, [key1, val1, key2, val2]);
-});
-
-Given('computed property {word} = arrow function with data.{word} times {int} plus data.{word}', async function(computedName, prop1, multiplier, prop2) {
-    await this.page.evaluate(([name, p1, mult, p2]) => {
-        if (!window._computed) window._computed = {};
-        window._computed[name] = () => window._reactive[p1] * (mult + window._reactive[p2]);
-    }, [computedName, prop1, multiplier, prop2]);
+    await useData(this, { [key1]: val1, [key2]: val2 });
 });
 
 Given('I have reactive data \\{ {word}: {int} }', async function(key, value) {
-    await this.page.evaluate(([k, v]) => {
-        window._testData = { [k]: v };
-        if (window.bindx) {
-            window._reactive = window.bindX.bindx(window._testData);
+    await useData(this, { [key]: value });
+});
+
+Given(/^(?:I have )?computed property (\w+) = \(\) => (.+)$/, async function(name, expr) {
+    if (!this.bx || !this.bx.rendered) {
+        // Scenarios without a data line compute over a = 1, b = 2
+        await useData(this, { a: 1, b: 2 });
+    }
+    await this.page.evaluate(([n, e]) => {
+        window._computed = window._computed || {};
+        window._evals = window._evals || {};
+        window._evals[n] = 0;
+        if (!window._dataView) {
+            window._dataView = new Proxy({}, {
+                get: (_, key) => (key in window._computed ? window._computed[key]() : window._reactive[key])
+            });
         }
-    }, [key, value]);
+        if (!window.heavyComputation) {
+            window._heavyCount = 0;
+            window.heavyComputation = () => { window._heavyCount++; return 42; };
+        }
+        const body = new Function('data', 'heavyComputation', `return (${e});`);
+        // A named function, so cycle errors name the computed
+        const fn = { [n]: function() {
+            window._evals[n]++;
+            return body(window._dataView, window.heavyComputation);
+        } }[n];
+        window._computed[n] = window.bindX.computed(fn);
+    }, [name, expr]);
 });
 
-Given('computed property {word} = arrow function with data.{word} times data.{word}', async function(computedName, prop) {
-    await this.page.evaluate(([name, p]) => {
-        if (!window._computed) window._computed = {};
-        window._computed[name] = () => window._reactive[p] * window._reactive[p];
-    }, [computedName, prop]);
-});
-
-Given('computed property {word} = arrow function with squared times data.{word}', async function(computedName, prop) {
-    await this.page.evaluate(([name, p]) => {
-        if (!window._computed) window._computed = {};
-        window._computed[name] = () => window._computed.squared() * window._reactive[p];
-    }, [computedName, prop]);
-});
-
-Given('I have computed property {word} = arrow function with data.{word} plus {int}', async function(computedA, propB, increment) {
-    await this.page.evaluate(([name, p, inc]) => {
-        if (!window._computed) window._computed = {};
-        window._computed[name] = () => window._reactive[p] + inc;
-    }, [computedA, propB, increment]);
-});
-
-Given('computed property {word} = arrow function with data.{word} plus {int}', async function(computedB, propA, increment) {
-    await this.page.evaluate(([name, p, inc]) => {
-        if (!window._computed) window._computed = {};
-        window._computed[name] = () => window._reactive[p] + inc;
-    }, [computedB, propA, increment]);
-});
-
-Given('I have computed property {word} = arrow function calling heavyComputation', async function(computedName) {
-    await this.page.evaluate((name) => {
-        window._computationCount = 0;
-        window.heavyComputation = () => {
-            window._computationCount++;
-            return 42;
-        };
-        if (!window._computed) window._computed = {};
-        window._computed[name] = () => window.heavyComputation();
-    }, computedName);
-});
-
-Given('{word} has been computed and cached', async function(computedName) {
-    await this.page.evaluate((name) => {
-        // Execute computed to cache it
-        const result = window._computed[name]();
-        window._cachedResult = result;
-    }, computedName);
+Given('{word} has been computed and cached', async function(name) {
+    const state = await this.page.evaluate((n) => {
+        const value = window._computed[n]();
+        return { value, cached: window.__bxi.computedCache.get(window._computed[n]).cached, evals: window._evals[n] };
+    }, name);
+    assert.strictEqual(state.cached, true);
+    this.cachedValue = state.value;
+    this.evalsBefore = state.evals;
 });
 
 // ============================================================================
@@ -97,104 +75,81 @@ Given('{word} has been computed and cached', async function(computedName) {
 // ============================================================================
 
 When('I set data.{word} = {float}', async function(key, value) {
-    await this.page.evaluate(([k, v]) => {
-        if (window._reactive) {
-            window._reactive[k] = v;
-        }
-    }, [key, value]);
-    await this.page.waitForTimeout(50);
+    await render(this);
+    await setData(this, key, value);
 });
 
-When('I read {word} {int} times without data changes', async function(computedName, count) {
-    this.readResults = await this.page.evaluate(([name, c]) => {
+When('I read {word} {int} times without data changes', async function(name, count) {
+    this.readResults = await this.page.evaluate(([n, c]) => {
         const results = [];
         for (let i = 0; i < c; i++) {
-            results.push(window._computed[name]());
+            results.push(window._computed[n]());
         }
         return results;
-    }, [computedName, count]);
+    }, [name, count]);
 });
 
 When('I change data.{word}', async function(key) {
-    await this.page.evaluate((k) => {
-        if (window._reactive) {
-            window._reactive[k] = 999; // Change to arbitrary value
-        }
-    }, key);
-    await this.page.waitForTimeout(50);
+    await this.page.evaluate((k) => { window._reactive[k] = 999; }, key);
 });
 
 // ============================================================================
 // ASSERTION STEPS
 // ============================================================================
 
-Then('{word} should equal {int}', async function(computedName, expected) {
-    const result = await this.page.evaluate((name) => {
-        return window._computed[name]();
-    }, computedName);
+Then('{word} should equal {int}', async function(name, expected) {
+    const result = await this.page.evaluate((n) => window._computed[n](), name);
     assert.strictEqual(result, expected);
 });
 
-Then('{word} should automatically recompute to {int}', async function(computedName, expected) {
-    await this.page.waitForTimeout(50); // Wait for reactivity
-    const result = await this.page.evaluate((name) => {
-        return window._computed[name]();
-    }, computedName);
-    assert.strictEqual(result, expected);
+Then('{word} should automatically recompute to {int}', async function(name, expected) {
+    const state = await this.page.evaluate((n) => {
+        const before = window._evals[n];
+        const value = window._computed[n]();
+        return { value, ran: window._evals[n] - before };
+    }, name);
+    assert.strictEqual(state.value, expected);
+    assert.strictEqual(state.ran, 1, 'The change should invalidate the cache so the read recomputes');
 });
 
 Then('attempting to evaluate should throw CircularDependencyError', async function() {
-    try {
-        await this.page.evaluate(() => {
-            // Attempt to evaluate computed 'a'
-            return window._computed.a();
-        });
-        assert.fail('Should have thrown CircularDependencyError');
-    } catch (error) {
-        assert.ok(error.message.includes('CircularDependency') || error.message.includes('Maximum'));
-    }
+    this.cycleError = await this.page.evaluate(() => {
+        try {
+            window._computed.a();
+            return null;
+        } catch (e) {
+            return { name: e.name, message: e.message, cycle: e.cycle };
+        }
+    });
+    assert.ok(this.cycleError, 'Should have thrown CircularDependencyError');
+    assert.strictEqual(this.cycleError.name, 'CircularDependencyError');
 });
 
-Then('error message should show the cycle path', async function() {
-    // This was verified in the previous step
-    assert.ok(true);
+Then('error message should show the cycle path', function() {
+    const { message, cycle } = this.cycleError;
+    assert.ok(cycle.length > 0, 'Error should carry the cycle');
+    assert.ok(cycle.every(n => n === 'a' || n === 'b'), `Cycle ${cycle} should name the computeds`);
+    assert.ok(message.includes(cycle.join(' → ')), `Message "${message}" should show the cycle`);
 });
 
 Then('heavyComputation should only execute once', async function() {
-    const count = await this.page.evaluate(() => {
-        return window._computationCount;
-    });
+    const count = await this.page.evaluate(() => window._heavyCount);
     assert.strictEqual(count, 1);
 });
 
-Then('{int} reads should hit cache', async function(expectedCacheHits) {
-    // If computation only executed once but we read 100 times, 99 were cache hits
-    const count = await this.page.evaluate(() => {
-        return window._computationCount;
-    });
-    assert.strictEqual(count, 1, `Expected 1 computation, got ${count}`);
+Then('{int} reads should hit cache', async function(hits) {
+    const evals = await this.page.evaluate(() => window._evals.expensive);
+    assert.strictEqual(this.readResults.length - evals, hits);
+    assert.ok(this.readResults.every(v => v === this.readResults[0]), 'Cached reads should return the same value');
 });
 
 Then('cache should be invalidated', async function() {
-    // Next read will force recomputation
-    await this.page.evaluate(() => {
-        window._cacheInvalidated = true;
-    });
-    assert.ok(true);
+    const cached = await this.page.evaluate(() => window.__bxi.computedCache.get(window._computed.sum).cached);
+    assert.strictEqual(cached, false);
 });
 
 Then('next read should recompute', async function() {
-    const beforeCount = await this.page.evaluate(() => {
-        return window._computationCount;
-    });
-
-    await this.page.evaluate(() => {
-        window._computed.sum();
-    });
-
-    const afterCount = await this.page.evaluate(() => {
-        return window._computationCount;
-    });
-
-    assert.ok(afterCount > beforeCount, 'Should have recomputed');
+    const state = await this.page.evaluate(() => ({ value: window._computed.sum(), evals: window._evals.sum }));
+    assert.strictEqual(state.evals, this.evalsBefore + 1);
+    assert.notStrictEqual(state.value, this.cachedValue);
 });

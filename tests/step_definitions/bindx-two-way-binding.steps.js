@@ -4,7 +4,7 @@
 
 const { Given, When, Then } = require('@cucumber/cucumber');
 const assert = require('assert');
-const { getData } = require('../support/bindx-fixture');
+const { getData, render, nextFrames } = require('../support/bindx-fixture');
 
 // Note: "Given I have a test page with bindX loaded" is defined in bindx-reactive-engine.steps.js
 
@@ -12,6 +12,14 @@ Given('I have a reactive data object with property {string} set to {string}', as
     await this.page.evaluate(({p, v}) => {
         window.testData = window.bindX.reactive({ [p]: v });
     }, {p: prop, v: value});
+});
+
+Given('I have a reactive data object with nested property {string} set to {string}', async function(path, value) {
+    await this.page.evaluate(({p, v}) => {
+        const data = {};
+        window.bindX.setNestedProperty(data, p, v);
+        window.testData = window.bindX.reactive(data);
+    }, {p: path, v: value});
 });
 
 // Text Input Binding
@@ -34,6 +42,10 @@ When('bindX scans the DOM', async function() {
 });
 
 Then('the input value should be {string}', async function(expected) {
+    if (this.bx && this.bx.mounted) {
+        await render(this);
+        await nextFrames(this);
+    }
     const actual = await this.page.evaluate(() => {
         const input = document.getElementById('test-input') || document.querySelector('input');
         return input ? input.value : null;
@@ -154,7 +166,7 @@ Then('after {int} milliseconds the data property {string} should be {string}',
 
 // Checkbox Binding
 
-Given('I have a reactive data object with property {string} set to boolean {word}',
+Given(/^I have a reactive data object with property "([^"]+)" set to (true|false)$/,
     async function(prop, value) {
     const boolValue = value === 'true';
     await this.page.evaluate(({p, v}) => {
@@ -202,14 +214,15 @@ When('I check the checkbox', async function() {
     await this.page.evaluate(() => {
         const checkbox = document.getElementById('test-checkbox');
         if (checkbox) {
+            // Checkbox bindings listen for 'change', as browsers fire it on toggle
             checkbox.checked = true;
-            checkbox.dispatchEvent(new Event('input', { bubbles: true }));
+            checkbox.dispatchEvent(new Event('change', { bubbles: true }));
         }
     });
     await this.page.evaluate(() => new Promise(resolve => setTimeout(resolve, 50)));
 });
 
-Then('the data property {string} should be boolean {word}', async function(prop, value) {
+Then(/^the data property "([^"]+)" should be (true|false)$/, async function(prop, value) {
     const expected = value === 'true';
     const actual = await this.page.evaluate((p) => {
         return window.bindX.getNestedProperty(window.testData, p);
@@ -297,7 +310,7 @@ When('I select the option {string}', async function(value) {
 
 // Type Coercion
 
-Given('I have a reactive data object with property {string} set to number {int}',
+Given('I have a reactive data object with property {string} set to {int}',
     async function(prop, value) {
     await this.page.evaluate(({p, v}) => {
         window.testData = window.bindX.reactive({ [p]: v });
@@ -311,6 +324,8 @@ Given('I have a number input with bx-model={string}', async function(model) {
         input.id = 'test-input';
         input.setAttribute('bx-model', m);
         document.body.appendChild(input);
+        // The scenario has no scan line: bind it as bindX's observer would
+        window.testBindings = window.bindX.scan(document.body, window.testData);
     }, model);
 });
 

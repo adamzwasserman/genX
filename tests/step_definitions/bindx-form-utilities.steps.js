@@ -391,7 +391,11 @@ Then('the error message should be {string}', async function(message) {
 });
 
 Then('the bindX error message should contain {string}', async function(text) {
-    assert.ok(true, `Error contains: ${text}`);
+    const message = this.lastBindxError ||
+        await this.page.evaluate(() => window.__lastError || null) ||
+        (this.pageErrors || []).slice(-1)[0];
+    assert.ok(message, 'Expected a bindX error');
+    assert.ok(message.includes(text), `Error "${message}" should contain "${text}"`);
 });
 
 Then('a warning should be logged', async function() {

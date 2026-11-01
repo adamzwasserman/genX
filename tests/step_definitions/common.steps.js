@@ -204,3 +204,9 @@ Then('no memory leaks should occur', async function() {
 module.exports = {
     // Export for potential reuse
 };
+
+// Shared by many features: nothing threw in the page (uncaught errors,
+// including MutationObserver callbacks) and no step recorded an error.
+Then('no errors should occur', async function() {
+    expect(this.pageErrors || []).toEqual([]);
+});

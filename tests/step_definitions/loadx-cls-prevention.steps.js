@@ -342,6 +342,8 @@ Then('activeObservers Set should be empty', async function() {
 });
 
 Then('no memory leaks should be detected', async function() {
+    // Scenarios that measured collection themselves (bindX reactive engine) check it here
+    if (typeof this.checkLeaks === 'function') return this.checkLeaks();
     // This is a conceptual check - in real scenarios we'd use Chrome DevTools Memory profiler
     // For now, verify that cleanup methods were called
     const cleanupVerified = await this.page.evaluate(() => {

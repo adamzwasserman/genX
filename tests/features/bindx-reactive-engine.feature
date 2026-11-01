@@ -124,17 +124,19 @@ Feature: bindX Reactive Engine
 
   # Performance
 
+  @perf
   Scenario: Property access performance is within target
     Given I have a reactive object with 100 properties
     When I perform 1000 property reads
     Then the average time per read should be less than 0.5 milliseconds
-    And the total time should be less than 500 milliseconds
+    And in bindx-reactive-engine, the total time should be less than 500 milliseconds
 
+  @perf
   Scenario: Property mutation performance is within target
     Given I have a reactive object with property "test" set to 0
     When I perform 1000 property writes
     Then the average time per write should be less than 0.5 milliseconds
-    And the total time should be less than 500 milliseconds
+    And in bindx-reactive-engine, the total time should be less than 500 milliseconds
 
   # Edge Cases
 

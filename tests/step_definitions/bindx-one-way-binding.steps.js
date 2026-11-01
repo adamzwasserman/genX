@@ -1,136 +1,90 @@
 /**
  * Step definitions for bindX One-Way Data Binding
  * Covers: bindx-one-way-binding.feature
+ *
+ * Markup and data go onto the bindX fixture page; the first check or change
+ * renders (scan + observer), so bindings run as they would in an app.
  */
 
 const { Given, When, Then } = require('@cucumber/cucumber');
 const assert = require('assert');
+const { addMarkup, render, setData, nextFrames } = require('../support/bindx-fixture');
+
+const setAllData = async (world, data) => {
+    await addMarkup(world, '');
+    await world.page.evaluate(d => {
+        window._testData = d;
+    }, data);
+};
+
+const text = async (world, selector) => {
+    await render(world);
+    await nextFrames(world);
+    return world.page.evaluate(sel => document.querySelector(sel)?.textContent ?? null, selector);
+};
 
 // ============================================================================
 // SETUP STEPS
 // ============================================================================
 
 Given('I have a span element with bx-bind={string}', async function(path) {
-    const html = `
-        <!DOCTYPE html>
-        <html><body>
-            <span id="test-span" bx-bind="${path}"></span>
-        </body></html>
-    `;
-    await this.page.setContent(html);
-});
-
-Given('reactive data \\{ user: \\{ name: {string} } }', async function(name) {
-    await this.page.evaluate((n) => {
-        window._testData = { user: { name: n } };
-        if (window.bindx) {
-            window._reactive = window.bindX.bindx(window._testData);
-        }
-    }, name);
+    await addMarkup(this, `<span id="test-span" bx-bind="${path}"></span>`);
 });
 
 Given('I have a span with bx-bind={string}', async function(path) {
-    const html = `
-        <!DOCTYPE html>
-        <html><body>
-            <span id="test-span" bx-bind="${path}"></span>
-        </body></html>
-    `;
-    await this.page.setContent(html);
-});
-
-Given('reactive data \\{ {word}: {int} }', async function(key, value) {
-    await this.page.evaluate(([k, v]) => {
-        window._testData = { [k]: v };
-        if (window.bindx) {
-            window._reactive = window.bindX.bindx(window._testData);
-        }
-    }, [key, value]);
+    await addMarkup(this, `<span id="test-span" bx-bind="${path}"></span>`);
 });
 
 Given('I have a div with bx-bind={string}', async function(path) {
-    const html = `
-        <!DOCTYPE html>
-        <html><body>
-            <div id="test-div" bx-bind="${path}"></div>
-        </body></html>
-    `;
-    await this.page.setContent(html);
-});
-
-Given('reactive data with nested properties', async function() {
-    await this.page.evaluate(() => {
-        window._testData = { user: { profile: { city: 'San Francisco' } } };
-        if (window.bindx) {
-            window._reactive = window.bindX.bindx(window._testData);
-        }
-    });
+    await addMarkup(this, `<div id="test-div" bx-bind="${path}"></div>`);
 });
 
 Given('I have an input with bx-bind={string} readonly', async function(path) {
-    const html = `
-        <!DOCTYPE html>
-        <html><body>
-            <input id="test-input" bx-bind="${path}" readonly />
-        </body></html>
-    `;
-    await this.page.setContent(html);
-});
-
-Given('reactive data \\{ {word}: {string} }', async function(key, value) {
-    await this.page.evaluate(([k, v]) => {
-        window._testData = { [k]: v };
-        if (window.bindx) {
-            window._reactive = window.bindX.bindx(window._testData);
-        }
-    }, [key, value]);
+    await addMarkup(this, `<input id="test-input" bx-bind="${path}" readonly />`);
 });
 
 Given('I have {int} spans with bx-bind={string}', async function(count, path) {
-    let html = '<!DOCTYPE html><html><body>';
-    for (let i = 0; i < count; i++) {
-        html += `<span class="test-span" bx-bind="${path}"></span>`;
-    }
-    html += '</body></html>';
-    await this.page.setContent(html);
+    await addMarkup(this, `<span class="test-span" bx-bind="${path}"></span>`.repeat(count));
 });
 
-Given('data containing {string}', async function(maliciousContent) {
-    await this.page.evaluate((content) => {
-        window._testData = { malicious: content };
-        if (window.bindx) {
-            window._reactive = window.bindX.bindx(window._testData);
-        }
-    }, maliciousContent);
+Given('reactive data \\{ user: \\{ name: {string} } }', async function(name) {
+    await setAllData(this, { user: { name } });
+});
+
+Given('reactive data \\{ {word}: {int} }', async function(key, value) {
+    await setAllData(this, { [key]: value });
+});
+
+Given('reactive data \\{ {word}: {string} }', async function(key, value) {
+    await setAllData(this, { [key]: value });
+});
+
+Given('reactive data with nested properties', async function() {
+    await setAllData(this, { user: { profile: { city: 'San Francisco' } } });
+});
+
+Given('data containing {string}', async function(content) {
+    await setAllData(this, { malicious: content });
+    await this.page.evaluate(() => {
+        window._alertTriggered = false;
+        window.alert = () => {
+            window._alertTriggered = true;
+        };
+    });
 });
 
 Given('data \\{ {word}: {string} }', async function(key, value) {
-    await this.page.evaluate(([k, v]) => {
-        window._testData = { [k]: v === '""' ? '' : v };
-        if (window.bindx) {
-            window._reactive = window.bindX.bindx(window._testData);
-        }
-    }, [key, value]);
+    await setAllData(this, { [key]: value === '""' ? '' : value });
 });
 
 // Unquoted values only; quoted values go to 'data { {word}: {string} }'.
 Given(/^data \{ (\w+): ([^"'\s]+) \}$/, async function(key, value) {
-    const parsedValue = value === 'true' ? true : value === 'false' ? false : value;
-    await this.page.evaluate(([k, v]) => {
-        window._testData = { [k]: v };
-        if (window.bindx) {
-            window._reactive = window.bindX.bindx(window._testData);
-        }
-    }, [key, parsedValue]);
+    const parsed = value === 'true' ? true : value === 'false' ? false : value;
+    await setAllData(this, { [key]: parsed });
 });
 
 Given('data \\{ }', async function() {
-    await this.page.evaluate(() => {
-        window._testData = {};
-        if (window.bindx) {
-            window._reactive = window.bindX.bindx(window._testData);
-        }
-    });
+    await setAllData(this, {});
 });
 
 // ============================================================================
@@ -140,25 +94,18 @@ Given('data \\{ }', async function() {
 // 'I set data.{word} = {float}' (bindx-computed-properties.steps.js) covers integers too.
 
 When('I change data.{word} to {int}', async function(key, value) {
-    await this.page.evaluate(([k, v]) => {
-        if (window._reactive) {
-            window._reactive[k] = v;
-        }
-    }, [key, value]);
-    await this.page.waitForTimeout(50);
+    await render(this);
+    await setData(this, key, value);
 });
 
 When('I destroy the binding', async function() {
-    await this.page.evaluate(() => {
+    await render(this);
+    this.destroyedCount = await this.page.evaluate(() => {
         const element = document.getElementById('test-span');
-        if (window.bindx && window.bindx.destroy) {
-            window.bindx.destroy(element);
-        }
+        const mine = window.__bindings.filter(b => b.element === element);
+        mine.forEach(b => b.destroy());
+        return mine.length;
     });
-});
-
-When('user typing should not update data', async function() {
-    // This is a verification step, not an action
 });
 
 // ============================================================================
@@ -166,103 +113,72 @@ When('user typing should not update data', async function() {
 // ============================================================================
 
 Then('the span should display {string}', async function(expected) {
-    const text = await this.page.evaluate(() => {
-        return document.getElementById('test-span')?.textContent;
-    });
-    assert.strictEqual(text, expected);
+    assert.strictEqual(await text(this, '#test-span'), expected);
 });
 
 Then('the span should update to {string}', async function(expected) {
-    const text = await this.page.evaluate(() => {
-        return document.getElementById('test-span')?.textContent;
-    });
-    assert.strictEqual(text, expected);
+    assert.strictEqual(await text(this, '#test-span'), expected);
 });
 
 Then('the div should display the nested value', async function() {
-    const text = await this.page.evaluate(() => {
-        return document.getElementById('test-div')?.textContent;
-    });
-    assert.ok(text && text.length > 0, 'Div should display nested value');
+    assert.strictEqual(await text(this, '#test-div'), 'San Francisco', 'Div should display nested value');
 });
 
 // 'the input value should be {string}' lives in bindx-two-way-binding.steps.js.
 
-Then('But user typing should not update data', async function() {
-    // Simulate typing in readonly field
+Then('user typing should not update data', async function() {
+    await render(this);
     await this.page.evaluate(() => {
         const input = document.getElementById('test-input');
-        input.value = 'changed';
-        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.removeAttribute('readonly');
     });
-
-    // Verify data didn't change
-    const dataValue = await this.page.evaluate(() => {
-        return window._reactive?.username;
-    });
+    await this.page.locator('#test-input').fill('changed');
+    await nextFrames(this);
+    const dataValue = await this.page.evaluate(() => window._testData.username);
     assert.strictEqual(dataValue, 'admin');
 });
 
 Then('all {int} spans should update to {string}', async function(count, expected) {
-    const texts = await this.page.evaluate(() => {
-        const spans = Array.from(document.querySelectorAll('.test-span'));
-        return spans.map(s => s.textContent);
-    });
-    assert.strictEqual(texts.length, count);
-    texts.forEach(text => {
-        assert.strictEqual(text, expected);
-    });
+    await render(this);
+    await nextFrames(this);
+    const texts = await this.page.evaluate(() =>
+        Array.from(document.querySelectorAll('.test-span')).map(s => s.textContent));
+    assert.deepStrictEqual(texts, Array(count).fill(expected));
 });
 
 Then('the script should be displayed as text', async function() {
-    const html = await this.page.evaluate(() => {
-        return document.getElementById('test-span')?.innerHTML;
-    });
-    // The HTML should contain escaped entities, not executable script
-    assert.ok(!html.includes('<script>'), 'Script should not be in HTML');
+    const shown = await text(this, '#test-span');
+    assert.strictEqual(shown, "<script>alert('xss')</script>");
 });
 
 Then('not executed as HTML', async function() {
-    // Check that no alert was triggered
-    const alertTriggered = await this.page.evaluate(() => {
-        return window._alertTriggered || false;
-    });
-    assert.strictEqual(alertTriggered, false);
+    const result = await this.page.evaluate(() => ({
+        alert: window._alertTriggered,
+        children: document.getElementById('test-span').children.length
+    }));
+    assert.deepStrictEqual(result, { alert: false, children: 0 });
 });
 
 Then('the binding should be removed from registry', async function() {
-    const inRegistry = await this.page.evaluate(() => {
-        const element = document.getElementById('test-span');
-        return window.bindx?.hasBinding?.(element) || false;
-    });
-    assert.strictEqual(inRegistry, false);
+    assert.strictEqual(this.destroyedCount, 1, 'the span should have had one binding');
+    const left = await this.page.evaluate(() =>
+        window.__bxi.getBindingRegistry().getByElement(document.getElementById('test-span')).length);
+    assert.strictEqual(left, 0);
 });
 
 Then('no one-way binding memory leaks should occur', async function() {
-    // Basic check - element should be removable
-    const removed = await this.page.evaluate(() => {
-        const element = document.getElementById('test-span');
-        return element === null || element.parentNode === null;
-    });
-    // This is a basic check; actual leak detection requires specialized tools
-    assert.ok(true, 'Memory leak check passed');
+    await this.checkReleased();
 });
 
 Then('the span should display empty string', async function() {
-    const text = await this.page.evaluate(() => {
-        return document.getElementById('test-span')?.textContent;
-    });
-    assert.strictEqual(text, '');
+    assert.strictEqual(await text(this, '#test-span'), '');
 });
 
 Then('not show {string} or {string}', async function(val1, val2) {
-    const text = await this.page.evaluate(() => {
-        return document.getElementById('test-span')?.textContent;
-    });
-    assert.ok(text !== val1 && text !== val2, `Should not show ${val1} or ${val2}`);
+    const shown = await text(this, '#test-span');
+    assert.ok(shown !== val1 && shown !== val2, `Should not show ${val1} or ${val2}`);
 });
 
 Then('not throw an error', async function() {
-    // If we got here, no error was thrown
-    assert.ok(true);
+    assert.deepStrictEqual(this.pageErrors, []);
 });

@@ -183,11 +183,6 @@ Then('no updates should execute', async function() {
     assert.ok(true, 'No updates with empty queue');
 });
 
-Then('no errors should occur', async function() {
-    // If we got here, no errors occurred
-    assert.ok(true);
-});
-
 Then('the queue should be empty', async function() {
     const isEmpty = await this.page.evaluate(() => {
         return window.bindx?.batchQueue?.size === 0;

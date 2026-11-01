@@ -8,6 +8,9 @@
  * #app with bindX.scan() (keeping the returned bindings in window.__bindings)
  * and starts bindX's MutationObserver through bindX.init(). Data changes made
  * after render go through the reactive proxy, as an app's would.
+ *
+ * bindX's CommonJS exports (registry, batch queue, withTracking) are kept on
+ * window.__bxi for steps that check internals the feature names.
  */
 
 const { baseUrl } = require('../fixtures/server');
@@ -30,7 +33,14 @@ window.__app = () => document.getElementById('app') ||
     document.getElementById('test-container') || document.body;
 </script>
 <script src="${base}/src/genx-common.js"></script>
+<script>
+// bindX exports its internals (registry, batch queue, tracking) through
+// module.exports for tests. Give it one while it loads, then keep the
+// exports on window.__bxi and remove the shim.
+window.module = { exports: {} };
+</script>
 <script src="${base}/src/bindx.js"></script>
+<script>window.__bxi = window.module.exports; delete window.module;</script>
 </body></html>`;
     await world.page.route(url => url.pathname === FIXTURE_PATH,
         route => route.fulfill({ status: 200, contentType: 'text/html', body: html }));
