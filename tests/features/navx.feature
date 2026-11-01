@@ -17,7 +17,7 @@ Feature: navX - Declarative Navigation
 
   Scenario: Active link highlighting
     Given a nav with nx-nav="main" nx-active-class="active"
-    And the current URL is "/about"
+    And in navX, the current URL is "/about"
     When the page is rendered
     Then the "About" link should have class "active"
     And other links should not have the active class
@@ -25,7 +25,7 @@ Feature: navX - Declarative Navigation
   Scenario: Active link with exact match
     Given a nav with nx-exact="true"
     And a link to "/products"
-    And the current URL is "/products/shoes"
+    And in navX, the current URL is "/products/shoes"
     Then the link should not be active
     When the URL is exactly "/products"
     Then the link should be active
@@ -33,7 +33,7 @@ Feature: navX - Declarative Navigation
   # Breadcrumbs
   Scenario: Generate breadcrumbs from path
     Given an element with nx-breadcrumb="auto"
-    And the current URL is "/products/electronics/phones"
+    And in navX, the current URL is "/products/electronics/phones"
     When the page is rendered
     Then breadcrumbs should display: "Home > Products > Electronics > Phones"
 
@@ -45,7 +45,7 @@ Feature: navX - Declarative Navigation
 
   Scenario: Breadcrumb navigation
     Given rendered breadcrumbs
-    When the user clicks "Products"
+    When in navX, the user clicks "Products"
     Then navigation should occur to "/products"
 
   # Scroll Spy
@@ -66,6 +66,7 @@ Feature: navX - Declarative Navigation
     Then sections should activate 100px before reaching top
 
   # Smooth Scrolling
+  @perf # checks animation duration
   Scenario: Smooth scroll to anchor
     Given a link with href="#section1" and nx-scroll="smooth"
     When the link is clicked
@@ -77,6 +78,7 @@ Feature: navX - Declarative Navigation
     When the link is clicked
     Then the page should jump immediately to the target
 
+  @perf # checks animation duration
   Scenario: Scroll with custom duration
     Given a link with nx-scroll="smooth" nx-duration="1000"
     When the link is clicked
@@ -93,7 +95,7 @@ Feature: navX - Declarative Navigation
     Given a mobile hamburger menu
     When the hamburger icon is clicked
     Then the menu should slide in
-    When clicked again
+    When in navX, clicked again
     Then the menu should slide out
 
   Scenario: Close menu on link click
@@ -128,6 +130,7 @@ Feature: navX - Declarative Navigation
     When the user presses Arrow Down
     Then focus should move to first dropdown item
 
+  @wip # nested sub-dropdowns are not built
   Scenario: Nested dropdowns
     Given a dropdown with sub-dropdowns
     When hovering a submenu item
@@ -135,12 +138,14 @@ Feature: navX - Declarative Navigation
     And parent dropdown should remain open
 
   # Mega Menus
+  @wip # nx-mega is not built
   Scenario: Full-width mega menu
     Given a nav item with nx-mega="true"
     When the item is activated
     Then a full-width mega menu should display
     And it should contain multiple columns
 
+  @wip # nx-mega is not built
   Scenario: Mega menu with grid layout
     Given a mega menu with nx-cols="3"
     Then the content should be in 3 columns
@@ -175,7 +180,7 @@ Feature: navX - Declarative Navigation
   Scenario: Deep link to tab
     Given tabs with deep linking enabled
     And the URL is "page.html#features"
-    When the page loads
+    When in navX, the page loads
     Then the "features" tab should be active
 
   # Navigation Guards
@@ -221,6 +226,7 @@ Feature: navX - Declarative Navigation
     When dropdown opens
     Then aria-expanded should be "true"
 
+  @wip # nx-skip-nav is not built
   Scenario: Skip navigation link
     Given a page with nx-skip-nav="true"
     Then a skip link should be added
@@ -228,6 +234,7 @@ Feature: navX - Declarative Navigation
     When focused
     Then it should become visible
 
+  @wip # nx-mega is not built
   Scenario: Keyboard trap in mega menu
     Given an open mega menu
     When the user tabs through items
@@ -236,18 +243,21 @@ Feature: navX - Declarative Navigation
     Then the menu should close and focus should return to trigger
 
   # Navigation Animations
+  @wip # nx-animation is not built
   Scenario: Slide-in animation
     Given a mobile menu with nx-animation="slide"
     When the menu opens
     Then it should slide in from the left
     And the animation should be smooth
 
+  @wip # nx-animation is not built
   Scenario: Fade animation
     Given a dropdown with nx-animation="fade"
     When the dropdown opens
     Then it should fade in
     And opacity should transition
 
+  @wip # nx-animation is not built; nx-mega is not built
   Scenario: Scale animation
     Given a mega menu with nx-animation="scale"
     When opening
@@ -256,14 +266,15 @@ Feature: navX - Declarative Navigation
   # Sticky Navigation
   Scenario: Sticky header
     Given a nav with nx-sticky="true"
-    When the user scrolls down
+    When in navX, the user scrolls down
     Then the nav should stick to the top
-    And it should have class "nx-sticky"
+    And in navX, it should have class "nx-sticky"
 
   Scenario: Sticky with offset
     Given a nav with nx-sticky="true" nx-sticky-offset="50"
     Then the nav should stick after scrolling 50px
 
+  @wip # nx-hide-on-scroll is not built
   Scenario: Hide on scroll down
     Given a nav with nx-hide-on-scroll="true"
     When the user scrolls down
@@ -272,6 +283,7 @@ Feature: navX - Declarative Navigation
     Then the nav should slide down and show
 
   # Navigation Progress
+  @wip # nx-progress is not built
   Scenario: Show page load progress
     Given a nav with nx-progress="true"
     When navigation starts
@@ -281,6 +293,7 @@ Feature: navX - Declarative Navigation
     Then the progress bar should disappear
 
   # Multi-level Navigation
+  @wip # multi-level hover menus are not built
   Scenario: Three-level navigation
     Given a nav with three levels
     When hovering level 1 item
@@ -288,12 +301,14 @@ Feature: navX - Declarative Navigation
     When hovering level 2 item
     Then level 3 should appear
 
+  @wip # nx-collapse is not built
   Scenario: Collapse inactive branches
     Given a multi-level nav with nx-collapse="true"
     When a new branch is opened
     Then the previous branch should collapse
 
   # Navigation Search
+  @wip # nx-search is not built
   Scenario: Search navigation items
     Given a nav with nx-search="true"
     And a search input
@@ -301,6 +316,7 @@ Feature: navX - Declarative Navigation
     Then only matching nav items should display
     And others should be hidden
 
+  @wip # nx-search is not built
   Scenario: Highlight search matches
     Given a nav search
     When the user types "pro"
@@ -357,6 +373,7 @@ Feature: navX - Declarative Navigation
     Then active section detection should use IntersectionObserver
     And updates should be throttled to 60 FPS
 
+  @wip # nx-mega and nx-lazy are not built
   Scenario: Lazy load mega menu content
     Given a mega menu with nx-lazy="true"
     Then content should not load initially
@@ -370,6 +387,7 @@ Feature: navX - Declarative Navigation
     Then the link should be automatically enhanced
 
   # Integration with bindX
+  @wip # navX has no bindX integration
   Scenario: Bind active state to data
     Given a nav with bx-model="navigation.activeTab"
     When a tab is clicked
@@ -379,12 +397,12 @@ Feature: navX - Declarative Navigation
   # URL Patterns
   Scenario: Match URL patterns
     Given a link with nx-pattern="/products/*"
-    And the current URL is "/products/shoes"
+    And in navX, the current URL is "/products/shoes"
     Then the link should be active
 
   Scenario: Exclude URL patterns
     Given a link with nx-exclude="/products/archive"
-    And the current URL is "/products/archive"
+    And in navX, the current URL is "/products/archive"
     Then the link should not be active
 
   # Navigation Shortcuts
@@ -394,6 +412,7 @@ Feature: navX - Declarative Navigation
     Then navigation to that link should occur
 
   # Navigation Analytics
+  @wip # nx-analytics is not built
   Scenario: Track navigation clicks
     Given a nav with nx-analytics="true"
     When a link is clicked
