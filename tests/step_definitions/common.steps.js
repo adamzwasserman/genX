@@ -16,6 +16,11 @@ Given('the DOM is ready', async function() {
 });
 
 When('the page is rendered', async function() {
+    // Module fixtures that render on demand (bindX) register this.render.
+    if (typeof this.render === 'function') {
+        await this.render();
+        return;
+    }
     await this.page.waitForLoadState('load');
 });
 
@@ -97,14 +102,22 @@ Then('the element should not have class {string}', async function(className) {
 // Common Error Handling Steps
 // ============================================================================
 
+// Errors a module reports: window._testErrors (set by some fixtures) plus
+// console errors and warnings captured by the world for this scenario.
+async function loggedErrors(world) {
+    const recorded = await world.page.evaluate(() => window._testErrors || []);
+    const consoleErrors = (world.consoleMessages || [])
+        .filter(m => m.type === 'error' || m.type === 'warning');
+    return [...recorded, ...consoleErrors];
+}
+
 Then('an error should be logged', async function() {
-    // Check console for errors
-    const errors = await this.page.evaluate(() => window._testErrors || []);
+    const errors = await loggedErrors(this);
     expect(errors.length).toBeGreaterThan(0);
 });
 
 Then('a validation error should be logged', async function() {
-    const errors = await this.page.evaluate(() => window._testErrors || []);
+    const errors = await loggedErrors(this);
     expect(errors.length).toBeGreaterThan(0);
 });
 
@@ -170,13 +183,21 @@ Then('only one DOM update should occur', async function() {
 // Common Cleanup Steps
 // ============================================================================
 
-Given('memory should be released', function() {
-    // Memory checks would require proper instrumentation
+// Fixtures that can verify their bindings or listeners were torn down
+// register this.checkReleased; others stay pending.
+Given('memory should be released', async function() {
+    if (typeof this.checkReleased === 'function') {
+        await this.checkReleased();
+        return undefined;
+    }
     return 'pending';
 });
 
-Then('no memory leaks should occur', function() {
-    // Memory leak detection would require proper tooling
+Then('no memory leaks should occur', async function() {
+    if (typeof this.checkReleased === 'function') {
+        await this.checkReleased();
+        return undefined;
+    }
     return 'pending';
 });
 

@@ -1,84 +1,82 @@
 /**
- * Step definitions for bindX module and all bindX features
- * Covers: bindx.feature, bindx-two-way-binding.feature, bindx-one-way-binding.feature,
- *         bindx-computed-properties.feature, bindx-reactive-proxy.feature,
- *         bindx-dependency-tracking.feature, bindx-binding-registry.feature, bindx-batched-updates.feature
+ * Step definitions for bindx.feature (and steps other bindX features share).
+ *
+ * Every scenario runs on the bindX fixture page (tests/support/bindx-fixture.js):
+ * markup goes into #app, data into window._testData, and the first step that
+ * needs live bindings renders the page with bindX.reactive(), bindX.scan() and
+ * bindX.init({observe: true}). Changes after render go through the reactive
+ * proxy, the way an application changes its data.
  */
 
 const { Given, When, Then } = require('@cucumber/cucumber');
 const { defineElement } = require('../support/element-fixtures');
 const { expect } = require('@playwright/test');
+const {
+    mountBindx, loadFmtx, addMarkup, render, parseValue, setData, getData, nextFrames
+} = require('../support/bindx-fixture');
+
+function escapeAttr(value) {
+    return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
+
+/** Retry an assertion until it passes or the timeout ends. */
+async function eventually(check, timeout = 1000) {
+    const end = Date.now() + timeout;
+    for (;;) {
+        try {
+            return await check();
+        } catch (error) {
+            if (Date.now() > end) throw error;
+            await new Promise(resolve => setTimeout(resolve, 25));
+        }
+    }
+}
 
 // ============================================================================
 // BACKGROUND - Module Loading
 // ============================================================================
 
 Given('the bindX module is loaded', async function() {
-    await this.page.goto('about:blank');
-    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
-    await this.page.addScriptTag({ path: './src/bindx.js' });
-
-    // Wait for bindX to be available
-    await this.page.waitForFunction(() => typeof window.bindX?.bindx === 'function');
+    await mountBindx(this);
 });
 
 // ============================================================================
 // REACTIVE DATA SETUP
 // ============================================================================
 
-Given('the reactive data object has {word}.{word}={string}', async function(obj, prop, value) {
-    await this.page.evaluate(({o, p, v}) => {
-        if (!window._testData) window._testData = {};
-        if (!window._testData[o]) window._testData[o] = {};
-        window._testData[o][p] = v;
-        window._reactive = window.bindX.bindx(window._testData);
-    }, {o: obj, p: prop, v: value});
-});
-
-Given('the reactive data object has {word}.{word}=value {word}', async function(obj, prop, value) {
-    const parsedValue = value === 'true' ? true : value === 'false' ? false : value;
-    await this.page.evaluate(({o, p, v}) => {
-        if (!window._testData) window._testData = {};
-        if (!window._testData[o]) window._testData[o] = {};
-        window._testData[o][p] = v;
-        window._reactive = window.bindX.bindx(window._testData);
-    }, {o: obj, p: prop, v: parsedValue});
-});
+// the reactive data object has user.name="John" / the reactive data has price=25.00
+Given(/^the reactive data (?:object )?has ([\w$.]+)=("[^"]*"|true|false|null|-?\d+(?:\.\d+)?)$/,
+    async function(path, raw) {
+        await setData(this, path, parseValue(raw));
+    });
 
 Given('the reactive data has {word}={string} and {word}={string}', async function(key1, val1, key2, val2) {
-    await this.page.evaluate(({k1, v1, k2, v2}) => {
-        window._testData = { [k1]: v1, [k2]: v2 };
-        window._reactive = window.bindX.bindx(window._testData);
-    }, {k1: key1, v1: val1, k2: key2, v2: val2});
+    await setData(this, key1, val1);
+    await setData(this, key2, val2);
 });
 
 Given('the reactive data has {word}={int} and {word}={int}', async function(key1, val1, key2, val2) {
-    await this.page.evaluate(({k1, v1, k2, v2}) => {
-        window._testData = { [k1]: v1, [k2]: v2 };
-        window._reactive = window.bindX.bindx(window._testData);
-    }, {k1: key1, v1: val1, k2: key2, v2: val2});
-});
-
-Given('the reactive data has {word}={word}', async function(key, value) {
-    const parsedValue = value === 'true' ? true : value === 'false' ? false : parseInt(value) || value;
-    await this.page.evaluate(({k, v}) => {
-        window._testData = { [k]: v };
-        window._reactive = window.bindX.bindx(window._testData);
-    }, {k: key, v: parsedValue});
-});
-
-Given('the nested reactive data has {word}.{word}={string}', async function(obj, prop, value) {
-    await this.page.evaluate(({o, p, v}) => {
-        window._testData = { [o]: { [p]: v } };
-        window._reactive = window.bindX.bindx(window._testData);
-    }, {o: obj, p: prop, v: value});
+    await setData(this, key1, val1);
+    await setData(this, key2, val2);
 });
 
 Given('the reactive data does not have this path', async function() {
+    await mountBindx(this);
     await this.page.evaluate(() => {
         window._testData = {};
-        window._reactive = window.bindX.bindx(window._testData);
     });
+});
+
+// the data object user.name changes to "Jane" / ... changes to false / ... to 30.00
+When(/^the data object ([\w$.]+) changes to (.+)$/, async function(path, raw) {
+    await render(this);
+    await setData(this, path, parseValue(raw));
+});
+
+// the data object user.name should be "Jane" / the data object user.subscribe should be true
+Then(/^the data object ([\w$.]+) should be (.+)$/, async function(path, raw) {
+    const expected = parseValue(raw);
+    await eventually(async () => expect(await getData(this, path)).toBe(expected));
 });
 
 // ============================================================================
@@ -86,117 +84,92 @@ Given('the reactive data does not have this path', async function() {
 // ============================================================================
 
 Given('an input with bx-model={string}', async function(model) {
-    await this.page.setContent(`
-        <html><body>
-            <input id="test-input" bx-model="${model}" />
-        </body></html>
-    `);
-    this.element = await this.page.$('#test-input');
+    await addMarkup(this, `<input id="test-input" bx-model="${escapeAttr(model)}">`, '#test-input');
+});
+
+defineElement('an element with bx-model={string}', async function(model) {
+    await addMarkup(this, `<input id="test-input" bx-model="${escapeAttr(model)}">`, '#test-input');
 });
 
 Given('a checkbox with bx-model={string}', async function(model) {
-    await this.page.setContent(`
-        <html><body>
-            <input id="test-checkbox" type="checkbox" bx-model="${model}" />
-        </body></html>
-    `);
-    this.element = await this.page.$('#test-checkbox');
+    await addMarkup(this, `<input id="test-checkbox" type="checkbox" bx-model="${escapeAttr(model)}">`,
+        '#test-checkbox');
 });
 
 Given('a textarea with bx-model={string}', async function(model) {
-    await this.page.setContent(`
-        <html><body>
-            <textarea id="test-textarea" bx-model="${model}"></textarea>
-        </body></html>
-    `);
-    this.element = await this.page.$('#test-textarea');
+    await addMarkup(this, `<textarea id="test-textarea" bx-model="${escapeAttr(model)}"></textarea>`,
+        '#test-textarea');
 });
 
+// The options arrive in the next step, so hold the select until then.
 Given('a select element with bx-model={string}', async function(model) {
-    this.selectModel = model;
+    await mountBindx(this);
+    this.bx.selectModel = model;
 });
 
-Given('options for {string}, {string}, {string}', async function(opt1, opt2, opt3) {
-    await this.page.setContent(`
-        <html><body>
-            <select id="test-select" bx-model="${this.selectModel}">
-                <option value="${opt1}">${opt1}</option>
-                <option value="${opt2}">${opt2}</option>
-                <option value="${opt3}">${opt3}</option>
-            </select>
-        </body></html>
-    `);
-    this.element = await this.page.$('#test-select');
+Given('options for {string}, {string}, {string}', async function(a, b, c) {
+    const options = [a, b, c].map(v => `<option value="${escapeAttr(v)}">${v}</option>`).join('');
+    await addMarkup(this,
+        `<select id="test-select" bx-model="${escapeAttr(this.bx.selectModel)}">${options}</select>`,
+        '#test-select');
 });
 
-Given('radio buttons with bx-model={string} and values {string}, {string}, {string}', async function(model, val1, val2, val3) {
-    await this.page.setContent(`
-        <html><body>
-            <input type="radio" name="plan" bx-model="${model}" value="${val1}" id="radio1" />
-            <input type="radio" name="plan" bx-model="${model}" value="${val2}" id="radio2" />
-            <input type="radio" name="plan" bx-model="${model}" value="${val3}" id="radio3" />
-        </body></html>
-    `);
-});
+Given('radio buttons with bx-model={string} and values {string}, {string}, {string}',
+    async function(model, a, b, c) {
+        const radios = [a, b, c].map(v =>
+            `<label><input type="radio" name="radio-group" value="${escapeAttr(v)}" bx-model="${escapeAttr(model)}">${v}</label>`
+        ).join('');
+        await addMarkup(this, `<div id="test-radios">${radios}</div>`);
+    });
 
 When('the user types {string} into the input', async function(text) {
+    await render(this);
+    this.bx.typed = text;
     await this.element.fill(text);
 });
 
 When('the user types {string} into the textarea', async function(text) {
+    await render(this);
+    this.bx.typed = text;
     await this.element.fill(text);
 });
 
 When('the user checks the checkbox', async function() {
+    await render(this);
     await this.element.check();
 });
 
+// Shared with tablex.feature, which picks a page size from its own select.
 When('the user selects {string}', async function(value) {
+    if (this.bx && this.bx.mounted) {
+        await render(this);
+    }
     await this.element.selectOption(value);
 });
 
 When('the user selects the {string} radio button', async function(value) {
-    await this.page.click(`input[value="${value}"]`);
+    await render(this);
+    await this.page.check(`#test-radios input[value="${value}"]`);
 });
 
 Then('the input should display {string}', async function(expected) {
-    const value = await this.element.inputValue();
-    expect(value).toBe(expected);
+    expect(await this.element.inputValue()).toBe(expected);
 });
 
 Then('the textarea should display {string}', async function(expected) {
-    const value = await this.element.inputValue();
-    expect(value).toBe(expected);
+    expect(await this.element.inputValue()).toBe(expected);
 });
 
 Then('the dropdown should display {string}', async function(expected) {
-    const value = await this.element.inputValue();
-    expect(value).toBe(expected);
+    expect(await this.element.inputValue()).toBe(expected);
 });
 
 Then('the checkbox should be unchecked', async function() {
-    const checked = await this.element.isChecked();
-    expect(checked).toBe(false);
+    expect(await this.element.isChecked()).toBe(false);
 });
 
 Then('the {string} radio button should be selected', async function(value) {
-    const checked = await this.page.isChecked(`input[value="${value}"]`);
-    expect(checked).toBe(true);
-});
-
-Then('the data object {word}.{word} should be {string}', async function(obj, prop, expected) {
-    const actual = await this.page.evaluate(({o, p}) => {
-        return window._testData[o][p];
-    }, {o: obj, p: prop});
-    expect(actual).toBe(expected);
-});
-
-Then('the data object {word}.{word} should be value {word}', async function(obj, prop, expected) {
-    const expectedValue = expected === 'true' ? true : expected === 'false' ? false : expected;
-    const actual = await this.page.evaluate(({o, p}) => {
-        return window._testData[o][p];
-    }, {o: obj, p: prop});
-    expect(actual).toBe(expectedValue);
+    expect(await this.page.isChecked(`#test-radios input[value="${value}"]`)).toBe(true);
 });
 
 // ============================================================================
@@ -204,209 +177,79 @@ Then('the data object {word}.{word} should be value {word}', async function(obj,
 // ============================================================================
 
 defineElement('an element with bx-bind:text={string}', async function(binding) {
-    await this.page.setContent(`
-        <html><body>
-            <span id="test-element" bx-bind:text="${binding}"></span>
-        </body></html>
-    `);
-    this.element = await this.page.$('#test-element');
+    await addMarkup(this, `<span id="test-element" bx-bind:text="${escapeAttr(binding)}"></span>`, '#test-element');
 });
 
 Given('an img with bx-bind:src={string}', async function(binding) {
-    await this.page.setContent(`
-        <html><body>
-            <img id="test-img" bx-bind:src="${binding}" />
-        </body></html>
-    `);
-    this.element = await this.page.$('#test-img');
+    await addMarkup(this, `<img id="test-img" alt="" bx-bind:src="${escapeAttr(binding)}">`, '#test-img');
 });
 
 defineElement('an element with bx-bind:class={string}', async function(binding) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="test-element" bx-bind:class="${binding}"></div>
-        </body></html>
-    `);
-    this.element = await this.page.$('#test-element');
+    await addMarkup(this, `<div id="test-element" bx-bind:class="${escapeAttr(binding)}"></div>`, '#test-element');
 });
 
 defineElement('an element with bx-bind:style.color={string}', async function(binding) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="test-element" bx-bind:style.color="${binding}"></div>
-        </body></html>
-    `);
-    this.element = await this.page.$('#test-element');
-});
-
-When('the nested data object {word}.{word} changes to {string}', async function(obj, prop, newValue) {
-    await this.page.evaluate(({o, p, v}) => {
-        window._testData[o][p] = v;
-    }, {o: obj, p: prop, v: newValue});
-});
-
-When('the nested data object {word}.{word} changes to value {word}', async function(obj, prop, newValue) {
-    const parsedValue = newValue === 'true' ? true : newValue === 'false' ? false : newValue;
-    await this.page.evaluate(({o, p, v}) => {
-        window._testData[o][p] = v;
-    }, {o: obj, p: prop, v: parsedValue});
-});
-
-When('the data object {word} changes to {string}', async function(key, newValue) {
-    await this.page.evaluate(({k, v}) => {
-        window._testData[k] = v;
-    }, {k: key, v: newValue});
-});
-
-When('the data object {word} changes to number {int}', async function(key, newValue) {
-    await this.page.evaluate(({k, v}) => {
-        window._testData[k] = v;
-    }, {k: key, v: newValue});
+    await addMarkup(this, `<div id="test-element" bx-bind:style.color="${escapeAttr(binding)}"></div>`,
+        '#test-element');
 });
 
 Then('the element should automatically update to {string}', async function(expected) {
-    await this.page.waitForTimeout(100); // Wait for binding to update
-    const content = await this.element.textContent();
-    expect(content).toBe(expected);
+    await eventually(async () => expect(await this.element.textContent()).toBe(expected));
+});
+
+Then('the element should display empty string', async function() {
+    expect(await this.element.textContent()).toBe('');
 });
 
 Then('the img src should be {string}', async function(expected) {
-    const src = await this.element.getAttribute('src');
-    expect(src).toBe(expected);
+    expect(await this.element.getAttribute('src')).toBe(expected);
 });
 
 Then('the img src should automatically update to {string}', async function(expected) {
-    await this.page.waitForTimeout(100);
-    const src = await this.element.getAttribute('src');
-    expect(src).toBe(expected);
+    await eventually(async () => expect(await this.element.getAttribute('src')).toBe(expected));
 });
 
 Then('the element style color should be {string}', async function(expected) {
-    const color = await this.element.evaluate(el => el.style.color);
-    expect(color).toBe(expected);
+    expect(await this.element.evaluate(el => el.style.color)).toBe(expected);
 });
 
 Then('the element style color should automatically update to {string}', async function(expected) {
-    await this.page.waitForTimeout(100);
-    const color = await this.element.evaluate(el => el.style.color);
-    expect(color).toBe(expected);
+    await eventually(async () => expect(await this.element.evaluate(el => el.style.color)).toBe(expected));
 });
 
 // ============================================================================
-// COMPUTED PROPERTIES (bx-compute)
+// FORMATTERS AND fmtX
 // ============================================================================
 
-defineElement('an element with bx-compute={string}', async function(computedName) {
-    this.computedName = computedName;
+Given('an element with bx-bind:text={string} and bx-format={string}', async function(binding, format) {
+    await loadFmtx(this);
+    await addMarkup(this,
+        `<span id="test-element" bx-bind:text="${escapeAttr(binding)}" bx-format="${escapeAttr(format)}"></span>`,
+        '#test-element');
 });
 
-Given('the computed function returns {word}.{word} + \' \' + {word}.{word}', async function(obj1, prop1, obj2, prop2) {
-    await this.page.evaluate(({name, o1, p1, o2, p2}) => {
-        window._computed = window._computed || {};
-        window._computed[name] = () => {
-            return window._testData[o1][p1] + ' ' + window._testData[o2][p2];
-        };
-    }, {name: this.computedName, o1: obj1, p1: prop1, o2: obj2, p2: prop2});
-
-    await this.page.setContent(`
-        <html><body>
-            <span id="test-element" bx-compute="${this.computedName}"></span>
-        </body></html>
-    `);
-    this.element = await this.page.$('#test-element');
-});
-
-Given('the computed function returns {word} * {word}', async function(var1, var2) {
-    await this.page.evaluate(({name, v1, v2}) => {
-        window._computed = window._computed || {};
-        window._computed[name] = () => {
-            return window._testData[v1] * window._testData[v2];
-        };
-    }, {name: this.computedName, v1: var1, v2: var2});
-
-    await this.page.setContent(`
-        <html><body>
-            <span id="test-element" bx-compute="${this.computedName}"></span>
-        </body></html>
-    `);
-    this.element = await this.page.$('#test-element');
-});
-
-Given('the computed function returns {word} ? {string} : {string}', async function(condition, trueVal, falseVal) {
-    await this.page.evaluate(({name, cond, tv, fv}) => {
-        window._computed = window._computed || {};
-        window._computed[name] = () => {
-            return window._testData[cond] ? tv : fv;
-        };
-    }, {name: this.computedName, cond: condition, tv: trueVal, fv: falseVal});
-
-    await this.page.setContent(`
-        <html><body>
-            <span id="test-element" bx-compute="${this.computedName}"></span>
-        </body></html>
-    `);
-    this.element = await this.page.$('#test-element');
+Given('an element with bx-bind:text={string} and fx-format={string}', async function(binding, format) {
+    await loadFmtx(this);
+    await addMarkup(this,
+        `<span id="test-element" bx-bind:text="${escapeAttr(binding)}" fx-format="${escapeAttr(format)}"></span>`,
+        '#test-element');
 });
 
 // ============================================================================
-// COLLECTION BINDING (bx-each)
+// DEBOUNCE
 // ============================================================================
 
-defineElement('an element with bx-each={string}', async function(eachExpression) {
-    this.eachExpression = eachExpression;
+Given('an input with bx-model={string} and bx-debounce={string}', async function(model, debounce) {
+    await addMarkup(this,
+        `<input id="test-input" bx-model="${escapeAttr(model)}" bx-debounce="${escapeAttr(debounce)}">`,
+        '#test-input');
 });
 
-Given('the template is {string}', async function(template) {
-    this.template = template;
-});
-
-Given('the reactive data has items=[{word}:{string}, {word}:{string}]', async function(key1, val1, key2, val2) {
-    await this.page.evaluate(({t, expr, k1, v1, k2, v2}) => {
-        window._testData = {
-            items: [{[k1]: v1}, {[k2]: v2}]
-        };
-        window._reactive = window.bindX.bindx(window._testData);
-    }, {t: this.template, expr: this.eachExpression, k1: key1, v1: val1, k2: key2, v2: val2});
-
-    await this.page.setContent(`
-        <html><body>
-            <ul id="list" bx-each="${this.eachExpression}">
-                ${this.template}
-            </ul>
-        </body></html>
-    `);
-});
-
-Given('the reactive data has items=[{word}:{string}]', async function(key, val) {
-    await this.page.evaluate(({k, v}) => {
-        window._testData = {
-            items: [{[k]: v}]
-        };
-        window._reactive = window.bindX.bindx(window._testData);
-    }, {k: key, v: val});
-
-    await this.page.setContent(`
-        <html><body>
-            <ul id="list" bx-each="${this.eachExpression}">
-                ${this.template}
-            </ul>
-        </body></html>
-    `);
-});
-
-Then('there should be {int} li element(s)', async function(count) {
-    const elements = await this.page.$$('li');
-    expect(elements.length).toBe(count);
-});
-
-Then('the first li should contain {string}', async function(text) {
-    const content = await this.page.$eval('li:first-child', el => el.textContent);
-    expect(content).toContain(text);
-});
-
-Then('the second li should contain {string}', async function(text) {
-    const content = await this.page.$eval('li:nth-child(2)', el => el.textContent);
-    expect(content).toContain(text);
+When('the user types {string} quickly', async function(text) {
+    await render(this);
+    this.bx.typed = text;
+    this.bx.typedPath = await this.element.getAttribute('bx-model');
+    await this.element.pressSequentially(text);
 });
 
 // ============================================================================
@@ -414,136 +257,147 @@ Then('the second li should contain {string}', async function(text) {
 // ============================================================================
 
 Given('an element with invalid bx-model={string}', async function(model) {
-    await this.page.setContent(`
-        <html><body>
-            <input id="test-input" bx-model="${model}" />
-        </body></html>
-    `);
-});
-
-Given('bindx\\(\\) is called with a non-object', async function() {
-    this.error = await this.page.evaluate(() => {
-        try {
-            window.bindX.bindx("not an object");
-        } catch (e) {
-            return {name: e.constructor.name, message: e.message};
-        }
-    });
+    await addMarkup(this, `<input id="test-input" bx-model="${escapeAttr(model)}">`, '#test-input');
 });
 
 Then('the binding should not be created', async function() {
-    // Check that binding was not created
-    return 'pending';
+    const count = await this.page.evaluate(() => window.__bindings.length);
+    expect(count).toBe(0);
+    // Typing into the element must not create data anywhere.
+    await this.element.fill('typed');
+    await nextFrames(this);
+    expect(await this.page.evaluate(() => JSON.stringify(window._testData))).toBe('{}');
+});
+
+Given('bindx\\(\\) is called with a non-object', async function() {
+    const thrown = await this.page.evaluate(() => {
+        try {
+            window.bindX.bindx('not an object');
+            return null;
+        } catch (e) {
+            return { name: e.constructor.name, message: e.message };
+        }
+    });
+    expect(thrown).not.toBeNull();
+    // Rebuild the page's error in Node so the shared "a TypeError should be thrown" step can check its class.
+    const ErrorClass = typeof globalThis[thrown.name] === 'function' ? globalThis[thrown.name] : Error;
+    this.error = new ErrorClass(thrown.message);
+});
+
+// ============================================================================
+// EVENTS
+// ============================================================================
+
+Then('the event detail should contain the new value', async function() {
+    const detail = await this.page.evaluate(() => window._testEventDetail);
+    expect(detail).toBeTruthy();
+    expect(detail.value).toBe(this.bx.typed);
+    expect(detail.field).toBe(await this.element.getAttribute('bx-model'));
+});
+
+// ============================================================================
+// MUTATION OBSERVER
+// ============================================================================
+
+Given('the bindX module is initialized with observe=true', async function() {
+    await render(this);
+});
+
+When('a new element with bx-model={string} is added', async function(model) {
+    await addMarkup(this, `<input id="dynamic-input" bx-model="${escapeAttr(model)}">`, '#dynamic-input');
+    this.bx.dynamicPath = model;
+    await nextFrames(this);
+});
+
+Then('the binding should be automatically created', async function() {
+    // The observer binds new elements after a short throttle; once it has,
+    // typing reaches the data.
+    await eventually(async () => {
+        await this.element.fill(`typed ${Date.now()}`);
+        const typed = await this.element.inputValue();
+        expect(await getData(this, this.bx.dynamicPath)).toBe(typed);
+    });
+});
+
+Then('the element should be reactive', async function() {
+    await setData(this, this.bx.dynamicPath, 'from data');
+    await eventually(async () => expect(await this.element.inputValue()).toBe('from data'));
 });
 
 // ============================================================================
 // CLEANUP & MEMORY
 // ============================================================================
 
-Given('the binding is active', function() {
-    this.bindingActive = true;
+Given('the binding is active', async function() {
+    await render(this);
+    const path = await this.element.getAttribute('bx-model');
+    await this.element.fill('active');
+    await eventually(async () => expect(await getData(this, path)).toBe('active'));
 });
 
 When('the unbind function is called', async function() {
-    await this.page.evaluate(() => {
-        if (window._unbind) window._unbind();
-    });
+    await this.page.evaluate(() => window.__bindings.forEach(binding => binding.destroy()));
 });
 
 Then('the binding should be removed', async function() {
-    return 'pending';
+    const path = await this.element.getAttribute('bx-model');
+    await this.element.fill('after unbind');
+    await nextFrames(this);
+    expect(await getData(this, path)).toBe('active');
+    await setData(this, path, 'changed in data');
+    expect(await this.element.inputValue()).toBe('after unbind');
 });
 
 When('the element is removed from the DOM', async function() {
+    await render(this);
     await this.element.evaluate(el => el.remove());
+    await nextFrames(this);
 });
 
 Then('the binding should be automatically cleaned up', async function() {
-    return 'pending';
+    await eventually(async () => {
+        const left = await this.page.evaluate(() => window.__bindings.filter(b => !b.__destroyed).length);
+        expect(left).toBe(0);
+    });
 });
 
 // ============================================================================
-// PLACEHOLDERS FOR COMPLEX FEATURES
+// NOT BUILT: bx-compute, bx-each, batching metrics
+// These scenarios are tagged @wip (bx-compute and bx-each are not implemented)
+// or @perf (timing), so the steps below never run in the default suite.
 // ============================================================================
 
-Given('an input with bx-model={string} and bx-debounce={string}', async function(model, debounce) {
-    return 'pending';
+defineElement('an element with bx-compute={string}', async function(computedName) {
+    await addMarkup(this, `<span id="test-element" bx-compute="${escapeAttr(computedName)}"></span>`, '#test-element');
 });
 
-Given('{int} elements bound to different properties', async function(count) {
-    return 'pending';
+defineElement('an element with bx-each={string}', async function(expression) {
+    await addMarkup(this, `<ul id="test-list" bx-each="${escapeAttr(expression)}"></ul>`, '#test-list');
 });
 
-When('{int} properties change simultaneously', async function(count) {
-    return 'pending';
-});
+const notBuilt = () => 'pending';
 
-Given('the reactive data has {int} items', async function(count) {
-    return 'pending';
-});
+Given('the computed function returns {word}.{word} + \' \' + {word}.{word}', notBuilt);
+Given('the computed function returns {word} * {word}', notBuilt);
+Given('the computed function returns {word} ? {string} : {string}', notBuilt);
+Given('computed {string} depends on computed {string}', notBuilt);
+Then('a circular dependency error should be thrown', notBuilt);
+Given('the template is {string}', notBuilt);
+Given(/^the reactive data has ([\w$.]+)=(\[.*\])$/, notBuilt);
+Given('the reactive data has {int} items', notBuilt);
+When(/^a new item (\{.*\}) is added to items$/, notBuilt);
+When('the first item is removed from items', notBuilt);
+When('the first item {word} changes to {string}', notBuilt);
+When('a new tag {string} is pushed to post.tags', notBuilt);
+Then('there should be {int} li element(s)', notBuilt);
+Then('the first li should contain {string}', notBuilt);
+Then('the second li should contain {string}', notBuilt);
+Then('there should be {int} span elements', notBuilt);
+Then('all {int} items should render', notBuilt);
+Given('{int} elements bound to different properties', notBuilt);
+When('{int} properties change simultaneously', notBuilt);
 
-When('a new item {word}:{string} is added to items', async function(key, value) {
-    return 'pending';
-});
-
-When('the first item is removed from items', async function() {
-    return 'pending';
-});
-
-When('the first item {word} changes to {string}', async function(prop, value) {
-    return 'pending';
-});
-
-Given('an element with bx-bind:text={string} and bx-format={string}', async function(binding, format) {
-    return 'pending';
-});
-
-Given('an element with bx-bind:text={string} and fx-format={string}', async function(binding, format) {
-    return 'pending';
-});
-
-When('the user types {string} quickly', async function(text) {
-    return 'pending';
-});
-
-Given('computed {string} depends on computed {string}', async function(comp1, comp2) {
-    return 'pending';
-});
-
-Then('a circular dependency error should be thrown', async function() {
-    return 'pending';
-});
-
-Given('the bindX module is initialized with observe=true', async function() {
-    return 'pending';
-});
-
-When('a new element with bx-model={string} is added', async function(model) {
-    return 'pending';
-});
-
-Then('the element should be reactive', async function() {
-    return 'pending';
-});
-
-When('an item is added to {word}', async function(arrayName) {
-    return 'pending';
-});
-
-Given('the reactive data has post.tags=[{string}, {string}]', async function(tag1, tag2) {
-    return 'pending';
-});
-
-When('a new tag {string} is pushed to post.tags', async function(tag) {
-    return 'pending';
-});
-
-Then('there should be {int} span elements', async function(count) {
-    return 'pending';
-});
-
-Then('all {int} items should render', async function(count) {
-    return 'pending';
-});
+// tablex.feature: adding a row to a bound array needs bx-each.
+When('an item is added to {word}', notBuilt);
 
 module.exports = {};

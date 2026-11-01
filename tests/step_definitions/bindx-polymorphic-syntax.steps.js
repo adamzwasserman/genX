@@ -1,165 +1,148 @@
 /**
  * Step definitions for bindX Polymorphic Syntax
  * Covers: bindx-polymorphic-syntax.feature
+ *
+ * Elements go into the bindX fixture page (tests/support/bindx-fixture.js).
+ * "the container is scanned" runs bindX.scan(), and the checks read the
+ * binding objects scan() returned: their type, path and parsed options.
  */
 
 const { Given, When, Then } = require('@cucumber/cucumber');
 const assert = require('assert');
+const { addMarkup, render, setData, parseValue, consoleOf } = require('../support/bindx-fixture');
+
+function escapeAttr(value) {
+    return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
+
+/** Rows of | attribute | value | as an attribute string. */
+function attributesFromTable(dataTable) {
+    return dataTable.hashes()
+        .map(row => `${row.attribute}="${escapeAttr(row.value)}"`)
+        .join(' ');
+}
 
 Given('an input with attributes:', async function(dataTable) {
-    const attrs = dataTable.hashes()[0];
-    let html = '<!DOCTYPE html><html><body>';
-    html += `<input id="test-input"`;
-    Object.keys(attrs).forEach(key => {
-        html += ` ${key}="${attrs[key]}"`;
-    });
-    html += ' /></body></html>';
-    await this.page.setContent(html);
+    await addMarkup(this, `<input id="test-input" ${attributesFromTable(dataTable)}>`, '#test-input');
 });
 
 Given('a div with attributes:', async function(dataTable) {
-    const attrs = dataTable.hashes()[0];
-    let html = '<!DOCTYPE html><html><body>';
-    html += `<div id="test-div"`;
-    Object.keys(attrs).forEach(key => {
-        html += ` ${key}="${attrs[key]}"`;
-    });
-    html += '></div></body></html>';
-    await this.page.setContent(html);
+    await addMarkup(this, `<div id="test-div" ${attributesFromTable(dataTable)}></div>`, '#test-div');
+});
+
+Given('a textarea with attributes:', async function(dataTable) {
+    await addMarkup(this, `<textarea id="test-textarea" ${attributesFromTable(dataTable)}></textarea>`, '#test-textarea');
 });
 
 // 'an input with bx-model' and 'a textarea with bx-model' live in bindx.steps.js.
 
 Given('a span with bx-bind={string}', async function(binding) {
-    await this.page.setContent(`
-        <!DOCTYPE html>
-        <html><body>
-            <span id="test-span" bx-bind="${binding}"></span>
-        </body></html>
-    `);
+    await addMarkup(this, `<span id="test-span" bx-bind="${escapeAttr(binding)}"></span>`, '#test-span');
 });
 
 Given('a reactive data object with {word}.{word}.{word}={string}', async function(obj1, obj2, prop, value) {
-    await this.page.evaluate(([o1, o2, p, v]) => {
-        window._testData = { [o1]: { [o2]: { [p]: v } } };
-        if (window.bindx) {
-            window._reactive = window.bindX.bindx(window._testData);
-        }
-    }, [obj1, obj2, prop, value]);
+    await setData(this, `${obj1}.${obj2}.${prop}`, value);
+});
+
+Given(/^a reactive data object with ([\w$.]+)=(-?\d+\.\d+)$/, async function(key, value) {
+    await setData(this, key, parseValue(value));
 });
 
 Given('an input {string} with bx-model={string} bx-debounce={string}', async function(id, model, debounce) {
-    const html = `
-        <!DOCTYPE html>
-        <html><body>
-            <input id="${id}" bx-model="${model}" bx-debounce="${debounce}" />
-        </body></html>
-    `;
-    await this.page.setContent(html);
+    await addMarkup(this, `<input id="${id}" bx-model="${escapeAttr(model)}" bx-debounce="${escapeAttr(debounce)}">`);
+});
+
+Given('an input {string} with bx-model={string}', async function(id, model) {
+    await addMarkup(this, `<input id="${id}" bx-model="${escapeAttr(model)}">`);
 });
 
 Given('an input {string} with bx-model={string} bx-opts={string}', async function(id, model, opts) {
-    const html = `
-        <!DOCTYPE html>
-        <html><body>
-            <input id="${id}" bx-model="${model}" bx-opts='${opts}' />
-        </body></html>
-    `;
-    await this.page.setContent(html);
+    await addMarkup(this, `<input id="${id}" bx-model="${escapeAttr(model)}" bx-opts="${escapeAttr(opts)}">`);
 });
 
 Given('a reactive data object with {word}={string}, {word}={string}, {word}={string}', async function(k1, v1, k2, v2, k3, v3) {
-    await this.page.evaluate(([keys, vals]) => {
-        window._testData = { [keys[0]]: vals[0], [keys[1]]: vals[1], [keys[2]]: vals[2] };
-        if (window.bindx) {
-            window._reactive = window.bindX.bindx(window._testData);
-        }
-    }, [[k1, k2, k3], [v1, v2, v3]]);
+    await setData(this, k1, v1);
+    await setData(this, k2, v2);
+    await setData(this, k3, v3);
 });
 
 When('the container is scanned', async function() {
-    await this.page.evaluate(() => {
-        if (window.bindx && window.bindx.scan) {
-            window.bindx.scan(document.body);
-        }
-    });
+    await render(this);
 });
 
-Then('the binding should have debounce={int}', async function(debounce) {
-    const hasDebounce = await this.page.evaluate((d) => {
-        const input = document.getElementById('test-input') || document.getElementById('test-textarea');
-        const attr = input?.getAttribute('bx-debounce') || input?.getAttribute('bx-model');
-        return attr && (attr.includes(`:${d}`) || input?.getAttribute('bx-debounce') === String(d));
-    }, debounce);
-    assert.ok(hasDebounce, `Should have debounce=${debounce}`);
-});
+/** The bindings scan() created, as plain data. */
+function bindingsSummary(world) {
+    return world.page.evaluate(() => (window.__bindings || []).map(b => ({
+        id: b.element.id,
+        tag: b.element.tagName.toLowerCase(),
+        type: b.type,
+        path: b.path,
+        debounce: b.options ? b.options.debounce : undefined,
+        formatter: b.options ? b.options.formatter : undefined
+    })));
+}
 
-Then('the div should have a one-way binding to {string}', async function(path) {
-    const hasBinding = await this.page.evaluate((p) => {
-        const div = document.getElementById('test-div');
-        return div?.getAttribute('bx-bind') === p || div?.hasAttribute('bx-bind');
-    }, path);
-    assert.ok(hasBinding, `Should have one-way binding to ${path}`);
-});
+async function onlyBinding(world) {
+    const bindings = await bindingsSummary(world);
+    assert.strictEqual(bindings.length, 1, `expected one binding, got ${JSON.stringify(bindings)}`);
+    return bindings[0];
+}
 
-Then('the binding should have formatter={string}', async function(formatter) {
-    const hasFormatter = await this.page.evaluate((f) => {
-        const elem = document.getElementById('test-div') || document.getElementById('test-span');
-        const formatAttr = elem?.getAttribute('bx-format');
-        const bindAttr = elem?.getAttribute('bx-bind');
-        return formatAttr === f || (bindAttr && bindAttr.includes(`:${f}`));
-    }, formatter);
-    assert.ok(hasFormatter, `Should have formatter=${formatter}`);
-});
+async function expectBinding(world, tag, type, path) {
+    const bindings = await bindingsSummary(world);
+    const hit = bindings.find(b => b.tag === tag && b.type === type && b.path === path);
+    assert.ok(hit, `expected a ${type} binding on <${tag}> to "${path}", got ${JSON.stringify(bindings)}`);
+}
 
-Then('the span should have a one-way binding to {string}', async function(path) {
-    const hasBinding = await this.page.evaluate((p) => {
-        const span = document.getElementById('test-span');
-        return span?.getAttribute('bx-bind') === p || span?.hasAttribute('bx-bind');
-    }, path);
-    assert.ok(hasBinding, `Should have one-way binding to ${path}`);
+// The mixed-syntax scenario binds a textarea and calls it "the input".
+Then('the input should have a two-way binding to {string}', async function(path) {
+    const bindings = await bindingsSummary(this);
+    const hit = bindings.find(b => (b.tag === 'input' || b.tag === 'textarea') &&
+        b.type === 'model' && b.path === path);
+    assert.ok(hit, `expected a two-way binding to "${path}", got ${JSON.stringify(bindings)}`);
 });
 
 Then('the textarea should have a two-way binding to {string}', async function(path) {
-    const hasBinding = await this.page.evaluate((p) => {
-        const textarea = document.getElementById('test-textarea');
-        return textarea?.getAttribute('bx-model') === p || textarea?.hasAttribute('bx-model');
-    }, path);
-    assert.ok(hasBinding, `Should have two-way binding to ${path}`);
+    await expectBinding(this, 'textarea', 'model', path);
+});
+
+Then('the div should have a one-way binding to {string}', async function(path) {
+    await expectBinding(this, 'div', 'bind', path);
+});
+
+Then('the span should have a one-way binding to {string}', async function(path) {
+    await expectBinding(this, 'span', 'bind', path);
+});
+
+Then('the binding should have debounce={int}', async function(debounce) {
+    const binding = await onlyBinding(this);
+    assert.strictEqual(binding.debounce, debounce);
 });
 
 Then('the binding should not have debounce', async function() {
-    const noDebounce = await this.page.evaluate(() => {
-        const input = document.getElementById('test-input');
-        return !input?.hasAttribute('bx-debounce');
-    });
-    assert.ok(noDebounce, 'Should not have debounce');
+    const binding = await onlyBinding(this);
+    assert.ok(!binding.debounce, `expected no debounce, got ${binding.debounce}`);
+});
+
+Then('the binding should have formatter={string}', async function(formatter) {
+    const binding = await onlyBinding(this);
+    assert.strictEqual(binding.formatter, formatter);
 });
 
 Then('a warning should be logged about invalid JSON', async function() {
-    // Console warnings are hard to catch; assume logged
-    assert.ok(true, 'Warning logged about invalid JSON');
+    const warnings = consoleOf(this, 'warning').filter(m => /JSON/i.test(m.text));
+    assert.ok(warnings.length > 0,
+        `expected a JSON warning, console had ${JSON.stringify(this.consoleMessages)}`);
 });
 
 Then('all inputs should have identical binding configurations', async function() {
-    const allSame = await this.page.evaluate(() => {
-        const input1 = document.getElementById('input1');
-        const input2 = document.getElementById('input2');
-        const input3 = document.getElementById('input3');
-
-        // All should have debounce=500
-        return input1 && input2 && input3;
+    const bindings = await bindingsSummary(this);
+    const ids = ['input1', 'input2', 'input3'];
+    const configs = ids.map(id => bindings.find(b => b.id === id));
+    assert.ok(configs.every(Boolean), `expected bindings for ${ids.join(', ')}, got ${JSON.stringify(bindings)}`);
+    configs.forEach((c, i) => {
+        assert.strictEqual(c.type, 'model', `${ids[i]} type`);
+        assert.strictEqual(c.debounce, 500, `${ids[i]} debounce`);
+        assert.strictEqual(c.formatter, configs[0].formatter, `${ids[i]} formatter`);
     });
-    assert.ok(allSame, 'All inputs should have identical configs');
-});
-
-Then('the input should have a two-way binding to {string}', async function(path) {
-    const hasBinding = await this.page.evaluate((p) => {
-        const inputs = document.querySelectorAll('input');
-        return Array.from(inputs).some(input => {
-            const model = input.getAttribute('bx-model');
-            return model === p || model?.startsWith(p);
-        });
-    }, path);
-    assert.ok(hasBinding, `Should have two-way binding to ${path}`);
 });

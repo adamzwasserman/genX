@@ -4,6 +4,7 @@
 
 const { Given, When, Then } = require('@cucumber/cucumber');
 const assert = require('assert');
+const { getData } = require('../support/bindx-fixture');
 
 // Note: "Given I have a test page with bindX loaded" is defined in bindx-reactive-engine.steps.js
 
@@ -123,8 +124,22 @@ When('I type {string} character by character', async function(text) {
     }
 });
 
+// Right after the last keystroke a debounced binding has not written the
+// typed text yet. The bindx.feature fixture records the path in this.bx;
+// this feature keeps its data in window.testData and its input is #test-input.
 Then('the data should not update immediately', async function() {
-    // Just a marker step - we verify the actual behavior in the next step
+    if (this.bx && this.bx.typedPath) {
+        const value = await getData(this, this.bx.typedPath);
+        assert.notStrictEqual(value, this.bx.typed, 'debounced data updated immediately');
+        return;
+    }
+    const state = await this.page.evaluate(() => {
+        const input = document.getElementById('test-input');
+        const path = input && input.getAttribute('bx-model').split(':')[0];
+        return { typed: input && input.value, value: path && window.bindX.getNestedProperty(window.testData, path) };
+    });
+    assert.ok(state.typed, 'nothing was typed');
+    assert.notStrictEqual(state.value, state.typed, 'debounced data updated immediately');
 });
 
 Then('after {int} milliseconds the data property {string} should be {string}',
