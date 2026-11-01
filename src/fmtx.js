@@ -549,7 +549,11 @@
                 el.textContent = fmt;
             }
         }
-        if (!el.getAttribute(`${pref}raw`)) {
+        // Record the raw value. Write only when it changes the attribute:
+        // every setAttribute fires the observer, so rewriting an empty fx-raw
+        // with an empty value formatted the element again forever.
+        const storedRaw = el.getAttribute(`${pref}raw`);
+        if (storedRaw === null || (storedRaw === '' && raw !== '')) {
             el.setAttribute(`${pref}raw`, raw);
         }
     };

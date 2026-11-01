@@ -187,7 +187,14 @@
             // Remove from all bindings
             allBindings.delete(binding);
 
-            // Element bindings cleaned up automatically by WeakMap
+            // Remove from the element's list (the WeakMap entry itself is GC'd with the element)
+            const list = binding.element ? elementBindings.get(binding.element) : null;
+            if (list) {
+                const index = list.indexOf(binding);
+                if (index !== -1) {
+                    list.splice(index, 1);
+                }
+            }
         };
 
         /**
@@ -241,6 +248,7 @@
             getByElement,
             getByPath,
             getByPathPattern,
+            getAll: () => Array.from(allBindings),
             clear,
             get size() {
                 return allBindings.size; 
@@ -393,6 +401,18 @@
             }
         };
 
+        // Write the value to the data and announce the change (bx-field-change)
+        const commit = (newValue) => {
+            const oldValue = getNestedProperty(data, path);
+            setNestedProperty(data, path, newValue);
+            if (oldValue !== newValue && typeof CustomEvent !== 'undefined') {
+                element.dispatchEvent(new CustomEvent('bx-field-change', {
+                    bubbles: true,
+                    detail: { field: path, value: newValue, oldValue, timestamp: Date.now() }
+                }));
+            }
+        };
+
         // DOM -> Data (with debouncing)
         let timeoutId = null;
         const handleInput = (_event) => {
@@ -405,11 +425,9 @@
 
             if (debounce > 0) {
                 clearTimeout(timeoutId);
-                timeoutId = setTimeout(() => {
-                    setNestedProperty(data, path, newValue);
-                }, debounce);
+                timeoutId = setTimeout(() => commit(newValue), debounce);
             } else {
-                setNestedProperty(data, path, newValue);
+                commit(newValue);
             }
         };
 
@@ -498,6 +516,24 @@
                 }
             }
 
+            // fmtX attribute on the element (fx-format="currency"): hand fmtX the raw
+            // value through fx-raw so it formats from data, not from formatted text
+            if (!formatter && element.hasAttribute && element.hasAttribute('fx-format')) {
+                element.setAttribute('fx-raw', value);
+                const fmt = typeof window !== 'undefined' ? window.FormatX : null;
+                if (fmt && typeof fmt.formatElement === 'function') {
+                    fmt.formatElement(element);
+                    return;
+                }
+                if (typeof window !== 'undefined' && window.fxXFactory) {
+                    try {
+                        value = window.fxXFactory.format(element.getAttribute('fx-format'), value);
+                    } catch (error) {
+                        console.warn('bindX: fmtX format failed:', error);
+                    }
+                }
+            }
+
             // XSS-safe: Use textContent for non-input elements, value for inputs
             if (['INPUT', 'TEXTAREA'].includes(element.tagName)) {
                 if (element.value !== value) {
@@ -512,6 +548,7 @@
         };
 
         // Initial sync
+        warnIfParentMissing(data, path, element);
         updateDOM();
 
         // Subscribe to reactive data changes (Data -> DOM)
@@ -530,7 +567,9 @@
             updateDOM,
             destroy: () => {
                 unsubscribePath();
-                if (unsubscribeRoot) unsubscribeRoot();
+                if (unsubscribeRoot) {
+                    unsubscribeRoot();
+                }
                 const registry = getBindingRegistry();
                 registry.unregister(binding);
             }
@@ -540,6 +579,193 @@
         registry.register(element, binding);
 
         return binding;
+    };
+
+    /**
+     * Warn when a bound path points inside an object that does not exist,
+     * e.g. bx-bind="user.name" while data.user is undefined. The element
+     * shows an empty string until the object appears.
+     */
+    const warnIfParentMissing = (data, path, element) => {
+        const parts = String(path).split('.');
+        if (parts.length < 2) {
+            return;
+        }
+        const parent = getNestedProperty(data, parts.slice(0, -1).join('.'));
+        if (parent === undefined || parent === null) {
+            console.warn(
+                `bindX: Cannot read "${path}": "${parts.slice(0, -1).join('.')}" is ${parent}. ` +
+                'The element shows an empty string until it exists.', element
+            );
+        }
+    };
+
+    // Attributes that must never be bound (script execution)
+    const UNSAFE_ATTRIBUTE = /^on/i;
+    const URL_ATTRIBUTES = ['href', 'src', 'action', 'formaction', 'xlink:href'];
+    const BOOLEAN_ATTRIBUTES = ['disabled', 'checked', 'readonly', 'required', 'hidden',
+        'selected', 'multiple', 'open', 'autofocus'];
+
+    /**
+     * Create a one-way binding to an attribute: bx-bind:src="image.url".
+     *
+     * - text: textContent (same as plain bx-bind)
+     * - class: a string sets those classes; true/false toggles a class named
+     *   after the last path segment (bx-bind:class="status.active" -> "active")
+     * - style.prop: one style property; style alone takes a string or object
+     * - boolean attributes are present when the value is truthy
+     * - other attributes get String(value) and are removed for null/undefined/false
+     *
+     * @param {HTMLElement} element - DOM element
+     * @param {Object} data - Reactive data object
+     * @param {string} target - Text after "bx-bind:" (e.g. "src", "style.color")
+     * @param {string} path - Property path to bind
+     * @param {Object} options - Binding options
+     * @returns {Object|null} Binding instance, or null for an unsafe attribute
+     */
+    const createAttributeBinding = (element, data, target, path, options = {}) => {
+        const [attr, sub] = target.split(/\.(.+)/);
+        const name = attr.toLowerCase();
+
+        if (name === 'text') {
+            return createOneWayBinding(element, data, path, options);
+        }
+        if (UNSAFE_ATTRIBUTE.test(name) || name === 'html' || name === 'innerhtml') {
+            console.error(`bindX: bx-bind:${target} is not allowed; event handler and HTML bindings could run scripts.`, element);
+            return null;
+        }
+
+        let addedClasses = [];
+        const updateDOM = () => {
+            const value = getNestedProperty(data, path);
+
+            if (name === 'class') {
+                addedClasses.forEach(c => element.classList.remove(c));
+                if (typeof value === 'boolean') {
+                    addedClasses = value ? [path.split('.').pop()] : [];
+                } else if (Array.isArray(value)) {
+                    addedClasses = value.map(String).filter(Boolean);
+                } else if (value && typeof value === 'object') {
+                    addedClasses = Object.keys(value).filter(k => value[k]);
+                } else {
+                    addedClasses = value === undefined || value === null ? [] : String(value).split(/\s+/).filter(Boolean);
+                }
+                addedClasses.forEach(c => element.classList.add(c));
+                return;
+            }
+
+            if (name === 'style') {
+                if (sub) {
+                    const prop = sub.replace(/[A-Z]/g, m => '-' + m.toLowerCase());
+                    if (value === undefined || value === null || value === false) {
+                        element.style.removeProperty(prop);
+                    } else {
+                        element.style.setProperty(prop, String(value));
+                    }
+                } else if (value && typeof value === 'object') {
+                    Object.entries(value).forEach(([k, v]) => {
+                        element.style.setProperty(k.replace(/[A-Z]/g, m => '-' + m.toLowerCase()), String(v));
+                    });
+                } else {
+                    element.style.cssText = value === undefined || value === null ? '' : String(value);
+                }
+                return;
+            }
+
+            if (BOOLEAN_ATTRIBUTES.includes(name)) {
+                element.toggleAttribute(name, Boolean(value));
+                if (name in element && typeof element[name] === 'boolean') {
+                    element[name] = Boolean(value);
+                }
+                return;
+            }
+
+            if (value === undefined || value === null || value === false) {
+                element.removeAttribute(name);
+                return;
+            }
+            const str = String(value);
+            if (URL_ATTRIBUTES.includes(name) && /^\s*javascript:/i.test(str)) {
+                console.error(`bindX: Refusing javascript: URL for bx-bind:${target}`, element);
+                element.removeAttribute(name);
+                return;
+            }
+            if (element.getAttribute(name) !== str) {
+                element.setAttribute(name, str);
+            }
+        };
+
+        warnIfParentMissing(data, path, element);
+        updateDOM();
+
+        const rootPath = path.includes('.') ? path.split('.')[0] : path;
+        const unsubscribePath = subscribeToPath(path, () => updateDOM());
+        const unsubscribeRoot = rootPath !== path ? subscribeToPath(rootPath, () => updateDOM()) : null;
+
+        const binding = {
+            id: generateBindingId(),
+            element,
+            path,
+            type: 'bind',
+            attribute: target,
+            options,
+            updateDOM,
+            destroy: () => {
+                unsubscribePath();
+                if (unsubscribeRoot) {
+                    unsubscribeRoot();
+                }
+                getBindingRegistry().unregister(binding);
+            }
+        };
+
+        getBindingRegistry().register(element, binding);
+        return binding;
+    };
+
+    /**
+     * Find elements carrying any bx-bind:NAME attribute under root.
+     * @returns {Array<[HTMLElement, string, string]>} [element, target, path]
+     */
+    const findAttributeBindings = (root, prefix) => {
+        const marker = `${prefix}bind:`;
+        const found = [];
+        const visit = (el) => {
+            for (const attr of Array.from(el.attributes || [])) {
+                if (attr.name.startsWith(marker)) {
+                    found.push([el, attr.name.slice(marker.length), attr.value.trim()]);
+                }
+            }
+        };
+        if (root.nodeType === 1) {
+            visit(root);
+        }
+        const doc = root.ownerDocument || root;
+        if (doc.evaluate && typeof XPathResult !== 'undefined') {
+            // Attribute names with ":" cannot be matched by CSS selectors
+            const result = doc.evaluate(`.//*[@*[starts-with(name(), '${marker}')]]`, root, null,
+                XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+            for (let i = 0; i < result.snapshotLength; i++) {
+                visit(result.snapshotItem(i));
+            }
+        } else {
+            root.querySelectorAll('*').forEach(visit);
+        }
+        return found;
+    };
+
+    /** True when the element already has a live binding of this kind. */
+    const isBound = (element, type, attribute) => getBindingRegistry()
+        .getByElement(element)
+        .some(b => b.type === type && b.attribute === attribute);
+
+    /** Destroy bindings whose elements have left the document. */
+    const cleanupDetachedBindings = () => {
+        getBindingRegistry().getAll().forEach(binding => {
+            if (binding.element && !binding.element.isConnected && binding.destroy) {
+                binding.destroy();
+            }
+        });
     };
 
     /**
@@ -1404,9 +1630,11 @@
         // but exclude the binding key itself (model, bind, etc.)
         Object.entries(parsed).forEach(([key, value]) => {
             if (key !== bindingKey && key !== 'path') {
-                // Convert numeric strings to numbers for debounce
-                if (key === 'debounce' && /^\d+$/.test(String(value))) {
-                    config[key] = parseInt(value, 10);
+                // Debounce must be a whole number of milliseconds; ignore anything else
+                if (key === 'debounce') {
+                    if (/^\d+$/.test(String(value))) {
+                        config[key] = parseInt(value, 10);
+                    }
                 } else {
                     config[key] = value;
                 }
@@ -1418,6 +1646,20 @@
             const optionValue = optionParts.join(':').trim();
             if (/^\d+$/.test(optionValue)) {
                 config.debounce = parseInt(optionValue, 10);
+            }
+        }
+
+        // bx-opts outranks the colon form, as in every genX module (JSON > colon > verbose)
+        // (genx-common already warned about malformed JSON above.)
+        const jsonAttr = element.getAttribute(`${prefix}-config`) || element.getAttribute(`${prefix}-opts`);
+        if (jsonAttr) {
+            try {
+                const json = JSON.parse(jsonAttr);
+                if (json && /^\d+$/.test(String(json.debounce))) {
+                    config.debounce = parseInt(json.debounce, 10);
+                }
+            } catch (_error) {
+                // ignored: reported by genx-common
             }
         }
 
@@ -1440,19 +1682,25 @@
     const extractDataFromDOM = (root = document.body, prefix = 'bx-') => {
         const data = {};
 
-        if (!root) return data;
+        if (!root) {
+            return data;
+        }
 
         // Find all elements with bx-model attributes
         const modelElements = root.querySelectorAll(`[${prefix}model]`);
 
         modelElements.forEach(element => {
             const modelAttr = element.getAttribute(`${prefix}model`);
-            if (!modelAttr) return;
+            if (!modelAttr) {
+                return;
+            }
 
             // Parse the model attribute to get the path
             // Handle formats: "fieldName", "fieldName:debounce", etc.
             const path = modelAttr.split(':')[0].trim();
-            if (!path) return;
+            if (!path) {
+                return;
+            }
 
             // Extract value based on element type
             let value;
@@ -1575,7 +1823,14 @@
         // Find all elements with bx-model attributes
         const modelElements = root.querySelectorAll(`[${prefix}model]`);
         modelElements.forEach(element => {
+            if (isBound(element, 'model')) {
+                return;
+            }
             const config = parseBindingAttribute(element, `${prefix}model`);
+            if (!config || !config.path) {
+                console.error(`bindX: ${prefix}model on <${element.tagName.toLowerCase()}> has no property path; no binding created.`, element);
+                return;
+            }
             if (config && config.path) {
                 try {
                     const binding = createModelBinding(element, data, config.path, config);
@@ -1589,7 +1844,14 @@
         // Find all elements with bx-bind attributes
         const bindElements = root.querySelectorAll(`[${prefix}bind]`);
         bindElements.forEach(element => {
+            if (isBound(element, 'bind')) {
+                return;
+            }
             const config = parseBindingAttribute(element, `${prefix}bind`);
+            if (!config || !config.path) {
+                console.error(`bindX: ${prefix}bind on <${element.tagName.toLowerCase()}> has no property path; no binding created.`, element);
+                return;
+            }
             if (config && config.path) {
                 try {
                     const binding = createOneWayBinding(element, data, config.path, config);
@@ -1597,6 +1859,31 @@
                 } catch (error) {
                     console.error('bindX: Failed to create one-way binding:', error, element);
                 }
+            }
+        });
+
+        // Attribute bindings: bx-bind:src="image.url", bx-bind:style.color="theme.color"
+        findAttributeBindings(root, prefix).forEach(([element, target, path]) => {
+            if (isBound(element, 'bind', target) || (target.toLowerCase() === 'text' && isBound(element, 'bind'))) {
+                return;
+            }
+            if (!path) {
+                console.error(`bindX: ${prefix}bind:${target} on <${element.tagName.toLowerCase()}> has no property path; no binding created.`, element);
+                return;
+            }
+            try {
+                const config = parseBindingAttribute(element, `${prefix}bind`) || {};
+                // bx-format applies to bx-bind:text as it does to bx-bind
+                const format = element.getAttribute(`${prefix}format`);
+                if (format && !config.formatter) {
+                    config.formatter = format;
+                }
+                const binding = createAttributeBinding(element, data, target, path, { ...config, path });
+                if (binding) {
+                    bindings.push(binding);
+                }
+            } catch (error) {
+                console.error(`bindX: Failed to create ${prefix}bind:${target} binding:`, error, element);
             }
         });
 
@@ -1653,7 +1940,9 @@
         const ifElements = root.querySelectorAll(`[${prefix}if]`);
         ifElements.forEach(element => {
             const expression = element.getAttribute(`${prefix}if`);
-            if (!expression) return;
+            if (!expression) {
+                return;
+            }
 
             // Store original display style
             const originalDisplay = element.style.display || '';
@@ -1728,10 +2017,14 @@
      */
     const validateAndShowFieldFeedback = (field, data, prefix = 'bx-') => {
         const validationAttr = field.getAttribute(`${prefix}validate`);
-        if (!validationAttr) return { valid: true, errors: [] };
+        if (!validationAttr) {
+            return { valid: true, errors: [] };
+        }
 
         const path = field.getAttribute(`${prefix}model`) || field.getAttribute('name');
-        if (!path) return { valid: true, errors: [] };
+        if (!path) {
+            return { valid: true, errors: [] };
+        }
 
         const value = getNestedProperty(data, path);
         const rules = parseValidationRules(validationAttr);
@@ -1857,22 +2150,26 @@
 
         const callback = (mutations) => {
             let hasRelevantChanges = false;
+            let hasRemovals = false;
 
             for (const mutation of mutations) {
                 // Check for added nodes with bx- attributes
                 if (mutation.type === 'childList') {
                     mutation.addedNodes.forEach(node => {
                         if (node.nodeType === Node.ELEMENT_NODE) {
+                            const selector = `[${prefix}model], [${prefix}bind]`;
                             const hasBindingAttr =
-                                node.hasAttribute && (
-                                    node.hasAttribute(`${prefix}model`) ||
-                                    node.hasAttribute(`${prefix}bind`)
-                                );
+                                (node.matches && node.matches(selector)) ||
+                                (node.querySelector && node.querySelector(selector)) ||
+                                findAttributeBindings(node, prefix).length > 0;
                             if (hasBindingAttr) {
                                 hasRelevantChanges = true;
                             }
                         }
                     });
+                    if (mutation.removedNodes.length > 0) {
+                        hasRemovals = true;
+                    }
                 }
 
                 // Check for attribute changes on bx- attributes
@@ -1884,6 +2181,9 @@
                 }
             }
 
+            if (hasRemovals) {
+                cleanupDetachedBindings();
+            }
             if (hasRelevantChanges) {
                 scheduleProcess();
             }
@@ -1905,7 +2205,9 @@
 
         return {
             stop: () => {
-                if (unsub) { unsub(); unsub = null; }
+                if (unsub) {
+                    unsub(); unsub = null; 
+                }
                 if (timeoutId) {
                     clearTimeout(timeoutId);
                 }
@@ -2017,7 +2319,14 @@
                 resetForm,
                 validateField,
                 getFormState,
-                validationRules
+                validationRules,
+                // Documented utilities and manual bindings
+                getNestedProperty,
+                setNestedProperty,
+                generateBindingId,
+                parseBindingAttribute,
+                createModelBinding,
+                createOneWayBinding
             };
         }
 
@@ -2056,6 +2365,9 @@
             getBindingRegistry,
             createModelBinding,
             createOneWayBinding,
+            createAttributeBinding,
+            findAttributeBindings,
+            cleanupDetachedBindings,
             getNestedProperty,
             setNestedProperty,
             generateBindingId,
