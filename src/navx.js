@@ -200,67 +200,84 @@
     };
 
     /**
-     * Check navigation guards before allowing navigation
+     * Show the loading state on a link while navigation starts
+     * @param {HTMLElement} element - Navigation element
+     */
+    const showLinkLoading = (element) => {
+        if (!element.hasAttribute('nx-loading')) {
+            return;
+        }
+        element.classList.add('nx-loading');
+        element.setAttribute('aria-disabled', 'true');
+        element.style.pointerEvents = 'none';
+
+        // Re-enable after navigation (this is a simple implementation)
+        setTimeout(() => {
+            element.classList.remove('nx-loading');
+            element.removeAttribute('aria-disabled');
+            element.style.pointerEvents = '';
+        }, 1000);
+    };
+
+    /**
+     * Check navigation guards before allowing navigation.
+     * Runs synchronously so the caller can still cancel the click.
      * @param {HTMLElement} element - Navigation element
      * @param {string} href - Target URL
      * @param {Event} event - Click event
-     * @returns {boolean} True if navigation should proceed
+     * @returns {boolean|Promise<boolean>} True if navigation should proceed;
+     *   a Promise when nx-before-navigate returns one
      */
-    const checkNavigationGuards = async (element, href, event) => {
+    const checkNavigationGuards = (element, href, event) => {
+        const cancel = (reason) => {
+            emitEvent(element, 'navigation-cancelled', { reason, href, element });
+            return false;
+        };
+
         // Check nx-confirm
         const confirmMessage = element.getAttribute('nx-confirm');
         if (confirmMessage) {
             const confirmed = window.confirm(confirmMessage);
             if (!confirmed) {
-                emitEvent(element, 'navigation-cancelled', {
-                    reason: 'user-cancelled-confirm',
-                    href,
-                    element
-                });
-                return false;
+                return cancel('user-cancelled-confirm');
             }
         }
+
+        const fail = (err) => {
+            warn('Error in nx-before-navigate function:', err);
+            emitEvent(element, 'navigation-error', { error: err, href, element });
+            return false;
+        };
 
         // Check nx-before-navigate function
         const beforeNavigate = element.getAttribute('nx-before-navigate');
         if (beforeNavigate) {
+            let result;
             try {
                 const fn = window[beforeNavigate] || eval(beforeNavigate);
                 if (typeof fn === 'function') {
-                    const result = await fn(href, element, event);
-                    if (result === false) {
-                        emitEvent(element, 'navigation-cancelled', {
-                            reason: 'before-navigate-returned-false',
-                            href,
-                            element
-                        });
-                        return false;
-                    }
+                    result = fn(href, element, event);
                 }
             } catch (err) {
-                warn('Error in nx-before-navigate function:', err);
-                emitEvent(element, 'navigation-error', {
-                    error: err,
-                    href,
-                    element
-                });
-                return false;
+                return fail(err);
+            }
+
+            if (result && typeof result.then === 'function') {
+                return Promise.resolve(result).then((value) => {
+                    if (value === false) {
+                        return cancel('before-navigate-returned-false');
+                    }
+                    showLinkLoading(element);
+                    return true;
+                }, fail);
+            }
+            if (result === false) {
+                return cancel('before-navigate-returned-false');
             }
         }
 
         // Check nx-loading (show loading state)
-        if (element.hasAttribute('nx-loading')) {
-            element.classList.add('nx-loading');
-            element.setAttribute('aria-disabled', 'true');
-            element.style.pointerEvents = 'none';
-
-            // Re-enable after navigation (this is a simple implementation)
-            setTimeout(() => {
-                element.classList.remove('nx-loading');
-                element.removeAttribute('aria-disabled');
-                element.style.pointerEvents = '';
-            }, 1000);
-        }
+        showLinkLoading(element);
 
         return true;
     };
@@ -296,45 +313,48 @@
         debug: false
     };
 
-// Security helpers
-const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
-function isPlainObject(obj) {
-    return obj && typeof obj === 'object' && obj.constructor === Object;
-}
-function sanitizeConfig(input) {
-    if (!isPlainObject(input)) return {};
-    const out = {};
-    for (const k in input) {
-        if (!Object.prototype.hasOwnProperty.call(input, k)) continue;
-        if (DANGEROUS_KEYS.has(k)) continue;
-        const v = input[k];
-        if (v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
-            out[k] = v;
-        }
+    // Security helpers
+    const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+    function isPlainObject(obj) {
+        return obj && typeof obj === 'object' && obj.constructor === Object;
     }
-    return out;
-}
+    function sanitizeConfig(input) {
+        if (!isPlainObject(input)) return {};
+        const out = {};
+        for (const k in input) {
+            if (!Object.prototype.hasOwnProperty.call(input, k)) continue;
+            if (DANGEROUS_KEYS.has(k)) continue;
+            const v = input[k];
+            if (v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+                out[k] = v;
+            } else if (isPlainObject(v)) {
+                // Nested maps such as breadcrumb labels, cleaned the same way
+                out[k] = sanitizeConfig(v);
+            }
+        }
+        return out;
+    }
 
-// Track global listeners so we can remove them on destroy()
-const globalListeners = [];
-function addGlobalListener(target, type, handler, options) {
-    try {
-        target.addEventListener(type, handler, options);
-        globalListeners.push({ target, type, handler, options });
-    } catch (e) {
-        // ignore in constrained environments
-    }
-}
-function removeAllGlobalListeners() {
-    for (const l of globalListeners) {
+    // Track global listeners so we can remove them on destroy()
+    const globalListeners = [];
+    function addGlobalListener(target, type, handler, options) {
         try {
-            l.target.removeEventListener(l.type, l.handler, l.options);
+            target.addEventListener(type, handler, options);
+            globalListeners.push({ target, type, handler, options });
         } catch (e) {
-            // ignore
+            // ignore in constrained environments
         }
     }
-    globalListeners.length = 0;
-}
+    function removeAllGlobalListeners() {
+        for (const l of globalListeners) {
+            try {
+                l.target.removeEventListener(l.type, l.handler, l.options);
+            } catch (e) {
+                // ignore
+            }
+        }
+        globalListeners.length = 0;
+    }
 
     // ============================================================================
     // UTILITY FUNCTIONS
@@ -407,10 +427,23 @@ function removeAllGlobalListeners() {
    */
     const matchesCurrentPath = (href, exact = false) => {
         const currentPath = getCurrentPath();
-        if (exact) {
-            return currentPath === href;
+        let path = href;
+        try {
+            // Compare paths only, so absolute and relative hrefs both work
+            path = new URL(href, window.location.href).pathname;
+        } catch (e) {
+            // Keep the raw href
         }
-        return currentPath.startsWith(href);
+        if (exact || path === '/') {
+            // "/" is the home page, not a prefix of every path
+            return currentPath === path;
+        }
+        if (currentPath === path) {
+            return true;
+        }
+        // Prefix match on whole segments: /products matches /products/shoes, not /productsale
+        const prefix = path.endsWith('/') ? path : path + '/';
+        return currentPath.startsWith(prefix);
     };
 
     /**
@@ -527,7 +560,7 @@ function removeAllGlobalListeners() {
             const cachedConfig = sanitizeConfig(raw);
             if (Object.keys(cachedConfig).length > 0) {
                 const result = {};
-                const prefix = baseAttr.replace('nx-', '');
+                const prefix = baseAttr.replace('nx-', '').replace(/-([a-z])/g, (m, c) => c.toUpperCase());
 
                 if (cachedConfig[prefix] !== undefined) {
                     result.value = cachedConfig[prefix];
@@ -537,6 +570,13 @@ function removeAllGlobalListeners() {
                     if (key.startsWith(prefix) && key !== prefix) {
                         const configKey = key.charAt(prefix.length).toLowerCase() + key.slice(prefix.length + 1);
                         result[configKey] = cachedConfig[key];
+                    }
+                });
+
+                // Unprefixed attributes apply when no prefixed form is set
+                Object.keys(cachedConfig).forEach(key => {
+                    if (key !== prefix && !key.startsWith(prefix) && result[key] === undefined) {
+                        result[key] = cachedConfig[key];
                     }
                 });
 
@@ -555,8 +595,8 @@ function removeAllGlobalListeners() {
 
         const elementConfig = {};
 
-        // Extract base attribute name (e.g., 'nx-nav' -> 'nav')
-        const baseName = baseAttr.replace('nx-', '');
+        // Extract base attribute name (e.g., 'nx-nav' -> 'nav', 'nx-scroll-spy' -> 'scrollSpy')
+        const baseName = baseAttr.replace('nx-', '').replace(/-([a-z])/g, (m, c) => c.toUpperCase());
 
         // Get base attribute value (e.g., parsed.nav -> elementConfig.value)
         if (parsed[baseName] !== undefined) {
@@ -573,6 +613,14 @@ function removeAllGlobalListeners() {
             }
         });
 
+        // Unprefixed attributes on the same element (e.g., nx-active-class next to
+        // nx-nav, nx-offset next to nx-scroll-spy) apply when no prefixed form is set
+        Object.keys(parsed).forEach(key => {
+            if (key !== baseName && !key.startsWith(baseName) && elementConfig[key] === undefined) {
+                elementConfig[key] = parsed[key];
+            }
+        });
+
         return elementConfig;
     };
 
@@ -580,75 +628,139 @@ function removeAllGlobalListeners() {
     // NAVIGATION ENHANCEMENT
     // ============================================================================
 
+    // Elements that can act as navigation links inside nx-nav
+    const NAV_LINK_SELECTOR = 'a[href], [hx-get], [hx-post], [hx-put], [hx-delete], [nx-route]';
+
+    // Enhanced nav elements and their settings, for rechecking active links
+    const enhancedNavs = new Map();
+
+    /**
+   * Get the target URL of a navigation link
+   * Priority: nx-route > href attribute > HTMX attributes
+   * @param {HTMLElement} navElement - Link element
+   * @returns {string|null} Target URL
+   */
+    const getLinkHref = (navElement) => {
+        const attrs = ['nx-route', 'href', 'hx-get', 'hx-post', 'hx-put', 'hx-delete'];
+        for (const attr of attrs) {
+            if (navElement.hasAttribute(attr)) {
+                return navElement.getAttribute(attr);
+            }
+        }
+        return null;
+    };
+
+    /**
+   * Set or clear the active state of one link
+   * @param {HTMLElement} navElement - Link element
+   * @param {Object} settings - { activeClass, exact }
+   */
+    const updateLinkActive = (navElement, settings) => {
+        const href = getLinkHref(navElement);
+        // Skip anchor links for active state (they are handled by smooth scroll)
+        if (!href || href.startsWith('#')) {
+            return;
+        }
+        if (matchesCurrentPathWithPatterns(navElement, href, settings.exact)) {
+            navElement.classList.add(settings.activeClass);
+            navElement.setAttribute('aria-current', 'page');
+        } else {
+            navElement.classList.remove(settings.activeClass);
+            navElement.removeAttribute('aria-current');
+        }
+    };
+
+    /**
+   * Enhance one link inside an nx-nav element: active state, guards, events
+   * @param {HTMLElement} navElement - Link element
+   * @param {Object} settings - { activeClass, exact }
+   */
+    const enhanceNavLink = (navElement, settings) => {
+        const href = getLinkHref(navElement);
+        if (!href) {
+            return;
+        }
+
+        updateLinkActive(navElement, settings);
+
+        if (navElement.hasAttribute('nx-link-enhanced')) {
+            return;
+        }
+        navElement.setAttribute('nx-link-enhanced', 'true');
+
+        // Guards run synchronously so a refusal can still cancel the click
+        navElement.addEventListener('click', (e) => {
+            const result = checkNavigationGuards(navElement, href, e);
+
+            if (result === false) {
+                e.preventDefault();
+                return;
+            }
+
+            if (result && typeof result.then === 'function') {
+                // An async nx-before-navigate: hold the click, then navigate if allowed
+                e.preventDefault();
+                result.then((allowed) => {
+                    if (allowed) {
+                        emitNavigationEvent(navElement, href, { originalEvent: e, navElement });
+                        if (navElement.tagName === 'A' && navElement.href) {
+                            window.location.href = navElement.href;
+                        }
+                    }
+                });
+                return;
+            }
+
+            // Don't emit for anchor links or if default is prevented
+            if (!href.startsWith('#') && !e.defaultPrevented) {
+                emitNavigationEvent(navElement, href, {
+                    originalEvent: e,
+                    navElement: navElement
+                });
+            }
+        });
+    };
+
+    /**
+   * Recheck active links in every enhanced nav (after pushState, popstate, etc.)
+   */
+    const refreshActiveLinks = () => {
+        enhancedNavs.forEach((settings, element) => {
+            if (!element.isConnected) {
+                enhancedNavs.delete(element);
+                return;
+            }
+            element.querySelectorAll(NAV_LINK_SELECTOR).forEach(link => updateLinkActive(link, settings));
+        });
+    };
+
     /**
    * Enhance navigation element (nx-nav)
    * @param {HTMLElement} element - Nav element to enhance
    */
     const enhanceNav = (element) => {
         const navConfig = getElementConfig(element, 'nx-nav');
-        const activeClass = navConfig.activeClass || config.activeClass;
-        const exact = navConfig.exact === true;
+        const settings = {
+            activeClass: navConfig.activeClass || config.activeClass,
+            exact: navConfig.exact === true || navConfig.exact === 'true'
+        };
+        enhancedNavs.set(element, settings);
+
+        // Landmark role and name, unless the page already set them
+        if (!element.hasAttribute('role')) {
+            element.setAttribute('role', 'navigation');
+        }
+        if (!element.hasAttribute('aria-label') && !element.hasAttribute('aria-labelledby') &&
+            typeof navConfig.value === 'string' && navConfig.value && navConfig.value !== 'true') {
+            const name = navConfig.value.charAt(0).toUpperCase() + navConfig.value.slice(1);
+            element.setAttribute('aria-label', `${name} navigation`);
+        }
 
         // Find all navigable elements in nav:
         // 1. Traditional links: a[href]
         // 2. HTMX elements: [hx-get], [hx-post], [hx-put], [hx-delete]
         // 3. Route elements: [nx-route]
-        const navigableElements = element.querySelectorAll(
-            'a[href], [hx-get], [hx-post], [hx-put], [hx-delete], [nx-route]'
-        );
-
-        navigableElements.forEach(navElement => {
-            // Determine the target URL for this element
-            let href = null;
-
-            // Priority: nx-route > href attribute > HTMX attributes
-            if (navElement.hasAttribute('nx-route')) {
-                href = navElement.getAttribute('nx-route');
-            } else if (navElement.hasAttribute('href')) {
-                href = navElement.getAttribute('href');
-            } else if (navElement.hasAttribute('hx-get')) {
-                href = navElement.getAttribute('hx-get');
-            } else if (navElement.hasAttribute('hx-post')) {
-                href = navElement.getAttribute('hx-post');
-            } else if (navElement.hasAttribute('hx-put')) {
-                href = navElement.getAttribute('hx-put');
-            } else if (navElement.hasAttribute('hx-delete')) {
-                href = navElement.getAttribute('hx-delete');
-            }
-
-            if (!href) {
-                return;
-            }
-
-            // Skip anchor links for active state (but handle them for smooth scroll)
-            if (!href.startsWith('#')) {
-                // Check if element matches current path with patterns/excludes
-                if (matchesCurrentPathWithPatterns(navElement, href, exact)) {
-                    navElement.classList.add(activeClass);
-                    navElement.setAttribute('aria-current', 'page');
-                } else {
-                    navElement.classList.remove(activeClass);
-                    navElement.removeAttribute('aria-current');
-                }
-            }
-
-            // Add click event listener for navigation events
-            navElement.addEventListener('click', async (e) => {
-                // Check navigation guards
-                if (!await checkNavigationGuards(navElement, href, e)) {
-                    e.preventDefault();
-                    return;
-                }
-
-                // Don't emit for anchor links or if default is prevented
-                if (!href.startsWith('#') && !e.defaultPrevented) {
-                    emitNavigationEvent(navElement, href, {
-                        originalEvent: e,
-                        navElement: navElement
-                    });
-                }
-            });
-        });
+        element.querySelectorAll(NAV_LINK_SELECTOR).forEach(navElement => enhanceNavLink(navElement, settings));
 
         // Setup smooth scrolling if enabled
         if (navConfig.smoothScroll !== false) {
@@ -983,9 +1095,14 @@ function removeAllGlobalListeners() {
         // Ensure tablist role
         tabList.setAttribute('role', 'tablist');
 
-        // Find all tabs
-        const tabs = Array.from(tabList.querySelectorAll('[role="tab"]') ||
-                           tabList.querySelectorAll('button, a, li'));
+        // Find all tabs (role="tab" first, then buttons, links or list items)
+        let tabs = Array.from(tabList.querySelectorAll('[role="tab"]'));
+        if (tabs.length === 0) {
+            tabs = Array.from(tabList.querySelectorAll('button, a'));
+        }
+        if (tabs.length === 0) {
+            tabs = Array.from(tabList.querySelectorAll('li'));
+        }
 
         if (tabs.length === 0) {
             warn('No tabs found in tab list');
@@ -993,8 +1110,34 @@ function removeAllGlobalListeners() {
         }
 
         // Find all panels
-        const panels = Array.from(element.querySelectorAll('[role="tabpanel"]') ||
-                             element.querySelectorAll('.nx-tab-panel'));
+        let panels = Array.from(element.querySelectorAll('[role="tabpanel"]'));
+        if (panels.length === 0) {
+            panels = Array.from(element.querySelectorAll('.nx-tab-panel'));
+        }
+
+        // Vertical tab lists use Up and Down keys and stack their tabs
+        if (config.orientation === 'vertical') {
+            tabList.setAttribute('aria-orientation', 'vertical');
+            tabList.style.display = 'flex';
+            tabList.style.flexDirection = 'column';
+        }
+
+        const updateUrl = config.updateUrl === true || config.updateUrl === 'true';
+        // URL hash key of a tab: its data-tab, else its panel id
+        const tabKey = (tab, index) => tab.getAttribute('data-tab') || panels[index]?.id || tab.id;
+        const select = (tab) => {
+            const changed = tab.getAttribute('aria-selected') !== 'true';
+            activateTab(tab, tabs, panels);
+            if (changed) {
+                emitTabChangeEvent(element, tabs.indexOf(tab), tab.id, { tab, panel: panels[tabs.indexOf(tab)] || null });
+            }
+            if (updateUrl && typeof window !== 'undefined' && window.history) {
+                const key = tabKey(tab, tabs.indexOf(tab));
+                if (key && window.location.hash !== `#${key}`) {
+                    window.history.pushState(null, '', `#${key}`);
+                }
+            }
+        };
 
         // Setup ARIA attributes
         tabs.forEach((tab, index) => {
@@ -1014,8 +1157,12 @@ function removeAllGlobalListeners() {
             }
         });
 
-        // Activate first tab by default
-        if (tabs.length > 0 && panels.length > 0) {
+        // Activate the tab named in the URL hash (deep link), else the first tab
+        const hash = typeof window !== 'undefined' ? decodeURIComponent(window.location.hash.slice(1)) : '';
+        const linked = hash ? tabs.find((tab, index) => tabKey(tab, index) === hash || tab.id === hash) : null;
+        if (linked) {
+            activateTab(linked, tabs, panels);
+        } else if (tabs.length > 0) {
             activateTab(tabs[0], tabs, panels);
         }
 
@@ -1050,7 +1197,7 @@ function removeAllGlobalListeners() {
                 case 'Enter':
                 case ' ':
                     e.preventDefault();
-                    activateTab(tab, tabs, panels);
+                    select(tab);
                     return;
 
                 default:
@@ -1060,14 +1207,14 @@ function removeAllGlobalListeners() {
                 // Focus and activate new tab
                 tabs[targetIndex].focus();
                 if (config.autoActivate !== false) {
-                    activateTab(tabs[targetIndex], tabs, panels);
+                    select(tabs[targetIndex]);
                 }
             });
 
             // Click handler
             tab.addEventListener('click', (e) => {
                 e.preventDefault();
-                activateTab(tab, tabs, panels);
+                select(tab);
             });
         });
 
@@ -1154,31 +1301,43 @@ function removeAllGlobalListeners() {
             return;
         }
 
-        // Configuration
-        const threshold = config.threshold || 0.5;
-        const rootMargin = config.rootMargin || '0px 0px -50% 0px';
+        // Configuration. A section counts as current while any part of it is in the
+        // top half of the viewport, below nx-offset pixels (e.g. a fixed header).
+        const threshold = config.threshold !== undefined ? Number(config.threshold) : 0;
+        const offset = parseInt(config.offset || '0', 10) || 0;
+        const rootMargin = config.rootMargin || `${-offset}px 0px -50% 0px`;
         const activeClass = config.activeClass || 'nx-active';
+
+        // Sections in document order, and the ones in the band now
+        const sections = Array.from(targets.keys()).sort((a, b) =>
+            (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1);
+        const visible = new Set();
 
         // Create IntersectionObserver
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                const link = targets.get(entry.target);
-                if (!link) {
-                    return;
-                }
-
                 if (entry.isIntersecting) {
-                    // Remove active class from all links
-                    links.forEach(l => l.classList.remove(activeClass));
-
-                    // Add active class to current link
-                    link.classList.add(activeClass);
-                    link.setAttribute('aria-current', 'location');
+                    visible.add(entry.target);
                 } else {
-                    link.classList.remove(activeClass);
-                    link.removeAttribute('aria-current');
+                    visible.delete(entry.target);
                 }
             });
+
+            // The first section in the band is current; keep the last one when none is.
+            // A section whose bottom edge only touches the band still reports as
+            // intersecting, so skip sections that have scrolled past its top.
+            const current = sections.find(section =>
+                visible.has(section) && section.getBoundingClientRect().bottom > offset);
+            if (!current) {
+                return;
+            }
+            links.forEach(l => {
+                l.classList.remove(activeClass);
+                l.removeAttribute('aria-current');
+            });
+            const link = targets.get(current);
+            link.classList.add(activeClass);
+            link.setAttribute('aria-current', 'location');
         }, {
             threshold: threshold,
             rootMargin: rootMargin
@@ -1227,16 +1386,18 @@ function removeAllGlobalListeners() {
             element.style.zIndex = config.zIndex || '1000';
         }
 
-        // Add state classes based on scroll position
+        // Marker class for styling, plus a state class while stuck
+        element.classList.add('nx-sticky');
         const stickyClass = config.stickyClass || 'nx-stuck';
-        const offset = parseInt(config.offset || '0', 10);
+        const offset = parseInt(config.offset || '0', 10) || 0;
 
-        // Create sentinel element for IntersectionObserver
+        // Sentinel sits in the flow just above the element; once it has scrolled
+        // nx-sticky-offset pixels past the top of the viewport, the element is stuck
         const sentinel = document.createElement('div');
         sentinel.className = 'nx-sticky-sentinel';
-        sentinel.style.position = 'absolute';
-        sentinel.style.top = `-${offset}px`;
+        sentinel.setAttribute('aria-hidden', 'true');
         sentinel.style.height = '1px';
+        sentinel.style.marginBottom = '-1px';
         sentinel.style.width = '1px';
         sentinel.style.pointerEvents = 'none';
         sentinel.style.overflow = 'hidden';
@@ -1292,8 +1453,9 @@ function removeAllGlobalListeners() {
    * @param {Object} options - Scroll options
    */
     const smoothScrollTo = (target, options = {}) => {
-        const duration = options.duration || 500;
-        const offset = options.offset || 0;
+        const hasDuration = options.duration !== undefined && options.duration !== null;
+        const duration = Number(options.duration) || 500;
+        const offset = Number(options.offset) || 0;
         const behavior = options.behavior || 'smooth';
 
         // Calculate target position
@@ -1308,8 +1470,14 @@ function removeAllGlobalListeners() {
             return;
         }
 
-        // Use native smooth scroll if supported and requested
-        if (behavior === 'smooth' && 'scrollBehavior' in document.documentElement.style) {
+        // "instant" or "auto" jumps straight to the target
+        if (behavior !== 'smooth') {
+            window.scrollTo(0, targetY);
+            return;
+        }
+
+        // Native smooth scroll has its own pace; a set duration uses the animation below
+        if (!hasDuration && 'scrollBehavior' in document.documentElement.style) {
             window.scrollTo({
                 top: targetY,
                 behavior: 'smooth'
@@ -1363,11 +1531,13 @@ function removeAllGlobalListeners() {
                 if (target) {
                     e.preventDefault();
 
-                    // Scroll to target
+                    // Per-link nx-scroll="smooth|instant" and nx-duration override the nav settings
+                    const linkBehavior = link.getAttribute('nx-scroll');
+                    const linkDuration = link.getAttribute('nx-duration');
                     smoothScrollTo(target, {
-                        duration: config.duration || 500,
+                        duration: linkDuration !== null ? parseInt(linkDuration, 10) : config.duration,
                         offset: config.offset || 0,
-                        behavior: config.behavior || 'smooth'
+                        behavior: linkBehavior || config.behavior || 'smooth'
                     });
 
                     // Update URL hash
@@ -1378,7 +1548,8 @@ function removeAllGlobalListeners() {
                     // Focus target for accessibility
                     if (config.focusTarget !== false) {
                         target.setAttribute('tabindex', '-1');
-                        target.focus();
+                        // preventScroll keeps focus from cutting the smooth scroll short
+                        target.focus({ preventScroll: true });
                     }
                 }
             });
@@ -1646,8 +1817,8 @@ function removeAllGlobalListeners() {
 
         let currentIndex = -1;
 
-        // Open dropdown
-        const openDropdown = async () => {
+        // Open dropdown; focus moves to the first item unless opened by hover
+        const openDropdown = async ({ focus = true } = {}) => {
             // Check for lazy loading
             if (element.hasAttribute('nx-lazy') && !element.hasAttribute('nx-loaded')) {
                 // Load content
@@ -1686,20 +1857,44 @@ function removeAllGlobalListeners() {
             trigger.setAttribute('aria-expanded', 'true');
             menu.hidden = false;
             menu.classList.add('nx-dropdown-open');
-            currentIndex = 0;
-            items[currentIndex]?.focus();
+            if (focus) {
+                currentIndex = 0;
+                items[currentIndex]?.focus();
+            }
             emitDropdownEvent(element, 'open', { trigger, menu });
         };
 
-        // Close dropdown
-        const closeDropdown = () => {
+        // Close dropdown; focus returns to the trigger unless closed by hover
+        const closeDropdown = ({ focus = true } = {}) => {
             trigger.setAttribute('aria-expanded', 'false');
             menu.hidden = true;
             menu.classList.remove('nx-dropdown-open');
             currentIndex = -1;
-            trigger.focus();
+            if (focus) {
+                trigger.focus();
+            }
             emitDropdownEvent(element, 'close', { trigger, menu });
         };
+
+        // nx-dropdown="hover" also opens on pointer hover and closes after a delay
+        if (config.value === 'hover') {
+            const delay = parseInt(config.delay ?? '300', 10);
+            let closeTimer = null;
+            element.addEventListener('mouseenter', () => {
+                clearTimeout(closeTimer);
+                if (menu.hidden) {
+                    openDropdown({ focus: false });
+                }
+            });
+            element.addEventListener('mouseleave', () => {
+                clearTimeout(closeTimer);
+                closeTimer = setTimeout(() => {
+                    if (!menu.hidden) {
+                        closeDropdown({ focus: false });
+                    }
+                }, isNaN(delay) ? 300 : delay);
+            });
+        }
 
         // Toggle dropdown
         const toggleDropdown = () => {
@@ -1724,13 +1919,27 @@ function removeAllGlobalListeners() {
             toggleDropdown();
         });
 
+        // Disclosure pattern: Enter and Space toggle the menu with focus on the
+        // trigger; Arrow Down opens it if needed and moves focus to the first item
         trigger.addEventListener('keydown', (e) => {
             switch (e.key) {
             case 'Enter':
             case ' ':
+                e.preventDefault();
+                if (menu.hidden) {
+                    openDropdown({ focus: false });
+                } else {
+                    closeDropdown();
+                }
+                break;
+
             case 'ArrowDown':
                 e.preventDefault();
-                openDropdown();
+                if (menu.hidden) {
+                    openDropdown();
+                } else {
+                    navigateToItem(0);
+                }
                 break;
 
             case 'Escape':
@@ -1801,7 +2010,133 @@ function removeAllGlobalListeners() {
    * @param {HTMLElement} element - Pagination container element
    * @param {Object} config - Pagination configuration
    */
+    /**
+   * Page numbers to show, with null for a gap. Up to 10 pages show in full;
+   * beyond that, the first and last three plus the current page and its neighbors.
+   * @param {number} current - Current page
+   * @param {number} total - Total pages
+   * @returns {Array<number|null>} Pages and gaps
+   */
+    const paginationWindow = (current, total) => {
+        if (total <= 10) {
+            return Array.from({ length: total }, (v, i) => i + 1);
+        }
+        const keep = new Set([1, 2, 3, total - 2, total - 1, total, current - 1, current, current + 1]);
+        const pages = [];
+        let last = 0;
+        for (let p = 1; p <= total; p++) {
+            if (keep.has(p)) {
+                if (p - last > 1) {
+                    pages.push(null);
+                }
+                pages.push(p);
+                last = p;
+            }
+        }
+        return pages;
+    };
+
+    /**
+   * Render Previous, page and Next buttons into a pagination element
+   * @param {HTMLElement} element - Pagination container element
+   */
+    const renderPagination = (element) => {
+        const total = parseInt(element.getAttribute('data-total-pages'), 10) || 1;
+        const current = Math.min(Math.max(parseInt(element.getAttribute('data-current-page'), 10) || 1, 1), total);
+        element.setAttribute('data-current-page', String(current));
+
+        const button = (cls, label, page, disabled) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = cls;
+            b.textContent = label;
+            if (page !== null) {
+                b.setAttribute('data-page', String(page));
+            }
+            b.disabled = disabled;
+            return b;
+        };
+
+        const parts = [button('prev', 'Previous', null, current <= 1)];
+        parts[0].setAttribute('data-prev', '');
+        paginationWindow(current, total).forEach(page => {
+            if (page === null) {
+                const gap = document.createElement('span');
+                gap.className = 'page-ellipsis';
+                gap.setAttribute('aria-hidden', 'true');
+                gap.textContent = '...';
+                parts.push(gap);
+            } else {
+                const b = button('page-btn', String(page), page, false);
+                if (page === current) {
+                    b.classList.add('nx-active');
+                    b.setAttribute('aria-current', 'page');
+                }
+                parts.push(b);
+            }
+        });
+        const next = button('next', 'Next', null, current >= total);
+        next.setAttribute('data-next', '');
+        parts.push(next);
+
+        element.replaceChildren(...parts);
+    };
+
+    /**
+   * Setup pagination controls. With data-total-items and data-per-page (or
+   * data-total-pages) on an empty element, navX renders the buttons itself and
+   * keeps them current; otherwise it wires up the buttons already there.
+   * @param {HTMLElement} element - Pagination container element
+   * @param {Object} config - Pagination configuration
+   */
     const setupPagination = (element, config) => {
+        const totalItems = parseInt(element.getAttribute('data-total-items') ?? config.totalItems, 10);
+        const perPage = parseInt(element.getAttribute('data-per-page') ?? config.perPage, 10);
+        if (totalItems >= 0 && perPage > 0) {
+            element.setAttribute('data-total-pages', String(Math.max(1, Math.ceil(totalItems / perPage))));
+        }
+        const renders = element.hasAttribute('data-total-pages') &&
+            !element.querySelector('.page-btn, [data-page], .prev, [data-prev], .next, [data-next]');
+
+        const currentPage = () => parseInt(element.getAttribute('data-current-page') || '1', 10);
+        const totalPages = () => parseInt(element.getAttribute('data-total-pages') || '1', 10);
+
+        if (renders) {
+            if (!element.hasAttribute('role')) {
+                element.setAttribute('role', 'navigation');
+            }
+            if (!element.hasAttribute('aria-label')) {
+                element.setAttribute('aria-label', 'Pagination');
+            }
+            renderPagination(element);
+
+            // One delegated listener survives re-renders
+            element.addEventListener('click', (e) => {
+                const b = e.target.closest && e.target.closest('button');
+                if (!b || !element.contains(b) || b.disabled) {
+                    return;
+                }
+                let page = null;
+                if (b.hasAttribute('data-prev')) {
+                    page = currentPage() - 1;
+                } else if (b.hasAttribute('data-next')) {
+                    page = currentPage() + 1;
+                } else if (b.hasAttribute('data-page')) {
+                    page = parseInt(b.getAttribute('data-page'), 10);
+                }
+                if (page === null || isNaN(page) || page < 1 || page > totalPages()) {
+                    return;
+                }
+                e.preventDefault();
+                element.setAttribute('data-current-page', String(page));
+                renderPagination(element);
+                emitPaginationEvent(element, page, { button: b, originalEvent: e });
+            });
+
+            debug('Rendered pagination:', totalPages(), 'pages');
+            return;
+        }
+
         // Find existing pagination buttons
         const pageButtons = element.querySelectorAll('.page-btn, [data-page]');
         const prevButton = element.querySelector('.prev, [data-prev]');
@@ -1822,9 +2157,8 @@ function removeAllGlobalListeners() {
         if (prevButton) {
             prevButton.addEventListener('click', (e) => {
                 e.preventDefault();
-                const currentPage = parseInt(element.getAttribute('data-current-page') || '1');
-                if (currentPage > 1) {
-                    emitPaginationEvent(element, currentPage - 1, { button: prevButton, originalEvent: e });
+                if (currentPage() > 1) {
+                    emitPaginationEvent(element, currentPage() - 1, { button: prevButton, originalEvent: e });
                 }
             });
         }
@@ -1832,10 +2166,8 @@ function removeAllGlobalListeners() {
         if (nextButton) {
             nextButton.addEventListener('click', (e) => {
                 e.preventDefault();
-                const currentPage = parseInt(element.getAttribute('data-current-page') || '1');
-                const totalPages = parseInt(element.getAttribute('data-total-pages') || '1');
-                if (currentPage < totalPages) {
-                    emitPaginationEvent(element, currentPage + 1, { button: nextButton, originalEvent: e });
+                if (currentPage() < totalPages()) {
+                    emitPaginationEvent(element, currentPage() + 1, { button: nextButton, originalEvent: e });
                 }
             });
         }
@@ -1953,7 +2285,8 @@ function removeAllGlobalListeners() {
             return;
         }
 
-        document.addEventListener('keydown', (e) => {
+        // Global listener, so destroy() removes it and init() doesn't stack copies
+        addGlobalListener(document, 'keydown', (e) => {
             // Find all elements with nx-shortcut
             const shortcutElements = document.querySelectorAll('[nx-shortcut]');
 
@@ -2043,6 +2376,15 @@ function removeAllGlobalListeners() {
                             const children = node.querySelectorAll(selector);
                             children.forEach(enhanceElement);
                         }
+
+                        // Links added inside a nav that is already enhanced
+                        const nav = node.parentElement && node.parentElement.closest('[nx-nav]');
+                        const settings = nav && enhancedNavs.get(nav);
+                        if (settings) {
+                            const links = node.matches(NAV_LINK_SELECTOR) ? [node] : [];
+                            node.querySelectorAll(NAV_LINK_SELECTOR).forEach(link => links.push(link));
+                            links.forEach(link => enhanceNavLink(link, settings));
+                        }
                     }
                 });
             });
@@ -2085,6 +2427,38 @@ function removeAllGlobalListeners() {
     // PUBLIC API
     // ============================================================================
 
+    // Original history methods, restored by destroy()
+    let originalHistory = null;
+
+    /**
+   * Recheck active links when the URL changes without a page load
+   * (history.pushState, history.replaceState, back and forward)
+   */
+    const watchHistory = () => {
+        if (typeof window === 'undefined' || !window.history || originalHistory) {
+            return;
+        }
+        const history = window.history;
+        originalHistory = { pushState: history.pushState, replaceState: history.replaceState };
+        ['pushState', 'replaceState'].forEach((method) => {
+            const original = originalHistory[method];
+            history[method] = function(...args) {
+                const result = original.apply(this, args);
+                refreshActiveLinks();
+                return result;
+            };
+        });
+        addGlobalListener(window, 'popstate', refreshActiveLinks);
+    };
+
+    const unwatchHistory = () => {
+        if (originalHistory) {
+            window.history.pushState = originalHistory.pushState;
+            window.history.replaceState = originalHistory.replaceState;
+            originalHistory = null;
+        }
+    };
+
     /**
    * Initialize navX module
    * @param {Object} userConfig - Configuration options
@@ -2114,6 +2488,9 @@ function removeAllGlobalListeners() {
 
         // Set up keyboard shortcuts
         setupKeyboardShortcuts();
+
+        // Keep active links current on client-side URL changes
+        watchHistory();
 
         initialized = true;
         debug('Initialized successfully');
@@ -2155,6 +2532,8 @@ function removeAllGlobalListeners() {
 
         // Remove any global listeners added via addGlobalListener
         removeAllGlobalListeners();
+        unwatchHistory();
+        enhancedNavs.clear();
 
         // Reset state
         initialized = false;
