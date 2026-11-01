@@ -29,6 +29,29 @@
         return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(text);
     };
 
+    // Set an attribute only when its value changes, so re-processing an
+    // element does not fire mutations (and wake every observer) for nothing.
+    const setAttr = (el, name, value) => {
+        if (el.getAttribute(name) !== String(value)) {
+            el.setAttribute(name, value);
+        }
+    };
+
+    // aria-label values accX generated, so an author's own aria-label is
+    // never overwritten by an automatic one.
+    const generatedLabels = new WeakMap();
+    const setAutoLabel = (el, value) => {
+        const current = el.getAttribute('aria-label');
+        if (current !== null && generatedLabels.get(el) !== current) {
+            return;
+        }
+        setAttr(el, 'aria-label', value);
+        generatedLabels.set(el, String(value));
+    };
+
+    // ARIA landmark roles (WAI-ARIA 1.2); anything else falls back to region.
+    const LANDMARK_ROLES = ['banner', 'complementary', 'contentinfo', 'form', 'main', 'navigation', 'region', 'search'];
+
     const enhance = {
         // Screen reader annotations
         srOnly: (el, opts) => {
@@ -84,8 +107,10 @@
                 break;
             case 'auto':
             default:
-                if (context) {
-                    el.setAttribute('aria-label', opts.label || context);
+                if (opts.label) {
+                    setAttr(el, 'aria-label', opts.label);
+                } else if (context) {
+                    setAutoLabel(el, context);
                 }
             }
         },
@@ -433,7 +458,11 @@
 
         // Landmark roles
         landmark: (el, opts) => {
-            const role = opts.role || opts.landmark || el.getAttribute('ax-role') || el.getAttribute('ax-landmark') || 'region';
+            let role = opts.role || opts.landmark || el.getAttribute('ax-role') || el.getAttribute('ax-landmark') || 'region';
+            if (!LANDMARK_ROLES.includes(role)) {
+                console.warn(`AccessX: Invalid landmark role '${role}', using 'region'`);
+                role = 'region';
+            }
             const label = opts.label || el.getAttribute('ax-label') || el.textContent?.trim().substring(0, 50);
 
             el.setAttribute('role', role);
@@ -858,7 +887,7 @@
         const enhancer = enhance[enhanceType];
         if (enhancer) {
             enhancer(el, opts);
-            el.setAttribute(`${prefix}enhanced`, 'true');
+            setAttr(el, `${prefix}enhanced`, 'true');
         } else {
             console.warn(`AccessX: Unknown enhancement type '${enhanceType}'`);
         }

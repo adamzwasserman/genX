@@ -170,6 +170,9 @@
             // Dates
         case 'date': case 'datetime': case 'relative':
             if (date === null) {
+                if (str.trim()) {
+                    console.warn(`FormatX: Invalid date '${str}'`);
+                }
                 return fallback();
             }
             break;
