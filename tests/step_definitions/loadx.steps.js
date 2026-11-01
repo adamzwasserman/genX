@@ -578,305 +578,281 @@ Then('use CSS animations for efficiency', async function() {
 });
 
 // ============================================================================
-// BINDX INTEGRATION - Data Binding
+// loadx.feature - real pages: fixture HTML, then loadx.js + loadx.css + init()
 // ============================================================================
 
-Given('an element with lx-loading bound to isLoading', async function() {
-    await this.page.setContent(`
-        <html><body>
-            <div id="bound-element" lx-loading="true">
-                Loading...
-            </div>
-            <button id="toggle-btn">Toggle</button>
-        </body></html>
-    `);
+const ORIGINAL_CONTENT = '<p id="lx-original">Original content</p>';
 
-    // Simulate bindX data binding
-    await this.page.evaluate(() => {
-        window._isLoading = true;
+/** Load genx-common, loadX and loadx.css into the current page and record
+ *  every live-region announcement (the region clears itself after 1s). */
+async function addLoadX(world) {
+    await world.page.addScriptTag({ path: './src/genx-common.js' });
+    await world.page.addScriptTag({ path: './src/loadx.js' });
+    await world.page.addStyleTag({ path: './src/loadx.css' });
+    await world.page.evaluate(() => {
+        window.__lxAnnouncements = [];
+        new MutationObserver(() => {
+            const region = document.getElementById('lx-live-region');
+            if (region && region.textContent) {
+                window.__lxAnnouncements.push(region.textContent);
+            }
+        }).observe(document.body, { childList: true, subtree: true, characterData: true });
     });
+}
+
+async function mountLoadX(world, bodyHtml) {
+    await world.page.setContent(`<!DOCTYPE html><html><head></head><body>${bodyHtml}</body></html>`);
+    await addLoadX(world);
+    await world.page.evaluate(() => { window.loadX.init(); });
+}
+
+/** Wait past the observer debounce (50ms) plus a frame. */
+async function settle(world) {
+    await world.page.waitForTimeout(120);
+}
+
+const lxEl = (world) => world.page.locator('#lx-el');
+
+Given(/^a loadX element with ((?:[\w:-]+="[^"]*"(?: |$))+)$/, async function(attrs) {
+    await mountLoadX(this, `<div id="lx-el" ${attrs.trim()} style="width:300px">${ORIGINAL_CONTENT}</div>`);
 });
 
-Given('a button that toggles isLoading', async function() {
-    // Button is already created in previous step
+Given('loadX is initialized on an empty page', async function() {
+    await mountLoadX(this, '<main id="root"></main>');
 });
 
-When('the button is clicked', async function() {
-    await this.page.click('#toggle-btn');
+When(/^a new element with ((?:[\w:-]+="[^"]*" )+)is added$/, async function(attrs) {
+    await this.page.evaluate((a) => {
+        document.getElementById('root').insertAdjacentHTML('beforeend',
+            `<div id="lx-el" ${a}><p id="lx-original">Original content</p></div>`);
+    }, attrs.trim());
 });
 
-Then('isLoading should become true', async function() {
-    const isLoading = await this.page.evaluate(() => {
-        return window._isLoading === true;
-    });
-
-    expect(isLoading).toBe(true);
+When('lx-loading changes to {string}', async function(value) {
+    await this.page.evaluate((v) => document.getElementById('lx-el').setAttribute('lx-loading', v), value);
+    await settle(this);
 });
 
-Then('the loading indicator should appear', async function() {
-    const isVisible = await this.page.evaluate(() => {
-        const el = document.getElementById('bound-element');
-        return el && el.getAttribute('lx-loading') === 'true';
-    });
-
-    expect(isVisible).toBe(true);
+When('loadX updates the progress to {int}', async function(value) {
+    await this.page.evaluate((v) => window.loadX.update(document.getElementById('lx-el'), v), value);
 });
 
-// ============================================================================
-// CUSTOM SPINNERS
-// ============================================================================
+// ---- spinners -------------------------------------------------------------
 
-defineElement('an element with lx-loading={string} lx-icon={string}', async function(loading, icon) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="custom-icon" lx-loading="${loading}" lx-icon="${icon}">
-                <svg id="custom-svg" width="32" height="32" viewBox="0 0 32 32">
-                    <circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/>
-                </svg>
-            </div>
-        </body></html>
-    `);
+async function expectSpinner(world) {
+    await expect(lxEl(world).locator('.lx-spinner-wrapper')).toHaveCount(1);
+    await expect(lxEl(world).locator('.lx-spinner-wrapper')).toBeVisible();
+    await expect(lxEl(world)).toHaveClass(/\blx-loading\b/);
+}
+
+async function expectNoSpinner(world) {
+    await expect(lxEl(world).locator('.lx-spinner-wrapper')).toHaveCount(0);
+    await expect(lxEl(world)).not.toHaveClass(/\blx-loading\b/);
+    await expect(world.page.locator('#lx-original')).toBeVisible();
+}
+
+Then('a spinner should be visible', async function() { await expectSpinner(this); });
+Then('the spinner should appear', async function() { await expectSpinner(this); });
+Then('no spinner should be visible', async function() { await expectNoSpinner(this); });
+Then('the spinner should disappear', async function() { await expectNoSpinner(this); });
+
+Then('the loading indicator should appear automatically', async function() {
+    await expectSpinner(this);
+    await expect(lxEl(this)).toHaveAttribute('aria-busy', 'true');
 });
 
-Given('a custom SVG icon defined', async function() {
-    // Icon is already in the HTML above
+/** Name of the running CSS animation on the first match of selector. */
+const animationOf = (world, selector) => world.page.evaluate((sel) => {
+    const node = document.querySelector(sel);
+    if (!node) return null;
+    const style = getComputedStyle(node);
+    return { name: style.animationName, iteration: style.animationIterationCount };
+}, selector);
+
+Then('a circular animated spinner should display', async function() {
+    await expect(lxEl(this).locator('.lx-spinner-circle')).toBeVisible();
+    const anim = await animationOf(this, '#lx-el .lx-spinner-circle');
+    expect(anim.name).toBe('lx-spin');
+    expect(anim.iteration).toBe('infinite');
 });
 
-Then('the custom icon should be used as the spinner', async function() {
-    const hasSVG = await this.page.evaluate(() => {
-        return document.getElementById('custom-svg') !== null;
-    });
-
-    expect(hasSVG).toBe(true);
+Then('three animated dots should display', async function() {
+    await expect(lxEl(this).locator('.lx-spinner-dots .lx-spinner-dot')).toHaveCount(3);
+    const anim = await animationOf(this, '#lx-el .lx-spinner-dot');
+    expect(anim.name).toBe('lx-bounce');
 });
 
-defineElement('an element with lx-loading={string} lx-size={string}', async function(loading, size) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="sized-spinner" lx-loading="${loading}" lx-size="${size}" class="lx-spinner-${size}">
-                Spinner
-            </div>
-        </body></html>
-    `);
+Then('animated bars should display', async function() {
+    const bars = lxEl(this).locator('.lx-spinner-bars .lx-spinner-bar');
+    expect(await bars.count()).toBeGreaterThan(1);
+    const anim = await animationOf(this, '#lx-el .lx-spinner-bar');
+    expect(anim.name).toBe('lx-scale');
+});
+
+Then('the spinner should be red', async function() {
+    const color = await this.page.evaluate(() =>
+        getComputedStyle(document.querySelector('#lx-el .lx-spinner-circle')).borderTopColor);
+    expect(color).toBe('rgb(255, 0, 0)');
 });
 
 Then('the spinner should be large size', async function() {
-    const hasSize = await this.page.evaluate(() => {
-        const el = document.getElementById('sized-spinner');
-        return el.classList.contains('lx-spinner-large');
+    const spinner = lxEl(this).locator('.lx-spinner-circle');
+    await expect(spinner).toHaveClass(/\blx-spinner-large\b/);
+    const sizes = await this.page.evaluate(() => {
+        const large = document.querySelector('#lx-el .lx-spinner-circle').getBoundingClientRect().width;
+        const probe = document.createElement('div');
+        probe.className = 'lx-spinner-circle lx-spinner-medium';
+        document.body.appendChild(probe);
+        const medium = probe.getBoundingClientRect().width;
+        probe.remove();
+        return { large, medium };
     });
-
-    expect(hasSize).toBe(true);
+    expect(sizes.large).toBeGreaterThan(sizes.medium);
 });
 
-// ============================================================================
-// SHIMMER EFFECTS
-// ============================================================================
+// ---- skeletons and placeholders -------------------------------------------
 
-defineElement('an element with lx-skeleton={string} lx-shimmer={string}', async function(skeleton, shimmer) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="shimmer" lx-skeleton="${skeleton}" lx-shimmer="${shimmer}" style="
-                width: 200px;
-                height: 100px;
-                background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-                background-size: 200% 100%;
-                animation: shimmer 2s infinite;
-            "></div>
-            <style>
-                @keyframes shimmer {
-                    0% { background-position: 200% 0; }
-                    100% { background-position: -200% 0; }
-                }
-            </style>
-        </body></html>
-    `);
+Then('a text skeleton placeholder should display', async function() {
+    await expect(lxEl(this).locator('.lx-skeleton.lx-skeleton-text').first()).toBeVisible();
+    await expect(lxEl(this)).toHaveClass(/\blx-loading-skeleton\b/);
 });
 
-Then('the skeleton should have shimmer animation', async function() {
-    const hasShimmer = await this.page.evaluate(() => {
-        const el = document.getElementById('shimmer');
-        const style = window.getComputedStyle(el);
-        return !!(style.animation || style.animationName);
-    });
+async function expectShimmer(world) {
+    const anim = await animationOf(world, '#lx-el .lx-skeleton');
+    expect(anim.name).toBe('lx-shimmer');
+    expect(anim.iteration).toBe('infinite');
+}
 
-    expect(hasShimmer).toBe(true);
-});
+Then('it should have shimmer animation', async function() { await expectShimmer(this); });
+Then('the skeleton should have shimmer animation', async function() { await expectShimmer(this); });
 
 Then('the shimmer should move from left to right', async function() {
-    const movesLeftToRight = await this.page.evaluate(() => {
-        const el = document.getElementById('shimmer');
-        const style = window.getComputedStyle(el);
-        const animation = style.animation || style.animationName || '';
-        return animation.includes('shimmer') || style.backgroundPosition;
+    // lx-shimmer moves the gradient from background-position -200% to 200%.
+    const frames = await this.page.evaluate(() => {
+        for (const sheet of document.styleSheets) {
+            for (const rule of sheet.cssRules) {
+                if (rule.type === CSSRule.KEYFRAMES_RULE && rule.name === 'lx-shimmer') {
+                    return Array.from(rule.cssRules).map(r => ({
+                        key: r.keyText, x: parseFloat(r.style.backgroundPosition)
+                    }));
+                }
+            }
+        }
+        return null;
     });
-
-    expect(movesLeftToRight).toBeTruthy();
+    expect(frames).not.toBeNull();
+    const first = frames.find(f => f.key === '0%');
+    const last = frames.find(f => f.key === '100%');
+    expect(last.x).toBeGreaterThan(first.x);
 });
 
-Then('the skeleton should be static', async function() {
-    const isStatic = await this.page.evaluate(() => {
-        const el = document.getElementById('shimmer');
-        const style = window.getComputedStyle(el);
-        const hasAnimation = !!(style.animation || style.animationName);
-        return !hasAnimation;
-    });
+async function expectStaticSkeleton(world) {
+    await expect(lxEl(world).locator('.lx-skeleton').first()).toBeVisible();
+    const anim = await animationOf(world, '#lx-el .lx-skeleton');
+    expect(anim.name).toBe('none');
+}
 
-    expect(isStatic).toBe(true);
-});
-
+Then('the skeleton should be static', async function() { await expectStaticSkeleton(this); });
 Then('no animation should occur', async function() {
-    const hasAnimation = await this.page.evaluate(() => {
-        const el = document.getElementById('shimmer');
-        const style = window.getComputedStyle(el);
-        return !!(style.animation || style.animationName);
+    const running = await this.page.evaluate(() =>
+        document.getAnimations().filter(a => document.getElementById('lx-el').contains(a.effect && a.effect.target)).length);
+    expect(running).toBe(0);
+});
+
+Then('the element\'s content should be hidden', async function() {
+    await expect(this.page.locator('#lx-original')).toHaveCount(0);
+    await expect(lxEl(this)).toHaveAttribute('data-lx-original-content', /Original content/);
+});
+
+Then('a placeholder should display', async function() {
+    await expect(lxEl(this).locator('.lx-skeleton').first()).toBeVisible();
+});
+
+Then('the element\'s content should be visible', async function() {
+    await expect(this.page.locator('#lx-original')).toBeVisible();
+});
+
+Then('no placeholder should display', async function() {
+    await expect(lxEl(this).locator('.lx-skeleton')).toHaveCount(0);
+    await expect(lxEl(this)).not.toHaveClass(/\blx-loading\b/);
+});
+
+// ---- progress ---------------------------------------------------------------
+
+const progressBar = (world) => lxEl(world).locator('.lx-progress-bar');
+const progressWidth = (world) => world.page.evaluate(() => {
+    const bar = document.querySelector('#lx-el .lx-progress-bar');
+    const fill = document.querySelector('#lx-el .lx-progress-fill');
+    return Math.round(fill.getBoundingClientRect().width / bar.getBoundingClientRect().width * 100);
+});
+
+Then(/^a progress bar at (\d+)% should display$/, async function(pct) {
+    await expect(progressBar(this)).toBeVisible();
+    await expect(progressBar(this)).toHaveClass(/\blx-progress-determinate\b/);
+    await expect(lxEl(this).locator('.lx-progress-fill')).toHaveAttribute('style', new RegExp(`width:\\s*${pct}%`));
+    expect(await progressWidth(this)).toBe(Number(pct));
+});
+
+Then(/^the progress bar should animate to (\d+)%$/, async function(pct) {
+    const transition = await this.page.evaluate(() =>
+        getComputedStyle(document.querySelector('#lx-el .lx-progress-fill')).transitionProperty);
+    expect(transition).toContain('width');
+    await expect(lxEl(this).locator('.lx-progress-fill')).toHaveAttribute('style', new RegExp(`width:\\s*${pct}%`));
+    await expect.poll(() => progressWidth(this)).toBe(Number(pct));
+    await expect(progressBar(this)).toHaveAttribute('aria-valuenow', String(pct));
+});
+
+Then('an indeterminate progress bar should display', async function() {
+    await expect(progressBar(this)).toBeVisible();
+    await expect(progressBar(this)).toHaveClass(/\blx-progress-indeterminate\b/);
+    await expect(lxEl(this).locator('.lx-progress-label')).toHaveCount(0);
+});
+
+Then('it should have continuous animation', async function() {
+    const anim = await animationOf(this, '#lx-el .lx-progress-fill');
+    expect(anim.name).toBe('lx-progress-indeterminate');
+    expect(anim.iteration).toBe('infinite');
+});
+
+Then('the progress bar should show {string}', async function(text) {
+    await expect(lxEl(this).locator('.lx-progress-label')).toHaveText(text);
+});
+
+Then('the progress bar should have role={string}', async function(role) {
+    await expect(progressBar(this)).toHaveAttribute('role', role);
+});
+
+for (const attr of ['aria-valuenow', 'aria-valuemin', 'aria-valuemax']) {
+    Then(`${attr} should be {string}`, async function(value) {
+        await expect(progressBar(this)).toHaveAttribute(attr, value);
     });
+}
 
-    expect(hasAnimation).toBe(false);
+// ---- messages and ARIA ------------------------------------------------------
+
+Then('the message {string} should display', async function(message) {
+    await expect(lxEl(this).locator('.lx-fade-message')).toHaveText(message);
+    await expect(lxEl(this)).toHaveClass(/\blx-loading-fade\b/);
 });
 
-// ============================================================================
-// LOADING CONTEXT
-// ============================================================================
-
-Given('a container with lx-loading-context={string}', async function(context) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="context" lx-loading-context="${context}" lx-loading="true">
-                <input type="text" />
-                <input type="email" />
-                <textarea></textarea>
-            </div>
-        </body></html>
-    `);
+Then('the loadX live region should have aria-live={string}', async function(value) {
+    const region = this.page.locator('#lx-live-region');
+    await expect(region).toHaveCount(1);
+    await expect(region).toHaveAttribute('aria-live', value);
+    await expect(region).toHaveAttribute('aria-atomic', 'true');
 });
 
-Given('multiple inputs inside the container', async function() {
-    // Already created in previous step
+Then('screen readers should announce loading state', async function() {
+    const announced = await this.page.evaluate(() => window.__lxAnnouncements);
+    expect(announced).toContain('Loading');
 });
 
-When('the context loading state becomes true', async function() {
-    await this.page.evaluate(() => {
-        const context = document.getElementById('context');
-        context.setAttribute('lx-loading', 'true');
-    });
+Then('the loadX element should have aria-busy={string}', async function(value) {
+    await expect(lxEl(this)).toHaveAttribute('aria-busy', value);
 });
 
-Then('all inputs should show loading state', async function() {
-    const inputsDisabled = await this.page.evaluate(() => {
-        const inputs = document.querySelectorAll('input, textarea');
-        return Array.from(inputs).every(inp => inp.disabled || inp.getAttribute('aria-busy') === 'true');
-    });
-
-    expect(inputsDisabled).toBe(true);
+Then('the loadX element should no longer be busy', async function() {
+    const busy = await lxEl(this).getAttribute('aria-busy');
+    expect(busy === null || busy === 'false').toBe(true);
+    await expect(this.page.locator('#lx-original')).toBeVisible();
 });
-
-Then('all should be disabled', async function() {
-    const allDisabled = await this.page.evaluate(() => {
-        const inputs = document.querySelectorAll('input, textarea');
-        return Array.from(inputs).every(inp => inp.disabled || inp.hasAttribute('disabled'));
-    });
-
-    // May be disabled or have aria-busy
-    expect(allDisabled).toBe(true);
-});
-
-// ============================================================================
-// EVENTS
-// ============================================================================
-
-When('loading becomes true', async function() {
-    await this.page.evaluate(() => {
-        const el = document.getElementById('event-test') || document.querySelector('[lx-loading]');
-        if (el) {
-            el.setAttribute('lx-loading', 'true');
-            const event = new CustomEvent('lx:loadstart', { detail: { element: el } });
-            document.dispatchEvent(event);
-        }
-    });
-});
-
-
-
-When('loading becomes false', async function() {
-    await this.page.evaluate(() => {
-        const el = document.getElementById('event-test') || document.querySelector('[lx-loading]');
-        if (el) {
-            el.setAttribute('lx-loading', 'false');
-            const event = new CustomEvent('lx:loadend', { detail: { element: el } });
-            document.dispatchEvent(event);
-        }
-    });
-});
-
-// ============================================================================
-// RESPONSIVE LOADING
-// ============================================================================
-
-defineElement('an element with lx-type={string} lx-mobile-type={string}', async function(type, mobileType) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="responsive" lx-type="${type}" lx-mobile-type="${mobileType}">
-                Loading...
-            </div>
-        </body></html>
-    `);
-});
-
-When('in loadX, viewed on mobile', async function() {
-    await this.page.setViewportSize({ width: 375, height: 667 });
-});
-
-Then('dots spinner should display', async function() {
-    const hasDots = await this.page.evaluate(() => {
-        return document.querySelector('.lx-spinner-dots') !== null ||
-               document.getElementById('responsive').getAttribute('lx-mobile-type') === 'dots';
-    });
-
-    expect(hasDots).toBe(true);
-});
-
-When('viewed on desktop', async function() {
-    await this.page.setViewportSize({ width: 1920, height: 1080 });
-});
-
-Then('circular spinner should display', async function() {
-    const hasCircle = await this.page.evaluate(() => {
-        return document.querySelector('.lx-spinner-circle') !== null ||
-               document.getElementById('responsive').getAttribute('lx-type') === 'spinner';
-    });
-
-    expect(hasCircle).toBe(true);
-});
-
-// ============================================================================
-// TIMEOUT HANDLING
-// ============================================================================
-
-defineElement('an element with lx-loading={string} lx-timeout={string}', async function(loading, timeout) {
-    await this.page.setContent(`
-        <html><body>
-            <div id="timeout-test" lx-loading="${loading}" lx-timeout="${timeout}">
-                Loading...
-            </div>
-        </body></html>
-    `);
-});
-
-When('{int} seconds pass without completion', async function(seconds) {
-    // Wait for timeout period
-    await this.page.waitForTimeout(seconds * 1000 + 100);
-});
-
-Then('a timeout error should be shown', async function() {
-    const hasError = await this.page.evaluate(() => {
-        const el = document.getElementById('timeout-test');
-        return el && (el.classList.contains('lx-error') || el.getAttribute('aria-label')?.includes('timeout'));
-    });
-
-    expect(hasError).toBe(true);
-});
-
-
-
-module.exports = {};

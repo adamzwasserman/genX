@@ -33,8 +33,12 @@ When('loadX is initialized without configuration', async function() {
 });
 
 When('loadX is initialized with:', async function(dataTable) {
-    await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
-    await this.page.addScriptTag({ path: './src/loadx.js' });
+    // A Background may already have loaded the scripts; loading loadx.js twice
+    // would create a second module instance with its own observers
+    if (!(await this.page.evaluate(() => !!(window.loadX && window.loadX.init)))) {
+        await this.page.addScriptTag({ path: './src/genx-common.js' }); // modules parse attributes through genxCommon
+        await this.page.addScriptTag({ path: './src/loadx.js' });
+    }
 
     const config = {};
     dataTable.rows().forEach(([key, value]) => {
@@ -47,7 +51,8 @@ When('loadX is initialized with:', async function(dataTable) {
 
     this.loadxResult = await this.page.evaluate((cfg) => {
         if (window.loadX && window.loadX.init) {
-            return window.loadX.init(cfg);
+            window.__lxApi = window.loadX.init(cfg); // keep the live API for later steps
+            return window.__lxApi;
         }
         return null;
     }, config);
@@ -306,7 +311,9 @@ Given('an element with no lx- attributes', async function() {
 Then('the element should be detected and registered', async function() {
     const tracked = await this.page.evaluate(() =>
         Array.from(document.querySelectorAll('[lx-strategy], [lx-loading], [class*="lx-"]'))
-            .filter(el => el.id !== 'lx-live-region')
+            // skip the live region and indicator markup loadX renders inside
+            // a tracked element (lx-loading="true" forces the loading state)
+            .filter(el => el.id !== 'lx-live-region' && !el.parentElement.closest('[data-lx-tracked]'))
             .map(el => el.getAttribute('data-lx-tracked')));
     assert.ok(tracked.length > 0, 'Test element should exist');
     assert.ok(tracked.every(v => v === 'true'), `Element should be marked data-lx-tracked, got ${JSON.stringify(tracked)}`);

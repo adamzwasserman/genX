@@ -36,7 +36,9 @@ Feature: loadX v2.0 CLS Prevention with ResizeObserver
     And I apply loading state to the element with strategy "spinner"
     Then no ResizeObserver should be attached to the element
     And the element should not have min-width modified
-    And the element should not have min-height modified
+    # api.md: the spinner itself "preserves element dimensions", so its
+    # min-height lock stays even with preventCLS off
+    And the element should only have the spinner's own height lock
 
   Scenario: Multiple elements each get their own ResizeObserver
     When loadX is initialized with:
@@ -105,6 +107,7 @@ Feature: loadX v2.0 CLS Prevention with ResizeObserver
     And activeObservers Set should be empty
     And no memory leaks should be detected
 
+  @perf
   Scenario: Performance impact of ResizeObserver is minimal
     When loadX is initialized with:
       | property      | value |
@@ -119,7 +122,7 @@ Feature: loadX v2.0 CLS Prevention with ResizeObserver
       | property      | value |
       | preventCLS    | true  |
     And an element with id "dynamic-btn" is added with dimensions "200px" x "40px"
-    And I apply loading state to the element
+    And I apply loading state to the element with strategy "spinner"
     And the element content changes causing it to expand to "250px" x "45px"
     Then the ResizeObserver should detect the size change
     And the new dimensions should be stored in originalDimensions
