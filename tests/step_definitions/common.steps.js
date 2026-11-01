@@ -72,6 +72,13 @@ Then('the element should display {string}', async function(text) {
     expect(content).toBe(text);
 });
 
+// Intl output uses U+00A0 or U+202F between number and symbol; feature text uses a plain space.
+Then('the element should display {string}, where a non-breaking space counts as a space', async function(text) {
+    expect(this.element).toBeDefined();
+    const content = await this.element.textContent();
+    expect(content.replace(/[\u00A0\u202F]/g, ' ')).toBe(text);
+});
+
 Then('the element should have class {string}', async function(className) {
     expect(this.element).toBeDefined();
     const hasClass = await this.element.evaluate((el, cls) =>

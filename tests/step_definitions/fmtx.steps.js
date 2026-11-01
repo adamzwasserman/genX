@@ -56,6 +56,8 @@ Given('the fx-raw value is {string}', async function(value) {
     await this.page.evaluate((v) => {
         const el = document.getElementById('test');
         el.setAttribute('fx-raw', v);
+        // fmtX falls back to the text when fx-raw is empty, so the text must match too.
+        el.textContent = v;
     }, value);
 });
 
