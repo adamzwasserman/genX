@@ -788,6 +788,15 @@ const debounce = (fn, wait, immediate = false) => {
  * MODULE EXPORTS
  * ============================================================================ */
 
+/**
+ * Factory for circuit breakers (same as `new CircuitBreaker(threshold, timeout)`)
+ *
+ * @param {number} threshold - Failures before the circuit opens (default: 5)
+ * @param {number} timeout - Milliseconds before an open circuit allows a trial call (default: 60000)
+ * @returns {CircuitBreaker} New circuit breaker in the CLOSED state
+ */
+const createCircuitBreaker = (threshold, timeout) => new CircuitBreaker(threshold, timeout);
+
 const genxCommon = {
     errors: {
         GenXError,
@@ -800,6 +809,7 @@ const genxCommon = {
         Err
     },
     CircuitBreaker,
+    createCircuitBreaker,
     cache: {
         createCache,
         hashOptions,

@@ -68,6 +68,17 @@
     };
 
     /**
+     * Normalize a dx-data payload to an object (documented as a JSON payload).
+     * Parsers may hand back the raw attribute string.
+     */
+    const toDataPayload = (data) => {
+        if (typeof data === 'string') {
+            return safeJSONParse(data) || {};
+        }
+        return data || {};
+    };
+
+    /**
      * Parse verbose attribute syntax.
      * Example: dx-draggable="card" dx-data='{"id":123}'
      */
@@ -215,7 +226,7 @@
                 // Got cached config - convert to expected format
                 return Object.freeze({
                     type: cachedConfig.draggable,
-                    data: cachedConfig.data || {},
+                    data: toDataPayload(cachedConfig.data),
                     ghost: cachedConfig.ghost !== undefined ? cachedConfig.ghost : false,
                     constraint: cachedConfig.constraint,
                     handle: cachedConfig.handle,
@@ -245,7 +256,7 @@
         // Map parseNotation keys to dragX config format
         return Object.freeze({
             type: parsed.draggable,
-            data: parsed.data || {},
+            data: toDataPayload(parsed.data),
             ghost: parsed.ghost !== undefined ? parsed.ghost : false,
             constraint: parsed.constraint,
             handle: parsed.handle,
