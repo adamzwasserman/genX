@@ -37,29 +37,55 @@
     };
 
     /**
-     * Notify path subscribers (for computed invalidation)
+     * Notify path subscribers (for computed invalidation and watchers)
      * Also notifies subscribers of child paths when parent changes
      * e.g., when 'bio' changes, also notify 'bio.length', 'bio.wordCount', etc.
+     * and subscribers of parent paths when a child changes
+     * e.g., pushing to 'items' sets 'items.3', which notifies 'items'.
+     * Callbacks receive the path they subscribed to (exact and child) or the
+     * changed path (parent), so watch() can read the right value.
      * @param {string} path - Path that changed
-     * @param {*} value - New value
      */
+    const MAX_UPDATE_DEPTH = 100;
+    let notifyDepth = 0;
     const notifyPathSubscribers = (path) => {
-        // Notify exact path subscribers
-        const subscribers = pathSubscribers.get(path);
-        if (subscribers) {
-            for (const callback of subscribers) {
-                callback(path);
-            }
+        // A subscriber that writes the path it watches would recurse forever
+        if (notifyDepth >= MAX_UPDATE_DEPTH) {
+            throw new Error(`bindX: Maximum update depth exceeded while updating "${path}". ` +
+                'A watcher or binding probably writes the value it watches.');
         }
-
-        // Also notify child path subscribers (e.g., 'bio' changing should notify 'bio.length')
-        const pathPrefix = path + '.';
-        for (const [subscribedPath, childSubscribers] of pathSubscribers.entries()) {
-            if (typeof subscribedPath === 'string' && subscribedPath.startsWith(pathPrefix)) {
-                for (const callback of childSubscribers) {
-                    callback(subscribedPath);
+        notifyDepth++;
+        try {
+            // Notify exact path subscribers
+            const subscribers = pathSubscribers.get(path);
+            if (subscribers) {
+                for (const callback of [...subscribers]) {
+                    callback(path);
                 }
             }
+
+            // Also notify child path subscribers (e.g., 'bio' changing should notify 'bio.length')
+            const pathPrefix = path + '.';
+            for (const [subscribedPath, childSubscribers] of [...pathSubscribers.entries()]) {
+                if (typeof subscribedPath === 'string' && subscribedPath.startsWith(pathPrefix)) {
+                    for (const callback of [...childSubscribers]) {
+                        callback(subscribedPath);
+                    }
+                }
+            }
+
+            // And parent path subscribers (a change inside 'items' is a change to 'items')
+            const parts = path.split('.');
+            for (let i = parts.length - 1; i > 0; i--) {
+                const parentSubscribers = pathSubscribers.get(parts.slice(0, i).join('.'));
+                if (parentSubscribers) {
+                    for (const callback of [...parentSubscribers]) {
+                        callback(path);
+                    }
+                }
+            }
+        } finally {
+            notifyDepth--;
         }
     };
 
