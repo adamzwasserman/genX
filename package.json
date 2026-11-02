@@ -75,7 +75,11 @@
   "homepage": "https://genx.software",
   "dependencies": {},
   "devDependencies": {
+    "@angular/common": "^20.3.34",
+    "@angular/compiler": "^20.3.34",
     "@angular/core": "^20.3.34",
+    "@angular/forms": "^20.3.34",
+    "@angular/platform-browser": "^20.3.34",
     "@axe-core/playwright": "^4.11.0",
     "@babel/core": "^7.28.5",
     "@babel/preset-env": "^7.28.5",
@@ -104,7 +108,8 @@
     "svelte": "^5.57.3",
     "terser": "^5.44.1",
     "typescript": "^5.9.3",
-    "vue": "^3.5.44"
+    "vue": "^3.5.44",
+    "zone.js": "^0.15.1"
   },
   "size-limit": [
     {

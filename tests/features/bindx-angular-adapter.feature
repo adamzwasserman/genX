@@ -215,6 +215,8 @@ Feature: bindX Angular Framework Adapter
     And reactive state can be managed in services
 
   # Performance
+  # perf: timing threshold (60 FPS); runs only in the perf suite
+  @perf
   Scenario: Efficient change detection with reactive state
     Given a component with 1000 reactive properties
     When properties update frequently
@@ -283,6 +285,8 @@ Feature: bindX Angular Framework Adapter
     And nested components can inject it
 
   # SSR (Server-Side Rendering)
+  # wip: needs an Angular SSR app and @angular/platform-server (not a dependency of genX)
+  @wip
   Scenario: Reactive state in Angular Universal (SSR)
     Given an Angular Universal application
     When components use BindXService during SSR
@@ -290,6 +294,8 @@ Feature: bindX Angular Framework Adapter
     And state should serialize to client
     And hydration should work correctly
 
+  # wip: needs an Angular SSR app and @angular/platform-server (not a dependency of genX)
+  @wip
   Scenario: Avoid memory leaks in SSR
     Given SSR environment
     When components are rendered on server
@@ -297,12 +303,16 @@ Feature: bindX Angular Framework Adapter
     And no memory should leak between requests
 
   # Advanced Integration
+  # wip: needs NgRx (not a dependency of genX)
+  @wip
   Scenario: Integrate with NgRx store
     Given an app using NgRx
     When I sync bindX reactive state with NgRx store
     Then bindX state can derive from store selectors
     And bindX can dispatch actions on changes
 
+  # wip: needs @angular/router, and the adapter has no reset-on-navigation option to configure
+  @wip
   Scenario: Integrate with Angular Router
     Given reactive state in routed components
     When navigating between routes
@@ -318,6 +328,8 @@ Feature: bindX Angular Framework Adapter
     And updates should propagate to all components
 
   # Migration from Angular Services
+  # wip: compares code style and performance subjectively; no assertable spec
+  @wip
   Scenario: Migrate from BehaviorSubject to reactive state
     Given a service using BehaviorSubject
     When I replace BehaviorSubject with reactive state
@@ -325,6 +337,8 @@ Feature: bindX Angular Framework Adapter
     And less boilerplate code should be needed
     And performance should be better
 
+  # wip: needs NgRx ComponentStore (not a dependency of genX)
+  @wip
   Scenario: Use reactive state instead of ComponentStore
     Given a component using NgRx ComponentStore
     When I replace ComponentStore with BindXService

@@ -53,11 +53,14 @@ function buildAdapter(name) {
     return outfile;
 }
 
-function installDom(world) {
+function installDom(world, { runScripts } = {}) {
     const { JSDOM } = require('jsdom');
     const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
         pretendToBeVisual: true,
-        url: 'http://localhost/'
+        url: 'http://localhost/',
+        // 'outside-only' gives the window its own JS realm (window.eval), so a
+        // framework that patches globals (Angular's zone.js) patches only it
+        ...(runScripts ? { runScripts } : {})
     });
     const saved = {};
     for (const key of DOM_GLOBALS) {
@@ -102,7 +105,7 @@ function loadAdapter(name) {
 function setupAdapter(world, name, options = {}) {
     if (world.ad && world.ad.name === name) return world.ad;
     world._adapterTeardown = world._adapterTeardown || [];
-    const dom = installDom(world);
+    const dom = installDom(world, options);
     const core = loadCore();
     // Core logs each update in development; keep it out of the test output
     const { log: consoleLog, debug: consoleDebug } = console;
@@ -123,6 +126,7 @@ function setupAdapter(world, name, options = {}) {
             if (domBound.test(key)) delete require.cache[key];
         }
     }
+    // options.runScripts: see installDom.
     // options.load replaces the default build, for an adapter that must share one
     // bundle with its framework (Svelte's client runtime resolves by export condition)
     const adapter = options.load ? options.load() : loadAdapter(name);
