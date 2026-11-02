@@ -54,6 +54,15 @@ export interface UnwatchFn {
   (): void;
 }
 
+/** inject(token), or null outside an injection context or without a provider. */
+function injectOptional<T>(token: any): T | null {
+  try {
+    return inject(token, { optional: true }) as T | null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * BindXService - Angular service for bindX integration
  *
@@ -62,20 +71,28 @@ export interface UnwatchFn {
  *
  * @example
  * ```typescript
+ * import { Component } from '@angular/core';
+ * import { BindXService } from '@genx/bindx-angular';
+ *
  * @Component({
  *   selector: 'app-counter',
  *   template: `
  *     <div>Count: {{ state.count }}</div>
  *     <button (click)="increment()">+</button>
+ *     <button (click)="decrement()">-</button>
  *   `
  * })
- * export class CounterComponent implements OnInit {
+ * export class CounterComponent {
  *   state = this.bindX.reactive({ count: 0 });
  *
  *   constructor(private bindX: BindXService) {}
  *
  *   increment() {
  *     this.state.count++;
+ *   }
+ *
+ *   decrement() {
+ *     this.state.count--;
  *   }
  * }
  * ```
@@ -122,19 +139,24 @@ export class BindXService implements OnDestroy {
   reactive<T extends object>(state: T): T {
     const proxy = bindX.reactive(state);
 
-    // Wrap proxy to trigger change detection on updates
-    return new Proxy(proxy, {
-      set: (target, property, value) => {
-        const result = Reflect.set(target, property, value);
+    // Created in a component (constructor or field initializer): mark that view
+    // too, so an OnPush component re-renders on a change made outside its events
+    const view = injectOptional<ChangeDetectorRef>(ChangeDetectorRef);
 
-        // Trigger change detection
-        this.ngZone.run(() => {
-          // Empty callback - just need to trigger zone
-        });
+    // A deep watch sees every change, nested ones (todo.completed = true) and
+    // array methods (todos.push(...)) included
+    const unwatch = bindX.watch(
+      () => proxy,
+      () => {
+        view?.markForCheck();
+        // Entering the zone runs change detection, even from outside it
+        this.ngZone.run(() => {});
+      },
+      { deep: true }
+    );
+    this.onCleanup(unwatch);
 
-        return result;
-      }
-    });
+    return proxy;
   }
 
   /**
@@ -178,7 +200,11 @@ export class BindXService implements OnDestroy {
   /**
    * Watch reactive properties for changes
    *
-   * Watchers are automatically cleaned up when the component is destroyed.
+   * Watchers are automatically cleaned up when the component is destroyed if
+   * created in its injection context (constructor or field initializer), or if
+   * the component provides BindXService itself (`providers: [BindXService]`).
+   * Otherwise (say, from ngOnInit with the root service) they last as long as
+   * the service; call the returned unwatch function in ngOnDestroy.
    *
    * @template T - Type of the watched value
    * @param getter - Function that returns the value to watch
@@ -220,7 +246,7 @@ export class BindXService implements OnDestroy {
     this.watchers.push(unwatch);
 
     // Auto-cleanup on destroy
-    this.destroyRef.onDestroy(() => {
+    this.onCleanup(() => {
       unwatch();
       const index = this.watchers.indexOf(unwatch);
       if (index > -1) {
@@ -268,7 +294,7 @@ export class BindXService implements OnDestroy {
     );
 
     // Cleanup subject on destroy
-    this.destroyRef.onDestroy(() => {
+    this.onCleanup(() => {
       unwatch();
       subject.complete();
     });
@@ -371,6 +397,16 @@ export class BindXService implements OnDestroy {
   }
 
   /**
+   * Run `cleanup` when the caller is destroyed: the component (or directive or
+   * service) whose injection context this call runs in, as in a constructor or
+   * field initializer; otherwise this service's own injector.
+   */
+  private onCleanup(cleanup: () => void): void {
+    const destroyRef = injectOptional<DestroyRef>(DestroyRef) ?? this.destroyRef;
+    destroyRef.onDestroy(cleanup);
+  }
+
+  /**
    * Cleanup all watchers and subscriptions
    *
    * Called automatically on service destroy.
@@ -468,6 +504,8 @@ export {
  * @example
  * ```typescript
  * import { Component, OnInit } from '@angular/core';
+ * import { NgFor } from '@angular/common';
+ * import { FormsModule } from '@angular/forms';
  * import { BindXService } from '@genx/bindx-angular';
  *
  * interface TodoItem {
@@ -483,6 +521,7 @@ export {
  *
  * @Component({
  *   selector: 'app-todo',
+ *   imports: [NgFor, FormsModule],
  *   template: `
  *     <div>
  *       <h1>Todo List</h1>
