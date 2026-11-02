@@ -5,19 +5,18 @@
  * React 19 and react-dom against a jsdom document. Type scenarios run the
  * TypeScript compiler on small files that import the adapter.
  */
-const { Given, When, Then } = require('@cucumber/cucumber');
 const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
 const zlib = require('zlib');
-const { setupAdapter, flush } = require('../support/bindx-adapter-harness');
+const { setupAdapter, flush, adapterSteps, re } = require('../support/bindx-adapter-harness');
+
+const { Given, When, Then } = adapterSteps('react');
 
 const ROOT = path.resolve(__dirname, '../..');
 const ADAPTER_SRC = path.join(ROOT, 'src', 'bindx-react.ts');
 const TS_DIR = path.join(ROOT, 'node_modules', '.cache', 'genx-bindx-adapters', 'ts');
 
-// Anchored regex for a literal step text (texts here contain { } ( ) and /)
-const re = (text) => new RegExp('^' + text.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&') + '$');
 
 function rx(world) {
     if (!world.rc) world.rc = { renders: 0, log: [], checks: {} };

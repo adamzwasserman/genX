@@ -20,8 +20,16 @@ const DOM_GLOBALS = [
     'window', 'document', 'navigator', 'Node', 'Element', 'HTMLElement', 'HTMLInputElement',
     'HTMLSelectElement', 'HTMLTextAreaElement', 'SVGElement', 'Text', 'Comment',
     'DocumentFragment', 'Event', 'CustomEvent', 'MouseEvent', 'KeyboardEvent', 'InputEvent',
-    'MutationObserver', 'getComputedStyle', 'requestAnimationFrame', 'cancelAnimationFrame'
+    'MutationObserver', 'getComputedStyle', 'requestAnimationFrame', 'cancelAnimationFrame',
+    'Document', 'HTMLTemplateElement', 'HTMLButtonElement', 'HTMLFormElement', 'ShadowRoot', 'Range',
+    'FocusEvent', 'TransitionEvent', 'AnimationEvent', 'NodeList', 'HTMLCollection'
 ];
+
+// Frameworks that capture `document` when first required; reloaded per scenario
+const DOM_BOUND_PACKAGES = {
+    vue: /[\\/]node_modules[\\/](vue|@vue)[\\/]/,
+    svelte: /[\\/]node_modules[\\/]svelte[\\/]/
+};
 
 function buildAdapter(name) {
     if (built[name]) return built[name];
@@ -108,6 +116,12 @@ function setupAdapter(world, name) {
         console.debug = consoleDebug;
         delete globalThis.bindX;
     });
+    const domBound = DOM_BOUND_PACKAGES[name];
+    if (domBound) {
+        for (const key of Object.keys(require.cache)) {
+            if (domBound.test(key)) delete require.cache[key];
+        }
+    }
     const adapter = loadAdapter(name);
     world.ad = { name, core, adapter, dom, errors: [], cleanups: [] };
     return world.ad;
@@ -131,4 +145,45 @@ After(async function() {
     this.ad = null;
 });
 
-module.exports = { setupAdapter, flush, buildAdapter };
+// Anchored regex for a literal step text (texts contain { } ( ) and /)
+const re = (text) => new RegExp('^' + text.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&') + '$');
+
+/*
+ * The four adapter features share many step texts ("the state should be reactive")
+ * that mean different code per framework. Cucumber step definitions are global,
+ * so each adapter's steps file registers through adapterSteps(framework): the
+ * first file to use a pattern defines one Cucumber step that dispatches on the
+ * scenario's adapter (world.ad.name). A pattern with a single implementation
+ * runs it directly, which covers the package steps that run before world.ad.
+ */
+const sharedSteps = new Map();
+
+function adapterSteps(framework) {
+    const cucumber = require('@cucumber/cucumber');
+    const define = (keyword) => (pattern, ...rest) => {
+        const fn = rest.pop();
+        const key = pattern instanceof RegExp ? `re:${pattern.source}` : `ce:${pattern}`;
+        let entry = sharedSteps.get(key);
+        if (!entry) {
+            entry = { impls: {} };
+            sharedSteps.set(key, entry);
+            const dispatch = function(...args) {
+                const names = Object.keys(entry.impls);
+                const name = this.ad ? this.ad.name : names.length === 1 ? names[0] : undefined;
+                const impl = entry.impls[name] || (names.length === 1 ? entry.impls[names[0]] : undefined);
+                if (!impl) {
+                    throw new Error(`step ${pattern} has no ${name || 'adapter'} implementation (has: ${names.join(', ')})`);
+                }
+                return impl.apply(this, args);
+            };
+            // Cucumber checks the arity against the pattern's parameters
+            Object.defineProperty(dispatch, 'length', { value: fn.length });
+            cucumber[keyword](pattern, ...rest, dispatch);
+        }
+        if (entry.impls[framework]) throw new Error(`duplicate ${framework} step ${pattern}`);
+        entry.impls[framework] = fn;
+    };
+    return { Given: define('Given'), When: define('When'), Then: define('Then') };
+}
+
+module.exports = { setupAdapter, flush, buildAdapter, adapterSteps, re };
