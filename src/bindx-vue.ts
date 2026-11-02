@@ -343,7 +343,16 @@ export function computed<T>(getter: () => T): ComputedGetter<T> {
   return () => {
     void version.value;
     if (!stop && !disposed) {
-      stop = bindX.watch(() => bindXComputed(), () => {
+      // A getter that throws must not throw out of the state write that
+      // re-ran it. Each failure is a fresh value, so the component re-renders
+      // and the error surfaces from its own read, where Vue's handler sees it.
+      stop = bindX.watch(() => {
+        try {
+          return bindXComputed() as unknown;
+        } catch (error) {
+          return { error };
+        }
+      }, () => {
         version.value++;
       });
     }
