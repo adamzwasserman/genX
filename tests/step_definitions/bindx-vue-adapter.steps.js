@@ -2129,3 +2129,518 @@ Then(re('state should update teleported content'), async function() {
     await tick();
     assert.strictEqual(c.target.querySelector('.modal'), null);
 });
+
+// ---------------------------------------------------------------- Suspense and async setup
+
+Given(re('async component using bindX'), function() {
+    const c = vx(this);
+    const world = this;
+    c.baseline = watchers(this);
+    c.Async = V().defineAsyncComponent(() => new Promise((resolve) => setTimeout(() => resolve({
+        setup() {
+            c.state = A(world).reactive({ items: ['a', 'b'], loadedAt: 'ready' });
+            c.count = A(world).computed(() => c.state.items.length);
+            A(world).watch(() => c.state.items.length, (n) => c.log.push(n));
+            return { state: c.state, count: c.count };
+        },
+        template: '<p class="async">{{ state.loadedAt }}:{{ count() }}</p>'
+    }), 5)));
+});
+
+When(re('wrapped in <Suspense>'), async function() {
+    const c = vx(this);
+    c.view = mount(this, {
+        components: { Async: c.Async },
+        template: '<Suspense><Async /><template #fallback><p class="fallback">loading</p></template></Suspense>'
+    });
+    c.fallbackShown = !!c.view.find('.fallback');
+    await tick(20);
+});
+
+Then(re('bindX should work after loading'), async function() {
+    const c = vx(this);
+    assert.ok(c.fallbackShown, 'Suspense shows the fallback while loading');
+    assert.strictEqual(c.view.find('.fallback'), null);
+    c.state.items.push('c');
+    await tick();
+    assert.strictEqual(c.view.find('.async').textContent, 'ready:3');
+    assert.deepStrictEqual(c.log, [3]);
+});
+
+Then(re('state should initialize correctly'), function() {
+    const c = vx(this);
+    assert.deepStrictEqual([...c.state.items], ['a', 'b', 'c']);
+    assert.ok(watchers(this) > c.baseline, 'the loaded component owns live watchers');
+    c.view.unmount();
+    assert.strictEqual(watchers(this), c.baseline);
+});
+
+Given(re('component with async setup()'), function() {
+    const c = vx(this);
+    const world = this;
+    c.fetchData = () => new Promise((resolve) => setTimeout(() => resolve([{ id: 1, name: 'Ada' }, { id: 2, name: 'Grace' }]), 5));
+    c.Loader = {
+        async setup() {
+            // Adapter state is made before the first await, while the component is current
+            c.state = A(world).reactive({ users: [], status: 'loading' });
+            c.names = A(world).computed(() => c.state.users.map(u => u.name).join(','));
+            const users = await c.fetchData();
+            c.afterAwait(users);
+            return { state: c.state, names: c.names };
+        },
+        template: '<p class="users">{{ state.status }}|{{ names() }}</p>'
+    };
+});
+
+When(re('await fetchData()'), function() {
+    const c = vx(this);
+    c.afterAwait = () => {};
+    c.awaited = true;
+});
+
+When(re('set bindX state'), async function() {
+    const c = vx(this);
+    c.afterAwait = (users) => {
+        c.state.users = users;
+        c.state.status = 'done';
+    };
+    c.view = mount(this, {
+        components: { Loader: c.Loader },
+        template: '<Suspense><Loader /><template #fallback><p class="fallback">loading</p></template></Suspense>'
+    });
+    await tick(20);
+});
+
+Then(re('component should display data'), function() {
+    const c = vx(this);
+    assert.ok(c.awaited);
+    assert.strictEqual(c.view.find('.users').textContent, 'done|Ada,Grace');
+});
+
+Then(re('reactivity should work after load'), async function() {
+    const c = vx(this);
+    c.state.users.push({ id: 3, name: 'Linus' });
+    await tick();
+    assert.strictEqual(c.view.find('.users').textContent, 'done|Ada,Grace,Linus');
+    noWarnings(this);
+});
+
+// ---------------------------------------------------------------- Transitions
+
+function transitionHooks(c) {
+    c.hooks = [];
+    return {
+        onBeforeEnter: (el) => c.hooks.push(`before-enter:${el.textContent}`),
+        onEnter: (el, done) => { c.hooks.push(`enter:${el.textContent}`); setTimeout(done, 5); },
+        onAfterEnter: (el) => c.hooks.push(`after-enter:${el.textContent}`),
+        onLeave: (el, done) => { c.hooks.push(`leave:${el.textContent}`); setTimeout(done, 5); },
+        onAfterLeave: (el) => c.hooks.push(`after-leave:${el.textContent}`)
+    };
+}
+
+Given(re('component with <Transition>'), function() {
+    const c = vx(this);
+    const world = this;
+    c.Component = {
+        setup() {
+            c.state = A(world).reactive({ show: false });
+            return { state: c.state, hooks: transitionHooks(c) };
+        },
+        template: '<div><Transition :css="false" v-bind="hooks"><p v-if="state.show" class="panel">panel</p></Transition></div>'
+    };
+});
+
+When(re('bindX state controls visibility'), async function() {
+    const c = vx(this);
+    c.view = mount(this, c.Component);
+    c.state.show = true;
+    await tick(20);
+});
+
+Then(re('transitions should play correctly'), function() {
+    const c = vx(this);
+    assert.deepStrictEqual(c.hooks, ['before-enter:panel', 'enter:panel', 'after-enter:panel']);
+    assert.ok(c.view.find('.panel'));
+});
+
+Then(re('state changes should trigger transitions'), async function() {
+    const c = vx(this);
+    c.hooks.length = 0;
+    c.state.show = false;
+    await tick();
+    assert.deepStrictEqual(c.hooks, ['leave:panel']);
+    assert.ok(c.view.find('.panel'), 'the element stays until the leave finishes');
+    await tick(20);
+    assert.deepStrictEqual(c.hooks, ['leave:panel', 'after-leave:panel']);
+    assert.strictEqual(c.view.find('.panel'), null);
+});
+
+Given(re('bindX computed controlling animation'), function() {
+    const c = vx(this);
+    const world = this;
+    c.Component = {
+        setup() {
+            c.state = A(world).reactive({ score: 1 });
+            c.level = A(world).computed(() => (c.state.score > 5 ? 'high' : 'low'));
+            return { level: c.level, hooks: transitionHooks(c) };
+        },
+        template: '<div><Transition :css="false" mode="out-in" v-bind="hooks"><p :key="level()" class="level">{{ level() }}</p></Transition></div>'
+    };
+});
+
+When(re('computed value changes'), async function() {
+    const c = vx(this);
+    c.view = mount(this, c.Component);
+    await tick();
+    c.hooks.length = 0;
+    c.state.score = 9;
+    await tick(40);
+});
+
+Then(re('animation should trigger'), function() {
+    const c = vx(this);
+    // out-in: the new element is inserted (before-enter) as the leave
+    // completes, and enters only after the old one has left
+    assert.deepStrictEqual(c.hooks, ['leave:low', 'before-enter:high', 'after-leave:low', 'enter:high', 'after-enter:high']);
+    assert.strictEqual(c.view.find('.level').textContent, 'high');
+});
+
+Then(re('reactivity should work smoothly'), async function() {
+    const c = vx(this);
+    c.hooks.length = 0;
+    c.state.score = 7;
+    await tick(40);
+    assert.deepStrictEqual(c.hooks, [], 'a change that keeps the computed value does not animate');
+    c.state.score = 2;
+    await tick(40);
+    assert.strictEqual(c.hooks.filter(h => h.startsWith('enter:')).join(), 'enter:low');
+    assert.strictEqual(c.view.findAll('.level').length, 1);
+});
+
+// ---------------------------------------------------------------- Custom directives
+
+Given(re('custom directive using bindX'), function() {
+    const c = vx(this);
+    c.directives = {
+        // v-highlight="color": reads bindX state through its binding
+        highlight: {
+            mounted: (el, binding) => { el.style.color = binding.value; },
+            updated: (el, binding) => { el.style.color = binding.value; }
+        },
+        // v-count-clicks="state": writes to the bindX state it is given
+        countClicks: {
+            mounted(el, binding) {
+                el._vxClick = () => { binding.value.clicks++; };
+                el.addEventListener('click', el._vxClick);
+            },
+            unmounted(el) {
+                el.removeEventListener('click', el._vxClick);
+            }
+        }
+    };
+});
+
+When(re('directive accesses bindX state'), function() {
+    const c = vx(this);
+    c.view = mount(this, Object.assign(stateComponent(this, { color: 'red', clicks: 0 },
+        '<p v-highlight="state.color" v-count-clicks="state">{{ state.clicks }}</p>'), { directives: c.directives }));
+    c.p = c.view.find('p');
+    assert.strictEqual(c.p.style.color, 'red');
+});
+
+Then(re('directive should react to changes'), async function() {
+    const c = vx(this);
+    c.state.color = 'blue';
+    await tick();
+    assert.strictEqual(c.p.style.color, 'blue');
+});
+
+Then(re('can modify bindX state'), async function() {
+    const c = vx(this);
+    click(c.p);
+    click(c.p);
+    assert.strictEqual(c.state.clicks, 2);
+    await tick();
+    assert.strictEqual(c.p.textContent, '2');
+});
+
+// ---------------------------------------------------------------- Errors
+
+Given(re('computed property that throws'), function() {
+    const c = vx(this);
+    const world = this;
+    const Risky = {
+        setup() {
+            const root = A(world).computed(() => {
+                if (c.state.value < 0) throw new Error('negative input');
+                return Math.sqrt(c.state.value);
+            });
+            return { root };
+        },
+        template: '<b class="risky">{{ root() }}</b>'
+    };
+    c.Component = {
+        components: { Risky },
+        setup() {
+            c.state = A(world).reactive({ value: 4, clicks: 0 });
+            return { state: c.state };
+        },
+        template: '<div><button @click="state.clicks++">{{ state.clicks }}</button><Risky /></div>'
+    };
+});
+
+When(re('accessed in template'), async function() {
+    const c = vx(this);
+    c.view = mount(this, c.Component, { errors: true });
+    assert.strictEqual(c.view.find('.risky').textContent, '2');
+    c.state.value = -1;
+    await tick();
+    setCheck(this, 'error should be caught', () => {
+        assert.strictEqual(c.logged.length, 1, 'the render error reaches the app error handler, not the caller');
+        assert.strictEqual(c.logged[0].err.message, 'negative input');
+    });
+});
+
+Then(re('error should be caught'), async function() {
+    await runCheck(this, 'error should be caught');
+});
+
+Then(re('component should not crash'), async function() {
+    const c = vx(this);
+    if (c.componentCheck) return c.componentCheck();
+    click(c.view.find('button'));
+    await tick();
+    assert.strictEqual(c.view.find('button').textContent, '1', 'the rest of the app keeps rendering');
+    c.state.value = 9;
+    await tick();
+    assert.strictEqual(c.view.find('.risky') && c.view.find('.risky').textContent, '3', 'the computed recovers once its input is valid');
+});
+
+Then(re('error should be logged'), function() {
+    const c = vx(this);
+    assert.ok(/render/.test(c.logged[0].info), `logged with Vue's error info, got ${c.logged[0].info}`);
+});
+
+Given(re('watcher callback that throws'), function() {
+    const c = vx(this);
+    const world = this;
+    captureErrors(this);
+    c.Component = {
+        setup() {
+            c.state = A(world).reactive({ n: 0 });
+            A(world).watch(() => c.state.n, () => { throw new Error('watcher failed'); });
+            A(world).watch(() => c.state.n, (n) => c.log.push(n));
+            return { state: c.state };
+        },
+        template: '<p>{{ state.n }}</p>'
+    };
+    c.view = mount(this, c.Component, { errors: true });
+});
+
+When(re('watcher executes'), function() {
+    vx(this).state.n = 1;
+    setCheck(this, 'error should be caught', () => {
+        const c = vx(this);
+        assert.ok(c.errors.some(args => args[0] === 'bindX: watcher callback threw' && args[1].message === 'watcher failed'),
+            `errors were ${JSON.stringify(c.errors.map(a => String(a[0])))}`);
+        assert.deepStrictEqual(c.logged, [], 'the write itself did not throw into Vue');
+    });
+});
+
+Then(re('other watchers continue'), function() {
+    const c = vx(this);
+    assert.deepStrictEqual(c.log, [1]);
+    c.state.n = 2;
+    assert.deepStrictEqual(c.log, [1, 2]);
+});
+
+Then(re('component remains stable'), async function() {
+    const c = vx(this);
+    await tick();
+    assert.strictEqual(c.view.text(), '2');
+    c.state.n = 3;
+    await tick();
+    assert.strictEqual(c.view.text(), '3');
+});
+
+// ---------------------------------------------------------------- @vue/test-utils
+
+const VTU = () => require('@vue/test-utils');
+
+function vtuMount(world, component, options) {
+    const wrapper = VTU().mount(component, options);
+    world.ad.cleanups.push(() => wrapper.unmount());
+    return wrapper;
+}
+
+Given(re('test suite using @vue/test-utils'), function() {
+    const vtu = VTU();
+    assert.strictEqual(typeof vtu.mount, 'function');
+    assert.strictEqual(require('@vue/test-utils/package.json').version.split('.')[0], '2');
+});
+
+When(re('testing component with bindX'), function() {
+    const c = vx(this);
+    c.wrapper = vtuMount(this, stateComponent(this, { count: 0 },
+        '<div><span class="count">{{ state.count }}</span><button @click="state.count++">+</button></div>'));
+});
+
+Then(re('component should render'), function() {
+    assert.strictEqual(vx(this).wrapper.find('.count').text(), '0');
+});
+
+Then(re('state updates should work in tests'), async function() {
+    const c = vx(this);
+    await c.wrapper.find('button').trigger('click');
+    assert.strictEqual(c.wrapper.find('.count').text(), '1');
+    c.state.count = 5;
+    await c.wrapper.vm.$nextTick();
+    assert.strictEqual(c.wrapper.find('.count').text(), '5');
+});
+
+Given(re('component depending on bindX'), function() {
+    const c = vx(this);
+    c.Component = {
+        setup() {
+            const store = V().inject('store');
+            return { store };
+        },
+        template: '<p>{{ store.user.name }} has {{ store.items.length }} items</p>'
+    };
+});
+
+When(re('providing mock state'), function() {
+    const c = vx(this);
+    c.mock = A(this).createStore({ user: { name: 'Mock' }, items: [1] });
+    c.wrapper = vtuMount(this, c.Component, { global: { provide: { store: c.mock } } });
+});
+
+Then(re('component should work with mock'), function() {
+    assert.strictEqual(vx(this).wrapper.text(), 'Mock has 1 items');
+});
+
+Then(re('can control state for testing'), async function() {
+    const c = vx(this);
+    c.mock.user.name = 'Other';
+    c.mock.items.push(2, 3);
+    await c.wrapper.vm.$nextTick();
+    assert.strictEqual(c.wrapper.text(), 'Other has 3 items');
+});
+
+Given(re('component with bindX computed'), function() {
+    const c = vx(this);
+    const world = this;
+    c.Component = {
+        props: { factor: { type: Number, default: 2 } },
+        setup(props) {
+            c.state = A(world).reactive({ base: 3 });
+            c.product = A(world).computed(() => c.state.base * props.factor);
+            return { state: c.state, product: c.product };
+        },
+        template: '<p class="product">{{ product() }}</p>'
+    };
+});
+
+When(re('updating dependencies in test'), async function() {
+    const c = vx(this);
+    c.wrapper = vtuMount(this, c.Component);
+    c.initial = c.wrapper.find('.product').text();
+    c.state.base = 5;
+    await c.wrapper.vm.$nextTick();
+});
+
+Then(re('computed should update'), function() {
+    const c = vx(this);
+    assert.strictEqual(c.initial, '6');
+    assert.strictEqual(c.wrapper.find('.product').text(), '10');
+});
+
+Then(re('can assert on computed values'), async function() {
+    const c = vx(this);
+    assert.strictEqual(c.product(), 10);
+    assert.strictEqual(c.wrapper.vm.product(), 10);
+    // A bindX computed only tracks bindX state, so a Vue prop change shows
+    // after the next bindX write
+    c.state.base = 6;
+    assert.strictEqual(c.product(), 12);
+});
+
+Given(re('component with bindX watchers'), function() {
+    const c = vx(this);
+    const world = this;
+    c.saved = [];
+    c.Component = {
+        setup() {
+            c.state = A(world).reactive({ draft: '' });
+            A(world).watch(() => c.state.draft, (value) => c.saved.push(value));
+            return { state: c.state };
+        },
+        template: '<input v-model="state.draft">'
+    };
+    c.wrapper = vtuMount(this, c.Component);
+    c.baseline = watchers(this);
+});
+
+When(re('triggering state changes in test'), async function() {
+    const c = vx(this);
+    await c.wrapper.find('input').setValue('hello');
+    c.state.draft = 'hello world';
+});
+
+Then(re('watchers should execute'), function() {
+    assert.deepStrictEqual(vx(this).saved, ['hello', 'hello world']);
+});
+
+Then(re('can assert on side effects'), async function() {
+    const c = vx(this);
+    await c.wrapper.vm.$nextTick();
+    assert.strictEqual(c.wrapper.find('input').element.value, 'hello world', 'a direct state write reaches the input');
+    c.wrapper.unmount();
+    assert.ok(watchers(this) < c.baseline, 'unmounting through test-utils stops the watchers');
+});
+
+// ---------------------------------------------------------------- SSR
+
+Given(re('SSR environment'), function() {
+    const c = vx(this);
+    c.ssr = require('vue/server-renderer');
+    assert.strictEqual(typeof c.ssr.renderToString, 'function');
+    c.baseline = watchers(this);
+});
+
+When(re('rendering components with bindX'), async function() {
+    const c = vx(this);
+    const world = this;
+    const Page = {
+        props: ['user'],
+        setup(props) {
+            const { reactive, computed, watch } = A(world);
+            const state = reactive({ user: props.user, visits: 1 });
+            const greeting = computed(() => `Hello ${state.user}`);
+            watch(() => state.visits, () => {}, { immediate: true });
+            return { state, greeting };
+        },
+        template: '<main><h1>{{ greeting() }}</h1><p>{{ state.visits }}</p></main>'
+    };
+    c.html = [];
+    for (let i = 0; i < 25; i++) {
+        const app = V().createSSRApp(Page, { user: `u${i}` });
+        app.config.warnHandler = (msg) => c.warnings.push(msg);
+        c.html.push(await c.ssr.renderToString(app));
+    }
+});
+
+Then(re('watchers should cleanup after render'), function() {
+    const c = vx(this);
+    assert.strictEqual(watchers(this), c.baseline, 'server renders leave no bindX watchers behind');
+    noWarnings(this);
+});
+
+Then(re('no memory leaks between requests'), function() {
+    const c = vx(this);
+    c.html.forEach((html, i) => {
+        assert.ok(html.includes(`<h1>Hello u${i}</h1>`), html);
+        assert.ok(!html.includes(`u${i + 1}<`), 'no state carried over from another request');
+    });
+    assert.strictEqual(new Set(c.html).size, c.html.length);
+});
