@@ -221,4 +221,30 @@ describe('Feature: Reactive Proxy Wrapper', () => {
             expect(result).toBe(42);
         });
     });
+
+    describe('Scenario: Nested built-ins keep working', () => {
+        test('Promise, Date, Map and typed arrays are not wrapped', async () => {
+            const map = new Map([['a', 1]]);
+            const state = createReactive({
+                promise: Promise.resolve('done'),
+                when: new Date(0),
+                map,
+                bytes: new Uint8Array([1, 2])
+            });
+
+            await expect(state.promise.then(value => value + '!')).resolves.toBe('done!');
+            expect(state.when.getTime()).toBe(0);
+            expect(state.map).toBe(map);
+            expect(state.map.get('a')).toBe(1);
+            expect(state.bytes[1]).toBe(2);
+            expect(isReactive(state.map)).toBe(false);
+        });
+
+        test('replacing a nested built-in still notifies', () => {
+            const onChange = jest.fn();
+            const state = createReactive({ when: new Date(0) }, { onChange });
+            state.when = new Date(1000);
+            expect(onChange).toHaveBeenCalledWith('when', state.when);
+        });
+    });
 });

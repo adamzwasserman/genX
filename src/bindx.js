@@ -808,6 +808,16 @@
     };
 
     /**
+     * Built-ins whose methods read internal slots (a Promise's state, a Date's
+     * time, a Map's entries) throw when called through a Proxy, so a nested one
+     * is returned as is rather than wrapped. Replacing it is still reactive.
+     */
+    const isOpaqueBuiltin = (value) =>
+        value instanceof Promise || value instanceof Date || value instanceof RegExp ||
+        value instanceof Map || value instanceof Set || value instanceof WeakMap ||
+        value instanceof WeakSet || value instanceof ArrayBuffer || ArrayBuffer.isView(value);
+
+    /**
      * Create reactive proxy wrapper
      *
      * @param {Object} data - Plain object to make reactive
@@ -859,7 +869,7 @@
                 trackDependency(accessPath);
 
                 // Deep reactivity: wrap nested objects
-                if (deep && value && typeof value === 'object' && !isReactive(value)) {
+                if (deep && value && typeof value === 'object' && !isReactive(value) && !isOpaqueBuiltin(value)) {
                     // Check cache first
                     if (!metadata.nestedProxies.has(property)) {
                         const nestedProxy = createReactive(value, {
