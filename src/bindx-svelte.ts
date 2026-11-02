@@ -18,7 +18,7 @@
 
 import type { Writable, Readable, Subscriber, Unsubscriber } from 'svelte/store';
 import * as svelteStore from 'svelte/store';
-import { onDestroy } from 'svelte';
+import { onDestroy, setContext } from 'svelte';
 
 // Import bindX core (assuming it's available globally or via import)
 declare const bindX: any;
@@ -288,16 +288,17 @@ function watchedStore<T>(read: ComputedRef<T>): Readable<number> {
         try {
           return read();
         } catch (error) {
+          console.error('bindX: computed threw', error);
           return new ComputedError(error);
         }
       },
-      (value: unknown) => {
-        if (value instanceof ComputedError) {
-          console.error('bindX: computed threw', value.error);
-        }
+      () => {
         version++;
         subscribers.forEach(subscriber => subscriber(version));
-      }
+      },
+      // Deep, so a computed that returns reactive state as-is (say, the whole
+      // todo list) still ticks when an item inside it changes.
+      { deep: true }
     );
   };
 
@@ -653,11 +654,10 @@ export function isBindXStore<T>(value: any): value is BindXStore<T> {
  * @example
  * ```typescript
  * // Parent component:
- * import { setContext } from 'svelte';
  * import { createStore, provideStore } from '@genx/bindx-svelte';
  *
  * const userStore = createStore({ user: null });
- * setContext('userStore', userStore);
+ * provideStore('userStore', userStore); // same as setContext('userStore', userStore)
  *
  * // Child component:
  * import { getContext } from 'svelte';
@@ -666,8 +666,8 @@ export function isBindXStore<T>(value: any): value is BindXStore<T> {
  * ```
  */
 export function provideStore<T>(key: any, store: Writable<T>): void {
-  // Context setting is handled by Svelte's setContext
-  // This is just a type-safe wrapper
+  // Must run during component initialisation, like setContext itself
+  setContext(key, store);
 }
 
 /**
