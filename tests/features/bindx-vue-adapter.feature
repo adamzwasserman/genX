@@ -23,6 +23,8 @@ Feature: bindX Vue Framework Adapter
     And should work in Vue 3 context
     And TypeScript types should be correct
 
+  # wip: auto-imports need unplugin-auto-import or a Nuxt-style build step (not a genX dependency)
+  @wip
   Scenario: Use script setup syntax
     Given a Vue component with <script setup>
     When I use bindX reactive state
@@ -285,6 +287,8 @@ Feature: bindX Vue Framework Adapter
     And lifecycle should be managed
 
   # Single File Components (SFC)
+  # wip: hot module reload needs a Vite dev server with the Vue plugin (not a dependency of genX)
+  @wip
   Scenario: Use bindX in SFC <script setup>
     Given .vue file with <script setup>
     When using bindX reactive state
@@ -292,6 +296,8 @@ Feature: bindX Vue Framework Adapter
     And no explicit return needed
     And hot module reload should work
 
+  # wip: IDE support needs Volar/vue-tsc language-server checks (not a dependency of genX)
+  @wip
   Scenario: Use bindX in SFC with TypeScript
     Given .vue file with <script setup lang="ts">
     When using bindX with TypeScript
@@ -332,6 +338,8 @@ Feature: bindX Vue Framework Adapter
     Then updates should be efficient
     And UI should remain responsive
 
+  # perf: timing threshold (<0.5ms); runs only in the perf suite
+  @perf
   Scenario: Compare bindX vs Vue reactivity performance
     Given same component implemented both ways
     When performing identical operations
@@ -345,18 +353,24 @@ Feature: bindX Vue Framework Adapter
     And only accessed computed recalculate
 
   # Router Integration
+  # wip: needs vue-router (not a dependency of genX) and router integration in the adapter
+  @wip
   Scenario: Use bindX state with Vue Router
     Given Vue Router installed
     When using bindX across routes
     Then state should persist during navigation
     And can be reset on route change if desired
 
+  # wip: needs vue-router (not a dependency of genX) and router integration in the adapter
+  @wip
   Scenario: Store route-specific state in bindX
     Given route component with bindX state
     When navigating away and back
     Then state should handle correctly
     And cleanup should work
 
+  # wip: needs vue-router (not a dependency of genX) and router integration in the adapter
+  @wip
   Scenario: Watch route changes with bindX
     Given bindX watcher on route
     When route changes
@@ -420,6 +434,8 @@ Feature: bindX Vue Framework Adapter
     And component remains stable
 
   # DevTools Integration
+  # wip: needs the Vue DevTools browser extension; the adapter has no DevTools hook
+  @wip
   Scenario: Inspect bindX state in Vue DevTools
     Given component using bindX
     When opened in Vue DevTools
@@ -453,6 +469,8 @@ Feature: bindX Vue Framework Adapter
     And can assert on side effects
 
   # Vite Integration
+  # wip: needs a Vite dev server with HMR (not a dependency of genX)
+  @wip
   Scenario: Use bindX with Vite dev server
     Given Vite project with Vue 3
     When using bindX
@@ -460,6 +478,8 @@ Feature: bindX Vue Framework Adapter
     And state should persist during HMR
     And imports should resolve correctly
 
+  # wip: needs a Vite production build of a sample app (not a dependency of genX)
+  @wip
   Scenario: Build bindX with Vite
     Given production build with Vite
     When building application
@@ -468,12 +488,16 @@ Feature: bindX Vue Framework Adapter
     And bundle size should be minimal
 
   # SSR with Nuxt 3
+  # wip: needs a Nuxt 3 application and server runtime (not a dependency of genX)
+  @wip
   Scenario: Use bindX in Nuxt 3 pages
     Given Nuxt 3 application
     When using bindX in pages/components
     Then server-side rendering should work
     And hydration should work correctly
 
+  # wip: needs a Nuxt 3 application and server runtime (not a dependency of genX)
+  @wip
   Scenario: Initialize bindX state in Nuxt
     Given Nuxt component with asyncData
     When fetching data

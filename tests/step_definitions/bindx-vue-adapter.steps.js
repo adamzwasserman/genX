@@ -2644,3 +2644,682 @@ Then(re('no memory leaks between requests'), function() {
     });
     assert.strictEqual(new Set(c.html).size, c.html.length);
 });
+
+// ---------------------------------------------------------------- Plugin
+
+Given(re('app.use(bindXPlugin)'), function() {
+    vx(this).plugins = [A(this).bindXPlugin];
+});
+
+When(re('components access bindX'), function() {
+    const c = vx(this);
+    c.injected = [];
+    const Leaf = {
+        setup() {
+            const bx = V().inject('bindX');
+            c.injected.push(bx);
+            return { shared: V().inject('shared') };
+        },
+        template: '<i class="leaf">{{ shared.total }}</i>'
+    };
+    const Branch = {
+        components: { Leaf },
+        setup() {
+            const bx = V().inject('bindX');
+            c.injected.push(bx);
+            c.state = bx.reactive({ total: 1 });
+            c.double = bx.computed(() => c.state.total * 2);
+            V().provide('shared', c.state);
+            return { state: c.state, double: c.double };
+        },
+        template: '<div><b class="branch">{{ double() }}</b><Leaf /></div>'
+    };
+    c.view = mount(this, { components: { Branch }, template: '<Branch />' }, { plugins: c.plugins });
+});
+
+Then(re('bindX should be available globally'), function() {
+    const c = vx(this);
+    const api = c.injected[0];
+    for (const name of ['reactive', 'computed', 'watch', 'toVueRef', 'toVueComputed', 'fromVueRef', 'toVueReactive', 'createStore']) {
+        assert.strictEqual(api[name], A(this)[name], `plugin provides ${name}`);
+    }
+    assert.strictEqual(c.view.app.config.globalProperties.$bindX, undefined, 'no global property without the option');
+});
+
+Then(re('can be injected via provide/inject'), async function() {
+    const c = vx(this);
+    assert.strictEqual(c.injected.length, 2);
+    assert.strictEqual(c.injected[0], c.injected[1], 'every component injects the same API');
+    c.state.total = 5;
+    await tick();
+    assert.strictEqual(c.view.find('.branch').textContent, '10');
+    assert.strictEqual(c.view.find('.leaf').textContent, '5');
+});
+
+Given(re('app.use(bindXPlugin, { options })'), function() {
+    vx(this).plugins = [[A(this).bindXPlugin, { globalProperties: true }]];
+});
+
+When(re('components use bindX'), function() {
+    const c = vx(this);
+    c.Component = {
+        data() {
+            return { local: 'x' };
+        },
+        created() {
+            c.state = this.$bindX.reactive({ hits: 0 });
+            this.hits = this.$bindX.computed(() => c.state.hits);
+            this.$bindX.watch(() => c.state.hits, (n) => c.log.push(n));
+        },
+        template: '<button @click="hit">{{ hits() }}</button>',
+        methods: {
+            hit() {
+                c.state.hits++;
+            }
+        }
+    };
+    c.view = mount(this, c.Component, { plugins: c.plugins });
+});
+
+Then(re('options should be applied'), function() {
+    const c = vx(this);
+    const globals = c.view.app.config.globalProperties.$bindX;
+    assert.deepStrictEqual(Object.keys(globals).sort(), ['computed', 'reactive', 'watch']);
+    assert.strictEqual(globals.reactive, A(this).reactive);
+    assert.strictEqual(c.view.vm.$bindX, globals);
+});
+
+Then(re('configuration should work correctly'), async function() {
+    const c = vx(this);
+    click(c.view.find('button'));
+    click(c.view.find('button'));
+    await tick();
+    assert.strictEqual(c.view.find('button').textContent, '2');
+    assert.deepStrictEqual(c.log, [1, 2]);
+    // The option adds globals without replacing the injectable API
+    assert.strictEqual(typeof c.view.app._context.provides.bindX.createStore, 'function');
+    noWarnings(this);
+});
+
+// ---------------------------------------------------------------- Documentation examples
+
+Given(re('bindX-vue package README'), function() {
+    vx(this).source = docExample('Counter Example');
+});
+
+When(re('following counter example'), function() {
+    const c = vx(this);
+    c.view = mount(this, compileSFC(this, c.source).component);
+});
+
+Then(re('should have working counter'), function() {
+    const c = vx(this);
+    assert.strictEqual(c.view.text(), 'Count: 0Double: 0IncrementDecrementReset');
+});
+
+Then(re('increment/decrement should work'), async function() {
+    const c = vx(this);
+    const [inc, dec, reset] = c.view.findAll('button');
+    click(inc); click(inc); click(inc);
+    await tick();
+    assert.ok(c.view.text().startsWith('Count: 3Double: 6'), c.view.text());
+    click(dec);
+    await tick();
+    assert.ok(c.view.text().startsWith('Count: 2Double: 4'), c.view.text());
+    click(reset);
+    await tick();
+    assert.ok(c.view.text().startsWith('Count: 0Double: 0'), c.view.text());
+    noWarnings(this);
+});
+
+Given(re('bindX-vue todo example'), function() {
+    const c = vx(this);
+    c.example = 'todo';
+    c.source = docExample('Todo List');
+});
+
+Given(re('bindX-vue form example'), function() {
+    const c = vx(this);
+    const world = this;
+    c.example = 'form';
+    // The useForm documentation example, with the validation a form adds
+    c.Component = {
+        setup() {
+            const form = A(world).useForm({ username: '', email: '', password: '' });
+            A(world).watch(() => form.data.email, (email) => {
+                if (email && !email.includes('@')) form.setError('email', 'Enter a valid email');
+                else form.clearError('email');
+            });
+            A(world).watch(() => form.data.password, (password) => {
+                if (password && password.length < 8) form.setError('password', 'At least 8 characters');
+                else form.clearError('password');
+            });
+            c.form = form;
+            return { form, submitted: c.log };
+        },
+        template: `<form @submit.prevent>
+            <input class="username" v-model="form.data.username">
+            <input class="email" v-model="form.data.email">
+            <p class="email-error" v-if="form.errors.email">{{ form.errors.email }}</p>
+            <input class="password" v-model="form.data.password">
+            <p class="password-error" v-if="form.errors.password">{{ form.errors.password }}</p>
+            <button :disabled="form.hasErrors()" @click="form.submit(d => submitted.push({ ...d }))">Submit</button>
+        </form>`
+    };
+});
+
+When(re('implementing the example'), function() {
+    const c = vx(this);
+    if (c.example === 'todo') {
+        let id = 100;
+        const realNow = Date.now;
+        Date.now = () => ++id;
+        this.ad.cleanups.push(() => { Date.now = realNow; });
+        c.view = mount(this, compileSFC(this, c.source).component);
+    } else {
+        c.view = mount(this, c.Component);
+    }
+});
+
+async function addTodo(c, text) {
+    const input = c.view.find('input[placeholder="Add todo"]');
+    typeInto(input, text);
+    input.dispatchEvent(new window.KeyboardEvent('keyup', { key: 'Enter', bubbles: true }));
+    await tick();
+}
+
+const todoTexts = (c) => c.view.findAll('li span').map(s => s.textContent);
+
+Then(re('should have full CRUD functionality'), async function() {
+    const c = vx(this);
+    await addTodo(c, 'write steps');
+    await addTodo(c, 'run suite');
+    await addTodo(c, '   ');
+    await addTodo(c, 'ship');
+    assert.deepStrictEqual(todoTexts(c), ['write steps', 'run suite', 'ship'], 'blank text is not added');
+    assert.strictEqual(c.view.find('input[placeholder="Add todo"]').value, '', 'input clears after adding');
+    assert.ok(c.view.text().endsWith('3 items left'));
+
+    const box = c.view.findAll('li input[type="checkbox"]')[0];
+    box.checked = true;
+    box.dispatchEvent(new window.Event('change', { bubbles: true }));
+    await tick();
+    assert.ok(c.view.findAll('li span')[0].classList.contains('completed'));
+    assert.ok(c.view.text().endsWith('2 items left'));
+
+    click(c.view.findAll('li button')[1]);
+    await tick();
+    assert.deepStrictEqual(todoTexts(c), ['write steps', 'ship']);
+    assert.ok(c.view.text().endsWith('1 items left'));
+});
+
+Then(re('filtering should work reactively'), async function() {
+    const c = vx(this);
+    const filter = (label) => click(c.view.findAll('button').find(b => b.textContent === label));
+    filter('Active');
+    await tick();
+    assert.deepStrictEqual(todoTexts(c), ['ship']);
+    await addTodo(c, 'celebrate');
+    assert.deepStrictEqual(todoTexts(c), ['ship', 'celebrate'], 'a new todo shows under the active filter');
+    filter('Completed');
+    await tick();
+    assert.deepStrictEqual(todoTexts(c), ['write steps']);
+    filter('All');
+    await tick();
+    assert.deepStrictEqual(todoTexts(c), ['write steps', 'ship', 'celebrate']);
+    noWarnings(this);
+});
+
+Then(re('form validation should work'), async function() {
+    const c = vx(this);
+    const button = c.view.find('button');
+    assert.strictEqual(button.disabled, false);
+    typeInto(c.view.find('.email'), 'adam');
+    typeInto(c.view.find('.password'), 'short');
+    await tick();
+    assert.strictEqual(c.view.find('.email-error').textContent, 'Enter a valid email');
+    assert.strictEqual(c.view.find('.password-error').textContent, 'At least 8 characters');
+    assert.strictEqual(button.disabled, true, 'hasErrors() sees keys added to errors');
+    assert.strictEqual(c.form.isDirty(), true);
+});
+
+Then(re('error messages should be reactive'), async function() {
+    const c = vx(this);
+    typeInto(c.view.find('.email'), 'adam@genx.software');
+    await tick();
+    assert.strictEqual(c.view.find('.email-error'), null);
+    assert.strictEqual(c.view.find('button').disabled, true, 'the password error remains');
+    typeInto(c.view.find('.password'), 'long enough');
+    typeInto(c.view.find('.username'), 'adam');
+    await tick();
+    assert.strictEqual(c.view.find('.password-error'), null);
+    const button = c.view.find('button');
+    assert.strictEqual(button.disabled, false);
+    click(button);
+    await tick();
+    assert.deepStrictEqual(c.log, [{ username: 'adam', email: 'adam@genx.software', password: 'long enough' }]);
+    assert.strictEqual(c.form.isDirty(), false);
+    c.form.setError('username', 'Taken');
+    await tick();
+    assert.strictEqual(button.disabled, true);
+    c.form.reset();
+    await tick();
+    assert.strictEqual(c.view.find('.username').value, '');
+    assert.strictEqual(button.disabled, false);
+});
+
+// ---------------------------------------------------------------- Stores, modules, factories
+
+Given(re('bindX state exported from module'), function() {
+    const world = this;
+    // What a store.js module would export, created once at import time
+    vx(this).storeModule = (() => {
+        const store = A(world).createStore({ cart: [] });
+        return {
+            store,
+            addItem: (item) => store.cart.push(item),
+            total: A(world).computed(() => store.cart.reduce((sum, item) => sum + item.price, 0))
+        };
+    })();
+});
+
+When(re('multiple components import'), function() {
+    const c = vx(this);
+    const mod = c.storeModule;
+    c.seen = [];
+    const Header = {
+        setup() { c.seen.push(mod.store); return { store: mod.store, total: mod.total }; },
+        template: '<header>{{ store.cart.length }} items, ${{ total() }}</header>'
+    };
+    const Catalog = {
+        setup() { c.seen.push(mod.store); return { add: () => mod.addItem({ name: 'pen', price: 3 }) }; },
+        template: '<button @click="add">add</button>'
+    };
+    c.views = [mount(this, { components: { Header, Catalog }, template: '<div><Header /><Catalog /></div>' }), mount(this, Header)];
+    setCheck(this, 'all share same state', () => {
+        assert.strictEqual(c.seen.length, 3);
+        assert.ok(c.seen.every(s => s === mod.store));
+    });
+});
+
+Then(re('updates sync across app'), async function() {
+    const c = vx(this);
+    click(c.views[0].find('button'));
+    click(c.views[0].find('button'));
+    await tick();
+    assert.strictEqual(c.views[0].find('header').textContent, '2 items, $6');
+    assert.strictEqual(c.views[1].text(), '2 items, $6', 'a second app sees the same module state');
+    c.storeModule.store.cart.splice(0, 1);
+    await tick();
+    assert.strictEqual(c.views[1].text(), '1 items, $3');
+});
+
+Given(re('bindX state in separate modules'), function() {
+    const c = vx(this);
+    const world = this;
+    // A module keeps its state private and exports getters and actions
+    c.defineModule = (initial, actions) => {
+        // Module-level state: createStore keeps it Vue-tracked outside components
+        const state = A(world).createStore({ ...initial });
+        const api = {};
+        for (const key of Object.keys(initial)) api[key] = () => state[key];
+        for (const [name, fn] of Object.entries(actions)) api[name] = (...args) => fn(state, ...args);
+        return Object.freeze(api);
+    };
+    c.counterActions = { inc: (s) => { s.n++; } };
+    c.user = c.defineModule({ name: 'guest' }, { login: (s, name) => { s.name = name; } });
+    c.clicks = c.defineModule({ n: 0 }, c.counterActions);
+});
+
+When(re('importing and using modules'), function() {
+    const c = vx(this);
+    c.view = mount(this, {
+        setup: () => ({ user: c.user, clicks: c.clicks }),
+        template: '<p @click="clicks.inc()">{{ user.name() }}:{{ clicks.n() }}</p>'
+    });
+});
+
+Then(re('state should be encapsulated'), async function() {
+    const c = vx(this);
+    assert.deepStrictEqual(Object.keys(c.user).sort(), ['login', 'name']);
+    assert.throws(() => { 'use strict'; c.user.name = () => 'hacked'; }, TypeError);
+    c.user.login('adam');
+    click(c.view.find('p'));
+    await tick();
+    assert.strictEqual(c.view.text(), 'adam:1');
+});
+
+Then(re('modules should be reusable'), async function() {
+    const c = vx(this);
+    const other = c.defineModule({ n: 10 }, c.counterActions);
+    other.inc();
+    assert.strictEqual(other.n(), 11);
+    assert.strictEqual(c.clicks.n(), 1, 'another instance of the module has its own state');
+    await tick();
+    assert.strictEqual(c.view.text(), 'adam:1');
+});
+
+Given(re('factory function creating bindX state'), function() {
+    const c = vx(this);
+    const world = this;
+    c.createCounter = (start = 0) => {
+        const state = A(world).reactive({ count: start });
+        const doubled = A(world).computed(() => state.count * 2);
+        return { state, doubled, inc: () => { state.count++; } };
+    };
+});
+
+When(re('called multiple times'), function() {
+    const c = vx(this);
+    c.made = [c.createCounter(), c.createCounter(5), c.createCounter()];
+});
+
+Then(re('each call creates independent state'), function() {
+    const c = vx(this);
+    c.made[0].inc();
+    c.made[0].inc();
+    assert.deepStrictEqual(c.made.map(m => m.state.count), [2, 5, 0]);
+    assert.deepStrictEqual(c.made.map(m => m.doubled()), [4, 10, 0]);
+    assert.notStrictEqual(c.made[0].state, c.made[2].state);
+});
+
+Then(re('can be used for component instances'), async function() {
+    const c = vx(this);
+    const baseline = watchers(this);
+    const Counter = {
+        props: ['start'],
+        setup: (props) => c.createCounter(props.start),
+        template: '<button @click="inc">{{ state.count }}/{{ doubled() }}</button>'
+    };
+    c.view = mount(this, { components: { Counter }, template: '<div><Counter :start="1" /><Counter :start="2" /><Counter :start="3" /></div>' });
+    const buttons = c.view.findAll('button');
+    click(buttons[1]);
+    await tick();
+    assert.deepStrictEqual(buttons.map(b => b.textContent), ['1/2', '3/6', '3/6']);
+    c.view.unmount();
+    assert.strictEqual(watchers(this), baseline, 'per-instance computeds stop with their components');
+});
+
+// ---------------------------------------------------------------- Migration from Vue
+
+async function sfcTranscript(world, source, actions) {
+    const view = mount(world, compileSFC(world, source).component);
+    const frames = [view.text()];
+    for (const act of actions) {
+        act(view);
+        await tick();
+        frames.push(view.text());
+    }
+    view.unmount();
+    return frames;
+}
+
+function migrationCase(c, vueSource, bindxSource, actions) {
+    c.vueSource = vueSource;
+    c.bindxSource = bindxSource;
+    c.actions = actions;
+}
+
+const changedLines = (a, b) => {
+    const x = a.split('\n');
+    const y = b.split('\n');
+    return x.filter((line, i) => line !== y[i]);
+};
+
+When(re('replacing with bindX reactive'), async function() {
+    const c = vx(this);
+    c.frames = [await sfcTranscript(this, c.vueSource, c.actions), await sfcTranscript(this, c.bindxSource, c.actions)];
+    setCheck(this, 'migration should be straightforward', () => {
+        assert.deepStrictEqual(changedLines(c.vueSource, c.bindxSource), ["import { reactive } from 'vue';"], 'only the import changes');
+    });
+});
+
+Given(re('component using Vue reactive'), function() {
+    const body = (from) => `<template><div><p>{{ state.user.name }} ({{ state.tags.length }})</p>
+<button class="rename" @click="state.user.name = 'Grace'">rename</button>
+<button class="tag" @click="state.tags.push('x')">tag</button></div></template>
+<script setup>
+import { reactive } from '${from}';
+const state = reactive({ user: { name: 'Ada' }, tags: [] });
+</script>`;
+    migrationCase(vx(this), body('vue'), body('@genx/bindx-vue'), [
+        (v) => click(v.find('.rename')),
+        (v) => click(v.find('.tag')),
+        (v) => click(v.find('.tag'))
+    ]);
+});
+
+Then(re('functionality should be equivalent'), function() {
+    const c = vx(this);
+    assert.deepStrictEqual(c.frames[1], c.frames[0]);
+    assert.deepStrictEqual(c.frames[0], ['Ada (0)renametag', 'Grace (0)renametag', 'Grace (1)renametag', 'Grace (2)renametag']);
+});
+
+Given(re('component using Vue computed'), function() {
+    const c = vx(this);
+    c.vueSource = `<template><div><p>{{ total }}</p><button @click="state.qty++">+</button></div></template>
+<script setup>
+import { reactive, computed } from 'vue';
+const state = reactive({ qty: 1, price: 4 });
+const total = computed(() => state.qty * state.price);
+</script>`;
+    c.bindxSource = c.vueSource.replace("from 'vue'", "from '@genx/bindx-vue'").replace('{{ total }}', '{{ total() }}');
+    c.actions = [(v) => click(v.find('button')), (v) => click(v.find('button'))];
+});
+
+When(re('replacing with bindX computed'), async function() {
+    const c = vx(this);
+    c.frames = [await sfcTranscript(this, c.vueSource, c.actions), await sfcTranscript(this, c.bindxSource, c.actions)];
+});
+
+Then(re('behavior should be same'), function() {
+    const c = vx(this);
+    assert.deepStrictEqual(c.frames[1], c.frames[0]);
+    assert.deepStrictEqual(c.frames[0], ['4+', '8+', '12+']);
+    assert.deepStrictEqual(changedLines(c.vueSource, c.bindxSource).length, 2, 'the import and the call in the template');
+});
+
+Then(re('can use () syntax or property access'), async function() {
+    const c = vx(this);
+    const { reactive, computed, toVueComputed } = A(this);
+    const view = mount(this, {
+        setup() {
+            const state = reactive({ qty: 2 });
+            const total = computed(() => state.qty * 3);
+            c.state = state;
+            c.total = total;
+            c.totalRef = toVueComputed(total);
+            return { total, totalRef: c.totalRef };
+        },
+        template: '<p>{{ total() }}={{ totalRef }}</p>'
+    });
+    assert.strictEqual(c.total(), 6, '() syntax');
+    assert.strictEqual(c.totalRef.value, 6, 'property access through toVueComputed');
+    c.state.qty = 5;
+    await tick();
+    assert.strictEqual(view.text(), '15=15');
+    assert.strictEqual(c.totalRef.value, 15);
+});
+
+Given(re('component using Vue watch'), function() {
+    const c = vx(this);
+    c.vueSource = `<template><div><button class="n" @click="state.n++">n</button><button class="deep" @click="state.user.tags.push('t')">deep</button></div></template>
+<script setup>
+import { reactive, watch } from 'vue';
+const state = reactive({ n: 0, user: { tags: [] } });
+watch(() => state.n, (value, old) => log.push(['n', value, old ?? null]), { immediate: true });
+watch(() => state.user, (user) => log.push(['user', user.tags.length]), { deep: true });
+</script>`;
+    c.bindxSource = c.vueSource.replace("import { reactive, watch } from 'vue';", "import { reactive, watch } from '@genx/bindx-vue';");
+    c.actions = [(v) => click(v.find('.n')), (v) => click(v.find('.deep')), (v) => click(v.find('.n'))];
+});
+
+When(re('replacing with bindX watch'), async function() {
+    const c = vx(this);
+    c.logs = [];
+    for (const source of [c.vueSource, c.bindxSource]) {
+        const log = [];
+        const scriptLog = source.replace('<script setup>', '<script setup>\nconst log = globalThis.__vxWatchLog;');
+        globalThis.__vxWatchLog = log;
+        await sfcTranscript(this, scriptLog, c.actions);
+        c.logs.push(log);
+    }
+    delete globalThis.__vxWatchLog;
+});
+
+Then(re('watching should work identically'), function() {
+    const c = vx(this);
+    assert.deepStrictEqual(c.logs[1], c.logs[0]);
+    assert.deepStrictEqual(changedLines(c.vueSource, c.bindxSource).length, 1, 'only the import changes');
+});
+
+Then(re('options should map correctly'), function() {
+    const c = vx(this);
+    assert.deepStrictEqual(c.logs[0], [['n', 0, null], ['n', 1, 0], ['user', 1], ['n', 2, 1]],
+        'immediate runs once at setup and deep sees a nested push');
+});
+
+// ---------------------------------------------------------------- Edge cases
+
+Given(re('multiple Vue apps on same page'), function() {
+    const c = vx(this);
+    const world = this;
+    c.makeApp = (label) => ({
+        setup() {
+            const bx = V().inject('bindX');
+            const state = bx.reactive({ n: 0 });
+            c.apps[label] = { state, api: bx };
+            return { state, label };
+        },
+        template: '<button @click="state.n++">{{ label }}{{ state.n }}</button>'
+    });
+    c.apps = {};
+    c.baseline = watchers(world);
+});
+
+When(re('each uses bindX'), function() {
+    const c = vx(this);
+    c.views = ['a', 'b'].map(label => mount(this, c.makeApp(label), { plugins: [A(this).bindXPlugin] }));
+    setCheck(this, 'no conflicts should occur', async () => {
+        assert.strictEqual(c.apps.a.api.reactive, c.apps.b.api.reactive, 'both apps get the one adapter');
+        c.views[0].unmount();
+        c.apps.b.state.n = 9;
+        await tick();
+        assert.strictEqual(c.views[1].text(), 'b9', 'the other app keeps working after one unmounts');
+        c.views[1].unmount();
+        assert.strictEqual(watchers(this), c.baseline);
+        noWarnings(this);
+    });
+});
+
+Then(re('bindX should work independently'), async function() {
+    const c = vx(this);
+    click(c.views[0].find('button'));
+    click(c.views[0].find('button'));
+    await tick();
+    assert.deepStrictEqual(c.views.map(v => v.text()), ['a2', 'b0']);
+});
+
+Given(re('recursive component using bindX'), function() {
+    const c = vx(this);
+    const world = this;
+    // Shared state made outside a component: createStore is the documented way to make it Vue-tracked
+    c.tree = A(this).createStore({ label: 'root', children: [
+        { label: 'a', children: [{ label: 'a1', children: [] }, { label: 'a2', children: [] }] },
+        { label: 'b', children: [{ label: 'b1', children: [{ label: 'b1x', children: [] }] }] }
+    ] });
+    c.nodes = [];
+    c.TreeNode = {
+        name: 'TreeNode',
+        props: ['node', 'depth'],
+        setup(props) {
+            const local = A(world).reactive({ open: true });
+            const size = A(world).computed(() => props.node.children.length);
+            c.nodes.push(local);
+            return { local, size };
+        },
+        template: `<li :data-depth="depth"><span @click="local.open = !local.open">{{ node.label }}[{{ size() }}]</span>
+            <ul v-if="local.open"><TreeNode v-for="child in node.children" :key="child.label" :node="child" :depth="depth + 1" /></ul></li>`
+    };
+});
+
+When(re('rendering nested structure'), function() {
+    const c = vx(this);
+    c.view = mount(this, { components: { TreeNode: c.TreeNode }, setup: () => ({ tree: c.tree }), template: '<ul><TreeNode :node="tree" :depth="0" /></ul>' });
+});
+
+const labels = (c) => c.view.findAll('span').map(s => s.textContent);
+
+Then(re('each instance should have correct state'), async function() {
+    const c = vx(this);
+    assert.deepStrictEqual(labels(c), ['root[2]', 'a[2]', 'a1[0]', 'a2[0]', 'b[1]', 'b1[1]', 'b1x[0]']);
+    assert.strictEqual(c.nodes.length, 7);
+    assert.strictEqual(c.view.find('li[data-depth="3"] span').textContent, 'b1x[0]');
+    click(c.view.findAll('span')[1]);
+    await tick();
+    assert.deepStrictEqual(labels(c), ['root[2]', 'a[2]', 'b[1]', 'b1[1]', 'b1x[0]'], 'collapsing one node hides only its subtree');
+});
+
+Then(re('reactivity should work at all levels'), async function() {
+    const c = vx(this);
+    c.tree.children[1].children[0].children[0].label = 'deep';
+    c.tree.children[1].children.push({ label: 'b2', children: [] });
+    c.tree.label = 'top';
+    await tick();
+    assert.deepStrictEqual(labels(c), ['top[2]', 'a[2]', 'b[2]', 'b1[1]', 'deep[0]', 'b2[0]']);
+});
+
+Given(re('component wrapped in <KeepAlive>'), function() {
+    const c = vx(this);
+    const world = this;
+    c.shared = A(this).reactive({ n: 0 });
+    c.setups = 0;
+    const Cached = {
+        setup() {
+            c.setups++;
+            const local = A(world).reactive({ clicks: 0 });
+            A(world).watch(() => c.shared.n, (value, old) => c.log.push([value, old]));
+            return { local };
+        },
+        template: '<button class="cached" @click="local.clicks++">{{ local.clicks }}</button>'
+    };
+    const Other = { template: '<i class="other">other</i>' };
+    c.Root = {
+        components: { Cached, Other },
+        setup: () => ({ tab: V().ref('cached') }),
+        template: '<KeepAlive><component :is="tab === \'cached\' ? \'Cached\' : \'Other\'" /></KeepAlive>'
+    };
+});
+
+When(re('component is cached/restored'), async function() {
+    const c = vx(this);
+    c.view = mount(this, c.Root);
+    click(c.view.find('.cached'));
+    click(c.view.find('.cached'));
+    c.view.vm.tab = 'other';
+    await tick();
+    assert.ok(c.view.find('.other'));
+    c.shared.n = 1;
+    c.shared.n = 2;
+    c.whileInactive = c.log.slice();
+    c.view.vm.tab = 'cached';
+    await tick();
+});
+
+Then(re('bindX state should persist correctly'), function() {
+    const c = vx(this);
+    assert.strictEqual(c.setups, 1, 'restored from the cache, not set up again');
+    assert.strictEqual(c.view.find('.cached').textContent, '2');
+});
+
+Then(re('watchers should pause/resume appropriately'), function() {
+    const c = vx(this);
+    assert.deepStrictEqual(c.whileInactive, [], 'no callbacks while cached');
+    assert.deepStrictEqual(c.log, [[2, 0]], 'one catch-up call with the latest value on restore');
+    c.shared.n = 3;
+    assert.deepStrictEqual(c.log, [[2, 0], [3, 2]]);
+});
+
+Then(re('migration should be straightforward'), async function() {
+    await runCheck(this, 'migration should be straightforward');
+});
