@@ -60,45 +60,60 @@
     // Counts change notifications. A computed evaluated since the latest one has
     // already seen every write, so a later subscriber need not invalidate it again.
     let changeEpoch = 0;
-    const notifyPathSubscribers = (path) => {
+    // One write can change several paths at once ('items.0', 'items.length' and
+    // the keys of 'items' for a push); they are notified together, so every
+    // computed is invalidated before any watcher runs.
+    const notifyPathSubscribers = (...paths) => {
         // A subscriber that writes the path it watches would recurse forever
         if (notifyDepth >= MAX_UPDATE_DEPTH) {
-            throw new Error(`bindX: Maximum update depth exceeded while updating "${path}". ` +
+            throw new Error(`bindX: Maximum update depth exceeded while updating "${paths.join('", "')}". ` +
                 'A watcher or binding probably writes the value it watches.');
         }
         changeEpoch++;
         notifyDepth++;
         try {
-            // Notify exact path subscribers
-            const subscribers = pathSubscribers.get(path);
-            if (subscribers) {
-                for (const callback of [...subscribers]) {
-                    callback(path);
-                }
-            }
-
-            // Also notify child path subscribers (e.g., 'bio' changing should notify 'bio.length')
-            const pathPrefix = path + '.';
-            for (const [subscribedPath, childSubscribers] of [...pathSubscribers.entries()]) {
-                if (typeof subscribedPath === 'string' && subscribedPath.startsWith(pathPrefix)) {
-                    for (const callback of [...childSubscribers]) {
-                        callback(subscribedPath);
+            // Collect every subscriber first: exact path, child paths (e.g. 'bio'
+            // changing notifies 'bio.length') and deep parent watchers (a change
+            // inside 'items' is a change to 'items'). Computeds and bindings that
+            // read 'items' on the way to 'items.0' are not invalidated by 'items.1'.
+            const calls = [];
+            for (const path of paths) {
+                const subscribers = pathSubscribers.get(path);
+                if (subscribers) {
+                    for (const callback of subscribers) {
+                        calls.push([callback, path]);
                     }
                 }
-            }
-
-            // And parent path watchers (a change inside 'items' is a change to 'items').
-            // Only watch() callbacks are deep; computeds and bindings that read
-            // 'items' on the way to 'items.0' are not invalidated by 'items.1'.
-            const parts = path.split('.');
-            for (let i = parts.length - 1; i > 0; i--) {
-                const parentSubscribers = pathSubscribers.get(parts.slice(0, i).join('.'));
-                if (parentSubscribers) {
-                    for (const callback of [...parentSubscribers]) {
-                        if (callback.deep) {
-                            callback(path);
+                const pathPrefix = path + '.';
+                for (const [subscribedPath, childSubscribers] of pathSubscribers) {
+                    if (typeof subscribedPath === 'string' && subscribedPath.startsWith(pathPrefix)) {
+                        for (const callback of childSubscribers) {
+                            calls.push([callback, subscribedPath]);
                         }
                     }
+                }
+                const parts = path.split('.');
+                for (let i = parts.length - 1; i > 0; i--) {
+                    const parentSubscribers = pathSubscribers.get(parts.slice(0, i).join('.'));
+                    if (parentSubscribers) {
+                        for (const callback of parentSubscribers) {
+                            if (callback.deep) {
+                                calls.push([callback, path]);
+                            }
+                        }
+                    }
+                }
+            }
+            // Invalidate computeds before running watchers, so no watcher reads a
+            // computed's stale cached value during this change
+            for (const [callback, changed] of calls) {
+                if (callback.invalidatesComputed) {
+                    callback(changed);
+                }
+            }
+            for (const [callback, changed] of calls) {
+                if (!callback.invalidatesComputed) {
+                    callback(changed);
                 }
             }
         } finally {
@@ -918,24 +933,26 @@
                         onChange(changePath, value);
                     }
 
-                    // Notify path subscribers (for computed invalidation)
-                    notifyPathSubscribers(changePath);
+                    const grewArray = oldLength !== undefined && property !== 'length' &&
+                        target.length !== oldLength;
+                    const lengthPath = path ? `${path}.length` : 'length';
+                    if (grewArray && onChange) {
+                        onChange(lengthPath, target.length);
+                    }
+
+                    // Notify path subscribers (for computed invalidation) of every
+                    // path this write changed: the property, the array's length
+                    // when it grew, and the keys when a key was added (what
+                    // Object.keys() and `in` see)
+                    const changedPaths = [changePath];
+                    if (grewArray) changedPaths.push(lengthPath);
+                    if (isNewKey) changedPaths.push(keysPath(path));
+                    notifyPathSubscribers(...changedPaths);
 
                     // Notify bindings (Phase 2)
                     notifyBindings(changePath, value);
-
-                    if (oldLength !== undefined && property !== 'length' && target.length !== oldLength) {
-                        const lengthPath = path ? `${path}.length` : 'length';
-                        if (onChange) {
-                            onChange(lengthPath, target.length);
-                        }
-                        notifyPathSubscribers(lengthPath);
+                    if (grewArray) {
                         notifyBindings(lengthPath, target.length);
-                    }
-
-                    // Adding a key changes what Object.keys() and `in` see
-                    if (isNewKey) {
-                        notifyPathSubscribers(keysPath(path));
                     }
                 }
 
@@ -966,9 +983,8 @@
                     if (onChange) {
                         onChange(changePath, undefined);
                     }
-                    notifyPathSubscribers(changePath);
+                    notifyPathSubscribers(changePath, keysPath(path));
                     notifyBindings(changePath, undefined);
-                    notifyPathSubscribers(keysPath(path));
                 }
 
                 return result;
@@ -1308,9 +1324,11 @@
                     state.unsubscribers.push(() => depState.dependents.delete(getter));
                     continue;
                 }
-                const unsubscribe = subscribeToPath(dep, () => {
+                const invalidate = () => {
                     invalidateStaleComputed(state);
-                });
+                };
+                invalidate.invalidatesComputed = true;
+                const unsubscribe = subscribeToPath(dep, invalidate);
                 state.unsubscribers.push(unsubscribe);
             }
 
