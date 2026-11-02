@@ -30,6 +30,15 @@
      * Track property dependency during access
      * @param {string} path - Property path being accessed
      */
+    /**
+     * The pseudo-path that key enumeration (Object.keys, for...in, `in`) of the
+     * object at `path` depends on. Adding or deleting a key notifies it, and
+     * replacing the object notifies it as a child path.
+     * @param {string} path - Path of the object
+     * @returns {string}
+     */
+    const keysPath = (path) => (path ? `${path}.@keys` : '@keys');
+
     const trackDependency = (path) => {
         if (currentTrackingContext && currentTrackingContext.isTracking) {
             currentTrackingContext.dependencies.add(path);
@@ -878,6 +887,7 @@
                 // Writing past the end of an array grows it without a separate
                 // 'length' write, so remember the length to report that change
                 const oldLength = Array.isArray(target) ? target.length : undefined;
+                const isNewKey = !Object.prototype.hasOwnProperty.call(target, property);
 
                 const result = Reflect.set(target, property, value, receiver);
 
@@ -908,16 +918,23 @@
                         notifyPathSubscribers(lengthPath);
                         notifyBindings(lengthPath, target.length);
                     }
+
+                    // Adding a key changes what Object.keys() and `in` see
+                    if (isNewKey) {
+                        notifyPathSubscribers(keysPath(path));
+                    }
                 }
 
                 return result;
             },
 
             has(target, property) {
+                trackDependency(keysPath(path));
                 return Reflect.has(target, property);
             },
 
             ownKeys(target) {
+                trackDependency(keysPath(path));
                 return Reflect.ownKeys(target);
             },
 
@@ -937,6 +954,7 @@
                     }
                     notifyPathSubscribers(changePath);
                     notifyBindings(changePath, undefined);
+                    notifyPathSubscribers(keysPath(path));
                 }
 
                 return result;
