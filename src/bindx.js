@@ -57,12 +57,16 @@
      */
     const MAX_UPDATE_DEPTH = 100;
     let notifyDepth = 0;
+    // Counts change notifications. A computed evaluated since the latest one has
+    // already seen every write, so a later subscriber need not invalidate it again.
+    let changeEpoch = 0;
     const notifyPathSubscribers = (path) => {
         // A subscriber that writes the path it watches would recurse forever
         if (notifyDepth >= MAX_UPDATE_DEPTH) {
             throw new Error(`bindX: Maximum update depth exceeded while updating "${path}". ` +
                 'A watcher or binding probably writes the value it watches.');
         }
+        changeEpoch++;
         notifyDepth++;
         try {
             // Notify exact path subscribers
@@ -1131,7 +1135,8 @@
                 return;
             }
             // Read through fresh computeds even if their own invalidation runs later
-            computeds.forEach(state => invalidateComputed(state));
+            // (but not ones another subscriber already re-evaluated for this change)
+            computeds.forEach(state => invalidateStaleComputed(state));
             const oldValue = value;
             const next = run();
             value = next.current;
@@ -1234,6 +1239,7 @@
             cached: false,
             dependencies: new Set(),
             dependents: new Set(),
+            epoch: -1,
             evaluating: false,
             unsubscribers: []
         };
@@ -1275,6 +1281,7 @@
             state.value = result;
             state.dependencies = dependencies;
             state.cached = true;
+            state.epoch = changeEpoch;
             state.evaluating = false;
 
             // Subscribe to dependencies for cache invalidation
@@ -1288,7 +1295,7 @@
                     continue;
                 }
                 const unsubscribe = subscribeToPath(dep, () => {
-                    invalidateComputed(state);
+                    invalidateStaleComputed(state);
                 });
                 state.unsubscribers.push(unsubscribe);
             }
@@ -1303,6 +1310,17 @@
         computedCache.set(getter, state);
 
         return getter;
+    };
+
+    /**
+     * Invalidate a computed unless it was evaluated after the change being
+     * notified (a watcher earlier in the same notification already re-read it)
+     * @param {Object} state - Computed property state
+     */
+    const invalidateStaleComputed = (state) => {
+        if (state.epoch !== changeEpoch) {
+            invalidateComputed(state);
+        }
     };
 
     /**

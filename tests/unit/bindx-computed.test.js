@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { bindx, computed, subscribeToPath, withTracking } from '../../src/bindx.js';
+import { bindx, computed, subscribeToPath, watch, withTracking } from '../../src/bindx.js';
 import {
     createMockComputation,
     createCircularData,
@@ -284,5 +284,31 @@ describe('Subscription System', () => {
 
         data.value = 3;
         expect(callCount).toBe(beforeUnsubscribe); // No new calls
+    });
+});
+
+describe('Watched computed chains', () => {
+    it('re-evaluates each computed once per change, with fresh values', () => {
+        const data = bindx({ price: 10, qty: 2 });
+        const runs = { subtotal: 0, tax: 0, total: 0 };
+        const subtotal = computed(() => { runs.subtotal++; return data.price * data.qty; });
+        const tax = computed(() => { runs.tax++; return subtotal() / 10; });
+        const total = computed(() => { runs.total++; return subtotal() + tax(); });
+        const seen = [];
+        const stops = [
+            watch(() => subtotal(), value => seen.push(['subtotal', value])),
+            watch(() => tax(), value => seen.push(['tax', value])),
+            watch(() => total(), value => seen.push(['total', value]))
+        ];
+        const before = { ...runs };
+
+        data.qty = 3;
+
+        expect(runs.subtotal - before.subtotal).toBe(1);
+        expect(runs.tax - before.tax).toBe(1);
+        expect(runs.total - before.total).toBe(1);
+        expect(seen).toEqual([['subtotal', 30], ['tax', 3], ['total', 33]]);
+        expect(total()).toBe(33);
+        stops.forEach(stop => stop());
     });
 });
