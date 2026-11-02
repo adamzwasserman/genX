@@ -17,6 +17,7 @@
  */
 
 import type { Writable, Readable, Subscriber, Unsubscriber } from 'svelte/store';
+import * as svelteStore from 'svelte/store';
 import { onDestroy } from 'svelte';
 
 // Import bindX core (assuming it's available globally or via import)
@@ -205,8 +206,13 @@ export function reactive<T extends object>(initialState: T): T {
 /**
  * Create computed property
  *
- * Returns a function that recalculates when dependencies change.
- * Use in Svelte templates or reactive statements.
+ * Returns a function that recalculates when dependencies change. The function
+ * is also a readable store.
+ *
+ * - In a Svelte 5 runes-mode component, `{fullName()}` re-renders on change.
+ * - In a legacy-mode component (no runes; also Svelte 3/4), Svelte does not
+ *   track function calls in markup or `$:` statements, so use the store form:
+ *   `{$fullName}` and `$: upper = $fullName.toUpperCase()`.
  *
  * @template T - Return type of the computed function
  * @param getter - Function that computes the value
@@ -219,12 +225,100 @@ export function reactive<T extends object>(initialState: T): T {
  * let state = reactive({ firstName: 'John', lastName: 'Doe' });
  * let fullName = computed(() => `${state.firstName} ${state.lastName}`);
  *
- * // In template:
+ * // In template (runes mode):
  * <p>{fullName()}</p>
+ * // In template (legacy mode, or Svelte 3/4):
+ * <p>{$fullName}</p>
  * ```
  */
-export function computed<T>(getter: () => T): ComputedRef<T> {
-  return bindX.computed(getter);
+export function computed<T>(getter: () => T): ComputedRef<T> & Readable<T> {
+  const bindXComputed: ComputedRef<T> = bindX.computed(getter);
+
+  // In runes mode, a template expression like {fullName()} re-runs only when a
+  // Svelte signal it read changes. Svelte 5's fromStore() turns a store into such
+  // a signal, so each call reads a store that ticks whenever the computed's bindX
+  // dependencies change. (Legacy mode wraps markup calls in untrack(), and Svelte
+  // 3/4 have no fromStore; there, the computed is used as a store: $fullName.)
+  const changes = watchedStore(bindXComputed);
+  const fromStore = (svelteStore as any).fromStore as
+    | ((store: Readable<number>) => { readonly current: number })
+    | undefined;
+  const tracker = typeof fromStore === 'function' ? fromStore(changes) : null;
+
+  const ref = (() => {
+    if (tracker) void tracker.current;
+    return bindXComputed();
+  }) as ComputedRef<T> & Readable<T>;
+
+  // Store contract, for $computed in templates and $: statements
+  ref.subscribe = (run: Subscriber<T>): Unsubscriber => {
+    run(bindXComputed());
+    let first = true;
+    return changes.subscribe(() => {
+      if (first) {
+        first = false;
+        return;
+      }
+      let value: T;
+      try {
+        value = bindXComputed();
+      } catch (error) {
+        return; // already logged by the watcher below
+      }
+      run(value);
+    });
+  };
+
+  return ref;
+}
+
+/**
+ * Readable store counting changes of a computed's value. Watches only while it
+ * has subscribers. A throwing computed is logged and still counts as a change,
+ * so a template reading it re-renders and the error reaches a <svelte:boundary>.
+ */
+function watchedStore<T>(read: ComputedRef<T>): Readable<number> {
+  const subscribers = new Set<Subscriber<number>>();
+  let unwatch: UnwatchFn | null = null;
+  let version = 0;
+
+  const start = () => {
+    unwatch = bindX.watch(
+      () => {
+        try {
+          return read();
+        } catch (error) {
+          return new ComputedError(error);
+        }
+      },
+      (value: unknown) => {
+        if (value instanceof ComputedError) {
+          console.error('bindX: computed threw', value.error);
+        }
+        version++;
+        subscribers.forEach(subscriber => subscriber(version));
+      }
+    );
+  };
+
+  return {
+    subscribe(run: Subscriber<number>): Unsubscriber {
+      subscribers.add(run);
+      if (!unwatch) start();
+      run(version);
+      return () => {
+        subscribers.delete(run);
+        if (subscribers.size === 0 && unwatch) {
+          unwatch();
+          unwatch = null;
+        }
+      };
+    }
+  };
+}
+
+class ComputedError {
+  constructor(public error: unknown) {}
 }
 
 /**
@@ -604,12 +698,17 @@ export function provideStore<T>(key: any, store: Writable<T>): void {
  *   function increment() {
  *     $count.value++;
  *   }
+ *
+ *   function decrement() {
+ *     $count.value--;
+ *   }
  * </script>
  *
  * <div>
  *   <p>Count: {$count.value}</p>
- *   <p>Doubled: {doubled()}</p>
+ *   <p>Doubled: {$doubled}</p>
  *   <button on:click={increment}>Increment</button>
+ *   <button on:click={decrement}>Decrement</button>
  * </div>
  * ```
  */
@@ -661,12 +760,16 @@ export function provideStore<T>(key: any, store: Writable<T>): void {
  *       state.todos = state.todos;
  *     }
  *   }
+ *
+ *   function removeTodo(id: number) {
+ *     state.todos = state.todos.filter(t => t.id !== id);
+ *   }
  * </script>
  *
  * <div>
  *   <input type="text" on:keyup={e => e.key === 'Enter' && addTodo(e.target.value)} />
  *
- *   {#each filteredTodos() as todo}
+ *   {#each $filteredTodos as todo}
  *     <div>
  *       <input
  *         type="checkbox"
@@ -674,10 +777,11 @@ export function provideStore<T>(key: any, store: Writable<T>): void {
  *         on:change={() => toggleTodo(todo.id)}
  *       />
  *       <span class:completed={todo.completed}>{todo.text}</span>
+ *       <button on:click={() => removeTodo(todo.id)}>Remove</button>
  *     </div>
  *   {/each}
  *
- *   <p>{remainingCount()} items left</p>
+ *   <p>{$remainingCount} items left</p>
  *
  *   <button on:click={() => state.filter = 'all'}>All</button>
  *   <button on:click={() => state.filter = 'active'}>Active</button>

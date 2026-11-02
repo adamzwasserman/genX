@@ -98,7 +98,7 @@ function loadAdapter(name) {
  * Set up an adapter scenario on the cucumber world. Returns world.ad with
  * { core, adapter, dom, errors, logs } and framework helpers added by the steps.
  */
-function setupAdapter(world, name) {
+function setupAdapter(world, name, options = {}) {
     if (world.ad && world.ad.name === name) return world.ad;
     world._adapterTeardown = world._adapterTeardown || [];
     const dom = installDom(world);
@@ -122,7 +122,9 @@ function setupAdapter(world, name) {
             if (domBound.test(key)) delete require.cache[key];
         }
     }
-    const adapter = loadAdapter(name);
+    // options.load replaces the default build, for an adapter that must share one
+    // bundle with its framework (Svelte's client runtime resolves by export condition)
+    const adapter = options.load ? options.load() : loadAdapter(name);
     world.ad = { name, core, adapter, dom, errors: [], cleanups: [] };
     return world.ad;
 }
