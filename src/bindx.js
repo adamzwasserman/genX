@@ -1070,6 +1070,20 @@
      * @param {Object} [options] - { immediate, deep }
      * @returns {Function} Unwatch function
      */
+    // JSON shows a Promise, Map, Set or RegExp as {}, so a deep watcher would miss
+    // one being replaced by another; snapshot such values by identity instead
+    const snapshotIds = new WeakMap();
+    let nextSnapshotId = 0;
+    const snapshotReplacer = (key, value) => {
+        if (value !== null && typeof value === 'object' && !ArrayBuffer.isView(value) && isOpaqueBuiltin(value)) {
+            if (!snapshotIds.has(value)) {
+                snapshotIds.set(value, ++nextSnapshotId);
+            }
+            return `[${Object.prototype.toString.call(value).slice(8, -1)} #${snapshotIds.get(value)}]`;
+        }
+        return value;
+    };
+
     const watchGetter = (getter, callback, options = {}) => {
         if (typeof callback !== 'function') {
             throw new TypeError('Callback must be a function');
@@ -1083,7 +1097,7 @@
                 return value;
             }
             try {
-                return JSON.stringify(value);
+                return JSON.stringify(value, snapshotReplacer);
             } catch (e) {
                 return value;
             }

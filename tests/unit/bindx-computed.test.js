@@ -312,3 +312,15 @@ describe('Watched computed chains', () => {
         stops.forEach(stop => stop());
     });
 });
+
+describe('Deep watchers and built-in values', () => {
+    it('notice a Promise or Map being replaced', () => {
+        const data = bindx({ promise: Promise.resolve(1), lookup: new Map() });
+        const seen = [];
+        const stop = watch(() => data, () => seen.push('changed'), { deep: true });
+        data.promise = Promise.resolve(2);
+        data.lookup = new Map([['a', 1]]);
+        expect(seen).toEqual(['changed', 'changed']);
+        stop();
+    });
+});
