@@ -403,7 +403,17 @@ export function watch<T>(
   let paused = false;
   let missed = false;
   let lastValue: T | undefined;
-  const unwatch = bindX.watch(getter, (newValue: T, oldValue: T) => {
+  let seen = false;
+  // Remember the first value too, so a catch-up call has a real old value
+  const trackedGetter = () => {
+    const value = getter();
+    if (!seen) {
+      seen = true;
+      lastValue = value;
+    }
+    return value;
+  };
+  const unwatch = bindX.watch(trackedGetter, (newValue: T, oldValue: T) => {
     if (paused) {
       missed = true;
       return;
