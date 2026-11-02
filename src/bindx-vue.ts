@@ -146,8 +146,13 @@ import {
   ref,
   computed as vueComputed,
   watch as vueWatch,
-  onUnmounted,
+  getCurrentScope,
   getCurrentInstance,
+  onScopeDispose,
+  onActivated,
+  onDeactivated,
+  inject,
+  ssrContextKey,
   type Ref,
   type ComputedRef,
   type WatchOptions,
@@ -206,29 +211,98 @@ export interface BindXWatchOptions {
  * state.user.age++;
  */
 export function reactive<T extends object>(state: T): T {
-  // Create bindX reactive state
   const bindXState = bindX.reactive(state);
 
-  // In a Vue component context, ensure changes trigger Vue updates
-  const instance = getCurrentInstance();
-
-  if (instance) {
-    // Wrap to trigger Vue's reactivity system
-    return new Proxy(bindXState, {
-      set(target, property, value, receiver) {
-        const result = Reflect.set(target, property, value, receiver);
-
-        // Force Vue to detect the change
-        if (instance.proxy) {
-          instance.proxy.$forceUpdate?.();
-        }
-
-        return result;
-      }
-    });
+  // Inside a component (or any effect scope) let Vue track the state, so
+  // templates, Vue computeds and Vue watchers update on every bindX write
+  if (getCurrentScope()) {
+    return toVueReactive(bindXState);
   }
 
   return bindXState;
+}
+
+/**
+ * True while a component sets up for server rendering. Vue renders it once and
+ * never unmounts it, so bridge watchers made there would leak per request.
+ */
+function inSSRSetup(): boolean {
+  return !!getCurrentInstance() && inject(ssrContextKey, null) !== null;
+}
+
+/** Stop a bindX watcher when the current component or effect scope ends. */
+function disposeWithScope(stop: () => void): void {
+  if (getCurrentScope()) {
+    onScopeDispose(stop);
+  }
+}
+
+/**
+ * Makes bindX reactive state visible to Vue's reactivity
+ *
+ * Vue tracks reads of the returned object; any write to the bindX state, at
+ * any depth and from anywhere, triggers the Vue effects that read it. The
+ * bridge watcher stops with the current component or effect scope.
+ *
+ * @template T - Type of state object
+ * @param {T} state - bindX reactive state
+ * @returns {T} The same state, tracked by Vue
+ *
+ * @example
+ * const store = bindX.reactive({ count: 0 });
+ * const state = toVueReactive(store); // in setup()
+ * store.count++; // re-renders components that read state.count
+ */
+export function toVueReactive<T extends object>(state: T): T {
+  // Server rendering reads the state once; nothing to keep in sync
+  if (inSSRSetup()) {
+    return state;
+  }
+
+  const version = ref(0);
+  const stop = bindX.watch(() => state, () => {
+    version.value++;
+  }, { deep: true });
+  disposeWithScope(stop);
+
+  // Nested plain objects and arrays get the same treatment, so a template that
+  // holds on to state.user or state.items still tracks it
+  const wrappers = new WeakMap<object, any>();
+  const handler: ProxyHandler<any> = {
+    get(target, property, receiver) {
+      // Vue's own reactive() (data(), reactive props) must not wrap the bridge
+      // again: writes made straight to the bindX state would bypass that copy
+      if (property === '__v_skip') {
+        return true;
+      }
+      // Reading the version makes the current Vue effect depend on this object
+      void version.value;
+      const value = Reflect.get(target, property, receiver);
+      return isPlainContainer(value) ? wrap(value) : value;
+    },
+    set(target, property, value) {
+      // Write through the bindX proxy itself so it notifies as usual
+      return Reflect.set(target, property, value);
+    }
+  };
+  const wrap = (target: object) => {
+    let wrapper = wrappers.get(target);
+    if (!wrapper) {
+      wrapper = new Proxy(target, handler);
+      wrappers.set(target, wrapper);
+    }
+    return wrapper;
+  };
+
+  return wrap(state);
+}
+
+function isPlainContainer(value: unknown): value is object {
+  if (value === null || typeof value !== 'object') {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return Array.isArray(value) || proto === Object.prototype || proto === null;
 }
 
 /**
@@ -247,7 +321,34 @@ export function reactive<T extends object>(state: T): T {
  * console.log(doubled()); // 10
  */
 export function computed<T>(getter: () => T): ComputedGetter<T> {
-  return bindX.computed(getter);
+  const bindXComputed = bindX.computed(getter);
+
+  if (!getCurrentScope() || inSSRSetup()) {
+    return bindXComputed;
+  }
+
+  // In a component, make reads Vue-tracked even when the value comes from the
+  // cache. The bridge watcher starts on first read, so evaluation stays lazy.
+  const version = ref(0);
+  let stop: UnwatchFn | null = null;
+  let disposed = false;
+  disposeWithScope(() => {
+    disposed = true;
+    if (stop) {
+      stop();
+      stop = null;
+    }
+  });
+
+  return () => {
+    void version.value;
+    if (!stop && !disposed) {
+      stop = bindX.watch(() => bindXComputed(), () => {
+        version.value++;
+      });
+    }
+    return bindXComputed();
+  };
 }
 
 /**
@@ -280,14 +381,49 @@ export function watch<T>(
   callback: WatchCallback<T>,
   options?: BindXWatchOptions
 ): UnwatchFn {
-  const unwatch = bindX.watch(getter, callback, options);
+  // Like Vue's watch during server rendering: only an immediate call runs
+  if (inSSRSetup()) {
+    if (options?.immediate) {
+      callback(getter(), undefined as unknown as T);
+    }
+    return () => {};
+  }
 
-  // Auto-cleanup on component unmount
+  // A component cached by <KeepAlive> pauses its watchers while inactive and,
+  // on reactivation, reports the latest value once if it changed meanwhile
+  let paused = false;
+  let missed = false;
+  let lastValue: T | undefined;
+  const unwatch = bindX.watch(getter, (newValue: T, oldValue: T) => {
+    if (paused) {
+      missed = true;
+      return;
+    }
+    lastValue = newValue;
+    callback(newValue, oldValue);
+  }, options);
+
   if (getCurrentInstance()) {
-    onUnmounted(() => {
-      unwatch();
+    onDeactivated(() => {
+      paused = true;
+    });
+    onActivated(() => {
+      if (!paused) {
+        return;
+      }
+      paused = false;
+      if (missed) {
+        missed = false;
+        const current = getter();
+        const previous = lastValue as T;
+        lastValue = current;
+        callback(current, previous);
+      }
     });
   }
+
+  // Auto-cleanup when the component (or effect scope) ends
+  disposeWithScope(unwatch);
 
   return unwatch;
 }
@@ -344,7 +480,7 @@ export function toVueComputed<T>(bindXComputed: ComputedGetter<T>): ComputedRef<
  *
  * @template T - Type of value
  * @param {Ref<T>} vueRef - Vue ref
- * @returns {T} bindX reactive value
+ * @returns {{ value: T }} bindX reactive object whose value follows the ref
  *
  * @example
  * const vueCount = ref(0);
@@ -352,20 +488,21 @@ export function toVueComputed<T>(bindXComputed: ComputedGetter<T>): ComputedRef<
  *
  * // Changes in Vue ref update bindX state
  * vueCount.value++;
- * console.log(bindXState); // 1
+ * console.log(bindXState.value); // 1
  */
-export function fromVueRef<T>(vueRef: Ref<T>): T {
-  const state = reactive({ value: vueRef.value }) as { value: T };
+export function fromVueRef<T>(vueRef: Ref<T>): { value: T } {
+  const state = bindX.reactive({ value: vueRef.value });
 
-  // Watch Vue ref and update bindX state
+  // Sync flush so bindX watchers and computeds see the change right away
   vueWatch(
     () => vueRef.value,
     (newValue) => {
       state.value = newValue;
-    }
+    },
+    { flush: 'sync' }
   );
 
-  return state.value;
+  return state;
 }
 
 /**
@@ -425,7 +562,8 @@ export function createComposable<T>(factory: () => T): () => T {
  * console.log(userStore.currentUser); // { id: 1, name: 'John' }
  */
 export function createStore<T extends object>(initialState: T): T {
-  return reactive(initialState);
+  // A module-level store outlives components, so it is always Vue-tracked
+  return toVueReactive(bindX.reactive(initialState));
 }
 
 /**
@@ -453,6 +591,7 @@ export const bindXPlugin = {
       toVueRef,
       toVueComputed,
       fromVueRef,
+      toVueReactive,
       createStore
     });
 
@@ -650,9 +789,13 @@ export function useForm<T extends Record<string, any>>(initialData: T) {
 
   const hasErrors = computed(() => Object.keys(state.errors).length > 0);
 
+  // Reset in place: the returned data and errors objects stay the live ones
   function reset() {
-    state.data = { ...initialData };
-    state.errors = {} as Record<keyof T, string>;
+    for (const key of Object.keys(state.data)) {
+      delete (state.data as Record<string, any>)[key];
+    }
+    Object.assign(state.data, initialData);
+    clearErrors();
     state.isDirty = false;
     state.isSubmitting = false;
   }
@@ -666,17 +809,21 @@ export function useForm<T extends Record<string, any>>(initialData: T) {
   }
 
   function clearErrors() {
-    state.errors = {} as Record<keyof T, string>;
+    for (const key of Object.keys(state.errors)) {
+      delete (state.errors as Record<string, string>)[key];
+    }
   }
 
-  async function submit(handler: (data: T) => Promise<void>) {
+  async function submit(handler?: (data: T) => Promise<void> | void) {
     if (state.isSubmitting) return;
 
     state.isSubmitting = true;
     clearErrors();
 
     try {
-      await handler(state.data);
+      if (handler) {
+        await handler(state.data);
+      }
       state.isDirty = false;
     } catch (error) {
       console.error('Form submission error:', error);
@@ -784,6 +931,7 @@ export default {
   toVueRef,
   toVueComputed,
   fromVueRef,
+  toVueReactive,
   createComposable,
   createStore,
   bindXPlugin,

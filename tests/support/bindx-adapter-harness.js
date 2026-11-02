@@ -154,7 +154,7 @@ const re = (text) => new RegExp('^' + text.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&
  * so each adapter's steps file registers through adapterSteps(framework): the
  * first file to use a pattern defines one Cucumber step that dispatches on the
  * scenario's adapter (world.ad.name). A pattern with a single implementation
- * runs it directly, which covers the package steps that run before world.ad.
+ * runs it directly only before world.ad is set (the package steps).
  */
 const sharedSteps = new Map();
 
@@ -170,7 +170,8 @@ function adapterSteps(framework) {
             const dispatch = function(...args) {
                 const names = Object.keys(entry.impls);
                 const name = this.ad ? this.ad.name : names.length === 1 ? names[0] : undefined;
-                const impl = entry.impls[name] || (names.length === 1 ? entry.impls[names[0]] : undefined);
+                // Once a scenario has an adapter, never fall back to another framework's code
+                const impl = this.ad ? entry.impls[name] : entry.impls[name] || (names.length === 1 ? entry.impls[names[0]] : undefined);
                 if (!impl) {
                     throw new Error(`step ${pattern} has no ${name || 'adapter'} implementation (has: ${names.join(', ')})`);
                 }
