@@ -271,6 +271,8 @@ Feature: bindX Svelte Framework Adapter
     And updates should sync across components
 
   # Performance
+  # perf: timing threshold (60 FPS); runs only in the perf suite
+  @perf
   Scenario: Efficient updates with bindX stores
     Given component with 1000 bindX reactive properties
     When properties update frequently
@@ -325,6 +327,8 @@ Feature: bindX Svelte Framework Adapter
     And I can assert on derived values
 
   # SvelteKit Integration
+  # wip: needs a SvelteKit app (routing, load functions, SSR and hydration); SvelteKit is not a genX dependency
+  @wip
   Scenario: Use bindX stores in SvelteKit pages
     Given SvelteKit page component
     When I use bindX stores
@@ -332,12 +336,16 @@ Feature: bindX Svelte Framework Adapter
     And SSR should not break
     And hydration should work correctly
 
+  # wip: needs a SvelteKit app (routing, load functions, SSR and hydration); SvelteKit is not a genX dependency
+  @wip
   Scenario: Share bindX state across SvelteKit routes
     Given bindX store in root layout
     When navigating between routes
     Then state should persist across navigation
     And all routes should access same store
 
+  # wip: needs a SvelteKit app (routing, load functions, SSR and hydration); SvelteKit is not a genX dependency
+  @wip
   Scenario: Load data into bindX state in load function
     Given SvelteKit page with load function
     When load function returns data
@@ -346,6 +354,8 @@ Feature: bindX Svelte Framework Adapter
     And reactivity should work after load
 
   # SSR (Server-Side Rendering)
+  # wip: needs a SvelteKit app (routing, load functions, SSR and hydration); SvelteKit is not a genX dependency
+  @wip
   Scenario: Render with bindX state on server
     Given SvelteKit with SSR enabled
     When component with bindX state renders on server

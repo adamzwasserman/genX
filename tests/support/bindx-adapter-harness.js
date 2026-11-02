@@ -22,7 +22,8 @@ const DOM_GLOBALS = [
     'DocumentFragment', 'Event', 'CustomEvent', 'MouseEvent', 'KeyboardEvent', 'InputEvent',
     'MutationObserver', 'getComputedStyle', 'requestAnimationFrame', 'cancelAnimationFrame',
     'Document', 'HTMLTemplateElement', 'HTMLButtonElement', 'HTMLFormElement', 'ShadowRoot', 'Range',
-    'FocusEvent', 'TransitionEvent', 'AnimationEvent', 'NodeList', 'HTMLCollection'
+    'FocusEvent', 'TransitionEvent', 'AnimationEvent', 'NodeList', 'HTMLCollection',
+    'HTMLMediaElement'
 ];
 
 // Frameworks that capture `document` when first required; reloaded per scenario
